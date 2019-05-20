@@ -57,15 +57,29 @@ t_inst	g_cpu_info[] = {
 	{},
 };
 
+
+// logical AND with A register
+t_spec	g_and_spec[] = {
+	{0x, A, 0, 4},
+	{0x, B, 0, 4},
+	{0x, C, 0, 4},
+	{0x, D, 0, 4},
+	{0x, E, 0, 4},
+	{0x, H, 0, 4},
+	{0x, L, 0, 4},
+	{0x, HL_ADDR, 0, 8},
+	{0x, ____, 0, 8},
+};
+
 t_spec	g_sbc_spec[] = {
 	{0x9f, A, A, 4},
-	{0x98, B, 0, 4},
-	{0x99, C, 0, 4},
-	{0x9a, D, 0, 4},
-	{0x9b, E, 0, 4},
-	{0x9c, H, 0, 4},
-	{0x9d, L, 0, 4},
-	{0x9e, HL_ADDR, 0, 8},
+	{0x98, A, B, 4},
+	{0x99, A, C, 4},
+	{0x9a, A, D, 4},
+	{0x9b, A, E, 4},
+	{0x9c, A, H, 4},
+	{0x9d, A, L, 4},
+	{0x9e, A, HL_ADDR, 8},
 	{????, ____, 0, ?},
 };
 
