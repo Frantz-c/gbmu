@@ -6,15 +6,21 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/21 16:29:29 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/21 17:00:19 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/21 20:36:49 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
+
+// http://bgb.bircd.org/pandocs.htm#thecartridgeheader
 
 #define	GB_CLOCK			4190000
 #define GB_MACHINE_CYCLE	1050000	
 #define GBC_CLOCK			8000000
 #define GBC_MACHINE_CYCLE	2000000 //???
+#define NITENDO_LOGO		"\xCE\xED\x66\x66\xCC\x0D\x00\x0B\x03\x73\x00\x83"\
+							"\x00\x0C\x00\x0D\x00\x08\x11\x1F\x88\x89\x00\x0E"\
+							"\xDC\xCC\x6E\xE6\xDD\xDD\xD9\x99\xBB\xBB\x67\x63"\
+							"\x6E\x0E\xEC\xCC\xDD\xDC\x99\x9F\xBB\xB9\x33\x3E"
 //#define GB
 
 enum	e_param
