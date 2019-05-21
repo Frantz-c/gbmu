@@ -1,6 +1,6 @@
 enum	e_param
 {
-	A, B, C, D, E, F, H, L,
+	NONE, A, B, C, D, E, F, H, L,
 	SP, PC,
 	AF, BC, DE, HL,
 	IMM8, IMM16,
@@ -46,44 +46,108 @@ t_inst	g_cpu_info[] = {
 	{"sub", "SUB", g_sub_spec},
 	{"sbc", "SBC", g_sbc_spec},
 	{"and", "AND", g_and_spec},
-	{},
-	{},
-	{},
-	{},
-	{},
-	{},
-	{},
-	{},
-	{},
+	{"or", "OR", g_or_spec},
+	{"xor", "XOR", g_xor_spec},
+	{"cp", "CP", g_cp_spec},
+	{"inc", "INC", g_inc_spec},
+	{"dec", "DEC", g_dec_spec},
+	{"swap", "SWAP", g_swap_spec},
+	{"daa", "DAA", g_daa_spec}, //??? decimal adjust A
+	{"cpl", "CPL", g_cpl_spec}, //??? complement A register
+	{"ccf", "CCF", g_ccf_spec},
+	{"scf", "SCF", g_scf_spec},
+	{"nop", "NOP", g_nop_spec},
+	{"halt", "HALT", g_halt_spec},
+	{"stop", "STOP", g_stop_spec},
+	{"di", "DI", g_di_spec},
+	{"ei", "EI", g_ei_spec},
+	{"rlca", "RLCA", g_rlca_spec},
+	{"rla", "RLA", g_rla_spec},
+	{"rrca", "RRCA", g_rrca_spec},
+	{"rra", "RRA", g_rra_spec},
+	{"rlc", "RLC", g_rlc_spec},
+	{"rl", "RL", g_rl_spec},
+	{"rrc", "RRC", g_rrc_spec},
+	{"rr", "RR", g_rr_spec},
+	{"sla", "SLA", g_sla_spec},
+	{"sra", "SRA", g_sra_spec},
+	{"srl", "SRL", g_srl_spec},
+	{"bit", "BIT", g_bit_spec},
+	{"set", "SET", g_set_spec},
+	{"res", "RES", g_res_spec},
+	{"jp", "JP", g_jp_spec},
+	{"jr", "JR", g_jr_spec},
+	{"call", "CALL", g_call_spec},
+	{"rst", "RST", g_rst_spec},
+	{"ret", "RET", g_ret_spec},
+	{"reti", "RETI", g_reti_spec}
 };
 
+t_spec	g_cp_spec[] = {
+	
+};
+
+
+// logical OR with A register
+// flags {Z = set; N, C, H = reset}
+// OR x --> A = A & x
+t_spec	g_or_spec[] = {
+	{0xb7, A, 0, 4},
+	{0xb0, B, 0, 4},
+	{0xb1, C, 0, 4},
+	{0xb2, D, 0, 4},
+	{0xb3, E, 0, 4},
+	{0xb4, H, 0, 4},
+	{0xb5, L, 0, 4},
+	{0xb6, HL_ADDR, 0, 8},
+	{0xf6, ____, 0, 8},
+};
+
+// logical XOR with A register
+// flags {Z = set; N, C, H = reset}
+// XOR x --> A = A & x
+t_spec	g_xor_spec[] = {
+	{0xaf, A, 0, 4},
+	{0xa8, B, 0, 4},
+	{0xa9, C, 0, 4},
+	{0xaa, D, 0, 4},
+	{0xab, E, 0, 4},
+	{0xac, H, 0, 4},
+	{0xad, L, 0, 4},
+	{0xae, HL_ADDR, 0, 8},
+	{0xee, ____, 0, 8},
+};
 
 // logical AND with A register
+// flags {Z = set; N, C = reset; H = set}
+// AND x --> A = A & x
 t_spec	g_and_spec[] = {
-	{0x, A, 0, 4},
-	{0x, B, 0, 4},
-	{0x, C, 0, 4},
-	{0x, D, 0, 4},
-	{0x, E, 0, 4},
-	{0x, H, 0, 4},
-	{0x, L, 0, 4},
-	{0x, HL_ADDR, 0, 8},
-	{0x, ____, 0, 8},
+	{0xa7, A, 0, 4},
+	{0xa0, B, 0, 4},
+	{0xa1, C, 0, 4},
+	{0xa2, D, 0, 4},
+	{0xa3, E, 0, 4},
+	{0xa4, H, 0, 4},
+	{0xa5, L, 0, 4},
+	{0xa6, HL_ADDR, 0, 8},
+	{0xe6, ____, 0, 8},
 };
 
+
+// carry flag to A
 t_spec	g_sbc_spec[] = {
-	{0x9f, A, A, 4},
-	{0x98, A, B, 4},
-	{0x99, A, C, 4},
-	{0x9a, A, D, 4},
-	{0x9b, A, E, 4},
-	{0x9c, A, H, 4},
-	{0x9d, A, L, 4},
-	{0x9e, A, HL_ADDR, 8},
+	{0x9f, A, 0, 4},
+	{0x98, B, 0, 4},
+	{0x99, C, 0, 4},
+	{0x9a, D, 0, 4},
+	{0x9b, E, 0, 4},
+	{0x9c, H, 0, 4},
+	{0x9d, L, 0, 4},
+	{0x9e, HL_ADDR, 0, 8},
 	{????, ____, 0, ?},
 };
 
-
+// sub to A
 t_spec	g_sub_spec[] = {
 	{0x97, A, 0, 4},
 	{0x90, B, 0, 4},
@@ -96,35 +160,36 @@ t_spec	g_sub_spec[] = {
 	{0xd6, ____, 0, 8},
 };
 
-// flags: {Z = set if result is zero; N = reset;
+// flags: {Z = set if riesult is zero; N = reset;
 //			H = set if carry from bit 3;
 //			C = set if carry of bit 7}
 // carry flag to A
 t_spec	g_adc_spec[] = {
-	{0x8f, A, A, 4},
-	{0x88, A, B, 4},
-	{0x89, A, C, 4},
-	{0x8a, A, D, 4},
-	{0x8b, A, E, 4},
-	{0x8c, A, H, 4},
-	{0x8d, A, L, 4},
-	{0x8e, A, HL_ADDR, 8},
-	{0xce, A, ____, 8},
+	{0x8f, A, 0, 4},
+	{0x88, B, 0, 4},
+	{0x89, C, 0, 4},
+	{0x8a, D, 0, 4},
+	{0x8b, E, 0, 4},
+	{0x8c, H, 0, 4},
+	{0x8d, L, 0, 4},
+	{0x8e, HL_ADDR, 0, 8},
+	{0xce, ____, 0, 8},
 };
 
 // flags: {Z = set if result is zero; N = reset;
 //			H = set if carry from bit 3;
 //			C = set if carry of bit 7}
+// add x to A
 t_spec	g_add_spec[] = {
-	{0x87, A, A, 4},
-	{0x80, A, B, 4},
-	{0x81, A, C, 4},
-	{0x82, A, D, 4},
-	{0x83, A, E, 4},
-	{0x84, A, H, 4},
-	{0x85, A, L, 4},
-	{0x86, A, HL_ADDR, 8},
-	{0xc6, A, ____, 8},
+	{0x87, A, 0, 4},
+	{0x80, B, 0, 4},
+	{0x81, C, 0, 4},
+	{0x82, D, 0, 4},
+	{0x83, E, 0, 4},
+	{0x84, H, 0, 4},
+	{0x85, L, 0, 4},
+	{0x86, HL_ADDR, 0, 8},
+	{0xc6, ____, 0, 8},
 };
 
 t_spec	g_pop_spec[] = {
