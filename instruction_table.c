@@ -59,64 +59,239 @@ typedef enum e_param	t_param;
 // X_FF00 = (X)
 //
 
-t_inst	g_cpu_info[] = {
-	{"ld", "LD", g_ld_spec},
-	{"ldd", "LDD", g_ldd_spec},
-	{"ldi", "LDI", g_ldi_spec},
-	{"ldhl", "LDHL", g_ldhl_spec},
-	{"push", "PUSH", g_push_spec},
-	{"pop", "POP", g_pop_spec},
-	{"add", "ADD", g_add_spec},
-	{"adc", "ADC", g_adc_spec},
-	{"sub", "SUB", g_sub_spec},
-	{"sbc", "SBC", g_sbc_spec},
-	{"and", "AND", g_and_spec},
-	{"or", "OR", g_or_spec},
-	{"xor", "XOR", g_xor_spec},
-	{"cp", "CP", g_cp_spec},
-	{"inc", "INC", g_inc_spec},
-	{"dec", "DEC", g_dec_spec},
-	{"swap", "SWAP", g_swap_spec},
-	{"daa", "DAA", g_daa_spec}, //??? decimal adjust A
-	{"cpl", "CPL", g_cpl_spec}, //??? complement A register
-	{"ccf", "CCF", g_ccf_spec},
-	{"scf", "SCF", g_scf_spec},
-	{"nop", "NOP", g_nop_spec},
-	{"halt", "HALT", g_halt_spec},
-	{"stop", "STOP", g_stop_spec},
-	{"di", "DI", g_di_spec},
-	{"ei", "EI", g_ei_spec},
-	{"rlca", "RLCA", g_rlca_spec},
-	{"rla", "RLA", g_rla_spec},
-	{"rrca", "RRCA", g_rrca_spec},
-	{"rra", "RRA", g_rra_spec},
-	{"rlc", "RLC", g_rlc_spec},
-	{"rl", "RL", g_rl_spec},
-	{"rrc", "RRC", g_rrc_spec},
-	{"rr", "RR", g_rr_spec},
-	{"sla", "SLA", g_sla_spec},
-	{"sra", "SRA", g_sra_spec},
-	{"srl", "SRL", g_srl_spec},
-	{"bit", "BIT", g_bit_spec},
-	{"set", "SET", g_set_spec},
-	{"res", "RES", g_res_spec},
-	{"jp", "JP", g_jp_spec},
-	{"jr", "JR", g_jr_spec},
-	{"call", "CALL", g_call_spec},
-	{"rst", "RST", g_rst_spec},
-	{"ret", "RET", g_ret_spec},
-	{"reti", "RETI", g_reti_spec}
+t_inst	cpu_info[] = {
+	{"ld", "LD", ld_spec},
+	{"ldd", "LDD", ldd_spec},
+	{"ldi", "LDI", ldi_spec},
+	{"ldhl", "LDHL", ldhl_spec},
+	{"push", "PUSH", push_spec},
+	{"pop", "POP", pop_spec},
+	{"add", "ADD", add_spec},
+	{"adc", "ADC", adc_spec},
+	{"sub", "SUB", sub_spec},
+	{"sbc", "SBC", sbc_spec},
+	{"and", "AND", and_spec},
+	{"or", "OR", or_spec},
+	{"xor", "XOR", xor_spec},
+	{"cp", "CP", cp_spec},
+	{"inc", "INC", inc_spec},
+	{"dec", "DEC", dec_spec},
+	{"swap", "SWAP", swap_spec},
+	{"daa", "DAA", daa_spec}, //??? decimal adjust A
+	{"cpl", "CPL", cpl_spec}, //??? complement A register
+	{"ccf", "CCF", ccf_spec},
+	{"scf", "SCF", scf_spec},
+	{"nop", "NOP", nop_spec},
+	{"halt", "HALT", halt_spec},
+	{"stop", "STOP", stop_spec},
+	{"di", "DI", di_spec},
+	{"ei", "EI", ei_spec},
+	{"rlca", "RLCA", rlca_spec},
+	{"rla", "RLA", rla_spec},
+	{"rrca", "RRCA", rrca_spec},
+	{"rra", "RRA", rra_spec},
+	{"rlc", "RLC", rlc_spec},
+	{"rl", "RL", rl_spec},
+	{"rrc", "RRC", rrc_spec},
+	{"rr", "RR", rr_spec},
+	{"sla", "SLA", sla_spec},
+	{"sra", "SRA", sra_spec},
+	{"srl", "SRL", srl_spec},
+	{"bit", "BIT", bit_spec},
+	{"set", "SET", set_spec},
+	{"res", "RES", res_spec},
+	{"jp", "JP", jp_spec},
+	{"jr", "JR", jr_spec},
+	{"call", "CALL", call_spec},
+	{"rst", "RST", rst_spec},
+	{"ret", "RET", ret_spec},
+	{"reti", "RETI", reti_spec}
 };
 
-t_spec	g_cp_spec[] = {
-	
+t_spec	_spec[] = {
+	{0x, , , },
+	NULL
+};
+
+t_spec	_spec[] = {
+	{0x, , , },
+	NULL
+};
+
+t_spec	_spec[] = {
+	{0x, , , },
+	NULL
+};
+
+t_spec	_spec[] = {
+	{0x, , , },
+	NULL
+};
+
+t_spec	_spec[] = {
+	{0x, , , },
+	NULL
+};
+
+t_spec	_spec[] = {
+	{0x, , , },
+	NULL
+};
+
+t_spec	_spec[] = {
+	{0x, , , },
+	NULL
+};
+
+t_spec	_spec[] = {
+	{0x, , , },
+	NULL
+};
+
+t_spec	rlc_spec[] = {
+	{0xcb0, , , },
+	{0xcb0, , , },
+	{0xcb0, , , },
+	{0xcb0, , , },
+	{0xcb0, , , },
+	{0xcb0, , , },
+	{0xcb0, , , },
+	{0xcb0, , , },
+	{0xcb0, , , },
+	{0xcb0, , , },
+	{0xcb0, , , },
+	NULL
+};
+
+t_spec	rra_spec[] = {
+	{0x1f, 0, 0, 4},
+	NULL
+};
+
+t_spec	rrca_spec[] = {
+	{0x0f, 0, 0, 4},
+	NULL
+};
+
+t_spec	rla_spec[] = {
+	{0x17, 0, 0, 4},
+	NULL
+};
+
+t_spec	rlca_spec[] = {
+	{0x07, 0, 0, 4},
+	NULL
+};
+
+t_spec	ei_spec[] = {
+	{0xfb, 0, 0, 4},
+	NULL
+};
+
+t_spec	di_spec[] = {
+	{0xf3, 0, 0, 4},
+	NULL
+};
+
+t_spec	stop_spec[] = {
+	{0x1000, 0, 0, 4},
+	NULL
+};
+
+t_spec	halt_spec[] = {
+	{0x76, 0, 0, 4},
+	NULL
+};
+
+t_spec	nop_spec[] = {
+	{0x00, 0, 0, 4},
+	NULL
+};
+
+t_spec	scf_spec[] = {
+	{0x37, 0, 0, 4},
+	NULL
+};
+
+t_spec	ccf_spec[] = {
+	{0x3f, 0, 0, 4},
+	NULL
+};
+
+t_spec	cpl_spec[] = {
+	{0x2f, 0, 0, 4},
+	NULL
+};
+
+t_spec	daa_spec[] = {
+	{0x27, 0, 0, 4},
+	NULL
+};
+
+t_spec	swap_spec[] = {
+	{0x37, A, 0, 8},
+	{0x30, B, 0, 8},
+	{0x31, C, 0, 8},
+	{0x32, D, 0, 8},
+	{0x33, E, 0, 8},
+	{0x34, H, 0, 8},
+	{0x35, L, 0, 8},
+	{0x36, HL_ADDR, 0, 8},
+	{-1, 0, 0, 0}
+};
+
+t_spec	dec_spec[] = {
+	{0x3d, A, 0, 4},
+	{0x05, B, 0, 4},
+	{0x0d, C, 0, 4},
+	{0x15, D, 0, 4},
+	{0x1d, E, 0, 4},
+	{0x25, H, 0, 4},
+	{0x2d, L, 0, 4},
+	{0x35, HL_ADDR, 0, 12},
+	{0x0b, BC, 0, 8},
+	{0x1b, DE, 0, 8},
+	{0x2b, HL, 0, 8},
+	{0x3b, SP, 0, 8},
+	{-1, 0, 0, 0}
+};
+
+t_spec	inc_spec[] = {
+	{0x3c, A, 0, 4},
+	{0x04, B, 0, 4},
+	{0x0c, C, 0, 4},
+	{0x14, D, 0, 4},
+	{0x1c, E, 0, 4},
+	{0x24, H, 0, 4},
+	{0x2c, L, 0, 4},
+	{0x34, HL_ADDR, 0, 12},
+	{0x03, BC, 0, 8},
+	{0x13, DE, 0, 8},
+	{0x23, HL, 0, 8},
+	{0x33, SP, 0, 8},
+	{-1, 0, 0, 0}
+};
+
+// cp B	--> cp A, B (A - B)
+// flags = {Z, N, H, C = set}
+t_spec	cp_spec[] = {
+	{0xbf, A, 0, 4},
+	{0xb8, B, 0, 4},
+	{0xb9, C, 0, 4},
+	{0xba, D, 0, 4},
+	{0xbb, E, 0, 4},
+	{0xbc, H, 0, 4},
+	{0xbd, L, 0, 4},
+	{0xbe, HL_ADDR, 0, 8},
+	{0xfe, ____, 0, 8},
+	{-1, 0, 0, 0}
 };
 
 
 // logical OR with A register
 // flags {Z = set; N, C, H = reset}
 // OR x --> A = A & x
-t_spec	g_or_spec[] = {
+t_spec	or_spec[] = {
 	{0xb7, A, 0, 4},
 	{0xb0, B, 0, 4},
 	{0xb1, C, 0, 4},
@@ -126,12 +301,13 @@ t_spec	g_or_spec[] = {
 	{0xb5, L, 0, 4},
 	{0xb6, HL_ADDR, 0, 8},
 	{0xf6, ____, 0, 8},
+	{-1, 0, 0, 0}
 };
 
 // logical XOR with A register
 // flags {Z = set; N, C, H = reset}
 // XOR x --> A = A & x
-t_spec	g_xor_spec[] = {
+t_spec	xor_spec[] = {
 	{0xaf, A, 0, 4},
 	{0xa8, B, 0, 4},
 	{0xa9, C, 0, 4},
@@ -141,12 +317,13 @@ t_spec	g_xor_spec[] = {
 	{0xad, L, 0, 4},
 	{0xae, HL_ADDR, 0, 8},
 	{0xee, ____, 0, 8},
+	{-1, 0, 0, 0}
 };
 
 // logical AND with A register
 // flags {Z = set; N, C = reset; H = set}
 // AND x --> A = A & x
-t_spec	g_and_spec[] = {
+t_spec	and_spec[] = {
 	{0xa7, A, 0, 4},
 	{0xa0, B, 0, 4},
 	{0xa1, C, 0, 4},
@@ -156,11 +333,12 @@ t_spec	g_and_spec[] = {
 	{0xa5, L, 0, 4},
 	{0xa6, HL_ADDR, 0, 8},
 	{0xe6, ____, 0, 8},
+	{-1, 0, 0, 0}
 };
 
 
 // carry flag to A
-t_spec	g_sbc_spec[] = {
+t_spec	sbc_spec[] = {
 	{0x9f, A, 0, 4},
 	{0x98, B, 0, 4},
 	{0x99, C, 0, 4},
@@ -170,10 +348,11 @@ t_spec	g_sbc_spec[] = {
 	{0x9d, L, 0, 4},
 	{0x9e, HL_ADDR, 0, 8},
 	{????, ____, 0, ?},
+	{-1, 0, 0, 0}
 };
 
 // sub to A
-t_spec	g_sub_spec[] = {
+t_spec	sub_spec[] = {
 	{0x97, A, 0, 4},
 	{0x90, B, 0, 4},
 	{0x91, C, 0, 4},
@@ -183,13 +362,14 @@ t_spec	g_sub_spec[] = {
 	{0x95, L, 0, 4},
 	{0x06, HL_ADDR, 0, 8},
 	{0xd6, ____, 0, 8},
+	{-1, 0, 0, 0}
 };
 
 // flags: {Z = set if riesult is zero; N = reset;
 //			H = set if carry from bit 3;
 //			C = set if carry of bit 7}
 // carry flag to A
-t_spec	g_adc_spec[] = {
+t_spec	adc_spec[] = {
 	{0x8f, A, 0, 4},
 	{0x88, B, 0, 4},
 	{0x89, C, 0, 4},
@@ -199,13 +379,14 @@ t_spec	g_adc_spec[] = {
 	{0x8d, L, 0, 4},
 	{0x8e, HL_ADDR, 0, 8},
 	{0xce, ____, 0, 8},
+	{-1, 0, 0, 0}
 };
 
 // flags: {Z = set if result is zero; N = reset;
 //			H = set if carry from bit 3;
 //			C = set if carry of bit 7}
 // add x to A
-t_spec	g_add_spec[] = {
+t_spec	add_spec[] = {
 	{0x87, A, 0, 4},
 	{0x80, B, 0, 4},
 	{0x81, C, 0, 4},
@@ -215,47 +396,57 @@ t_spec	g_add_spec[] = {
 	{0x85, L, 0, 4},
 	{0x86, HL_ADDR, 0, 8},
 	{0xc6, ____, 0, 8},
+	{0x09, HL, BC, 8},
+	{0x19, HL, DE, 8},
+	{0x29, HL, HL, 8},
+	{0x39, HL, SP, 8},
+	{0xe8, SP, ____, 16},
+	{-1, 0, 0, 0}
 };
 
-t_spec	g_pop_spec[] = {
+t_spec	pop_spec[] = {
 	{0xf1, AF, 0, 12},
 	{0xc1, BC, 0, 12},
 	{0xd1, DE, 0, 12},
 	{0xe1, HL, 0, 12},
+	{-1, 0, 0, 0}
 };
 
-t_spec	g_push_spec[] = {
+t_spec	push_spec[] = {
 	{0xf5, AF, 0, 16},
 	{0xc5, BC, 0, 16},
 	{0xd5, DE, 0, 16},
 	{0xe5, HL, 0, 16},
+	{-1, 0, 0, 0}
 };
 
-t_spec	g_ldhl_spec[] = {
+t_spec	ldhl_spec[] = {
 	// lea	(SP+IMM8), HL
 	// flags :: {Z, N = reset; H, C = set or reset}
 	{0xf8, SP, IMM8, 12},
 };
 
-t_spec	g_ldd_spec[] = {
+t_spec	ldd_spec[] = {
 	// load		reg, (addr)
 	// dec		addr
 	{0x3a, A, HL_ADDR, 8},
 	// load		(addr), reg
 	//dec		addr
 	{0x32, HL_ADDR, A, 8},
+	{-1, 0, 0, 0}
 };
 
-t_spec	g_ldi_spec[] = {
+t_spec	ldi_spec[] = {
 	// load		reg, addr
 	// inc		addr
 	{0x2a, A, HL_ADDR, 8},
 	// load		addr, reg
 	// inc		addr
 	{0x22, HL_ADDR, A, 8},
+	{-1, 0, 0, 0}
 }
 
-t_spec	g_ld_spec[] = {
+t_spec	ld_spec[] = {
 	// ld	(ADDR16), SP
 	{0x08, ADDR16, SP, 20},
 
@@ -355,4 +546,5 @@ t_spec	g_ld_spec[] = {
 	{0x, , , 4},
 	{0x, , , 4},
 	{0x, , , 4},
+	{-1, 0, 0, 0}
 };
