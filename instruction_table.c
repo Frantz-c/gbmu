@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/21 16:29:29 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/22 20:02:39 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/22 20:42:59 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -132,6 +132,7 @@ t_inst	str_inst_info[] = {
 	{"", "", custom__spec},
 };
 
+// AJOUTER les alternatives a ldi dans ld (pareil pour ldd)
 
 /*
  *  CUSTOM SPECS START
