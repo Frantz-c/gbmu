@@ -6,23 +6,27 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/22 21:51:26 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/22 22:05:01 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/22 22:58:18 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
 enum	e_operand_type
 {
-	NONE, IMM8, IMM16
+	NONE, IMM8, IMM16, ADDR8, ADDR16
 };
 
 struct	s_strcon
 {
 	char				*inst;
-	enum e_operand_type	operand_type;
+	enum e_operand_type	optype;
 };
 
 typedef struct s_strconv	t_strconv;
+
+/*
+ * STOP -> 0x1000 (skip 2 bytes)
+ */
 
 t_strconv	opcodes[] = {
 	{"nop\n", NONE}, //0x00
@@ -33,7 +37,7 @@ t_strconv	opcodes[] = {
 	{"dec  B\n", NONE},
 	{"ld   B, *\n", IMM8},
 	{"rlca\n", NONE},
-	{"ld   (*), SP\n", IMM16}, //0x08
+	{"ld   (*), SP\n", ADDR16}, //0x08
 	{"add  HL, BC\n", NONE},
 	{"ld   A, (BC)\n", NONE},
 	{"dec  BC\n", NONE},
@@ -219,39 +223,39 @@ t_strconv	opcodes[] = {
 	{"cp   A\n", NONE},
 	{"ret  NZ\n", NONE}, //0xc0
 	{"pop  BC\n", NONE},
-	{"jp   NZ, *\n", IMM16}, // alt="jpnz   *\n"
-	{"jp   *\n", IMM16},
-	{"call NZ, *\n", IMM16}, // alt="callnz   *\n"
+	{"jp   NZ, *\n", ADDR16}, // alt="jpnz   *\n"
+	{"jp   *\n", ADDR16},
+	{"call NZ, *\n", ADDR16}, // alt="callnz   *\n"
 	{"push BC\n", NONE},
 	{"add  A, *\n", IMM8},
 	{"rst  0x00\n", NONE},
 	{"ret  Z\n", NONE}, //0xc8   alt="retz\n"
 	{"ret\n", NONE},
-	{"jp   Z, *\n", IMM16}, // alt="jpz   *\n"
+	{"jp   Z, *\n", ADDR16}, // alt="jpz   *\n"
 	{NULL, 0}, // PREFIX 0xCB
-	{"call Z, *\n", IMM16}, // alt="callz   *\n"
-	{"call *\n", IMM16},
+	{"call Z, *\n", ADDR16}, // alt="callz   *\n"
+	{"call *\n", ADDR16},
 	{"adc  A, *\n", IMM8},
 	{"rst  0x08\n", NONE},
 	{"ret  NC\n", NONE}, //0xd0   alt="retnc\n"
 	{"pop  DE\n", NONE},
-	{"jp   NC, *\n", IMM16}, // alt="jpnc   *\n"
+	{"jp   NC, *\n", ADDR16}, // alt="jpnc   *\n"
 	{NULL, 0}, //unused
-	{"call NC, *\n", IMM16}, // alt="callnc   *\n"
+	{"call NC, *\n", ADDR16}, // alt="callnc   *\n"
 	{"push DE\n", NONE},
 	{"sub  *\n", IMM8},
 	{"rst  0x10\n", NONE},
 	{"ret  C\n", NONE}, //0xd8   alt="retc\n"
 	{"reti\n", NONE},
-	{"jp   C, *\n", IMM16}, // alt="jpc   *\n"
+	{"jp   C, *\n", ADDR16}, // alt="jpc   *\n"
 	{NULL, 0}, //unused
-	{"call C, *\n", IMM16}, // alt="callc   *\n"
+	{"call C, *\n", ADDR16}, // alt="callc   *\n"
 	{NULL, 0}, //unused
 	{"sbc  A, *\n", IMM8},
 	{"rst  0x18\n", NONE},
-	{"ldh  (*), A\n", IMM8}, //0xe0
+	{"ld   (0xff00+*), A\n", ADDR8}, //0xe0
 	{"pop  HL\n", NONE},
-	{"ld   (C), A\n", NONE}, /**** 2 bytes ?????  */
+	{"ld   (0xff00+C), A\n", NONE}, /**** 2 bytes ?????  */
 	{NULL, 0},
 	{NULL, 0},
 	{"push HL\n", NONE},
@@ -259,23 +263,23 @@ t_strconv	opcodes[] = {
 	{"rst  0x20\n", NONE},
 	{"add  SP, *\n", IMM8}, //0xe8
 	{"jp   (HL)\n", NONE},
-	{"ld   (*), A\n", IMM16},
+	{"ld   (*), A\n", ADDR16},
 	{NULL, 0},
 	{NULL, 0},
 	{NULL, 0},
 	{"xor  *\n", IMM8},
 	{"rst  0x28\n", NONE},
-	{"ldh  A, (*)\n", IMM8}, //0xf0
+	{"ld  A, (0xff00+*)\n", ADDR8}, //0xf0
 	{"pop  AF\n", NONE},
-	{"ld   A, (C)", NONE}, /**** 2 bytes ?????  */
+	{"ld   A, (0xff00+C)", NONE}, /**** 2 bytes ?????  */
 	{"di\n", NONE},
 	{NULL, 0},
 	{"push AF\n", NONE},
 	{"or   *\n", IMM8},
 	{"rst  0x30\n", NONE},
-	{"ld   HL, *(SP)\n", IMM8}, //0xf8
+	{"ldhl SP, *\n", IMM8}, //0xf8  (== "ld  HL, SP+*")
 	{"ld   SP, HL\n", NONE},
-	{"ld   A, (*)\n", IMM16},
+	{"ld   A, (*)\n", ADDR16},
 	{"ei\n", NONE},
 	{NULL, 0},
 	{NULL, 0},
