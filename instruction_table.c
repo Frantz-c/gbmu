@@ -110,32 +110,53 @@ t_inst	cpu_info[] = {
 
 t_spec	_spec[] = {
 	{0x, , , },
-	NULL
+	{-1, 0, 0, 0}
 };
 
 t_spec	_spec[] = {
 	{0x, , , },
-	NULL
+	{-1, 0, 0, 0}
 };
 
-t_spec	_spec[] = {
+t_spec	jp_spec[] = {
 	{0x, , , },
-	NULL
+	{-1, 0, 0, 0}
 };
 
-t_spec	_spec[] = {
-	{0x, , , },
-	NULL
+t_spec	res_spec[] = {
+	{0xcb87, IMM8_BIT, A, 8},
+	{0xcb80, IMM8_BIT, B, 8},
+	{0xcb81, IMM8_BIT, C, 8},
+	{0xcb82, IMM8_BIT, D, 8},
+	{0xcb83, IMM8_BIT, E, 8},
+	{0xcb84, IMM8_BIT, H, 8},
+	{0xcb85, IMM8_BIT, L, 8},
+	{0xcb86, IMM8_BIT, HL_ADDR, 16},
+	{-1, 0, 0, 0}
 };
 
-t_spec	_spec[] = {
-	{0x, , , },
-	NULL
+t_spec	set_spec[] = {
+	{0xcbc7, IMM8_BIT, A, 8},
+	{0xcbc0, IMM8_BIT, B, 8},
+	{0xcbc1, IMM8_BIT, C, 8},
+	{0xcbc2, IMM8_BIT, D, 8},
+	{0xcbc3, IMM8_BIT, E, 8},
+	{0xcbc4, IMM8_BIT, H, 8},
+	{0xcbc5, IMM8_BIT, L, 8},
+	{0xcbc6, IMM8_BIT, HL_ADDR, 16},
+	{-1, 0, 0, 0}
 };
 
 t_spec	bit_spec[] = {
-	{0x, IMM8_BIT, , },
-	NULL
+	{0xcb47, IMM8_BIT, A, 8},
+	{0xcb40, IMM8_BIT, B, 8},
+	{0xcb41, IMM8_BIT, C, 8},
+	{0xcb42, IMM8_BIT, D, 8},
+	{0xcb43, IMM8_BIT, E, 8},
+	{0xcb44, IMM8_BIT, H, 8},
+	{0xcb45, IMM8_BIT, L, 8},
+	{0xcb46, IMM8_BIT, HL_ADDR, 16},
+	{-1, 0, 0, 0}
 };
 
 t_spec	srl_spec[] = {
@@ -147,7 +168,7 @@ t_spec	srl_spec[] = {
 	{0xcb3c, H, 0, 8},
 	{0xcb3d, L, 0, 8},
 	{0xcb3e, HL_ADDR, 0, 16},
-	NULL
+	{-1, 0, 0, 0}
 };
 
 t_spec	sra_spec[] = {
@@ -159,7 +180,7 @@ t_spec	sra_spec[] = {
 	{0xcb2c, H, 0, 8},
 	{0xcb2d, L, 0, 8},
 	{0xcb2e, HL_ADDR, 0, 16},
-	NULL
+	{-1, 0, 0, 0}
 };
 
 t_spec	sla_spec[] = {
@@ -171,7 +192,7 @@ t_spec	sla_spec[] = {
 	{0xcb24, H, 0, 8},
 	{0xcb25, L, 0, 8},
 	{0xcb26, HL_ADDR, 0, 16},
-	NULL
+	{-1, 0, 0, 0}
 };
 
 t_spec	rr_spec[] = {
@@ -183,7 +204,7 @@ t_spec	rr_spec[] = {
 	{0xcb1c, H, 0, 8},
 	{0xcb1d, L, 0, 8},
 	{0xcb1e, HL_ADDR, 0, 16},
-	NULL
+	{-1, 0, 0, 0}
 };
 
 t_spec	rrc_spec[] = {
@@ -195,7 +216,7 @@ t_spec	rrc_spec[] = {
 	{0xcb0c, H, 0, 8},
 	{0xcb0d, L, 0, 8},
 	{0xcb0e, HL_ADDR, 0, 16},
-	NULL
+	{-1, 0, 0, 0}
 };
 
 t_spec	rl_spec[] = {
@@ -207,7 +228,7 @@ t_spec	rl_spec[] = {
 	{0xcb14, H, 0, 8},
 	{0xcb15, L, 0, 8},
 	{0xcb16, HL_ADDR, 0, 16},
-	NULL
+	{-1, 0, 0, 0}
 };
 
 t_spec	rlc_spec[] = {
@@ -219,72 +240,72 @@ t_spec	rlc_spec[] = {
 	{0xcb04, H, 0, 8},
 	{0xcb05, L, 0, 8},
 	{0xcb06, HL_ADDR, 0, 16},
-	NULL
+	{-1, 0, 0, 0}
 };
 
 t_spec	rra_spec[] = {
 	{0x1f, 0, 0, 4},
-	NULL
+	{-1, 0, 0, 0}
 };
 
 t_spec	rrca_spec[] = {
 	{0x0f, 0, 0, 4},
-	NULL
+	{-1, 0, 0, 0}
 };
 
 t_spec	rla_spec[] = {
 	{0x17, 0, 0, 4},
-	NULL
+	{-1, 0, 0, 0}
 };
 
 t_spec	rlca_spec[] = {
 	{0x07, 0, 0, 4},
-	NULL
+	{-1, 0, 0, 0}
 };
 
 t_spec	ei_spec[] = {
 	{0xfb, 0, 0, 4},
-	NULL
+	{-1, 0, 0, 0}
 };
 
 t_spec	di_spec[] = {
 	{0xf3, 0, 0, 4},
-	NULL
+	{-1, 0, 0, 0}
 };
 
 t_spec	stop_spec[] = {
 	{0x1000, 0, 0, 4},
-	NULL
+	{-1, 0, 0, 0}
 };
 
 t_spec	halt_spec[] = {
 	{0x76, 0, 0, 4},
-	NULL
+	{-1, 0, 0, 0}
 };
 
 t_spec	nop_spec[] = {
 	{0x00, 0, 0, 4},
-	NULL
+	{-1, 0, 0, 0}
 };
 
 t_spec	scf_spec[] = {
 	{0x37, 0, 0, 4},
-	NULL
+	{-1, 0, 0, 0}
 };
 
 t_spec	ccf_spec[] = {
 	{0x3f, 0, 0, 4},
-	NULL
+	{-1, 0, 0, 0}
 };
 
 t_spec	cpl_spec[] = {
 	{0x2f, 0, 0, 4},
-	NULL
+	{-1, 0, 0, 0}
 };
 
 t_spec	daa_spec[] = {
 	{0x27, 0, 0, 4},
-	NULL
+	{-1, 0, 0, 0}
 };
 
 t_spec	swap_spec[] = {
