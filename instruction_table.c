@@ -133,33 +133,92 @@ t_spec	_spec[] = {
 	NULL
 };
 
-t_spec	_spec[] = {
-	{0x, , , },
+t_spec	bit_spec[] = {
+	{0x, IMM8_BIT, , },
 	NULL
 };
 
-t_spec	_spec[] = {
-	{0x, , , },
+t_spec	srl_spec[] = {
+	{0xcb3f, A, 0, 8},
+	{0xcb38, B, 0, 8},
+	{0xcb39, C, 0, 8},
+	{0xcb3a, D, 0, 8},
+	{0xcb3b, E, 0, 8},
+	{0xcb3c, H, 0, 8},
+	{0xcb3d, L, 0, 8},
+	{0xcb3e, HL_ADDR, 0, 16},
 	NULL
 };
 
-t_spec	_spec[] = {
-	{0x, , , },
+t_spec	sra_spec[] = {
+	{0xcb2f, A, 0, 8},
+	{0xcb28, B, 0, 8},
+	{0xcb29, C, 0, 8},
+	{0xcb2a, D, 0, 8},
+	{0xcb2b, E, 0, 8},
+	{0xcb2c, H, 0, 8},
+	{0xcb2d, L, 0, 8},
+	{0xcb2e, HL_ADDR, 0, 16},
+	NULL
+};
+
+t_spec	sla_spec[] = {
+	{0xcb27, A, 0, 8},
+	{0xcb20, B, 0, 8},
+	{0xcb21, C, 0, 8},
+	{0xcb22, D, 0, 8},
+	{0xcb23, E, 0, 8},
+	{0xcb24, H, 0, 8},
+	{0xcb25, L, 0, 8},
+	{0xcb26, HL_ADDR, 0, 16},
+	NULL
+};
+
+t_spec	rr_spec[] = {
+	{0xcb1f, A, 0, 8},
+	{0xcb18, B, 0, 8},
+	{0xcb19, C, 0, 8},
+	{0xcb1a, D, 0, 8},
+	{0xcb1b, E, 0, 8},
+	{0xcb1c, H, 0, 8},
+	{0xcb1d, L, 0, 8},
+	{0xcb1e, HL_ADDR, 0, 16},
+	NULL
+};
+
+t_spec	rrc_spec[] = {
+	{0xcb0f, A, 0, 8},
+	{0xcb08, B, 0, 8},
+	{0xcb09, C, 0, 8},
+	{0xcb0a, D, 0, 8},
+	{0xcb0b, E, 0, 8},
+	{0xcb0c, H, 0, 8},
+	{0xcb0d, L, 0, 8},
+	{0xcb0e, HL_ADDR, 0, 16},
+	NULL
+};
+
+t_spec	rl_spec[] = {
+	{0xcb17, A, 0, 8},
+	{0xcb10, B, 0, 8},
+	{0xcb11, C, 0, 8},
+	{0xcb12, D, 0, 8},
+	{0xcb13, E, 0, 8},
+	{0xcb14, H, 0, 8},
+	{0xcb15, L, 0, 8},
+	{0xcb16, HL_ADDR, 0, 16},
 	NULL
 };
 
 t_spec	rlc_spec[] = {
-	{0xcb0, , , },
-	{0xcb0, , , },
-	{0xcb0, , , },
-	{0xcb0, , , },
-	{0xcb0, , , },
-	{0xcb0, , , },
-	{0xcb0, , , },
-	{0xcb0, , , },
-	{0xcb0, , , },
-	{0xcb0, , , },
-	{0xcb0, , , },
+	{0xcb07, A, 0, 8},
+	{0xcb00, B, 0, 8},
+	{0xcb01, C, 0, 8},
+	{0xcb02, D, 0, 8},
+	{0xcb03, E, 0, 8},
+	{0xcb04, H, 0, 8},
+	{0xcb05, L, 0, 8},
+	{0xcb06, HL_ADDR, 0, 16},
 	NULL
 };
 
