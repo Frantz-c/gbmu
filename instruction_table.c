@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/21 16:29:29 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/21 20:36:49 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/22 19:59:16 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -33,6 +33,8 @@ enum	e_param
 	FLAG,
 	HL_ADDR, BC_ADDR, DE_ADDR,
 	C_FF00,
+	__NZ__, __Z__, __NC__, __C__,
+	__00H__, __08H__, __10H__, __18H__, __20H__, __28H__, __30H__, __38H__,
 	____
 };
 
@@ -57,7 +59,7 @@ typedef enum e_param	t_param;
 
 // ADDR16 = little endian order 0xff00 = ($00ff)
 // X_FF00 = (X)
-//
+// HL_ADDR = "(HL)"
 
 t_inst	cpu_info[] = {
 	{"ld", "LD", ld_spec},
@@ -105,21 +107,173 @@ t_inst	cpu_info[] = {
 	{"call", "CALL", call_spec},
 	{"rst", "RST", rst_spec},
 	{"ret", "RET", ret_spec},
-	{"reti", "RETI", reti_spec}
+	{"reti", "RETI", reti_spec},
+	// customs
+	{"jpnz", "JPNZ", custom_jpnz_spec},
+	{"jpz", "JPZ", custom_jpz_spec},
+	{"jpnc", "JPNC", custom_jpnc_spec},
+	{"jpc", "JPC", custom_jpc_spec},
+	{"jrnz", "JRNZ", custom_jrnz_spec},
+	{"jrz", "JRZ", custom_jrz_spec},
+	{"jrnc", "JRNC", custom_jrnc_spec},
+	{"jrc", "JRC", custom_jrc_spec},
+	{"cmp", "CMP", cp_spec},
+	{"mov", "MOV", ld_spec},
+	{"movdec", "MOVDEC", ldd_spec},
+	{"movinc", "MOVINC", ldi_spec},
+	{"callnz", "CALLNZ", custom_callnz_spec},
+	{"callz", "CALLZ", custom_callz_spec},
+	{"callnc", "CALLNC", custom_callnc_spec},
+	{"callc", "CALLC", custom_callc_spec},
+	{"retnz", "RETNZ", custom_ret_spec},
+	{"retz", "RETZ", custom__spec},
+	{"retc", "RETC", custom__spec},
+	{"retnc", "RETNC", custom__spec},
+	{"", "", custom__spec},
 };
 
-t_spec	_spec[] = {
-	{0x, , , },
+
+/*
+ *  CUSTOM SPECS START
+ */
+
+t_spec	custom_jrnz_spec[] = {
+	{0x20, IMM8, 0, 12},
+	{-1, 0, 0, 0};
+};
+
+t_spec	custom_jrz_spec[] = {
+	{0x28, IMM8, 0, 12},
+	{-1, 0, 0, 0};
+};
+
+t_spec	custom_jrnc_spec[] = {
+	{0x30, IMM8, 0, 12},
+	{-1, 0, 0, 0};
+};
+
+t_spec	custom_jrc_spec[] = {
+	{0x38, IMM8, 0, 12},
+	{-1, 0, 0, 0};
+};
+
+t_spec	custom_jpnz_spec[] = {
+	{0xc2, IMM6, 0, 12},
+	{-1, 0, 0, 0};
+};
+
+t_spec	custom_jpz_spec[] = {
+	{0xca, IMM16, 0, 12},
+	{-1, 0, 0, 0};
+};
+
+t_spec	custom_jpnc_spec[] = {
+	{0xd2, IMM16, 0, 12},
+	{-1, 0, 0, 0};
+};
+
+t_spec	custom_jpc_spec[] = {
+	{0xda, IMM16, 0, 12},
+	{-1, 0, 0, 0};
+};
+
+t_spec	custom_retnz_spec[] = {
+	{0xc0, 0, 0, 8},
 	{-1, 0, 0, 0}
 };
 
-t_spec	_spec[] = {
-	{0x, , , },
+t_spec	custom_retz_spec[] = {
+	{0xc8, 0, 0, 8},
+	{-1, 0, 0, 0}
+};
+
+t_spec	custom_retnc_spec[] = {
+	{0xd0, 0, 0, 8},
+	{-1, 0, 0, 0}
+};
+
+t_spec	custom_retc_spec[] = {
+	{0xd8, 0, 0, 8},
+	{-1, 0, 0, 0}
+};
+
+t_spec	custom_callnz_spec[] = {
+	{0xc4, 0, 0, 12},
+	{-1, 0, 0, 0}
+};
+
+t_spec	custom_callz_spec[] = {
+	{0xcc, 0, 0, 12},
+	{-1, 0, 0, 0}
+};
+
+t_spec	custom_callnc_spec[] = {
+	{0xd4, 0, 0, 12},
+	{-1, 0, 0, 0}
+};
+
+t_spec	custom_callc_spec[] = {
+	{0xdc, 0, 0, 12},
+	{-1, 0, 0, 0}
+};
+
+/*
+ * CUSTOM SPECS END
+ */
+
+
+
+t_spec	reti_spec[] = {
+	{0xd9, 0, 0, 8},
+	{-1, 0, 0, 0}
+};
+
+t_spec	ret_spec[] = {
+	{0xc9, 0, 0, 8},
+	{0xc0, __NZ__, 0, 8},
+	{0xc8, __Z__, 0, 8},
+	{0xd0, __NC__, 0, 8},
+	{0xd8, __C__, 0, 8},
+	{-1, 0, 0, 0}
+};
+
+t_spec	rst_spec[] = {
+	{0xc7, __00H__, 0, 32},
+	{0xcf, __08H__, 0, 32},
+	{0xd7, __10H__, 0, 32},
+	{0xdf, __18H__, 0, 32},
+	{0xe7, __20H__, 0, 32},
+	{0xef, __28H__, 0, 32},
+	{0xf7, __30H__, 0, 32},
+	{0xff, __38H__, 0, 32},
+	{-1, 0, 0, 0}
+};
+
+t_spec	call_spec[] = {
+	{0xcd, IMM16, 0, 12},
+	{0xc4, __NZ__, IMM16, 12},
+	{0xcc, __Z__, IMM16, 12},
+	{0xd4, __NC__, IMM16, 12},
+	{0xdc, __C__, IMM16, 12},
+	{-1, 0, 0, 0}
+};
+
+t_spec	jr_spec[] = {
+	{0x18, IMM8, 0, 8},
+	{0x20, __NZ__, IMM8, 8},
+	{0x28, __Z__, IMM8, 8},
+	{0x30, __NC__, IMM8, 8},
+	{0x38, __C__, IMM8, 8},
 	{-1, 0, 0, 0}
 };
 
 t_spec	jp_spec[] = {
-	{0x, , , },
+	{0xc3, IMM16, 0, 12},
+	{0xc2, __NZ__, IMM16, 12},
+	{0xca, __Z__, IMM16, 12},
+	{0xd2, __NC__, IMM16, 12},
+	{0xda, __C__, IMM16, 12},
+	{0xe9, HL_ADDR, 0, 4},
 	{-1, 0, 0, 0}
 };
 
@@ -621,10 +775,5 @@ t_spec	ld_spec[] = {
 	{0x74, HL_ADDR, H, 8},
 	{0x75, HL_ADDR, L, 8},
 	{0x36, HL_ADDR, IMM8, 12},
-	{0x, , , 4},
-	{0x, , , 4},
-	{0x, , , 4},
-	{0x, , , 4},
-	{0x, , , 4},
 	{-1, 0, 0, 0}
 };
