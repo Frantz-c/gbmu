@@ -13,6 +13,27 @@
 
 #include "disassemble_table.c"
 
+static char		*itoazx(int n)
+{
+	char	s[7];
+	int		i = 5;
+
+	s[6] = '\0';
+	while (n)
+	{
+		s[i] = ((n % 16) + '0');
+		if (s[i] > '9')
+			s[i] += 40;
+		n /= 16;
+	}
+	while (i)
+	{
+		s[i--] = '0';
+	}
+	s[1] = 'x';
+	return (s);
+}
+
 static void		*fmt_strcpy(char *dst, char *src,
 							enum e_operand_type optype, void *bin)
 {
@@ -43,9 +64,7 @@ static void		*fmt_strcpy(char *dst, char *src,
 		value = *((unsigned char*)bin) + (*(unsigned char*)(bin + 1) << 8);
 		bin += 2;
 	}
-	numeric = itoa(value); //special itoa 0x0001, ...
-	*(dst++) = '0';
-	*(dst++) = 'x';
+	numeric = itoazx(value); //special itoa 0x0001, ...
 	strcpy(dst, numeric);
 	dst += strlen(numeric);
 	while ((*(dst++) = *(src++)));
@@ -64,6 +83,7 @@ int				disassemble_region(char **disassembled_code, void *binary,
 	int			i = 0;
 	int			len;
 
+	*disassembled_code = NULL;
 	while (binary < ptr_end)
 	{
 		if (*binary == 0xcb)
@@ -109,7 +129,11 @@ int				disassemble_region(char **disassembled_code, void *binary,
 			i += len;
 		}
 		else
+		{
+			free(buf);
 			return (-1);
+		}
 	}
+	disassembled_code = buf;
 	return (0);
 }
