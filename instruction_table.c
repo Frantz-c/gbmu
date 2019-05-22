@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/21 16:29:29 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/22 19:59:16 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/22 20:02:39 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -61,7 +61,7 @@ typedef enum e_param	t_param;
 // X_FF00 = (X)
 // HL_ADDR = "(HL)"
 
-t_inst	cpu_info[] = {
+t_inst	str_inst_info[] = {
 	{"ld", "LD", ld_spec},
 	{"ldd", "LDD", ldd_spec},
 	{"ldi", "LDI", ldi_spec},
