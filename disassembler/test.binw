@@ -1,0 +1,7 @@
+#!/bin/bash
+
+77			# ld (HL), A
+c4 00 2a    # call NZ, 0x002a
+0e 2a       # ld  C, 2a
+1e ff       # ld  E, -0x01
+cb 30		# swap B

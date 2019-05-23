@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/22 21:51:26 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/22 22:58:18 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/23 11:04:34 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -16,7 +16,7 @@ enum	e_operand_type
 	NONE, IMM8, IMM16, ADDR8, ADDR16
 };
 
-struct	s_strcon
+struct	s_strconv
 {
 	char				*inst;
 	enum e_operand_type	optype;

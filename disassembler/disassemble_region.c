@@ -6,19 +6,29 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/22 22:17:53 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/22 22:58:09 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/23 11:20:42 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "disassemble_table.c"
 
 static char		*itoazx(int n)
 {
-	char	s[7];
-	int		i = 5;
+	static char	s[8];
+	int			i = 6;
+	int			negative = 0;
 
-	s[6] = '\0';
+	if (n < 0)
+	{
+		negative++;
+		n = 0 - n;
+	}
+
+	s[7] = '\0';
 	while (n)
 	{
 		s[i] = ((n % 16) + '0');
@@ -26,12 +36,17 @@ static char		*itoazx(int n)
 			s[i] += 40;
 		n /= 16;
 	}
-	while (i)
+	while (i > 0)
 	{
 		s[i--] = '0';
 	}
-	s[1] = 'x';
-	return (s);
+	s[2] = 'x';
+	if (negative)
+	{
+		s[0] = '-';
+		return (s);
+	}
+	return (s + 1);
 }
 
 static void		*fmt_strcpy(char *dst, char *src,
@@ -51,7 +66,8 @@ static void		*fmt_strcpy(char *dst, char *src,
 	}
 	else if (optype == IMM16)
 	{
-		value = *((char*)bin) + (*(char*)(bin + 1) << 8);
+		value = *((unsigned char*)bin) + (*(unsigned char*)(bin + 1) << 8);
+		value = (short)value;
 		bin += 2;
 	}
 	else if (optype == ADDR8)
@@ -86,33 +102,34 @@ int				disassemble_region(char **disassembled_code, void *binary,
 	*disassembled_code = NULL;
 	while (binary < ptr_end)
 	{
-		if (*binary == 0xcb)
+		if (*(unsigned char*)binary == 0xcbU)
 		{
-			len = strlen(cb_opcodes[binary[1]].inst);
+			len = strlen(cb_opcodes[((unsigned char*)binary)[1]].inst);
 			if (i + len >= buflen)
 			{
 				buflen += 1024;
 				buf = realloc(buf, buflen);
 				if (!buf) {
 					fprintf(stderr, "realloc fatal error\n");
-					exit(1)
+					exit(1);
 				}
 			}
-			strcpy(buf + i, cb_opcodes[binary[1]].inst);
+			strcpy(buf + i, cb_opcodes[((unsigned char*)binary)[1]].inst);
 			i += len;
 			binary += 2;
 		}
-		else if (opcodes[*binary].inst)
+		else if (opcodes[*(unsigned char*)binary].inst)
 		{
-			len = strlen(opcodes[*binary].inst);
-			if (opcodes[*binary].optype)
+			len = strlen(opcodes[*(unsigned char*)binary].inst);
+			if (opcodes[*(unsigned char*)binary].optype)
 			{
-				switch (opcodes[*binary].optype)
+				switch (opcodes[*(unsigned char*)binary].optype)
 				{
 					case IMM8:
 					case ADDR8: len += 3; break;
 					case IMM16:
 					case ADDR16: len += 5;
+					default: break;
 				}
 			}
 			if (i + len >= buflen)
@@ -121,11 +138,11 @@ int				disassemble_region(char **disassembled_code, void *binary,
 				buf = realloc(buf, buflen);
 				if (!buf) {
 					fprintf(stderr, "realloc fatal error\n");
-					exit(1)
+					exit(1);
 				}
 			}
-			binary = fmt_strcpy(buf + i, opcodes[*binary].inst,
-								opcodes[*binary].optype, binary + 1);
+			binary = fmt_strcpy(buf + i, opcodes[*(unsigned char*)binary].inst,
+								opcodes[*(unsigned char*)binary].optype, binary + 1);
 			i += len;
 		}
 		else
@@ -134,6 +151,18 @@ int				disassemble_region(char **disassembled_code, void *binary,
 			return (-1);
 		}
 	}
-	disassembled_code = buf;
+	*disassembled_code = buf;
+	return (0);
+}
+
+int main(void)
+{
+	char	file[] = "\01\02\03\04\x77\xc4\x00\x2a\x0e\x2a\x1e\xff\xcb\x30\01\02\03\04";
+	char	*dis;
+
+	disassemble_region(&dis, file, 0x04, 0xe);
+
+	puts(dis);
+	free(dis);
 	return (0);
 }
