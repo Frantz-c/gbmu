@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/23 12:40:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/23 12:53:36 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/23 12:54:40 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -17,7 +17,7 @@
 # define reg_a	byte[0]
 # define reg_f	byte[1]
 
-# if (BYTE_ORDER == BIG_ENDIAN)
+# if (BYTE_ORDER == LITTLE_ENDIAN)
 #  define reg_b	byte[2]
 #  define reg_c	byte[3]
 #  define reg_d	byte[4]
