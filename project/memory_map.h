@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/23 11:44:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/23 12:36:53 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/23 12:53:45 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -14,7 +14,7 @@
 #ifndef MEMORY_MAP_H
 # define MEMORY_MAP_H
 
-typedef struct	memory_map
+typedef struct	memory_map_s
 {
 
 	// Pointer to the complete malloced block
