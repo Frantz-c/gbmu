@@ -6,13 +6,16 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/23 11:44:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/23 12:53:45 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/23 16:37:58 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
 #ifndef MEMORY_MAP_H
 # define MEMORY_MAP_H
+
+# include <stdint.h>
+# include <stddef.h>
 
 typedef struct	memory_map_s
 {
@@ -35,6 +38,6 @@ typedef struct	memory_map_s
 	uint8_t	*stack_ram;
 	uint8_t	*interrupt_flags;
 
-}		memory_map_t;
+}				memory_map_t;
 
 #endif
