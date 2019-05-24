@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/24 17:07:32 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/24 19:17:32 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/24 20:42:37 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -28,7 +28,7 @@
 // INTERRUPT FLAGS
 # define IF		0xff0fU
 # define IE		0xffffU
-//IME ???
+//IME register (no addr)
 
 // SERIAL TRANSFER
 # define SB		0xff01U
