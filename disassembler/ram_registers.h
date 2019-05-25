@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/24 17:07:32 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/25 21:44:58 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/25 22:56:06 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -57,6 +57,7 @@ utilisation:
 	/!\ touche enfoncee = bit a zero
 
 exemple:
+`````````````````````````````````````````````````````````
 	LD	A, $20		; requete touches directionnelles
 	LD	($FF00), A
 	LD	A, ($FF00)
@@ -70,6 +71,7 @@ exemple:
 	LD	A, $30		; 0x30 = (B | D) = requete reinitialisation du port ??
 	LD	($FF00), A
 
+`````````````````````````````````````````````````````````
 */
 
 
@@ -104,11 +106,13 @@ exemple:
 	Le timer doit etre demarre apres avoir ete initialise
 
 exemple:
+`````````````````````````````````````````````````````````
 	LD		A, 2			; f/2^6  (f = 4.194304)
 	LD		($FF00+07), A	; set clock speed
 	LD		A, 6			; 0b00000 1 10
 	LD		($FF00+07), A	; start timer
 
+`````````````````````````````````````````````````````````
 */
 
 
@@ -163,15 +167,78 @@ exemple:
 
 
 
+/***********************************************
+**** WORKING RAM BANK SWITCH REGISTER (CGB) ****
+***********************************************/
+# define SVBK	0xff70U // [.....BBB]
+/*
+	Select VRAM bank
 
-// WORKING RAM BANK SWITCH REGISTER (CGB)
-# define SVBK	0xff70U
+	BBB:
+		0, 1 = bank 1
+		2-7  = banks 2-7
 
-// CPU OPERATING SPEED SWITCH REGISTER (CGB)
-# define KEY1	0xff4dU
+	bank 1		= [0xc000-0xcfff]
+	bank 2-7	= [0xd000-0xdfff]
 
-// INFRARED PORT REGISTER (CGB)
+*/
+
+
+
+
+/************************************************
+*** CPU OPERATING SPEED SWITCH REGISTER (CGB) ***
+************************************************/
+# define KEY1	0xff4dU // [S......E]
+/*
+	S = Speed Flag (Read Only)
+	E = Enable speed flag
+
+	le bit 0 est automatiquement mis a zero apres un changement de mode de vitesse du cpu.
+
+	passage du mode normal a double-speed : 16ms
+	passage du mode double-speed a normal : 32ms
+	pour utiliser le double speed, il faut une cartouche qui le supporte.
+	les registres DIV et TIMA operent eux aussi a double vitesse.
+
+
+procedure de passage en mode double-speed:
+``````````````````````````````````````````
+	%define IF		0xff0f
+	%define IE		0xffff
+	%define KEY1	0xff4d
+	%define P1		0xff00
+
+	LD		HL, KEY1
+	BIT		7, (HL)			; verification du mode actuel
+	JR		NZ, _NO_SWITCH	; si le mode double-speed est deja active, on arrete
+
+	SET		0, (HL)			; set double-speed flag
+
+	XOR		A
+	LD		(IF), A			; reset IF
+	LD		(IE), A			; reset IE
+	LD		A, 0x30
+	LD		(P1), A			; reset P1
+	STOP
+
+_NO_SWITCH:
+``````````````````````````````````````````
+*/
+
+
+
+/*************************************
+**** INFRARED PORT REGISTER (CGB) ****
+*************************************/
 # define RP		0xff56U
+/*
+	On s'en fout !!!!!!!
+*/
+
+
+
+
 
 // VRAM BANK (CGB)
 # define VBK	0xff4fU //mask 0000 0001

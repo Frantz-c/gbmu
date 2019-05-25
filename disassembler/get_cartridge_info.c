@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/24 14:40:04 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/25 19:05:53 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/25 22:35:24 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -126,18 +126,18 @@ char	*cartridge_type(int c)
 	return ("ERROR");
 }
 /*
-00h -  32KByte (no ROM banking)
-01h -  64KByte (4 banks)
-02h - 128KByte (8 banks)
-03h - 256KByte (16 banks)
-04h - 512KByte (32 banks)
+00h -  32KBytes (no ROM banking)
+01h -  64KBytes (4 banks)
+02h - 128KBytes (8 banks)
+03h - 256KBytes (16 banks)
+04h - 512KBytes (32 banks)
 05h -   1MByte (64 banks)  - only 63 banks used by MBC1
-06h -   2MByte (128 banks) - only 125 banks used by MBC1
-07h -   4MByte (256 banks)
-08h -   8MByte (512 banks)
-52h - 1.1MByte (72 banks)
-53h - 1.2MByte (80 banks)
-54h - 1.5MByte (96 banks)
+06h -   2MBytes (128 banks) - only 125 banks used by MBC1
+07h -   4MBytes (256 banks)
+08h -   8MBytes (512 banks)
+52h - 1.1MBytes (72 banks)
+53h - 1.2MBytes (80 banks)
+54h - 1.5MBytes (96 banks)
 */
 char	*rom_size(int c, int rt)
 {
@@ -145,15 +145,15 @@ char	*rom_size(int c, int rt)
 
 	switch (c)
 	{
-		case 0x00: return ("256 KBit (32 KByte : 0 banks)");
-		case 0x01: return ("512 KBit (64 KByte : 4 banks)");
-		case 0x02: return ("1 MBit (128 KByte : 8 banks)");
-		case 0x03: return ("2 MBit (256 KByte : 16 banks)");
-		case 0x04: return ("4 MBit (512 KByte : 32 banks)");
-		case 0x05: return (!mbc2 ? "8 MBit (1 MByte : 64 banks)" : "8 MBit (1 MByte : 63 banks)");
-		case 0x06: return (!mbc2 ? "16 MBit (2 MByte : 128 banks)" : "16 MBit (2 MByte : 125 banks)");
-		case 0x07: return ("32 MBit (4 MByte : 256 banks)");
-		case 0x08: return ("64 Mbit (8 MByte : 512 banks)");
+		case 0x00: return ("256 KBits (32 KBytes : 0 banks)");
+		case 0x01: return ("512 KBits (64 KBytes : 4 banks)");
+		case 0x02: return ("1 MBit (128 KBytes : 8 banks)");
+		case 0x03: return ("2 MBits (256 KBytes : 16 banks)");
+		case 0x04: return ("4 MBits (512 KBytes : 32 banks)");
+		case 0x05: return (!mbc2 ? "8 MBits (1 MByte : 64 banks)" : "8 MBits (1 MByte : 63 banks)");
+		case 0x06: return (!mbc2 ? "16 MBits (2 MBytes : 128 banks)" : "16 MBits (2 MBytes : 125 banks)");
+		case 0x07: return ("32 MBits (4 MBytes : 256 banks)");
+		case 0x08: return ("64 MBits (8 MBytes : 512 banks)");
 	}
 	return ("ERROR");
 }
@@ -170,11 +170,11 @@ char	*ram_size(int c)
 	switch (c)
 	{
 		case 0x00: return ("No RAM");
-		case 0x01: return ("16 KBit (2 Kbyte)");
-		case 0x02: return ("64 KBit (8 KByte)");
-		case 0x03: return ("256 KBit (32 KByte : 4 banks of 8KByte)");
-		case 0x04: return ("1 MBit (128 KByte : 16 banks of 8KByte)");
-		case 0x05: return ("512 KBit (64 KByte : 8 banks of 8KByte)");
+		case 0x01: return ("16 KBits (2 Kbyte)");
+		case 0x02: return ("64 KBits (8 KBytes)");
+		case 0x03: return ("256 KBits (32 KBytes : 4 banks of 8 KBytes)");
+		case 0x04: return ("1 MBit (128 KBytes : 16 banks of 8 KBytes)");
+		case 0x05: return ("512 KBits (64 KBytes : 8 banks of 8 Kbytes)");
 	}
 	return ("ERROR");
 }
