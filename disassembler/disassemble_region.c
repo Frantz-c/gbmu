@@ -21,6 +21,53 @@
 #include <unistd.h>
 #include "disassemble_table.c"
 
+static inline const char		*left_trim(const char *s)
+{
+	while (*s == ' ' || *s == '\t')
+		s++;
+	if (*s == '0' && s[1] == 'x')
+	{
+		s += 2;
+		while (*s == '0')
+			s++;
+		return (s);
+	}
+	return (NULL);
+}
+
+static unsigned int				get_base_value(char c)
+{
+	if (c >= 'a' && c <= 'f')
+		return (c - ('a' - 10));
+	if (c >= 'A' && c <= 'F')
+		return (c - ('a' - 10));
+	return (c - '0');
+}
+
+static inline unsigned int		ft_strtoi(const char *s)
+{
+	unsigned int	n;
+
+	n = 0;
+	while (1)
+	{
+		if (*s > 'f' || (*s > 'F' && *s < 'a')
+				|| (*s > '9' && *s < 'A') || *s < '0')
+			break ;
+		n *= 16;
+		n += get_base_value(*(s++));
+	}
+	return (n);
+}
+
+extern inline unsigned int		atoi_hexa(const char *s)
+{
+	if ((s = left_trim(s)) == NULL)
+		return (0);
+	return (ft_strtoi(s));
+}
+
+
 static char		*itoazx(int n, int size)
 {
 	static char	s[8];
@@ -247,9 +294,19 @@ int main(int ac, char *av[])
 	start = 0;
 	end = len;
 	if (ac > 2)
-		start = atoi(av[2]);
+	{
+		if (av[2][0] == '0' && av[2][1] == 'x')
+			start = atoi_hexa(av[2]);
+		else
+			start = atoi(av[2]);
+	}
 	if (ac > 3)
-		end = atoi(av[3]);
+	{
+		if (av[3][0] == '0' && av[3][1] == 'x')
+			end = atoi_hexa(av[3]);
+		else
+			end = atoi(av[3]);
+	}
 	if (len < end)
 	{
 		fprintf(stderr, "end offset (%d) > file end (%d)\n", end, len);
@@ -257,7 +314,7 @@ int main(int ac, char *av[])
 	}
 	if (start > end)
 	{
-		fprintf(stderr, "start offset (%d) > file end (%d)\n", start, len);
+		fprintf(stderr, "start offset (%d) > end offset (%d)\n", start, end);
 		return (1);
 	}
 	if (start < 0 || end < 0)
