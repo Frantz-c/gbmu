@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/24 17:07:32 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/25 22:56:06 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/25 23:14:39 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -15,6 +15,11 @@
 # define RAM_REGISTERS_H
 
 // http://www.devrs.com/gb/files/faqs.html#GBBugs
+
+
+
+
+
 
 /*******************
 **** INTERRUPTS ****
@@ -35,6 +40,13 @@
 	5) Jump a l'adresse de l'interruption
 
 */
+
+
+
+
+
+
+
 
 
 
@@ -73,6 +85,10 @@ exemple:
 
 `````````````````````````````````````````````````````````
 */
+
+
+
+
 
 
 
@@ -120,6 +136,10 @@ exemple:
 
 
 
+
+
+
+
 /************************
 **** INTERRUPT FLAGS ****
 ************************/
@@ -154,11 +174,20 @@ exemple:
 
 
 
+
+
+
+
+
+
 /************************
 **** SERIAL TRANSFER ****
 ************************/
 # define SB		0xff01U
 # define SC		0xff02U
+
+
+
 
 
 
@@ -182,6 +211,11 @@ exemple:
 	bank 2-7	= [0xd000-0xdfff]
 
 */
+
+
+
+
+
 
 
 
@@ -228,6 +262,11 @@ _NO_SWITCH:
 
 
 
+
+
+
+
+
 /*************************************
 **** INFRARED PORT REGISTER (CGB) ****
 *************************************/
@@ -240,8 +279,28 @@ _NO_SWITCH:
 
 
 
-// VRAM BANK (CGB)
-# define VBK	0xff4fU //mask 0000 0001
+
+
+
+/**************************
+***** VRAM BANK (CGB) *****
+**************************/
+# define VBK	0xff4fU // [.......B]
+/*
+	VRAM BANK SELECT
+	[0x8000-0x9fff]
+
+	B = Bank (0 ou 1)
+*/
+
+
+
+
+
+
+
+
+
 
 // LCD DISPLAY REGISTERS
 # define LCDC	0xff40U
