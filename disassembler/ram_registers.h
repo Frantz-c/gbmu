@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/24 17:07:32 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/24 20:42:37 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/25 21:01:08 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -14,16 +14,97 @@
 #ifndef RAM_REGISTERS_H
 # define RAM_REGISTERS_H
 
-// CONTROLLER
-# define P1		0xff00U
+// http://www.devrs.com/gb/files/faqs.html#GBBugs
 
-// DIVIDER REGISTER
-# define DIV	0xff04U
+/*******************
+**** INTERRUPTS ****
+*******************/
+# define VBLANK_INT		0x40U
+# define LCDSTAT_INT	0x48U
+# define TIMAOVF_INT	0x50U
+# define SERIAL_INT		0x58U
+# define JOYPAD_INT		0x60
 
-// TIME REGISTERS
-# define TIMA	0xff05U
-# define TMA	0xff06U
-# define TAC	0xff07U
+
+
+
+/*****************
+*** CONTROLLER ***
+*****************/
+# define P1		0xff00U // [..BD3210]
+/*
+	B = bouton (A, B, select, start)
+	D = direction (droite, gauche, haut, bas)
+	3210 = bit correspondant au bouton.
+				0			1			2			3
+			B =	A,			B,			select,		start
+			D =	droite,		gauche,		haut,		bas
+
+utilisation:
+	mettre a 0 le bit D pour obtenir les touches directionnelles
+	mettre a 0 le bit B pour obtenir les touches A, B, ...
+	recuperer la valeur du registre P1 pour lire les touches enfoncees (utiliser BIT)
+	/!\ touche enfoncee = bit a zero
+
+exemple:
+	LD	A, $20		; requete touches directionnelles
+	LD	($FF00), A
+	LD	A, ($FF00)
+	.
+	.
+	LD	A, ($10)	; requete touches A, B, ...
+	LD	($FF00), A
+	LD	A, ($FF00)
+	.
+	.
+	LD	A, $30		; 0x30 = (B | D) = requete reinitialisation du port ??
+	LD	($FF00), A
+
+*/
+
+
+
+
+
+
+/******************
+****** TIMER ******
+******************/
+# define DIV	0xff04U //????
+/*
+	ecrire dans ce registre le remet a zero
+*/
+# define TIMA	0xff05U // TIMER [VVVVVVVV]
+/*
+	Genere une interruption si overflow
+*/
+# define TMA	0xff06U // [VVVVVVVV]
+/*
+	La valeur de TMA est chargee dans TIMA lorsque TIMA overflow
+*/
+# define TAC	0xff07U // TIMER CONTROLLER [.....TSS]
+/*
+	T	=	Timer stop/start (0 = stop, 1 = start)
+	SS	=	Input clock select
+			00 = 4.194304 MHz / 2^10 = 4.096 KHz
+			01 = 4.194304 MHz / 2^4 = 262.144 KHz
+			10 = 4.194304 MHz / 2^6 = 65.536 KHz
+			11 = 4.194304 MHz / 2^8 = 16.384 KHz
+
+	Le timer doit etre demarre apres avoir ete initialise
+
+exemple:
+	LD		A, 2			; f/2^6  (f = 4.194304)
+	LD		($FF00+07), A	; set clock speed
+	LD		A, 6			; 0b00000 1 10
+	LD		($FF00+07), A	; start timer
+
+*/
+
+
+
+
+
 
 // INTERRUPT FLAGS
 # define IF		0xff0fU

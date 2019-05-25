@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/24 14:40:04 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/24 23:09:33 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/25 19:05:53 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -76,12 +76,29 @@ char	*sgb_support(int c)
 	}
 	return ("ERROR");
 }
-
+/*
+00h  ROM ONLY                 19h  MBC5
+01h  MBC1                     1Ah  MBC5+RAM
+02h  MBC1+RAM                 1Bh  MBC5+RAM+BATTERY
+03h  MBC1+RAM+BATTERY         1Ch  MBC5+RUMBLE
+05h  MBC2                     1Dh  MBC5+RUMBLE+RAM
+06h  MBC2+BATTERY             1Eh  MBC5+RUMBLE+RAM+BATTERY
+08h  ROM+RAM                  20h  MBC6
+09h  ROM+RAM+BATTERY          22h  MBC7+SENSOR+RUMBLE+RAM+BATTERY
+0Bh  MMM01
+0Ch  MMM01+RAM
+0Dh  MMM01+RAM+BATTERY
+0Fh  MBC3+TIMER+BATTERY
+10h  MBC3+TIMER+RAM+BATTERY   FCh  POCKET CAMERA
+11h  MBC3                     FDh  BANDAI TAMA5
+12h  MBC3+RAM                 FEh  HuC3
+13h  MBC3+RAM+BATTERY         FFh  HuC1+RAM+BATTERY
+*/
 char	*cartridge_type(int c)
 {
 	switch (c)
 	{
-		case 0x00: return ("ROM");
+		case 0x00: return ("ROM ONLY");
 		case 0x01: return ("ROM MBC-1");
 		case 0x02: return ("ROM MBC-1 SRAM");
 		case 0x03: return ("ROM MBC-1 SRAM BATTERY");
@@ -91,47 +108,73 @@ char	*cartridge_type(int c)
 		case 0x07: return ("0x07");
 		case 0x08: return ("ROM SRAM");
 		case 0x09: return ("ROM SRAM BATTERY");
-		case 0x0f: return ("ROM MBC-3_W/RTC BATTERY");
-		case 0x10: return ("ROM MBC-3_W/RTC SRAM BATTERY");
-		case 0x11: return ("ROM MBC-3_No_RTC");
-		case 0x12: return ("ROM MBC-3_No_RTC SRAM");
-		case 0x13: return ("ROM MBC-3_No_RTC SRAM BATTERY");
-		case 0x19: return ("ROM MBC-5_No_Rumble");
-		case 0x1a: return ("ROM MBC-5_No_Rumble SRAM");
-		case 0x1b: return ("ROM MBC-5_No_Rumble SRAM BATTERY");
-		case 0x29: return ("ROM MBC-5_W/Rumble");
-		case 0x2a: return ("ROM MBC-5_W/Rumble SRAM");
-		case 0x2b: return ("ROM MBC-5_W/Rumble SRAM BATTERY");
+		case 0x0b: return ("MMM01");
+		case 0x0c: return ("MMM01 SRAM");
+		case 0x0d: return ("MMM01 SRAM BATTERY");
+		case 0x0f: return ("ROM MBC-3 RTC BATTERY");
+		case 0x10: return ("ROM MBC-3 RTC SRAM BATTERY");
+		case 0x11: return ("ROM MBC-3");
+		case 0x12: return ("ROM MBC-3 SRAM");
+		case 0x13: return ("ROM MBC-3 SRAM BATTERY");
+		case 0x19: return ("ROM MBC-5");
+		case 0x1a: return ("ROM MBC-5 SRAM");
+		case 0x1b: return ("ROM MBC-5 SRAM BATTERY");
+		case 0x1c: return ("ROM MBC-5 Rumble");
+		case 0x1d: return ("ROM MBC-5 Rumble SRAM");
+		case 0x1e: return ("ROM MBC-5 Rumble SRAM BATTERY");
 	}
 	return ("ERROR");
 }
-
-char	*rom_size(int c)
+/*
+00h -  32KByte (no ROM banking)
+01h -  64KByte (4 banks)
+02h - 128KByte (8 banks)
+03h - 256KByte (16 banks)
+04h - 512KByte (32 banks)
+05h -   1MByte (64 banks)  - only 63 banks used by MBC1
+06h -   2MByte (128 banks) - only 125 banks used by MBC1
+07h -   4MByte (256 banks)
+08h -   8MByte (512 banks)
+52h - 1.1MByte (72 banks)
+53h - 1.2MByte (80 banks)
+54h - 1.5MByte (96 banks)
+*/
+char	*rom_size(int c, int rt)
 {
+	int		mbc2 = (rt == 5 || rt == 6);
+
 	switch (c)
 	{
-		case 0x00: return ("256 KBit (32 KByte)");
-		case 0x01: return ("512 KBit (64 KByte)");
-		case 0x02: return ("1 MBit (128 KByte)");
-		case 0x03: return ("2 MBit (256 KByte)");
-		case 0x04: return ("4 MBit (512 KByte)");
-		case 0x05: return ("8 MBit (1 MByte)");
-		case 0x06: return ("16 MBit (2 MByte)");
-		case 0x07: return ("32 MBit (4 MByte)");
-		case 0x08: return ("64 Mbit (8 MByte)");
+		case 0x00: return ("256 KBit (32 KByte : 0 banks)");
+		case 0x01: return ("512 KBit (64 KByte : 4 banks)");
+		case 0x02: return ("1 MBit (128 KByte : 8 banks)");
+		case 0x03: return ("2 MBit (256 KByte : 16 banks)");
+		case 0x04: return ("4 MBit (512 KByte : 32 banks)");
+		case 0x05: return (!mbc2 ? "8 MBit (1 MByte : 64 banks)" : "8 MBit (1 MByte : 63 banks)");
+		case 0x06: return (!mbc2 ? "16 MBit (2 MByte : 128 banks)" : "16 MBit (2 MByte : 125 banks)");
+		case 0x07: return ("32 MBit (4 MByte : 256 banks)");
+		case 0x08: return ("64 Mbit (8 MByte : 512 banks)");
 	}
 	return ("ERROR");
 }
-
+/*
+00h - None
+01h - 2 KBytes
+02h - 8 Kbytes
+03h - 32 KBytes (4 banks of 8KBytes each)
+04h - 128 KBytes (16 banks of 8KBytes each)
+05h - 64 KBytes (8 banks of 8KBytes each)
+*/
 char	*ram_size(int c)
 {
 	switch (c)
 	{
-		case 0x00: return ("No RAM or MBC-2");
-		case 0x01: return ("-------");
+		case 0x00: return ("No RAM");
+		case 0x01: return ("16 KBit (2 Kbyte)");
 		case 0x02: return ("64 KBit (8 KByte)");
-		case 0x03: return ("256 KBit (32 KByte)");
-		case 0x04: return ("1 MBit (128 KByte)");
+		case 0x03: return ("256 KBit (32 KByte : 4 banks of 8KByte)");
+		case 0x04: return ("1 MBit (128 KByte : 16 banks of 8KByte)");
+		case 0x05: return ("512 KBit (64 KByte : 8 banks of 8KByte)");
 	}
 	return ("ERROR");
 }
@@ -187,7 +230,7 @@ void		print_cartridge_info(t_cartridge *cart)
 			cart->jump_addr, cart->game_title, cart->game_code,
 			cgb_support(cart->cgb_support_code), cart->maker_code,
 			sgb_support(cart->sgb_support_code), cartridge_type(cart->type),
-			rom_size(cart->rom_size), ram_size(cart->extern_ram_size),
+			rom_size(cart->rom_size, cart->type), ram_size(cart->extern_ram_size),
 			dest_code(cart->destination_code), cart->rom_version, cart->sum_complement);
 }
 
