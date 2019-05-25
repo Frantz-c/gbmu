@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/24 17:07:32 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/25 21:01:08 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/25 21:44:58 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -19,12 +19,22 @@
 /*******************
 **** INTERRUPTS ****
 *******************/
-# define VBLANK_INT		0x40U
-# define LCDSTAT_INT	0x48U
-# define TIMAOVF_INT	0x50U
-# define SERIAL_INT		0x58U
-# define JOYPAD_INT		0x60
+# define VBLANK_INT		0x0040U
+# define LCDC_INT		0x0048U
+# define TIMAOVF_INT	0x0050U
+# define SERIAL_INT		0x0058U
+# define JOYPAD_INT		0x0060U
 
+/* INTERRUPT AUTOMATIC PROCESS
+
+	1) initialisation du registre IF (liste des interruptions)
+	2) Si le flag IME est a 1 et le flag du registre IE correspondant
+		a l'interruption est a 1 aussi, on passe a l'etape 3.
+	3) Mise a zero du flag IME.
+	4) PUSH PC.
+	5) Jump a l'adresse de l'interruption
+
+*/
 
 
 
@@ -78,7 +88,7 @@ exemple:
 /*
 	Genere une interruption si overflow
 */
-# define TMA	0xff06U // [VVVVVVVV]
+# define TMA	0xff06U // TIMA base value [VVVVVVVV]
 /*
 	La valeur de TMA est chargee dans TIMA lorsque TIMA overflow
 */
@@ -106,14 +116,53 @@ exemple:
 
 
 
-// INTERRUPT FLAGS
-# define IF		0xff0fU
-# define IE		0xffffU
-//IME register (no addr)
+/************************
+**** INTERRUPT FLAGS ****
+************************/
+# define IF		0xff0fU // [...JSTLV] Interrupt request
+/*
+	list of requested interrupts
 
-// SERIAL TRANSFER
+	J = Joypad interrupt
+	S = Serial interrupt
+	T = Timer interrupt
+	L = LCDC interrupt
+	V = VBank interrupt
+
+	0 = disable, 1 = enable
+*/
+# define IE		0xffffU // [...JSTLV] Interrupt enable
+/*
+	enabled interrupts list
+
+	J = Joypad interrupt
+	S = Serial interrupt
+	T = Timer interrupt
+	L = LCDC interrupt
+	V = VBank interrupt
+
+	0 = disable, 1 = enable
+*/
+//IME register (interrupt master enable) : 0 = DI, 1 = EI
+
+
+
+
+
+
+/************************
+**** SERIAL TRANSFER ****
+************************/
 # define SB		0xff01U
 # define SC		0xff02U
+
+
+
+
+
+
+
+
 
 // WORKING RAM BANK SWITCH REGISTER (CGB)
 # define SVBK	0xff70U
