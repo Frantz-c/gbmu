@@ -141,7 +141,7 @@ char	*cartridge_type(int c)
 */
 char	*rom_size(int c, int rt)
 {
-	int		mbc2 = (rt == 5 || rt == 6);
+	int		mbc1 = (rt == 5 || rt == 6);
 
 	switch (c)
 	{
@@ -150,8 +150,8 @@ char	*rom_size(int c, int rt)
 		case 0x02: return ("1 MBit (128 KBytes : 8 banks)");
 		case 0x03: return ("2 MBits (256 KBytes : 16 banks)");
 		case 0x04: return ("4 MBits (512 KBytes : 32 banks)");
-		case 0x05: return (!mbc2 ? "8 MBits (1 MByte : 64 banks)" : "8 MBits (1 MByte : 63 banks)");
-		case 0x06: return (!mbc2 ? "16 MBits (2 MBytes : 128 banks)" : "16 MBits (2 MBytes : 125 banks)");
+		case 0x05: return (!mbc1 ? "8 MBits (1 MByte : 64 banks)" : "8 MBits (1 MByte : 63 banks)");
+		case 0x06: return (!mbc1 ? "16 MBits (2 MBytes : 128 banks)" : "16 MBits (2 MBytes : 125 banks)");
 		case 0x07: return ("32 MBits (4 MBytes : 256 banks)");
 		case 0x08: return ("64 MBits (8 MBytes : 512 banks)");
 	}
