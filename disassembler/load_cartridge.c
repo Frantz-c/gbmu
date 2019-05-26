@@ -1,16 +1,20 @@
 #include <stdint.h>
 #include <stdio.h>
-#include <stlib.h>
+#include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <ctype.h>
-#include "memory_map.h"
+#include "memory_map2.h"
 
-/* en cours */
+/* en cours... */	
 
+#define NITENDO_LOGO		"\xCE\xED\x66\x66\xCC\x0D\x00\x0B\x03\x73\x00\x83"\
+							"\x00\x0C\x00\x0D\x00\x08\x11\x1F\x88\x89\x00\x0E"\
+							"\xDC\xCC\x6E\xE6\xDD\xDD\xD9\x99\xBB\xBB\x67\x63"\
+							"\x6E\x0E\xEC\xCC\xDD\xDC\x99\x9F\xBB\xB9\x33\x3E"
 
 typedef struct
 {
@@ -58,27 +62,29 @@ unsigned char	*get_file_contents(const char *file, uint32_t *length)
 
 int		get_cartridge_type(uint8_t *mem, t_cartridge *cart)
 {
-	unsigned char	*start = mem;
-	unsigned char	sum = 0;
+	uint8_t	*start = mem;
+	uint8_t	sum = 0;
 	
 	mem += 0x100;
-	if (*mem != 0x00)
-		add_error(cart, "[0x100] \e[0;31m0x%hhx\e[0m, 0x00 expected\n", mem);
-	if (mem[1] != 0xc3)
-		add_error(cart, "[0x101] \e[0;31m0x%hhx\e[0m, 0xc3 expected\n", mem + 1);
+	if (*mem != 0x00 || mem[1] != 0xc3)
+		return (-1);
 	mem += 2;
 
+#if BYTE_ORDER == LITTLE_ENDIAN
 	cart->jump_addr = *(unsigned short*)mem;
+#else
+	cart->jump_addr = (*mem | (mem[1] << 8));
+#endif
 	mem += 2;
 
 	if (memcmp(mem, NITENDO_LOGO, 48))
-		add_error(cart, "[0x104-0x133] \e[0;31mnintendo logo error\e[0m\n", NULL);
+		return (-1);
 	mem += 48;
 
-	for (unsigned int i = 0; i < 11; i++)
+	for (uint32_t i = 0; i < 11; i++)
 	{
 		if (mem[i] && !isalnum(mem[i]) && mem[i] != '_' && mem[i] != ' ')
-			add_error(cart, "[title] \e[0;31m0x%hhx is an invalid char\e[0m\n", mem + i);
+			return (-1);
 	}
 	strncpy(cart->game_title, (char*)mem, 11);
 	cart->game_title[11] = '\0';
@@ -87,41 +93,39 @@ int		get_cartridge_type(uint8_t *mem, t_cartridge *cart)
 	for (unsigned int i = 0; i < 4; i++)
 	{
 		if (mem[i] && (mem[i] < 'A' || mem[i] > 'Z') && !isdigit(mem[i]))
-			add_error(cart, "[game_code] \e[0;31m0x%hhx is an invalid char\e[0m\n", mem + i);
+			return (-1);
 	}
 	strncpy(cart->game_code, (char*)mem, 4);
 	cart->game_code[4] = 0;
 	mem += 4;
 
 	if (*mem != 0x00 && *mem != 0x80 && *mem != 0xc0)
-		add_error(cart, "[cgb_support] \e[0;31m0x%hhx is an invalid support code\e[0m, {0x00, 0x80, 0xc0} expected\n", mem);
+		return (-1);
 	cart->cgb_support_code = *(mem++);
 
 	cart->maker_code[0] = *(mem++);
 	cart->maker_code[1] = *(mem++);
 	cart->maker_code[2] = 0;
 
-	if (*mem != 0x00 && *mem != 0x03)
-		add_error(cart, "[sgb_support] \e[0;31m0x%hhx is an invalid support code\e[0m, {0x00, 0x03} expected\n", mem);
+	if (*mem == 0x03 && *(start + 0x14b) != 0x33)
+		return (-1);
 	cart->sgb_support_code = *(mem++);
 
 	cart->type = *(mem++);
 
 	if (*mem > 0x08)
-		add_error(cart, "[ROM size] \e[0;31m0x%hhx is an invalid code\e[0m, {0x00 - 0x08} expected\n", mem);
+		return (-1);
 	cart->rom_size = *(mem++);
 
 	if (*mem > 0x04)
-		add_error(cart, "[RAM size] \e[0;31m0x%hhx is an invalid code\e[0m, {0x00 - 0x04} expected\n", mem);
+		return (-1);
 	cart->extern_ram_size = *(mem++);
 
 	if (*mem > 0x01)
-		add_error(cart, "[destination code] \e[0;31m0x%hhx is an invalid code\e[0m, {0x00, 0x01} expected\n", mem);
-	cart->destination_code = *(mem++);
+		return (-1);
+	cart->destination_code = *mem;
 
-	if (*mem != 0x33)
-		add_error(cart, "[0x14b] \e[0;31m0x%hhx is an invalid value\e[0m, 0x33 expected\n", mem);
-	mem++;
+	mem += 2;
 
 	cart->rom_version = *(mem++);
 
@@ -131,60 +135,72 @@ int		get_cartridge_type(uint8_t *mem, t_cartridge *cart)
 	}
 	sum += 0x19U + *mem;
 	if (sum != 0x0)
-		add_error(cart, "[complement check] \e[0;31m0x%hhx is an invalid sum\e[0m, 0x0 expected\n", &sum);
+		return (-1);
 	cart->sum_complement = *(mem++);
 
-
+	return (cart->type);
 }
 
-void	load_rom_only_cartridge(memmap, cart)
+void	load_rom_only_cartridge(memory_map_t *memmap, uint8_t *mem, t_cartridge *cart)
 {
-	
+	fprintf(stderr, "soon...\n");
+	exit(1);
 }
 
-void	load_MBC1_cartridge(memmap, cart)
+void	load_MBC1_cartridge(memory_map_t *memmap, uint8_t *mem, t_cartridge *cart)
 {
-	
+	fprintf(stderr, "soon...\n");
+	exit(1);
 }
 
-void	load_MBC2_cartridge(memmap, cart)
-{
-	fprintf(stderr, "Not implemented...\n");
-	return (1);
-}
-
-void	load_MBC3_cartridge(memmap, cart)
+void	load_MBC2_cartridge(memory_map_t *memmap, uint8_t *mem, t_cartridge *cart)
 {
 	fprintf(stderr, "Not implemented...\n");
-	return (1);
+	exit (1);
 }
 
-void	load_MBC5_cartridge(memmap, cart)
+void	load_MBC3_cartridge(memory_map_t *memmap, uint8_t *mem, t_cartridge *cart)
 {
 	fprintf(stderr, "Not implemented...\n");
-	return (1);
+	exit (1);
+}
+
+void	load_MBC5_cartridge(memory_map_t *memmap, uint8_t *mem, t_cartridge *cart)
+{
+	fprintf(stderr, "Not implemented...\n");
+	exit (1);
 }
 
 
 void	load_cartridge(memory_map_t *memmap, uint8_t *mem, t_cartridge *cart)
 {
-	int		type;
-
-	if ((type = get_cartridge_type(mem, cart)) == -1)
+	if (get_cartridge_type(mem, cart) == -1)
 	{
 		fprintf(stderr, "Invalid cartridge\n");
 		exit (1);
 	}
 
-	switch (type)
+	switch (cart->type)
 	{
-		case ROM_ONLY:	load_rom_only_cartridge(memmap, mem); break;
-		case MBC_1:		load_MBC1_cartridge(memmap, mem); break;
-		case MBC_2:		load_MBC2_cartridge(memmap, mem); break;
-		case MBC_3:		load_MBC3_cartridge(memmap, mem); break;
-		case MBC_5:		load_MBC5_cartridge(memmap, mem); break;
-		default:		fprintf(stderr, "Not supported cartridge type\n");
-						exit(1);
+		case 0x00:	load_rom_only_cartridge(memmap, mem, cart); break;
+		case 0x01:
+		case 0x02:
+		case 0x03:	load_MBC1_cartridge(memmap, mem, cart); break;
+		case 0x05:
+		case 0x06:	load_MBC2_cartridge(memmap, mem, cart); break;
+		case 0x0f:
+		case 0x10:
+		case 0x11:
+		case 0x12:
+		case 0x13:	load_MBC3_cartridge(memmap, mem, cart); break;
+		case 0x19:
+		case 0x1a:
+		case 0x1b:
+		case 0x1c:
+		case 0x1d:
+		case 0x1e:	load_MBC5_cartridge(memmap, mem, cart); break;
+		default:	fprintf(stderr, "Not supported cartridge type\n");
+					exit(1);
 	}
 }
 
