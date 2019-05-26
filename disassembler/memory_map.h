@@ -48,11 +48,8 @@
 
 			switch virtuel...
 
-
-		faire une table de redirection serait peut-etre mieux.
-		il suffira alors juste de changer les adresses
-			dans la structure lors des switch.
 */
+
 		memory_map_t	memmap;
 
 		const void	*const	get_real_addr[16] = {
@@ -132,7 +129,8 @@
 			after_call:
 
 /*			
-	il faudrait separer get_real_write_addr[] & get_real_read_addr
+	il faudrait faire une condition pour savoir si on veut
+	ecrire ou lire l'adresse (et un deuxieme tableau avec juste la partie ROM).
 	(ecrire dans la ROM modifie des registres,
 	lire la ROM c'est juste recuperer le code du jeu.)
 */
