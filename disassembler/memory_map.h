@@ -30,14 +30,14 @@
 
 			ou
 			
-			switch "virtuel", ce qui implique de faire plusieurs
-			condition lors du chargement/ecriture de donnees a une adresse.
+			switch "virtuel"
+				j'ai implemente une version non testee,
+				a base de tableau de label.
+				c'est aussi faisable avec un tableau de pointeur ou en cachant
+				le tableau de label dans une fonction.
 			ex:
 			`````````````````````````````````````````````````````````````````
-				if (cgb == true && addr >= 0xd000 && addr < 0xe000)
-				{
-					...
-				}
+				wk_ram_switch = wk_ram_banks[4];
 
 			`````````````````````````````````````````````````````````````````
 	
@@ -55,49 +55,95 @@
 */
 		memory_map_t	memmap;
 
-		uint8_t	*redirection[4096] = {
-			memmap.fixed_rom,			//0x000
-			memmap.fixed_rom + 0x1000,	//0x100
-			memmap.fixed_rom + 0x2000,	//0x200
-			memmap.fixed_rom + 0x3000,	//0x300
-			memmap.switch_rom,			//0x400
-			memmap.switch_rom + 0x1000,	//0x500
-			memmap.switch_rom + 0x2000,	//0x600
-			memmap.switch_rom + 0x3000,	//0x700
-			memmap.vram,				//0x800
-			memmap.vram + 0x1000,		//0x900
-			memmap.extern_ram,			//0xa00
-			memmap.extern_ram + 0x1000,	//0xb00
-			memmap.fixed_ram,			//0xc00
-			memmap.switch_ram,			//0xd00
-			NULL,						//0xe00
-			memmap.oam,					//0xfe0
-			NULL,						//0xfea
-			memmap.hardware_regs,		//0xff0
-			memmap.stack_ram			//0xff8
+		const void	*const	get_real_addr[16] = {
+			&&fixed_rom_0,				//0x0
+			&&fixed_rom_1,				//0x1
+			&&fixed_rom_2,				//0x2
+			&&fixed_rom_3,				//0x3
+			&&switch_rom_0,				//0x4
+			&&switch_rom_1,				//0x5
+			&&switch_rom_2,				//0x6
+			&&switch_rom_3,				//0x7
+			&&vram_0,					//0x8
+			&&vram_1,					//0x9
+			&&extern_ram_0,				//0xa
+			&&extern_ram_1,				//0xb
+			&&fixed_ram,				//0xc
+			&&switch_ram,				//0xd
+			&&out_of_range,
+			&&out_of_range
 		};
-		//PS: j'ai pas ecrit tous les elements parce que c'est long...
+
+		fixed_rom_0:
+			real_addr = memmap.fixed_rom + (virtual_addr & 0xfff);
+			goto after_call;
+		fixed_rom_1:
+			real_addr = memmap.fixed_rom + (virtual_addr & 0xfff) + 0x1000;
+			goto after_call;
+		fixed_rom_2:
+			real_addr = memmap.fixed_rom + (virtual_addr & 0xfff) + 0x2000;
+			goto after_call;
+		fixed_rom_3:
+			real_addr = memmap.fixed_rom + (virtual_addr & 0xfff) + 0x3000;
+			goto after_call;
+		switch_rom_0:
+			real_addr = memmap.switch_rom + (virtual_addr & 0xfff);
+			goto after_call;
+		switch_rom_1:
+			real_addr = memmap.switch_rom + (virtual_addr & 0xfff) + 0x1000;
+			goto after_call;
+		switch_rom_2:
+			real_addr = memmap.switch_rom + (virtual_addr & 0xfff) + 0x1000;
+			goto after_call;
+		switch_rom_3:
+			real_addr = memmap.switch_rom + (virtual_addr & 0xfff) + 0x1000;
+			goto after_call;
+		vram_0:
+			real_addr = memmap.vram + (virtual_addr & 0xfff);
+			goto after_call;
+		vram_1:
+			real_addr = memmap.vram + (virtual_addr & 0xfff) + 0x1000;
+			goto after_call;
+		extern_ram_0:
+			real_addr = memmap.extern_ram + (virtual_addr & 0xfff);
+			goto after_call;
+		extern_ram_1:
+			real_addr = memmap.extern_ram + (virtual_addr & 0xfff) + 0x1000;
+			goto after_call;
+		fixed_ram:
+			real_addr = memmap.extern_ram + (virtual_addr & 0xfff);
+			goto after_call;
+		switch_ram:
+			real_addr = memmap.extern_ram + (virtual_addr & 0xfff);
+			goto after_call;
+		out_of_range:
+			//reste juste les adresses superieures a 0xdfff
+
 /*
 		exemples:
 			acces a l'adresse 0x7e04 -> (memmap.switch_rom)
 */
-			uint8_t		*addr = 0x7e04;
-			uint32_t	final_offset = (addr & 0xf); // % 16
-			uint32_t	index = addr >> 4; // / 16
+			uint8_t		*virtual_addr = 0x7e04;
+			uint8_t		*real_addr;
+			uint32_t	i;
 
-			uint8_t		addr = redirection[index] + final_offset;
+			i = (virtual_addr >> 12);
+			goto get_real_addr[i];
+			after_call:
 
 /*			
-	il faudrait separer read_redirection[] de write_redirection[]
-	(ecrire dans la ROM modifie les registres,
+	il faudrait separer get_real_write_addr[] & get_real_read_addr
+	(ecrire dans la ROM modifie des registres,
 	lire la ROM c'est juste recuperer le code du jeu.)
 */
+
+
 
 typedef struct	memory_map_s
 {
 
 	/**** Pointer to the complete malloced block ****/
-	void	*complete_block; //inutile si on utilise les tableaux de redirection
+	void	*complete_block;
 
 
 	// Pointers to the different memory areas
