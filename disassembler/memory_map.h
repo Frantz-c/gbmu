@@ -24,7 +24,7 @@
 			4096 octets a remplacer par copie
 			ex:
 			`````````````````````````````````````````````````````````````````
-				memcpy(wk_ram_switch, wk_ram_banks[4], 4096); //switch bank 5
+				memcpy(extern_ram, extern_ram_banks[4], 8192); //switch bank 5
 
 			`````````````````````````````````````````````````````````````````
 
@@ -37,7 +37,9 @@
 				le tableau de label dans une fonction.
 			ex:
 			`````````````````````````````````````````````````````````````````
-				wk_ram_switch = wk_ram_banks[4];
+				extern_ram = extern_ram_banks[4];
+				get_real_addr[0xa] = extern_ram;
+				get_real_addr[0xb] = extern_ram + 0x1000;
 
 			`````````````````````````````````````````````````````````````````
 	
@@ -52,68 +54,24 @@
 
 		memory_map_t	memmap;
 
-		const void	*const	get_real_addr[16] = {
-			&&fixed_rom_0,				//0x0
-			&&fixed_rom_1,				//0x1
-			&&fixed_rom_2,				//0x2
-			&&fixed_rom_3,				//0x3
-			&&switch_rom_0,				//0x4
-			&&switch_rom_1,				//0x5
-			&&switch_rom_2,				//0x6
-			&&switch_rom_3,				//0x7
-			&&vram_0,					//0x8
-			&&vram_1,					//0x9
-			&&extern_ram_0,				//0xa
-			&&extern_ram_1,				//0xb
-			&&fixed_ram,				//0xc
-			&&switch_ram,				//0xd
-			&&out_of_range,
-			&&out_of_range
+		uint8_t	*get_real_addr[16] = {
+			memmap.fixed_rom,				//0x0
+			memmap.fixed_rom + 0x1000,		//0x1
+			memmap.fixed_rom + 0x2000,		//0x2
+			memmap.fixed_rom + 0x3000,		//0x3
+			memmap.switch_rom,				//0x4
+			memmap.switch_rom + 0x1000,		//0x5
+			memmap.switch_rom + 0x2000,		//0x6
+			memmap.switch_rom + 0x3000,		//0x7
+			memmap.vram,					//0x8
+			memmap.vram + 0x1000,			//0x9
+			memmap.extern_ram,				//0xa
+			memmap.extern_ram + 0x1000,		//0xb
+			memmap.fixed_ram,				//0xc
+			memmap.switch_ram,				//0xd
+			NULL,
+			NULL
 		};
-
-		fixed_rom_0:
-			real_addr = memmap.fixed_rom + (virtual_addr & 0xfff);
-			goto after_call;
-		fixed_rom_1:
-			real_addr = memmap.fixed_rom + (virtual_addr & 0xfff) + 0x1000;
-			goto after_call;
-		fixed_rom_2:
-			real_addr = memmap.fixed_rom + (virtual_addr & 0xfff) + 0x2000;
-			goto after_call;
-		fixed_rom_3:
-			real_addr = memmap.fixed_rom + (virtual_addr & 0xfff) + 0x3000;
-			goto after_call;
-		switch_rom_0:
-			real_addr = memmap.switch_rom + (virtual_addr & 0xfff);
-			goto after_call;
-		switch_rom_1:
-			real_addr = memmap.switch_rom + (virtual_addr & 0xfff) + 0x1000;
-			goto after_call;
-		switch_rom_2:
-			real_addr = memmap.switch_rom + (virtual_addr & 0xfff) + 0x1000;
-			goto after_call;
-		switch_rom_3:
-			real_addr = memmap.switch_rom + (virtual_addr & 0xfff) + 0x1000;
-			goto after_call;
-		vram_0:
-			real_addr = memmap.vram + (virtual_addr & 0xfff);
-			goto after_call;
-		vram_1:
-			real_addr = memmap.vram + (virtual_addr & 0xfff) + 0x1000;
-			goto after_call;
-		extern_ram_0:
-			real_addr = memmap.extern_ram + (virtual_addr & 0xfff);
-			goto after_call;
-		extern_ram_1:
-			real_addr = memmap.extern_ram + (virtual_addr & 0xfff) + 0x1000;
-			goto after_call;
-		fixed_ram:
-			real_addr = memmap.extern_ram + (virtual_addr & 0xfff);
-			goto after_call;
-		switch_ram:
-			real_addr = memmap.extern_ram + (virtual_addr & 0xfff);
-			goto after_call;
-		out_of_range:
 			//reste juste les adresses superieures a 0xdfff
 
 /*
@@ -125,8 +83,12 @@
 			uint32_t	i;
 
 			i = (virtual_addr >> 12);
-			goto get_real_addr[i];
-			after_call:
+			if (get_real_addr[i])
+			{
+				real_addr = get_real_addr[i] + (virtual_addr & 0xfff);
+			}
+			else
+				//autre tableau...
 
 /*			
 	il faudrait faire une condition pour savoir si on veut
