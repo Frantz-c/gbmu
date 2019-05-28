@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/23 11:44:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/23 16:37:58 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/28 17:51:16 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -54,7 +54,7 @@
 
 		memory_map_t	memmap;
 
-		uint8_t	*get_real_addr[16] = {
+		uint8_t	*g_get_real_read_addr[16] = {
 			memmap.fixed_rom,				//0x0
 			memmap.fixed_rom + 0x1000,		//0x1
 			memmap.fixed_rom + 0x2000,		//0x2
@@ -72,28 +72,50 @@
 			NULL,
 			NULL
 		};
-			//reste juste les adresses superieures a 0xdfff
+
+		uint8_t	*g_get_real_write_addr[16] = {
+			NULL,							//0x0
+			NULL,							//0x1
+			NULL,							//0x2
+			NULL,							//0x3
+			NULL,							//0x4
+			NULL,							//0x5
+			NULL,							//0x6
+			NULL,							//0x7
+			memmap.vram,					//0x8
+			memmap.vram + 0x1000,			//0x9
+			memmap.extern_ram,				//0xa
+			memmap.extern_ram + 0x1000,		//0xb
+			memmap.fixed_ram,				//0xc
+			memmap.switch_ram,				//0xd
+			NULL,
+			NULL
+		};
+
 
 /*
 		exemples:
 			acces a l'adresse 0x7e04 -> (memmap.switch_rom)
 */
+
+# define GET_REAL_READ_ADDR(virtual_addr)	(virtual_addr + memmap.complete_block)
+# define GET_REAL_WRITE_ADDR(virtual_addr)	\
+		 (\
+			(virtual_addr < 0x8000) ?\
+				g_get_real_write_addr[(virtual_addr >> 12)] :\
+				g_get_real_write_addr[(virtual_addr >> 12)] + (virtual_addr & 0xfff)\
+		 )
+
+
 			uint8_t		*virtual_addr = 0x7e04;
 			uint8_t		*real_addr;
-			uint32_t	i;
 
-			i = (virtual_addr >> 12);
-			if (get_real_addr[i])
-			{
-				real_addr = get_real_addr[i] + (virtual_addr & 0xfff);
-			}
-			else
-				//autre tableau...
+			real_addr = GET_REAL_READ_ADDR(virtual_addr);
 
 /*			
 	il faudrait faire une condition pour savoir si on veut
 	ecrire ou lire l'adresse (et un deuxieme tableau avec juste la partie ROM).
-	(ecrire dans la ROM modifie des registres,
+	(ecrire dans la ROM modifie les registres,
 	lire la ROM c'est juste recuperer le code du jeu.)
 */
 
@@ -113,7 +135,7 @@ typedef struct	memory_map_s
 
 	uint8_t		*fixed_rom;		// ROM:			0x0000 - 0x7fff
 								// MBC:			0x0000 - 0x3fff
-	uint8_t		*switch_rom;	// MBC Only:		0x4000 - 0x7fff
+	uint8_t		*switch_rom;	// MBC Only:	0x4000 - 0x7fff
 								// banks 1 to n, bank_size=16384 (16 Kbytes)
 		uint8_t	*rom_banks[512];
 	
