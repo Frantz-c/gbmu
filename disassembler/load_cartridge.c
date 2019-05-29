@@ -7,7 +7,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <ctype.h>
-#include "memory_map2.h"
+#include "memory_map.h"
 
 /* en cours... */	
 
@@ -15,33 +15,6 @@
 							"\x00\x0C\x00\x0D\x00\x08\x11\x1F\x88\x89\x00\x0E"\
 							"\xDC\xCC\x6E\xE6\xDD\xDD\xD9\x99\xBB\xBB\x67\x63"\
 							"\x6E\x0E\xEC\xCC\xDD\xDC\x99\x9F\xBB\xB9\x33\x3E"
-
-enum	e_cartridge_types
-{
-	ROM_ONLY, MBC1, MBC2, MBC3, MBC5
-};
-
-typedef struct
-{
-	int32_t		jump_addr;				//0x102 - 0x104
-	char		game_title[16];			//0x134 - 0x13e
-	char		game_code[8];			//0x13f - 0x142
-	int32_t		cgb_support_code;		//0x143
-	char		maker_code[8];			//0x144-0x145
-	int32_t		sgb_support_code;		//0x146
-	int32_t		type;					//0x147
-	int32_t		rom_size;				//0x148
-	int32_t		extern_ram_size;		//0x149
-	int32_t		destination_code;		//0x14a
-	int32_t		rom_version;			//0x14c
-	int32_t		sum_complement;			//0x14d
-	int32_t		hi_check_sum;			//0x14e
-	int32_t		lo_check_sum;			//0x14f
-	uint32_t	size;					//cartridge total size
-	uint32_t	n_banks;				//additionnal ROM banks
-	uint32_t	mbc;					//mbc number (0 == ROM_ONLY)
-}
-t_cartridge;
 
 unsigned char	*get_file_contents(const char *file, uint32_t *length)
 {
@@ -68,7 +41,7 @@ unsigned char	*get_file_contents(const char *file, uint32_t *length)
 	return (content);
 }
 
-int		get_cartridge_type(uint8_t *mem, t_cartridge *cart)
+int		gecartridge_t_type(uint8_t *mem, cartridge_t *cart)
 {
 	uint8_t	*start = mem;
 	uint8_t	sum = 0;
@@ -151,28 +124,47 @@ int		get_cartridge_type(uint8_t *mem, t_cartridge *cart)
 
 void	malloc_blocks(memory_map_t *memmap, int type)
 {
-	memmap->complete_block = malloc(0x10000);
-	memmap->fixed_rom = memmap->complete_block;
-	memmap->switch_rom = memmap->complete_block + 0x4000;
-	memmap->rom_banks[0] = NULL;
-	memmap->vram = memmap->complete_block + 0x8000;
-	memmap->vram_banks[0] = malloc(0x2000);
-	memmap->vram_banks[1] = malloc(0x2000);
-	memmap->extern_ram = memmap->complete_block + 0xa000;
-	memmap->extern_ram_banks[0] = NULL;
-	memmap->fixed_ram = memmap->complete_block + 0xc000;
-	memmap->switch_ram = memmap->complete_block + 0xd000;
-	for (unsigned int i = 0; i < 8; i++)
-		memmap->ram_banks[i] = malloc(0x1000);
-	memmap->redzone = memmap->complete_block + 0xe000;
-	memmap->oam = memmap->complete_block + 0xfe00;
-	memmap->cpu_redzone = memmap->complete_block + 0xfea0;
-	memmap->hardware_regs = memmap->complete_block + 0xff00;
-	memmap->stack_ram = memmap->complete_block + 0xff80;
-	memmap->int_flags = memmap->complete_block + 0xffff;
+	// 0x0000 - 0xffff
+	g_memmap->complete_block = valloc(0x10000);
+	// 0x0000 - 0x3fff
+	g_memmap->fixed_rom = g_memmap->complete_block;
+	// 0x4000 - 0x7fff
+	g_memmap->switch_rom = g_memmap->complete_block + 0x4000;
+	g_memmap->rom_banks[0] = NULL;
+	// 0x8000 - 0xa000
+	g_memmap->vram = g_memmap->complete_block + 0x8000;
+	g_memmap->vram_banks[0] = valloc(0x4000);
+	g_memmap->vram_banks[1] = g_memmap->vram_banks[0] + 0x2000;
+	// 0xa000 - 0xbfff
+	g_memmap->fixed_ram = g_memmap->complete_block + 0xc000;
+	g_memmap->switch_ram = g_memmap->complete_block + 0xd000;
+	g_memmap->ram_banks[0] = valloc(0x8000);
+	for (unsigned int i = 1; i < 8; i++)
+		g_memmap->ram_banks[i] = g_memmap->ram_banks[i - 1] + 0x1000;
+	g_memmap->redzone = g_memmap->complete_block + 0xe000;
+	g_memmap->oam = g_memmap->complete_block + 0xfe00;
+	g_memmap->cpu_redzone = g_memmap->complete_block + 0xfea0;
+	g_memmap->hardware_regs = g_memmap->complete_block + 0xff00;
+	g_memmap->stack_ram = g_memmap->complete_block + 0xff80;
+	g_memmap->int_flags = g_memmap->complete_block + 0xffff;
+
+	g_get_real_read_addr[0] = g_memmap.fixed_rom;			//0x0000
+	g_get_real_read_addr[1] = g_memmap.fixed_rom + 0x1000;	//0x1000
+	g_get_real_read_addr[2] = g_memmap.fixed_rom + 0x2000;	//0x2000
+	g_get_real_read_addr[3] = g_memmap.fixed_rom + 0x3000;	//0x3000
+	g_get_real_read_addr[4] = g_memmap.switch_rom;			//0x4000
+	g_get_real_read_addr[5] = g_memmap.switch_rom + 0x1000;	//0x5000
+	g_get_real_read_addr[6] = g_memmap.switch_rom + 0x2000;	//0x6000
+	g_get_real_read_addr[7] = g_memmap.switch_rom + 0x3000;	//0x7000
+	g_get_real_read_addr[8] = g_memmap.vram;				//0x8000
+	g_get_real_read_addr[9] = g_memmap.vram + 0x1000;		//0x9000
+	g_get_real_read_addr[10] = g_memmap.extern_ram;			//0xa000
+	g_get_real_read_addr[11] = g_memmap.extern_ram + 0x1000;//0xb000
+	g_get_real_read_addr[12] = g_memmap.fixed_ram;			//0xc000
+	g_get_real_read_addr[13] = g_memmap.switch_ram;			//0xd000
 }
 
-void	load_cartridge_on_memory(uint8_t *mem, memory_map_t *memmap, t_cartridge *cart, uint32_t type)
+void	load_cartridge_on_memory(uint8_t *mem, memory_map_t *memmap, cartridge_t *cart, uint32_t type)
 {
 	uint32_t	cartsiz = 0x8000;
 	uint8_t		*banks;
@@ -206,15 +198,44 @@ void	load_cartridge_on_memory(uint8_t *mem, memory_map_t *memmap, t_cartridge *c
 	}
 }
 
-void	load_rom_only_cartridge(memory_map_t *memmap, uint8_t *mem, t_cartridge *cart)
+void	load_rom_only_cartridge(memory_map_t *memmap, uint8_t *mem, cartridge_t *cart)
 {
 	malloc_blocks(memmap, ROM_ONLY);
 	load_cartridge_on_memory(mem, memmap, cart, ROM_ONLY);
 	cart->mbc = ROM_ONLY;
+
+	g_get_real_write_addr[0] = ;
+	g_get_real_write_addr[1] = ;
+	g_get_real_write_addr[2] = ;
+	g_get_real_write_addr[3] = ;
+	g_get_real_write_addr[4] = ;
+	g_get_real_write_addr[5] = ;
+	g_get_real_write_addr[6] = ;
+	g_get_real_write_addr[7] = ;
+	g_get_real_write_addr[8] = ;
+		uint8_t	*g_get_real_write_addr[16] = {
+			NULL,							//0x0
+			NULL,							//0x1
+			NULL,							//0x2
+			NULL,							//0x3
+			NULL,							//0x4
+			NULL,							//0x5
+			NULL,							//0x6
+			NULL,							//0x7
+			memmap.vram,					//0x8
+			memmap.vram + 0x1000,			//0x9
+			memmap.extern_ram,				//0xa
+			memmap.extern_ram + 0x1000,		//0xb
+			memmap.fixed_ram,				//0xc
+			memmap.switch_ram,				//0xd
+			NULL,
+			NULL
+		};
+
 	puts("\e[0;32mCARTRIDGE LOADED WITH SUCCESS\e[0m");
 }
 
-void	load_MBC1_cartridge(memory_map_t *memmap, uint8_t *mem, t_cartridge *cart)
+void	load_MBC1_cartridge(memory_map_t *memmap, uint8_t *mem, cartridge_t *cart)
 {
 	malloc_blocks(memmap, MBC1);
 	load_cartridge_on_memory(mem, memmap, cart, MBC1);
@@ -222,28 +243,28 @@ void	load_MBC1_cartridge(memory_map_t *memmap, uint8_t *mem, t_cartridge *cart)
 	puts("\e[0;32mCARTRIDGE LOADED WITH SUCCESS\e[0m");
 }
 
-void	load_MBC2_cartridge(memory_map_t *memmap, uint8_t *mem, t_cartridge *cart)
+void	load_MBC2_cartridge(memory_map_t *memmap, uint8_t *mem, cartridge_t *cart)
 {
 	fprintf(stderr, "Not implemented...\n");
 	exit (1);
 }
 
-void	load_MBC3_cartridge(memory_map_t *memmap, uint8_t *mem, t_cartridge *cart)
+void	load_MBC3_cartridge(memory_map_t *memmap, uint8_t *mem, cartridge_t *cart)
 {
 	fprintf(stderr, "Not implemented...\n");
 	exit (1);
 }
 
-void	load_MBC5_cartridge(memory_map_t *memmap, uint8_t *mem, t_cartridge *cart)
+void	load_MBC5_cartridge(memory_map_t *memmap, uint8_t *mem, cartridge_t *cart)
 {
 	fprintf(stderr, "Not implemented...\n");
 	exit (1);
 }
 
 
-void	load_cartridge(memory_map_t *memmap, uint8_t *mem, t_cartridge *cart)
+void	load_cartridge(memory_map_t *memmap, uint8_t *mem, cartridge_t *cart)
 {
-	if (get_cartridge_type(mem, cart) == -1)
+	if (gecartridge_t_type(mem, cart) == -1)
 	{
 		fprintf(stderr, "Invalid cartridge\n");
 		exit (1);
@@ -276,7 +297,7 @@ void	load_cartridge(memory_map_t *memmap, uint8_t *mem, t_cartridge *cart)
 int		main(int ac, char *av[])
 {
 	memory_map_t	memmap = {0};
-	t_cartridge		cartridge = {0};
+	cartridge_t		cartridge = {0};
 	uint8_t			*content;
 
 	if (ac != 2)

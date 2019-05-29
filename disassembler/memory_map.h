@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/23 11:44:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/28 17:51:16 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/29 10:27:31 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -50,7 +50,6 @@
 
 			switch virtuel...
 
-*/
 
 		memory_map_t	memmap;
 
@@ -93,33 +92,49 @@
 		};
 
 
-/*
-		exemples:
-			acces a l'adresse 0x7e04 -> (memmap.switch_rom)
-*/
-
-# define GET_REAL_READ_ADDR(virtual_addr)	(virtual_addr + memmap.complete_block)
-# define GET_REAL_WRITE_ADDR(virtual_addr)	\
-		 (\
-			(virtual_addr < 0x8000) ?\
-				g_get_real_write_addr[(virtual_addr >> 12)] :\
-				g_get_real_write_addr[(virtual_addr >> 12)] + (virtual_addr & 0xfff)\
-		 )
-
+		exemple:
+```````````````````````````````````````````````````````````````````````````
+			// acces a l'adresse 0x7e04 -> (memmap.switch_rom)
 
 			uint8_t		*virtual_addr = 0x7e04;
 			uint8_t		*real_addr;
 
 			real_addr = GET_REAL_READ_ADDR(virtual_addr);
+````````````````````````````````````````````````````````````````````````````
 
-/*			
 	il faudrait faire une condition pour savoir si on veut
 	ecrire ou lire l'adresse (et un deuxieme tableau avec juste la partie ROM).
 	(ecrire dans la ROM modifie les registres,
 	lire la ROM c'est juste recuperer le code du jeu.)
 */
 
+enum	e_cartridge_types
+{
+	ROM_ONLY, MBC1, MBC2, MBC3, MBC5
+};
 
+typedef struct
+{
+	int32_t		jump_addr;				//0x102 - 0x104
+	char		game_title[16];			//0x134 - 0x13e
+	char		game_code[8];			//0x13f - 0x142
+	int32_t		cgb_support_code;		//0x143
+	char		maker_code[8];			//0x144-0x145
+	int32_t		sgb_support_code;		//0x146
+	int32_t		type;					//0x147
+	int32_t		rom_size;				//0x148
+	int32_t		extern_ram_size;		//0x149
+	int32_t		destination_code;		//0x14a
+	int32_t		rom_version;			//0x14c
+	int32_t		sum_complement;			//0x14d
+	int32_t		hi_check_sum;			//0x14e
+	int32_t		lo_check_sum;			//0x14f
+
+	uint32_t	size;					//cartridge total size
+	uint32_t	n_banks;				//additionnal ROM banks
+	uint32_t	mbc;					//mbc number (0 == ROM_ONLY)
+}
+cartridge_t;
 
 typedef struct	memory_map_s
 {
@@ -161,5 +176,24 @@ typedef struct	memory_map_s
 	uint8_t		*int_flags;		// 0xffff
 
 }				memory_map_t;
+
+uint8_t			*g_get_real_read_addr[16] = {NULL};
+uint8_t			*g_get_real_write_addr[16] = {NULL};
+memory_map_t	g_memmap = {NULL};
+
+# define GET_REAL_READ_ADDR(virtual_addr)	\
+		 (\
+			(g_get_real_read_addr[(virtual_addr >> 12)]) ?\
+				g_get_real_read_addr[(virtual_addr >> 12)] + (virtual_addr & 0xfff) :\
+				virtual_addr + g_memmap.complete_block\
+		 )
+# define GET_REAL_WRITE_ADDR(virtual_addr)	\
+		 (\
+			(virtual_addr < 0x8000) ?\
+				g_get_real_write_addr[(virtual_addr >> 12)] :\
+				(g_get_real_write_addr[(virtual_addr >> 12)]) ?\
+					g_get_real_write_addr[(virtual_addr >> 12)] + (virtual_addr & 0xfff) :\
+					virtual_addr + g_memmap.complete_block\
+		 )
 
 #endif
