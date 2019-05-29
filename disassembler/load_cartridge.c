@@ -1,3 +1,16 @@
+/* ************************************************************************** */
+/*                                                          LE - /            */
+/*                                                              /             */
+/*   load_cartridge.c                                 .::    .:/ .      .::   */
+/*                                                 +:+:+   +:    +:  +:+:+    */
+/*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
+/*                                                 #+#   #+    #+    #+#      */
+/*   Created: 2019/05/29 17:38:18 by fcordon      #+#   ##    ##    #+#       */
+/*   Updated: 2019/05/29 17:49:36 by fcordon     ###    #+. /#+    ###.fr     */
+/*                                                         /                  */
+/*                                                        /                   */
+/* ************************************************************************** */
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,6 +29,30 @@
 							"\xDC\xCC\x6E\xE6\xDD\xDD\xD9\x99\xBB\xBB\x67\x63"\
 							"\x6E\x0E\xEC\xCC\xDD\xDC\x99\x9F\xBB\xB9\x33\x3E"
 
+#define ROM_MAX_LENGTH		0x800000
+
+void			put_file_contents(const char *file, const void *content, uint32_t length)
+{
+	const int		fd = open(file, O_WRONLY | O_TRUNC | O_CREAT, 0664);
+
+	if (fd == -1)
+	{
+		fprintf(stderr, "can't open file %s\n", file);
+		exit(1);
+	}
+	if (write(fd, content, length) != length)
+	{
+		fprintf(stderr, "save failure\n");
+		exit(1);
+	}
+	close(fd);
+}
+
+void	save_external_ram(void)
+{
+	put_file_contents(g_memmap.save_name, g_memmap.extern_ram, g_memmap.save_size);
+}
+
 unsigned char	*get_file_contents(const char *file, uint32_t *length)
 {
 	unsigned char	*content;
@@ -33,11 +70,18 @@ unsigned char	*get_file_contents(const char *file, uint32_t *length)
 		fprintf(stderr, "empty file\n");
 		return (NULL);
 	}
-	if ((content = valloc(filestat.st_size + 1)) != NULL)
+	else if (filestat.st_size > ROM_MAX_LENGTH)
 	{
-		*length = read(fd, content, filestat.st_size);
-		close(fd);
+		fprintf(stderr, "too heavy file\n");
+		return (NULL);
 	}
+	if ((content = valloc(filestat.st_size)) == NULL)
+	{
+		fprintf(stderr, "malloc fatal error\n");
+		return (NULL);
+	}
+	*length = read(fd, content, filestat.st_size);
+	close(fd);
 	return (content);
 }
 
@@ -211,31 +255,27 @@ void	load_cartridge_on_memory(uint8_t *mem, cartridge_t *cart, uint32_t type)
 	uint32_t	cartsize = 0x8000;
 	uint8_t		*rom;
 
-	switch (cart->rom_size)
-	{
-		case 0x08: cartsize <<= 8; cart->n_banks = 512; break;
-		case 0x07: cartsize <<= 7; cart->n_banks = 256; break;
-		case 0x06: cartsize <<= 6; cart->n_banks = 128; break;
-		case 0x05: cartsize <<= 5; cart->n_banks = 64; break;
-		case 0x04: cartsize <<= 4; cart->n_banks = 32; break;
-		case 0x03: cartsize <<= 3; cart->n_banks = 16; break;
-		case 0x02: cartsize <<= 2; cart->n_banks = 8; break;
-		case 0x01: cartsize <<= 1; cart->n_banks = 4;
+	if (cart->rom_size) {
+		cartsize = 0x8000 << cart->rom_size;
+		cart->n_rom_banks = 2 << cart->rom_size;
 	}
-	if (cart->size != cartsize)
-	{
-		fprintf(stderr, "\e[0;31mcartridge size invalid\e[0m\n");
+	else {
+		cartsize = 0x8000;
+		cart->n_rom_banks = 0;
+	}
+
+	if (cart->size != cartsize) {
+		fprintf(stderr, "\e[0;31minvalid cartridge size\e[0m\n");
 		exit(1);
 	}
 
 	rom = valloc(cartsize);
 	memcpy(rom, mem, cartsize);
-	mem += 0x8000;
-	for (uint32_t i = 0; i < cart->n_banks; i++)
+	g_memmap.fixed_rom = rom;
+	rom += 0x8000;
+	for (uint32_t i = 0; i < cart->n_rom_banks; i++)
 	{
 		g_memmap.rom_banks[i] = rom;
-		memcpy(g_memmap.rom_banks[i], mem, 0x4000);
-		mem += 0x4000;
 		rom += 0x4000;
 	}
 }
@@ -306,15 +346,12 @@ void	load_MBC5_cartridge(uint8_t *mem, cartridge_t *cart)
 	exit (1);
 }
 
-void	save_external_ram()
-{
-	
-}
-
 void	load_saved_external_ram(cartridge_t *cart, const char *path)
 {
-	char	*save_name = valloc(strlen(path) + 2);
-	char	*p;
+	char		*save_name = valloc(strlen(path) + 2);
+	char		*p;
+	uint8_t		*save;
+	uint32_t	length;
 
 	strcpy(save_name, path);
 	if ((p = strrchr(save_name, '.')) == NULL || (strcmp(".gb", p) && strcmp(".gbc", p)))
@@ -331,6 +368,20 @@ void	load_saved_external_ram(cartridge_t *cart, const char *path)
 		g_memmap.save_name = NULL;
 		return;
 	}
+
+	if ((save = get_file_contents(save_name, &length)) == NULL)
+	{
+		bzero(g_memmap.extern_ram, g_memmap.save_size);
+		return ;
+	}
+	if (length != g_memmap.save_size)
+	{
+		fprintf(stderr, "%s: wrong size, abort loading\n", save_name);
+		free(save);
+		return;
+	}
+	memcpy(g_memmap.extern_ram, save, g_memmap.save_size);
+	free(save);
 }
 
 void	load_cartridge(uint8_t *mem, cartridge_t *cart, const char *path)
@@ -391,12 +442,9 @@ void	open_cartridge(const char *path)
 	uint8_t			*content;
 
 	if ((content = get_file_contents(path, &cartridge.size)) == NULL)
-	{
 		exit(1);
-	}
 	load_cartridge(content, &cartridge, path);
 	free(content);
-	return (0);
 }
 
 int		main(int ac, char *av[])

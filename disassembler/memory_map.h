@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/23 11:44:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/29 16:27:09 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/29 17:40:59 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -139,7 +139,7 @@ typedef struct	memory_map_s
 	uint8_t		*int_flags;		// 0xffff
 
 	uint8_t		cart_reg[8];	// cartridge registers
-	uint8_t		*save_name;		// saved game file name
+	char		*save_name;		// saved game file name
 	uint32_t	mbc;			// mbc number (0 == ROM_ONLY)
 	uint32_t	save_size;		// size of ram
 }
