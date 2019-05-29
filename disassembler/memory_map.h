@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/23 11:44:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/29 17:40:59 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/29 20:47:22 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -75,6 +75,24 @@ enum	e_cartridge_types
 	ROM_ONLY, MBC1, MBC2, MBC3, MBC5
 };
 
+# define MBC1_RAM_ENABLE		0
+# define MBC1_ROM_NUM			1
+# define MBC1_RAM_NUM			2
+# define MBC1_MODE				3
+
+# define MBC2_RAM_ENABLE		0
+# define MBC2_ROM_NUM			1
+
+# define MBC3_RAM_TIMER_ENABLE	0
+# define MBC3_ROM_NUM			1
+# define MBC3_ROM_RTC_SELECT	2
+# define MBC3_CLOCK_DATA		3
+
+# define MBC5_RAM_ENABLE		0
+# define MBC5_LOW_ROM_NUM		1
+# define MBC5_HI_ROM_NUM		2
+# define MBC5_RAM_NUM			3
+
 typedef struct
 {
 	int32_t		jump_addr;				//0x102 - 0x104
@@ -138,6 +156,8 @@ typedef struct	memory_map_s
 	uint8_t		*stack_ram;		// 0xff80 - 0xfffe
 	uint8_t		*int_flags;		// 0xffff
 
+	uint32_t	cur_extern_ram;	// Numero of extern ram bank
+
 	uint8_t		cart_reg[8];	// cartridge registers
 	char		*save_name;		// saved game file name
 	uint32_t	mbc;			// mbc number (0 == ROM_ONLY)
@@ -150,19 +170,18 @@ uint8_t			*g_get_real_read_addr[16] = {NULL};
 uint8_t			*g_get_real_write_addr[16] = {NULL};
 memory_map_t	g_memmap = {NULL};
 
-# define GET_REAL_READ_ADDR(virtual_addr)	\
+void			write_cartridge_register(uint32_t i, uint8_t value);
+
+# define GET_REAL_ADDR(virtual_addr)	\
 		 (\
 			(g_get_real_read_addr[(virtual_addr >> 12)]) ?\
 				g_get_real_read_addr[(virtual_addr >> 12)] + (virtual_addr & 0xfff) :\
 				virtual_addr + g_memmap.complete_block\
 		 )
-# define GET_REAL_WRITE_ADDR(virtual_addr)	\
-		 (\
-			(virtual_addr < 0x8000) ?\
-				g_get_real_write_addr[(virtual_addr >> 12)] :\
-				(g_get_real_write_addr[(virtual_addr >> 12)]) ?\
-					g_get_real_write_addr[(virtual_addr >> 12)] + (virtual_addr & 0xfff) :\
-					virtual_addr + g_memmap.complete_block\
-		 )
+# define WRITE_TO_MBC_REGISTER(virtual_addr, data)	\
+			do {\
+				if (virtual_addr < 0x8000)\
+					write_cartridge_register((virtual_addr >> 12), data);\
+			} while(0);
 
 #endif

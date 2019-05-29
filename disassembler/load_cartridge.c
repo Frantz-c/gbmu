@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/29 17:38:18 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/29 17:49:36 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/29 20:03:24 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -200,7 +200,7 @@ void	malloc_blocks(cartridge_t *cart)
 	else
 	{
 		g_memmap.extern_ram = valloc(g_memmap.save_size);
-		g_memmap.extern_ram_banks[0] = g_memmap.extern_ram + 0x2000;
+		g_memmap.extern_ram_banks[0] = g_memmap.extern_ram;
 		for (unsigned int i = 1; i < cart->n_ram_banks; i++)
 			g_memmap.extern_ram_banks[i] = g_memmap.extern_ram_banks[i - 1] + 0x2000;
 	}
@@ -225,7 +225,7 @@ void	malloc_blocks(cartridge_t *cart)
 	// 0xffff
 	g_memmap.int_flags = g_memmap.complete_block + 0xffff;
 
-	// convertion virtual addresse to real addresse (read)
+	// convertion virtual addresse to real addresse
 	g_get_real_read_addr[0] = g_memmap.fixed_rom;			//0x0000
 	g_get_real_read_addr[1] = g_memmap.fixed_rom + 0x1000;	//0x1000
 	g_get_real_read_addr[2] = g_memmap.fixed_rom + 0x2000;	//0x2000
@@ -285,22 +285,22 @@ void	load_rom_only_cartridge(uint8_t *mem, cartridge_t *cart)
 	cart->mbc = ROM_ONLY;
 	malloc_blocks(cart);
 	load_cartridge_on_memory(mem, cart, ROM_ONLY);
-
-	g_get_real_write_addr[0] = g_memmap.redzone;
-	g_get_real_write_addr[1] = g_memmap.redzone;
-	g_get_real_write_addr[2] = g_memmap.redzone;
-	g_get_real_write_addr[3] = g_memmap.redzone;
-	g_get_real_write_addr[4] = g_memmap.redzone;
-	g_get_real_write_addr[5] = g_memmap.redzone;
-	g_get_real_write_addr[6] = g_memmap.redzone;
-	g_get_real_write_addr[7] = g_memmap.redzone;
+/*
+	g_get_real_write_addr[0] = g_memmap.complete_block;
+	g_get_real_write_addr[1] = g_memmap.complete_block;
+	g_get_real_write_addr[2] = g_memmap.complete_block;
+	g_get_real_write_addr[3] = g_memmap.complete_block;
+	g_get_real_write_addr[4] = g_memmap.complete_block;
+	g_get_real_write_addr[5] = g_memmap.complete_block;
+	g_get_real_write_addr[6] = g_memmap.complete_block;
+	g_get_real_write_addr[7] = g_memmap.complete_block;
 	g_get_real_write_addr[8] = g_memmap.vram;					//0x8000
 	g_get_real_write_addr[9] = g_memmap.vram + 0x1000;			//0x9000
 	g_get_real_write_addr[10] = g_memmap.extern_ram;			//0xa000
 	g_get_real_write_addr[11] = g_memmap.extern_ram + 0x1000;	//0xb000
 	g_get_real_write_addr[12] = g_memmap.fixed_ram;				//0xc000
 	g_get_real_write_addr[13] = g_memmap.switch_ram;			//0xd000
-
+*/
 	puts("\e[0;32mCARTRIDGE LOADED WITH SUCCESS\e[0m");
 }
 
@@ -309,7 +309,7 @@ void	load_MBC1_cartridge(uint8_t *mem, cartridge_t *cart)
 	cart->mbc = MBC1;
 	malloc_blocks(cart);
 	load_cartridge_on_memory(mem, cart, MBC1);
-
+/*
 	g_get_real_write_addr[0] = g_memmap.cart_reg;
 	g_get_real_write_addr[1] = g_memmap.cart_reg;
 	g_get_real_write_addr[2] = g_memmap.cart_reg + 1;
@@ -324,7 +324,7 @@ void	load_MBC1_cartridge(uint8_t *mem, cartridge_t *cart)
 	g_get_real_write_addr[11] = g_memmap.extern_ram + 0x1000;	//0xb000
 	g_get_real_write_addr[12] = g_memmap.fixed_ram;				//0xc000
 	g_get_real_write_addr[13] = g_memmap.switch_ram;			//0xd000
-
+*/
 	puts("\e[0;32mCARTRIDGE LOADED WITH SUCCESS\e[0m");
 }
 
@@ -434,6 +434,12 @@ void	load_cartridge(uint8_t *mem, cartridge_t *cart, const char *path)
 		case 0x1b:
 		case 0x1e: load_saved_external_ram(cart, path);
 	}
+	g_memmap.cur_extern_ram = 0;
+	g_memmap.cart_reg[0] = 0;
+	g_memmap.cart_reg[1] = 0;
+	g_memmap.cart_reg[2] = 0;
+	g_memmap.cart_reg[3] = 0;
+	g_memmap.cart_reg[4] = 0;
 }
 
 void	open_cartridge(const char *path)
