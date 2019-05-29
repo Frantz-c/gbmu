@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/23 11:44:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/29 10:27:31 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/29 16:27:09 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -18,39 +18,6 @@
 # include <stddef.h>
 
 /*
-	Realisation des differents switch:
-
-		1) working ram:
-			4096 octets a remplacer par copie
-			ex:
-			`````````````````````````````````````````````````````````````````
-				memcpy(extern_ram, extern_ram_banks[4], 8192); //switch bank 5
-
-			`````````````````````````````````````````````````````````````````
-
-			ou
-			
-			switch "virtuel"
-				j'ai implemente une version non testee,
-				a base de tableau de label.
-				c'est aussi faisable avec un tableau de pointeur ou en cachant
-				le tableau de label dans une fonction.
-			ex:
-			`````````````````````````````````````````````````````````````````
-				extern_ram = extern_ram_banks[4];
-				get_real_addr[0xa] = extern_ram;
-				get_real_addr[0xb] = extern_ram + 0x1000;
-
-			`````````````````````````````````````````````````````````````````
-	
-		2) ROM:
-			16384 octets a remplacer par copie...
-
-			ou
-
-			switch virtuel...
-
-
 		memory_map_t	memmap;
 
 		uint8_t	*g_get_real_read_addr[16] = {
@@ -101,11 +68,6 @@
 
 			real_addr = GET_REAL_READ_ADDR(virtual_addr);
 ````````````````````````````````````````````````````````````````````````````
-
-	il faudrait faire une condition pour savoir si on veut
-	ecrire ou lire l'adresse (et un deuxieme tableau avec juste la partie ROM).
-	(ecrire dans la ROM modifie les registres,
-	lire la ROM c'est juste recuperer le code du jeu.)
 */
 
 enum	e_cartridge_types
@@ -131,7 +93,8 @@ typedef struct
 	int32_t		lo_check_sum;			//0x14f
 
 	uint32_t	size;					//cartridge total size
-	uint32_t	n_banks;				//additionnal ROM banks
+	uint32_t	n_rom_banks;			//total of additionnal ROM banks
+	uint32_t	n_ram_banks;			//total of additionnal RAM banks
 	uint32_t	mbc;					//mbc number (0 == ROM_ONLY)
 }
 cartridge_t;
@@ -175,7 +138,13 @@ typedef struct	memory_map_s
 	uint8_t		*stack_ram;		// 0xff80 - 0xfffe
 	uint8_t		*int_flags;		// 0xffff
 
-}				memory_map_t;
+	uint8_t		cart_reg[8];	// cartridge registers
+	uint8_t		*save_name;		// saved game file name
+	uint32_t	mbc;			// mbc number (0 == ROM_ONLY)
+	uint32_t	save_size;		// size of ram
+}
+memory_map_t;
+
 
 uint8_t			*g_get_real_read_addr[16] = {NULL};
 uint8_t			*g_get_real_write_addr[16] = {NULL};

@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/24 14:40:04 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/25 22:35:24 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/29 16:56:27 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -141,7 +141,7 @@ char	*cartridge_type(int c)
 */
 char	*rom_size(int c, int rt)
 {
-	int		mbc1 = (rt == 5 || rt == 6);
+	int		mbc1 = (rt && rt < 4);
 
 	switch (c)
 	{
@@ -159,7 +159,7 @@ char	*rom_size(int c, int rt)
 }
 /*
 00h - None
-01h - 2 KBytes
+01h - 2 KBytes ??
 02h - 8 Kbytes
 03h - 32 KBytes (4 banks of 8KBytes each)
 04h - 128 KBytes (16 banks of 8KBytes each)
@@ -170,7 +170,7 @@ char	*ram_size(int c)
 	switch (c)
 	{
 		case 0x00: return ("No RAM");
-		case 0x01: return ("16 KBits (2 Kbyte)");
+		//case 0x01: return ("16 KBits (2 Kbyte)");
 		case 0x02: return ("64 KBits (8 KBytes)");
 		case 0x03: return ("256 KBits (32 KBytes : 4 banks of 8 KBytes)");
 		case 0x04: return ("1 MBit (128 KBytes : 16 banks of 8 KBytes)");

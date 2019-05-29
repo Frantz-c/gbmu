@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/22 22:17:53 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/23 16:48:22 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/29 15:24:20 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -158,8 +158,8 @@ static void		*fmt_strcpy(char *dst, char *src,
 	}
 	else
 	{
-		puts("ERROR\n");
-		exit (1);
+		fprintf(stderr, "\e[0;31mFATAL ERROR\e[0m\n");
+		exit(1);
 	}
 	strcpy(dst, numeric);
 	dst += strlen(numeric);
@@ -229,17 +229,18 @@ int				disassemble_region(char **disassembled_code, void *binary,
 		}
 		else
 		{
-			if (i + 45 >= buflen)
+			if (i + 40 >= buflen)
 			{
-				buflen += 46;
+				buflen += 41;
 				buf = realloc(buf, buflen);
 				if (!buf) {
 					fprintf(stderr, "realloc fatal error\n");
 					exit(1);
 				}
 			}
-			sprintf(buf + i, "\e[1;31mILLEGAL INSTRUCTION: \e[0mstop (0x%hhx)\e[0m\n", *(uint8_t*)binary);
-			break;
+			i += sprintf(buf + i, "\e[1;31mILLEGAL INSTRUCTION: (0x%hhx)\e[0m\n", *(uint8_t*)binary);
+			binary++;
+			//break;
 		}
 	}
 	*disassembled_code = buf;
