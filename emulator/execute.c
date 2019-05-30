@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/29 09:59:24 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/29 16:54:53 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/30 11:05:38 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -75,7 +75,19 @@ cycle_count_t	execute(registers_t *regs)
 		&&retnz,			&&pop_bc,			&&jpnz_imm16,		&&jp_imm16,
 		&&callnz_imm16,		&&push_bc,			&&add_a_imm8,		&&rst_00h,
 		&&retz,				&&ret,				&&jpz_imm16,		&&prefix_cb,
-		&&callz_imm16,		&&call_imm16,		&&adc_a_imm8,		&&rst_08h
+		&&callz_imm16,		&&call_imm16,		&&adc_a_imm8,		&&rst_08h,
+		&&retnc,			&&pop_de,			&&jpnc_imm16,		&&illegal,
+		&&callnc_imm16,		&&push_de,			&&sub_a_imm8,		&&rst_10h,
+		&&retc,				&&reti,				&&jpc_imm16,		&&illegal,
+		&&callc_imm16,		&&illegal,			&&sbc_a_imm8,		&&rst_18h,
+		&&ldff_imm8_a,		&&pop_hl,			&&ldff_c_a,			&&illegal,
+		&&illegal,			&&push_hl,			&&and_a_imm8,		&&rst_20h,
+		&&add_sp_imm8,		&&jp_hl,			&&ld_imm16_a,		&&illegal,
+		&&illegal,			&&illegal,			&&xor_a_imm8,		&&rst_28h,
+		&&ldff_a_imm8,		&&pop_af,			&&ldff_a_c,			&&di,
+		&&illegal,			&&push_af,			&&or_a_imm8,		&&rst_30h,
+		&&ld_hl_sp_imm8,	&&ld_sp_hl,			&&ld_a_imm16,		&&ei,
+		&&illegal,			&&illegal,			&&cp_a_imm8,		&&rst_38h
 	};
 
 	uint8_t			*address;
@@ -1850,6 +1862,164 @@ rst_08h:
 	address[-2] = (uint8_t)(regs->reg_pc);
 	regs->reg_pc = 0x08u;
 	return (16);
+
+retnc:
+	if ((regs->reg_f & FLAG_CY) == 0)
+	{
+		address = GET_REAL_READ_ADDR(regs->reg_sp);
+		regs->reg_sp += 2;
+		SET_PC(((uint16_t)address[1] << 8) | (uint16_t)address[0]);
+		return (20);
+	}
+	else
+	{
+		ADD_PC(1);
+		return (8);
+	}
+
+pop_de:
+	ADD_PC(1);
+	address = GET_REAL_READ_ADDR(regs->reg_sp);
+	regs->reg_sp += 2;
+	regs->reg_de = ((uint16_t)address[1] << 8) | (uint16_t)address[0];
+	return (12);
+
+jpnc_imm16:
+	if ((regs->reg_f & FLAG_CY) == 0)
+	{
+		SET_PC(imm_16);
+		return (16);
+	}
+	else
+	{
+		ADD_PC(3);
+		return (12);
+	}
+
+callnc_imm16:
+	if ((regs->reg_f & FLAG_CY) == 0)
+	{
+		address = GET_REAL_WRITE_ADDR(regs->reg_sp);
+		regs->reg_sp -= 2;
+		address[-1] = (uint8_t)(imm_16 >> 8);
+		address[-2] = (uint8_t)(imm_16);
+		SET_PC(imm_16);
+		return (24);
+	}
+	else
+	{
+		ADD_PC(3);
+		return (12);
+	}
+
+push_de:
+	ADD_PC(1);
+	address = GET_REAL_WRITE_ADDR(regs->reg_sp);
+	regs->reg_sp -= 2;
+	address[-1] = (uint8_t)(regs->reg_de >> 8);
+	address[-2] = (uint8_t)(regs->reg_de);
+	return (16);
+
+sub_a_imm8:
+	ADD_PC(1);
+	regs->reg_f = FLAG_N;
+	imm_8 = regs->reg_a - imm_8;
+	if (imm_8 > regs->reg_a)
+		regs->reg_f |= FLAG_CY;
+	if ((imm_8 & 0xFu) > (regs->reg_a & 0xFu))
+		regs->reg_f |= FLAG_H;
+	if (imm_8 == 0)
+		regs->reg_f |= FLAG_Z;
+	regs->reg_a = imm_8;
+	return (4);
+
+rst_10h:
+	ADD_PC(1);
+	address = GET_REAL_WRITE_ADDR(regs->reg_sp);
+	regs->reg_sp -= 2;
+	address[-1] = (uint8_t)(regs->reg_pc >> 8);
+	address[-2] = (uint8_t)(regs->reg_pc);
+	regs->reg_pc = 0x10u;
+	return (16);
+
+retc:
+	if ((regs->reg_f & FLAG_CY) == FLAG_CY)
+	{
+		address = GET_REAL_READ_ADDR(regs->reg_sp);
+		regs->reg_sp += 2;
+		SET_PC(((uint16_t)address[1] << 8) | (uint16_t)address[0]);
+		return (20);
+	}
+	else
+	{
+		ADD_PC(1);
+		return (8);
+	}
+
+reti:
+	ADD_PC(1);
+
+	// Va te faire ...
+
+	return (16);
+
+jpc_imm16:
+	if ((regs->reg_f & FLAG_CY) == FLAG_CY)
+	{
+		SET_PC(imm_16);
+		return (16);
+	}
+	else
+	{
+		ADD_PC(3);
+		return (12);
+	}
+
+callc_imm16:
+	if ((regs->reg_f & FLAG_CY) == FLAG_CY)
+	{
+		address = GET_REAL_WRITE_ADDR(regs->reg_sp);
+		regs->reg_sp -= 2;
+		address[-1] = (uint8_t)(imm_16 >> 8);
+		address[-2] = (uint8_t)(imm_16);
+		SET_PC(imm_16);
+		return (24);
+	}
+	else
+	{
+		ADD_PC(3);
+		return (12);
+	}
+
+sbc_a_imm8:
+	ADD_PC(1);
+	tmpflag = regs->reg_f;
+	regs->reg_f = FLAG_N;
+	imm_8 = regs->reg_a - imm_8;
+	imm_8 -= ((tmpflag & FLAG_CY) == FLAG_CY) ? 1 : 0;
+	if (imm_8 > regs->reg_a ||
+		(imm_8 == regs->reg_a && (tmpflag & FLAG_CY) == FLAG_CY))
+		regs->reg_f |= FLAG_CY;
+	if ((imm_8 & 0xFu) > (regs->reg_a & 0xFu) ||
+		(imm_8 & 0xFu) == (regs->reg_a & 0xFu) && (tmpflag & FLAG_CY) == FLAG_CY)
+		regs->reg_f |= FLAG_H;
+	if (imm_8 == 0)
+		regs->reg_f |= FLAG_Z;
+	regs->reg_a = imm_8;
+	return (4);
+
+rst_18h:
+	ADD_PC(1);
+	address = GET_REAL_WRITE_ADDR(regs->reg_sp);
+	regs->reg_sp -= 2;
+	address[-1] = (uint8_t)(regs->reg_pc >> 8);
+	address[-2] = (uint8_t)(regs->reg_pc);
+	regs->reg_pc = 0x18u;
+	return (16);
+
+illegal:
+	ADD_PC(1);
+	return (0);
 
 prefix_cb:
 	ADD_PC(2);
