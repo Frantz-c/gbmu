@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/29 17:52:58 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/30 10:46:56 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/30 15:04:17 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -21,6 +21,7 @@
 #include <unistd.h>
 #include <ctype.h>
 #include "memory_map.h"
+#include "execute.h"
 
 
 
@@ -43,7 +44,7 @@
 	do\
 	{\
 		if (g_memmap.cart_reg[0])\
-			g_memmap.extern_ram = g_memmap.rom_banks[g_memmap.cart_reg[2]]\
+			g_memmap.extern_ram = g_memmap.rom_banks[g_memmap.cart_reg[2]];\
 		g_memmap.cur_extern_ram = g_memmap.cart_reg[2];\
 	} while (0)\
 
@@ -136,7 +137,6 @@ mbc3_3:
 **    MBC_5    **
 ****************/
 mbc5_0:
-mbc5_0:
 mbc5_1:
 mbc5_2:
 mbc5_3:
@@ -145,6 +145,6 @@ mbc5_3:
 **    ERROR    **
 ****************/
 ret:
-	g_memmap.redzone = 0xff; // read-only memory is written
+	*g_memmap.redzone = 0xff; // read-only memory is written
 	return (0);
 }

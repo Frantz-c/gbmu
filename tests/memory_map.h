@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/23 11:44:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/30 14:10:22 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/30 15:03:46 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -16,6 +16,7 @@
 
 # include <stdint.h>
 # include <stddef.h>
+# include "execute.h"
 
 /*
 		memory_map_t	memmap;
@@ -121,7 +122,7 @@ typedef struct	memory_map_s
 {
 
 	/**** Pointer to the complete malloced block ****/
-	void	*complete_block;
+	uint8_t		*complete_block;
 
 
 	// Pointers to the different memory areas
@@ -171,7 +172,7 @@ uint8_t			*g_get_real_read_addr[16];
 //uint8_t			*g_get_real_write_addr[16] = {NULL};
 memory_map_t	g_memmap;
 
-void			write_cartridge_register(uint32_t i, uint8_t value);
+cycle_count_t		write_cartridge_register(uint32_t i, uint8_t value, cycle_count_t cycle);
 
 # define GET_REAL_ADDR(virtual_addr)	\
 		 (\
