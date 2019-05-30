@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/23 11:44:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/30 14:10:22 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/30 16:46:41 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -16,6 +16,7 @@
 
 # include <stdint.h>
 # include <stddef.h>
+# include <stdbool.h>
 
 /*
 		memory_map_t	memmap;
