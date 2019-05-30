@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/30 09:02:45 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/30 14:58:03 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/30 16:44:56 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -134,15 +134,27 @@ static int		restore_terminal(int sig)
 	exit(1);
 }
 
-static void		start_game(void)
+static void		start_cpu(void)
 {
-	registers_t	regs = {{0}};
-	pthread_t	joypad;
-
+	registers_t		regs = {{0}};
+	cycles_count_t	cycles;
+	
 	regs.reg_pc = 0x100;
 	regs.reg_sp = 0xfffe;
 
+	while (1)
+	{
+		//cycles = execute(&regs);
+		break;
+	}
+}
+
+static void		start_game(void)
+{
+	pthread_t	joypad;
+
 	pthread_create(&joypad, NULL, joypad_control_thread, NULL);
+	start_cpu();
 	pthread_join(joypad, NULL);
 }
 

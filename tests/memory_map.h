@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/23 11:44:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/30 15:03:46 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/30 16:37:12 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -94,6 +94,14 @@ enum	e_cartridge_types
 # define MBC5_HI_ROM_NUM		2
 # define MBC5_RAM_NUM			3
 
+
+# define CUR_RAM	g_memmap.cur_extern_ram
+# define EXTERN_RAM	g_memmap.extern_ram
+# define SWITCH_ROM	g_memmap.switch_rom
+# define RAM_BANK	g_memmap.extern_ram_banks
+# define ROM_BANK	g_memmap.rom_banks
+# define CART_REG	g_memmap.cart_reg
+
 typedef struct
 {
 	int32_t		jump_addr;				//0x102 - 0x104
@@ -172,21 +180,19 @@ uint8_t			*g_get_real_read_addr[16];
 //uint8_t			*g_get_real_write_addr[16] = {NULL};
 memory_map_t	g_memmap;
 
-cycle_count_t		write_cartridge_register(uint32_t i, uint8_t value, cycle_count_t cycle);
-
 # define GET_REAL_ADDR(virtual_addr)	\
 		 (\
 			(g_get_real_read_addr[((virtual_addr) >> 12)]) ?\
 				g_get_real_read_addr[((virtual_addr) >> 12)] + (virtual_addr & 0xfff) :\
 				(virtual_addr) + g_memmap.complete_block\
 		 )
-# define WRITE_TO_MBC_REGISTER(virtual_addr, data, cycles)	\
-			do {\
-				if ((virtual_addr) < 0x8000)\
-				{\
-					write_cartridge_register(((virtual_addr) >> 12), data);\
-					return (cycles);\
-				}\
-			} while(0);
+# define WRITE_REGISTER_IF_ROM_AREA(virtual_addr, _cycles)	\
+		do {\
+			if ((virtual_addr) < 0x8000)\
+			{\
+				cycles = (_cycles);\
+				goto *jump_to_mbcx[g_memmap.mbc][(virtual_addr) >> 12];\
+			}\
+		} while(0)
 
 #endif
