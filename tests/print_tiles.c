@@ -63,7 +63,7 @@ unsigned int	g_next = 0;
 #define SCREEN_LOOP()	for (;;)
 #define CPU_LOOP()		for (;;)
 
-uint8_t			*g_get_real_read_addr[16] = {NULL};
+uint8_t			*g_get_real_addr[16] = {NULL};
 memory_map_t	g_memmap;
 
 

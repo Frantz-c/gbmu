@@ -23,7 +23,7 @@
 /*
 		memory_map_t	memmap;
 
-		uint8_t	*g_get_real_read_addr[16] = {
+		uint8_t	*g_get_real_addr[16] = {
 			memmap.fixed_rom,				//0x0
 			memmap.fixed_rom + 0x1000,		//0x1
 			memmap.fixed_rom + 0x2000,		//0x2
@@ -179,14 +179,14 @@ typedef struct	memory_map_s
 memory_map_t;
 
 
-uint8_t			*g_get_real_read_addr[16];
+uint8_t			*g_get_real_addr[16];
 //uint8_t			*g_get_real_write_addr[16] = {NULL};
 memory_map_t	g_memmap;
 
 # define GET_REAL_ADDR(virtual_addr)	\
 		 (\
-			(g_get_real_read_addr[((virtual_addr) >> 12)]) ?\
-				g_get_real_read_addr[((virtual_addr) >> 12)] + (virtual_addr & 0xfff) :\
+			(g_get_real_addr[((virtual_addr) >> 12)]) ?\
+				g_get_real_addr[((virtual_addr) >> 12)] + (virtual_addr & 0xfff) :\
 				(virtual_addr) + g_memmap.complete_block\
 		 )
 # define WRITE_REGISTER_IF_ROM_AREA(virtual_addr, _value, _cycles)	\

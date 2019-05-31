@@ -29,20 +29,20 @@
 	do\
 	{\
 		SWITCH_ROM = ROM_BANK [ CART_REG[1] | (CART_REG[2] << 5) ];\
-		g_get_real_read_addr[4] = SWITCH_ROM;\
-		g_get_real_read_addr[5] = SWITCH_ROM + 0x1000;\
-		g_get_real_read_addr[6] = SWITCH_ROM + 0x2000;\
-		g_get_real_read_addr[7] = SWITCH_ROM + 0x3000;\
+		g_get_real_addr[4] = SWITCH_ROM;\
+		g_get_real_addr[5] = SWITCH_ROM + 0x1000;\
+		g_get_real_addr[6] = SWITCH_ROM + 0x2000;\
+		g_get_real_addr[7] = SWITCH_ROM + 0x3000;\
 	} while (0)
 
 #define SET_MBC1_MODE_1_ROM_ADDR()	\
 	do\
 	{\
 		ROM_BANK [ CART_REG [MBC1_ROM_NUM] ];\
-		g_get_real_read_addr[4] = SWITCH_ROM;\
-		g_get_real_read_addr[5] = SWITCH_ROM + 0x1000;\
-		g_get_real_read_addr[6] = SWITCH_ROM + 0x2000;\
-		g_get_real_read_addr[7] = SWITCH_ROM + 0x3000;\
+		g_get_real_addr[4] = SWITCH_ROM;\
+		g_get_real_addr[5] = SWITCH_ROM + 0x1000;\
+		g_get_real_addr[6] = SWITCH_ROM + 0x2000;\
+		g_get_real_addr[7] = SWITCH_ROM + 0x3000;\
 	} while (0)
 
 #define SET_MBC1_MODE_0_RAM_ADDR()	\
@@ -51,8 +51,8 @@
 		if (CART_REG[0])\
 		{\
 			EXTERN_RAM = RAM_BANK[0];\
-			g_get_real_read_addr[10] = EXTERN_RAM;\
-			g_get_real_read_addr[11] = EXTERN_RAM + 0x1000;\
+			g_get_real_addr[10] = EXTERN_RAM;\
+			g_get_real_addr[11] = EXTERN_RAM + 0x1000;\
 		}\
 		CUR_RAM = 0;\
 	} while (0)
@@ -63,8 +63,8 @@
 		if (CART_REG[0])\
 		{\
 			EXTERN_RAM = RAM_BANK [ CART_REG[2] ];\
-			g_get_real_read_addr[10] = EXTERN_RAM;\
-			g_get_real_read_addr[11] = EXTERN_RAM + 0x1000;\
+			g_get_real_addr[10] = EXTERN_RAM;\
+			g_get_real_addr[11] = EXTERN_RAM + 0x1000;\
 		}\
 		CUR_RAM = CART_REG[2];\
 	} while (0)
@@ -95,8 +95,8 @@
 		g_memmap.cart_reg[0] = 0;\
 		EXTERN_RAM = g_memmap.complete_block + 0x2000;\
 	}\
-	g_get_real_read_addr[10] = EXTERN_RAM;\
-	g_get_real_read_addr[11] = EXTERN_RAM + 0x1000;\
+	g_get_real_addr[10] = EXTERN_RAM;\
+	g_get_real_addr[11] = EXTERN_RAM + 0x1000;\
 
 
 

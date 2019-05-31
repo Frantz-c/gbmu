@@ -14,7 +14,7 @@
 #include "execute.h"
 #include <unistd.h>
 
-extern uint8_t		*g_get_real_read_addr[16];
+extern uint8_t		*g_get_real_addr[16];
 //extern uint8_t		*g_get_real_write_addr[16];
 extern memory_map_t	g_memmap;
 
@@ -24,35 +24,52 @@ extern memory_map_t	g_memmap;
 	
 #define SET_LOW_ROM_NUMBER_MBC5()	\
 	CART_REG[1] = value;\
-	SWITCH_ROM = ROM_BANK [ CART_REG[1] | (CART_REG[2] << 8) ];
+	SWITCH_ROM = ROM_BANK [ CART_REG[1] | (CART_REG[2] << 8) ];\
+	g_get_real_addr[4] = SWITCH_ROM;\
+	g_get_real_addr[5] = SWITCH_ROM + 0x1000;\
+	g_get_real_addr[6] = SWITCH_ROM + 0x2000;\
+	g_get_real_addr[7] = SWITCH_ROM + 0x3000;\
 
 #define SET_HI_ROM_NUMBER_MBC5()	\
 	CART_REG[2] = (value & 0x01);\
-	SWITCH_ROM = ROM_BANK [ CART_REG[1] | (CART_REG[2] << 8) ];
+	SWITCH_ROM = ROM_BANK [ CART_REG[1] | (CART_REG[2] << 8) ];\
+	g_get_real_addr[4] = SWITCH_ROM;\
+	g_get_real_addr[5] = SWITCH_ROM + 0x1000;\
+	g_get_real_addr[6] = SWITCH_ROM + 0x2000;\
+	g_get_real_addr[7] = SWITCH_ROM + 0x3000;\
 
 #define SET_RAM_NUMBER_MBC5()		\
 	CUR_RAM = (value & 0x0f); /*CART_REG[3]*/\
-	EXTERN_RAM = RAM_BANK[CUR_RAM];
+	EXTERN_RAM = RAM_BANK[CUR_RAM];\
+	g_get_real_addr[10] = EXTERN_RAM;\
+	g_get_real_addr[11] = EXTERN_RAM + 0x1000;\
 
 
 #define SET_MBC1_MODE_0_ROM_ADDR()	\
 	do\
-	{\
-		SWITCH_ROM = ROM_BANK [ CART_REG[1] | (CART_REG[2] << 5) ];\
-		g_get_real_read_addr[4] = SWITCH_ROM;\
-		g_get_real_read_addr[5] = SWITCH_ROM + 0x1000;\
-		g_get_real_read_addr[6] = SWITCH_ROM + 0x2000;\
-		g_get_real_read_addr[7] = SWITCH_ROM + 0x3000;\
+	{/* if file contain empty banks at 0x20, 0x40, 0x60 */\
+		if ((CART_REG[1] | (CART_REG[2] << 5)) == 0x20)\
+			SWITCH_ROM = ROM_BANK [0x21];\
+		else if ((CART_REG[1] | (CART_REG[2] << 5)) == 0x40)\
+			SWITCH_ROM = ROM_BANK [0x41];\
+		else if ((CART_REG[1] | (CART_REG[2] << 5)) == 0x60)\
+			SWITCH_ROM = ROM_BANK [0x61];\
+		else\
+			SWITCH_ROM = ROM_BANK [ CART_REG[1] | (CART_REG[2] << 5) ];\
+		g_get_real_addr[4] = SWITCH_ROM;\
+		g_get_real_addr[5] = SWITCH_ROM + 0x1000;\
+		g_get_real_addr[6] = SWITCH_ROM + 0x2000;\
+		g_get_real_addr[7] = SWITCH_ROM + 0x3000;\
 	} while (0)
 
 #define SET_MBC1_MODE_1_ROM_ADDR()	\
 	do\
 	{\
-		ROM_BANK [ CART_REG [MBC1_ROM_NUM] ];\
-		g_get_real_read_addr[4] = SWITCH_ROM;\
-		g_get_real_read_addr[5] = SWITCH_ROM + 0x1000;\
-		g_get_real_read_addr[6] = SWITCH_ROM + 0x2000;\
-		g_get_real_read_addr[7] = SWITCH_ROM + 0x3000;\
+		SWITCH_ROM = ROM_BANK [ CART_REG [MBC1_ROM_NUM] ];\
+		g_get_real_addr[4] = SWITCH_ROM;\
+		g_get_real_addr[5] = SWITCH_ROM + 0x1000;\
+		g_get_real_addr[6] = SWITCH_ROM + 0x2000;\
+		g_get_real_addr[7] = SWITCH_ROM + 0x3000;\
 	} while (0)
 
 #define SET_MBC1_MODE_0_RAM_ADDR()	\
@@ -61,8 +78,8 @@ extern memory_map_t	g_memmap;
 		if (CART_REG[0])\
 		{\
 			EXTERN_RAM = RAM_BANK[0];\
-			g_get_real_read_addr[10] = EXTERN_RAM;\
-			g_get_real_read_addr[11] = EXTERN_RAM + 0x1000;\
+			g_get_real_addr[10] = EXTERN_RAM;\
+			g_get_real_addr[11] = EXTERN_RAM + 0x1000;\
 		}\
 		CUR_RAM = 0;\
 	} while (0)
@@ -73,8 +90,8 @@ extern memory_map_t	g_memmap;
 		if (CART_REG[0])\
 		{\
 			EXTERN_RAM = RAM_BANK [ CART_REG[2] ];\
-			g_get_real_read_addr[10] = EXTERN_RAM;\
-			g_get_real_read_addr[11] = EXTERN_RAM + 0x1000;\
+			g_get_real_addr[10] = EXTERN_RAM;\
+			g_get_real_addr[11] = EXTERN_RAM + 0x1000;\
 		}\
 		CUR_RAM = CART_REG[2];\
 	} while (0)
@@ -105,8 +122,8 @@ extern memory_map_t	g_memmap;
 		g_memmap.cart_reg[0] = 0;\
 		EXTERN_RAM = g_memmap.complete_block + 0x2000;\
 	}\
-	g_get_real_read_addr[10] = EXTERN_RAM;\
-	g_get_real_read_addr[11] = EXTERN_RAM + 0x1000;\
+	g_get_real_addr[10] = EXTERN_RAM;\
+	g_get_real_addr[11] = EXTERN_RAM + 0x1000;\
 
 
 cycle_count_t	execute(registers_t *regs)

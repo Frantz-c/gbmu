@@ -226,28 +226,28 @@ static void	malloc_blocks(cartridge_t *cart)
 	g_memmap.int_flags = g_memmap.complete_block + 0xffff;
 
 	// convertion virtual addresse to real addresse
-	g_get_real_read_addr[0] = g_memmap.fixed_rom;			//0x0000
-	g_get_real_read_addr[1] = g_memmap.fixed_rom + 0x1000;	//0x1000
-	g_get_real_read_addr[2] = g_memmap.fixed_rom + 0x2000;	//0x2000
-	g_get_real_read_addr[3] = g_memmap.fixed_rom + 0x3000;	//0x3000
-	g_get_real_read_addr[4] = g_memmap.switch_rom;			//0x4000
-	g_get_real_read_addr[5] = g_memmap.switch_rom + 0x1000;	//0x5000
-	g_get_real_read_addr[6] = g_memmap.switch_rom + 0x2000;	//0x6000
-	g_get_real_read_addr[7] = g_memmap.switch_rom + 0x3000;	//0x7000
-	g_get_real_read_addr[8] = g_memmap.vram;				//0x8000
-	g_get_real_read_addr[9] = g_memmap.vram + 0x1000;		//0x9000
+	g_get_real_addr[0] = g_memmap.fixed_rom;			//0x0000
+	g_get_real_addr[1] = g_memmap.fixed_rom + 0x1000;	//0x1000
+	g_get_real_addr[2] = g_memmap.fixed_rom + 0x2000;	//0x2000
+	g_get_real_addr[3] = g_memmap.fixed_rom + 0x3000;	//0x3000
+	g_get_real_addr[4] = g_memmap.switch_rom;			//0x4000
+	g_get_real_addr[5] = g_memmap.switch_rom + 0x1000;	//0x5000
+	g_get_real_addr[6] = g_memmap.switch_rom + 0x2000;	//0x6000
+	g_get_real_addr[7] = g_memmap.switch_rom + 0x3000;	//0x7000
+	g_get_real_addr[8] = g_memmap.vram;				//0x8000
+	g_get_real_addr[9] = g_memmap.vram + 0x1000;		//0x9000
 	if (g_memmap.extern_ram == NULL)
 	{
-		g_get_real_read_addr[10] = g_memmap.complete_block;	//0xa000
-		g_get_real_read_addr[11] = g_memmap.complete_block;	//0xb000
+		g_get_real_addr[10] = g_memmap.complete_block;	//0xa000
+		g_get_real_addr[11] = g_memmap.complete_block;	//0xb000
 	}
 	else
 	{
-		g_get_real_read_addr[10] = g_memmap.extern_ram;			//0xa000
-		g_get_real_read_addr[11] = g_memmap.extern_ram + 0x1000;//0xb000
+		g_get_real_addr[10] = g_memmap.extern_ram;			//0xa000
+		g_get_real_addr[11] = g_memmap.extern_ram + 0x1000;//0xb000
 	}
-	g_get_real_read_addr[12] = g_memmap.fixed_ram;			//0xc000
-	g_get_real_read_addr[13] = g_memmap.switch_ram;			//0xd000
+	g_get_real_addr[12] = g_memmap.fixed_ram;			//0xc000
+	g_get_real_addr[13] = g_memmap.switch_ram;			//0xd000
 }
 
 static void	load_cartridge_on_memory(uint8_t *mem, cartridge_t *cart, uint32_t type)
