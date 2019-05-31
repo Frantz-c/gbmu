@@ -144,7 +144,7 @@ static void		joypad_control_loop(void)
 	}
 }
 
-static void		write_dmg_tile_in_screen(char *screen, char *tile, size_t tile_size,
+static void		write_tile(char *screen, char *tile, size_t tile_size,
 				unsigned int x, unsigned int y)
 {
 	unsigned int		i = 0;
@@ -243,7 +243,7 @@ static void		*screen_control_thread(void *unused)
 
 	init_screen(screen);
 	write_debug(screen, 5, "---> DEBUG \e[0;33mdebug\e[0m");
-	write_dmg_tile_in_screen(screen, tile, 64, 0, 0);
+	write_tile(screen, tile, 64, 0, 0);
 	put_screen(screen);
 
 	SCREEN_LOOP()

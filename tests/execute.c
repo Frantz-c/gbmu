@@ -15,11 +15,25 @@
 #include <unistd.h>
 
 extern uint8_t		*g_get_real_read_addr[16];
-extern uint8_t		*g_get_real_write_addr[16];
+//extern uint8_t		*g_get_real_write_addr[16];
 extern memory_map_t	g_memmap;
+
 
 #define ADD_PC(offset)	regs->reg_pc += (offset);
 #define SET_PC(value)	regs->reg_pc = (value);
+	
+#define SET_LOW_ROM_NUMBER_MBC5()	\
+	CART_REG[1] = value;\
+	SWITCH_ROM = ROM_BANK [ CART_REG[1] | (CART_REG[2] << 8) ];
+
+#define SET_HI_ROM_NUMBER_MBC5()	\
+	CART_REG[2] = (value & 0x01);\
+	SWITCH_ROM = ROM_BANK [ CART_REG[1] | (CART_REG[2] << 8) ];
+
+#define SET_RAM_NUMBER_MBC5()		\
+	CUR_RAM = (value & 0x0f); /*CART_REG[3]*/\
+	EXTERN_RAM = RAM_BANK[CUR_RAM];
+
 
 #define SET_MBC1_MODE_0_ROM_ADDR()	\
 	do\
@@ -94,6 +108,7 @@ extern memory_map_t	g_memmap;
 	g_get_real_read_addr[10] = EXTERN_RAM;\
 	g_get_real_read_addr[11] = EXTERN_RAM + 0x1000;\
 
+
 cycle_count_t	execute(registers_t *regs)
 {
 	static const void *const	jump_to_mbcx[5][8] =
@@ -115,7 +130,7 @@ cycle_count_t	execute(registers_t *regs)
 			&&mbc3_2,		&&mbc3_2,		&&mbc3_3,		&&mbc3_3
 		},
 		{
-			&&mbc5_0,		&&mbc5_0,		&&mbc5_1,		&&mbc5_2,
+			&&mbc1_0,		&&mbc1_0,		&&mbc5_1,		&&mbc5_2,
 			&&mbc5_3,		&&mbc5_3,		&&redzone_ret,	&&redzone_ret
 		}
 	};
