@@ -285,22 +285,6 @@ static void	load_rom_only_cartridge(uint8_t *mem, cartridge_t *cart)
 	cart->mbc = ROM_ONLY;
 	malloc_blocks(cart);
 	load_cartridge_on_memory(mem, cart, ROM_ONLY);
-/*
-	g_get_real_write_addr[0] = g_memmap.complete_block;
-	g_get_real_write_addr[1] = g_memmap.complete_block;
-	g_get_real_write_addr[2] = g_memmap.complete_block;
-	g_get_real_write_addr[3] = g_memmap.complete_block;
-	g_get_real_write_addr[4] = g_memmap.complete_block;
-	g_get_real_write_addr[5] = g_memmap.complete_block;
-	g_get_real_write_addr[6] = g_memmap.complete_block;
-	g_get_real_write_addr[7] = g_memmap.complete_block;
-	g_get_real_write_addr[8] = g_memmap.vram;					//0x8000
-	g_get_real_write_addr[9] = g_memmap.vram + 0x1000;			//0x9000
-	g_get_real_write_addr[10] = g_memmap.extern_ram;			//0xa000
-	g_get_real_write_addr[11] = g_memmap.extern_ram + 0x1000;	//0xb000
-	g_get_real_write_addr[12] = g_memmap.fixed_ram;				//0xc000
-	g_get_real_write_addr[13] = g_memmap.switch_ram;			//0xd000
-*/
 	puts("\e[0;32mCARTRIDGE LOADED WITH SUCCESS\e[0m");
 }
 
@@ -309,41 +293,31 @@ static void	load_MBC1_cartridge(uint8_t *mem, cartridge_t *cart)
 	cart->mbc = MBC1;
 	malloc_blocks(cart);
 	load_cartridge_on_memory(mem, cart, MBC1);
-/*
-	g_get_real_write_addr[0] = g_memmap.cart_reg;
-	g_get_real_write_addr[1] = g_memmap.cart_reg;
-	g_get_real_write_addr[2] = g_memmap.cart_reg + 1;
-	g_get_real_write_addr[3] = g_memmap.cart_reg + 1;
-	g_get_real_write_addr[4] = g_memmap.cart_reg + 2;
-	g_get_real_write_addr[5] = g_memmap.cart_reg + 2;
-	g_get_real_write_addr[6] = g_memmap.cart_reg + 3;
-	g_get_real_write_addr[7] = g_memmap.cart_reg + 3;
-	g_get_real_write_addr[8] = g_memmap.vram;					//0x8000
-	g_get_real_write_addr[9] = g_memmap.vram + 0x1000;			//0x9000
-	g_get_real_write_addr[10] = g_memmap.extern_ram;			//0xa000
-	g_get_real_write_addr[11] = g_memmap.extern_ram + 0x1000;	//0xb000
-	g_get_real_write_addr[12] = g_memmap.fixed_ram;				//0xc000
-	g_get_real_write_addr[13] = g_memmap.switch_ram;			//0xd000
-*/
 	puts("\e[0;32mCARTRIDGE LOADED WITH SUCCESS\e[0m");
 }
 
 static void	load_MBC2_cartridge(uint8_t *mem, cartridge_t *cart)
 {
-	fprintf(stderr, "Not implemented...\n");
-	exit (1);
+	cart->mbc = MBC2;
+	malloc_blocks(cart);
+	load_cartridge_on_memory(mem, cart, MBC2);
+	puts("\e[0;32mCARTRIDGE LOADED WITH SUCCESS\e[0m");
 }
 
 static void	load_MBC3_cartridge(uint8_t *mem, cartridge_t *cart)
 {
-	fprintf(stderr, "Not implemented...\n");
-	exit (1);
+	cart->mbc = MBC3;
+	malloc_blocks(cart);
+	load_cartridge_on_memory(mem, cart, MBC3);
+	puts("\e[0;32mCARTRIDGE LOADED WITH SUCCESS\e[0m");
 }
 
 static void	load_MBC5_cartridge(uint8_t *mem, cartridge_t *cart)
 {
-	fprintf(stderr, "Not implemented...\n");
-	exit (1);
+	cart->mbc = MBC5;
+	malloc_blocks(cart);
+	load_cartridge_on_memory(mem, cart, MBC5);
+	puts("\e[0;32mCARTRIDGE LOADED WITH SUCCESS\e[0m");
 }
 
 static void	load_saved_external_ram(cartridge_t *cart, const char *path)
