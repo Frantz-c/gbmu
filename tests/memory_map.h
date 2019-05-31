@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/23 11:44:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/30 16:37:12 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/05/31 11:56:20 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -16,7 +16,9 @@
 
 # include <stdint.h>
 # include <stddef.h>
+# include <stdbool.h>
 # include "execute.h"
+# include "ram_registers.h"
 
 /*
 		memory_map_t	memmap;
@@ -165,6 +167,7 @@ typedef struct	memory_map_s
 	uint8_t		*stack_ram;		// 0xff80 - 0xfffe
 	uint8_t		*int_flags;		// 0xffff
 	_Bool		ime;
+	_Bool		stop_mode;
 
 	uint32_t	cur_extern_ram;	// Numero of extern ram bank
 
@@ -186,11 +189,12 @@ memory_map_t	g_memmap;
 				g_get_real_read_addr[((virtual_addr) >> 12)] + (virtual_addr & 0xfff) :\
 				(virtual_addr) + g_memmap.complete_block\
 		 )
-# define WRITE_REGISTER_IF_ROM_AREA(virtual_addr, _cycles)	\
+# define WRITE_REGISTER_IF_ROM_AREA(virtual_addr, _value, _cycles)	\
 		do {\
 			if ((virtual_addr) < 0x8000)\
 			{\
 				cycles = (_cycles);\
+				value = (_value); \
 				goto *jump_to_mbcx[g_memmap.mbc][(virtual_addr) >> 12];\
 			}\
 		} while(0)
