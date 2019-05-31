@@ -3,15 +3,16 @@
 /*                                                              /             */
 /*   execute.c                                        .::    .:/ .      .::   */
 /*                                                 +:+:+   +:    +:  +:+:+    */
-/*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
+/*   By: mhouppin <marvin@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
-/*   Created: 2019/05/29 09:59:24 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/30 16:47:27 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Created: 2019/05/31 11:52:51 by mhouppin     #+#   ##    ##    #+#       */
+/*   Updated: 2019/05/31 12:00:57 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
 #include "execute.h"
+#include <unistd.h>
 
 extern uint8_t		*g_get_real_read_addr[16];
 extern uint8_t		*g_get_real_write_addr[16];
@@ -20,8 +21,105 @@ extern memory_map_t	g_memmap;
 #define ADD_PC(offset)	regs->reg_pc += (offset);
 #define SET_PC(value)	regs->reg_pc = (value);
 
+#define SET_MBC1_MODE_0_ROM_ADDR()	\
+	do\
+	{\
+		SWITCH_ROM = ROM_BANK [ CART_REG[1] | (CART_REG[2] << 5) ];\
+		g_get_real_read_addr[4] = SWITCH_ROM;\
+		g_get_real_read_addr[5] = SWITCH_ROM + 0x1000;\
+		g_get_real_read_addr[6] = SWITCH_ROM + 0x2000;\
+		g_get_real_read_addr[7] = SWITCH_ROM + 0x3000;\
+	} while (0)
+
+#define SET_MBC1_MODE_1_ROM_ADDR()	\
+	do\
+	{\
+		ROM_BANK [ CART_REG [MBC1_ROM_NUM] ];\
+		g_get_real_read_addr[4] = SWITCH_ROM;\
+		g_get_real_read_addr[5] = SWITCH_ROM + 0x1000;\
+		g_get_real_read_addr[6] = SWITCH_ROM + 0x2000;\
+		g_get_real_read_addr[7] = SWITCH_ROM + 0x3000;\
+	} while (0)
+
+#define SET_MBC1_MODE_0_RAM_ADDR()	\
+	do\
+	{\
+		if (CART_REG[0])\
+		{\
+			EXTERN_RAM = RAM_BANK[0];\
+			g_get_real_read_addr[10] = EXTERN_RAM;\
+			g_get_real_read_addr[11] = EXTERN_RAM + 0x1000;\
+		}\
+		CUR_RAM = 0;\
+	} while (0)
+
+#define SET_MBC1_MODE_1_RAM_ADDR()	\
+	do\
+	{\
+		if (CART_REG[0])\
+		{\
+			EXTERN_RAM = RAM_BANK [ CART_REG[2] ];\
+			g_get_real_read_addr[10] = EXTERN_RAM;\
+			g_get_real_read_addr[11] = EXTERN_RAM + 0x1000;\
+		}\
+		CUR_RAM = CART_REG[2];\
+	} while (0)
+
+#define	SWITCH_RAM_ROM_MBC1()	\
+	do\
+	{\
+		if (g_memmap.cart_reg[MBC1_MODE]) {\
+			SET_MBC1_MODE_0_ROM_ADDR();\
+			SET_MBC1_MODE_0_RAM_ADDR();\
+		}\
+		else {\
+			SET_MBC1_MODE_1_ROM_ADDR();\
+			SET_MBC1_MODE_1_RAM_ADDR();\
+		}\
+	} while (0)
+
+// if write on disabled ram is a fatal error,
+// please remove 0x2000 offset
+#define ENABLE_EXTERNAL_RAM_MBC1()	\
+	if (value == 0x0a)\
+	{\
+		g_memmap.cart_reg[0] = 1;\
+		EXTERN_RAM = RAM_BANK[CUR_RAM];\
+	}\
+	else\
+	{\
+		g_memmap.cart_reg[0] = 0;\
+		EXTERN_RAM = g_memmap.complete_block + 0x2000;\
+	}\
+	g_get_real_read_addr[10] = EXTERN_RAM;\
+	g_get_real_read_addr[11] = EXTERN_RAM + 0x1000;\
+
 cycle_count_t	execute(registers_t *regs)
 {
+	static const void *const	jump_to_mbcx[5][8] =
+	{
+		{
+			&&redzone_ret,	&&redzone_ret,	&&redzone_ret,	&&redzone_ret,
+			&&redzone_ret,	&&redzone_ret,	&&redzone_ret,	&&redzone_ret
+		},
+		{
+			&&mbc1_0,		&&mbc1_0,		&&mbc1_1,		&&mbc1_1,
+			&&mbc1_2,		&&mbc1_2,		&&mbc1_3,		&&mbc1_3
+		},
+		{
+			&&mbc2_0,		&&mbc2_0,		&&mbc2_1,		&&mbc2_1,
+			&&redzone_ret,	&&redzone_ret,	&&redzone_ret,	&&redzone_ret
+		},
+		{
+			&&mbc3_0,		&&mbc3_0,		&&mbc3_1,		&&mbc3_1,
+			&&mbc3_2,		&&mbc3_2,		&&mbc3_3,		&&mbc3_3
+		},
+		{
+			&&mbc5_0,		&&mbc5_0,		&&mbc5_1,		&&mbc5_2,
+			&&mbc5_3,		&&mbc5_3,		&&redzone_ret,	&&redzone_ret
+		}
+	};
+
 	static const void *const	instruction_jumps[256] =
 	{
 		&&nop,				&&ld_bc_imm16,		&&ld_bc_a,			&&inc_bc,
@@ -90,6 +188,9 @@ cycle_count_t	execute(registers_t *regs)
 		&&illegal,			&&illegal,			&&cp_a_imm8,		&&rst_38h
 	};
 
+	cycle_count_t	cycles;
+	uint8_t			value;
+
 	uint8_t			*address;
 
 	address = GET_REAL_ADDR(regs->reg_pc);
@@ -112,6 +213,7 @@ ld_bc_imm16:
 ld_bc_a:
 	ADD_PC(1);
 	address = GET_REAL_ADDR(regs->reg_bc);
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_bc, regs->reg_a, 8);
 	*address = regs->reg_a;
 	return (8);
 
@@ -220,7 +322,9 @@ rrca:
 stop:
 	ADD_PC(1);
 
-	// Va te faire ...
+	g_memmap.stop_mode = true;
+	while ((g_memmap.complete_block[IF] & BIT_4) == BIT_4)
+		usleep(1000);
 
 	return (4);
 
@@ -232,6 +336,7 @@ ld_de_imm16:
 ld_de_a:
 	ADD_PC(1);
 	address = GET_REAL_ADDR(regs->reg_de);
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_de, regs->reg_a, 8);
 	*address = regs->reg_a;
 	return (8);
 
@@ -355,6 +460,7 @@ ld_hli_a:
 	ADD_PC(1);
 	address = GET_REAL_ADDR(regs->reg_hl);
 	regs->reg_hl += 1;
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_hl - 1, regs->reg_a, 8);
 	*address = regs->reg_a;
 	return (8);
 
@@ -542,6 +648,7 @@ ld_hld_a:
 	ADD_PC(1);
 	address = GET_REAL_ADDR(regs->reg_hl);
 	regs->reg_hl -= 1;
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_hl - 1, regs->reg_a, 8);
 	*address = regs->reg_a;
 	return (8);
 
@@ -576,6 +683,7 @@ dec_ahl:
 ld_hl_imm8:
 	ADD_PC(2);
 	address = GET_REAL_ADDR(regs->reg_hl);
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_hl, imm_8, 12);
 	*address = imm_8;
 	return (12);
 
@@ -901,51 +1009,60 @@ ld_l_a:
 ld_hl_b:
 	ADD_PC(1);
 	address = GET_REAL_ADDR(regs->reg_hl);
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_hl, regs->reg_b, 8);
 	*address = regs->reg_b;
-	return (4);
+	return (8);
 
 ld_hl_c:
 	ADD_PC(1);
 	address = GET_REAL_ADDR(regs->reg_hl);
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_hl, regs->reg_c, 8);
 	*address = regs->reg_c;
-	return (4);
+	return (8);
 
 ld_hl_d:
 	ADD_PC(1);
 	address = GET_REAL_ADDR(regs->reg_hl);
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_hl, regs->reg_d, 8);
 	*address = regs->reg_d;
-	return (4);
+	return (8);
 
 ld_hl_e:
 	ADD_PC(1);
 	address = GET_REAL_ADDR(regs->reg_hl);
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_hl, regs->reg_e, 8);
 	*address = regs->reg_e;
-	return (4);
+	return (8);
 
 ld_hl_h:
 	ADD_PC(1);
 	address = GET_REAL_ADDR(regs->reg_hl);
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_hl, regs->reg_h, 8);
 	*address = regs->reg_h;
-	return (4);
+	return (8);
 
 ld_hl_l:
 	ADD_PC(1);
 	address = GET_REAL_ADDR(regs->reg_hl);
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_hl, regs->reg_l, 8);
 	*address = regs->reg_l;
-	return (4);
+	return (8);
 
 halt:
+	if (g_memmap.ime == true)
+	{
+		while (g_memmap.complete_block[IF] == 0)
+			usleep(1000);
+	}
 	ADD_PC(1);
-	
-	// Va te faire ...
-
-	return (8);
+	return (4);
 
 ld_hl_a:
 	ADD_PC(1);
 	address = GET_REAL_ADDR(regs->reg_hl);
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_hl, regs->reg_a, 8);
 	*address = regs->reg_a;
-	return (4);
+	return (8);
 
 ld_a_b:
 	ADD_PC(1);
@@ -2079,6 +2196,7 @@ rst_18h:
 ldff_imm8_a:
 	ADD_PC(2);
 	address = GET_REAL_ADDR(0xFF00u + (uint16_t)imm_8);
+	WRITE_REGISTER_IF_ROM_AREA(0xFF00u + (uint16_t)imm_8, regs->reg_a, 8);
 	*address = regs->reg_a;
 	return (8);
 
@@ -2092,6 +2210,7 @@ pop_hl:
 ldff_c_a:
 	ADD_PC(2);
 	address = GET_REAL_ADDR(0xFF00u + (uint16_t)regs->reg_c);
+	WRITE_REGISTER_IF_ROM_AREA(0xFF00u + (uint16_t)regs->reg_c, regs->reg_a, 8);
 	*address = regs->reg_a;
 	return (8);
 
@@ -2139,6 +2258,7 @@ jp_hl:
 ld_imm16_a:
 	ADD_PC(3);
 	address = GET_REAL_ADDR(imm_16);
+	WRITE_REGISTER_IF_ROM_AREA(imm_16, regs->reg_a, 16);
 	*address = regs->reg_a;
 	return (16);
 
@@ -3819,4 +3939,64 @@ set_7_hl:
 set_7_a:
 	regs->reg_a |= (BIT_7);
 	return (8);
+
+/****************
+**    MBC_1    **
+****************/
+mbc1_0:
+	ENABLE_EXTERNAL_RAM_MBC1();
+	return (cycles);
+
+
+mbc1_1:
+	/* 5 bits register */
+	g_memmap.cart_reg[MBC1_ROM_NUM] =
+		((value & 0x1f) == 0) ? 0 : (value & 0x1f) - 1;
+	SWITCH_RAM_ROM_MBC1();
+	return (cycles);
+
+mbc1_2:
+	/* 3 bits register */
+	g_memmap.cart_reg[MBC1_RAM_NUM] = (value & 0x03);
+	SWITCH_RAM_ROM_MBC1();
+	return (cycles);
+
+mbc1_3:
+	/* 1 bit register */
+	g_memmap.cart_reg[MBC1_MODE] = (value & 0x01);
+	SWITCH_RAM_ROM_MBC1();
+	return (cycles);
+
+
+/****************
+**    MBC_2    **
+****************/
+mbc2_0:
+mbc2_1:
+
+
+/****************
+**    MBC_3    **
+****************/
+mbc3_0:
+mbc3_1:
+mbc3_2:
+mbc3_3:
+
+
+/****************
+**    MBC_5    **
+****************/
+mbc5_0:
+mbc5_1:
+mbc5_2:
+mbc5_3:
+
+
+/****************
+**    ERROR    **
+****************/
+redzone_ret:
+	*g_memmap.redzone = 0xff; /* read-only memory is written */
+	return (0);
 }
