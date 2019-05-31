@@ -29,14 +29,27 @@
 #include "execute.h"
 #include <malloc/malloc.h>
 
-// len = 13
+
 #define COL0		"\e[48;5;255m  "
 #define COL1		"\e[48;5;249m  "
 #define COL2		"\e[48;5;242m  "
 #define COL3		"\e[48;5;235m  "
 
-#define SCREEN_W	(145 * 13 + 80 + 1)
-#define DEBUG_ZONE	(144 * 13 + 9)
+
+#define REAL_W		(161 * 13 + 80 + 1)
+#define SCREEN_W	(160)
+#define SCREEN_H	(144)
+#define SCREEN_SIZE	(SCREEN_H * REAL_W)
+#define DEBUG_ZONE	(160 * 13 + 9)
+
+// 18 * 20
+#define TILE_OFFSET(x, y)	\
+	(((y) * REAL_W * 8) + (13 * 8 * (x)))
+
+// 144 * 160
+#define SCREEN_OFFSET(x, y)	\
+	(((y) * REAL_W) + (13 * (x)))
+
 
 #define K_UP		0x415b1bUL
 #define K_DOWN		0x425b1bUL
@@ -131,35 +144,54 @@ static void		joypad_control_loop(void)
 	}
 }
 
-static void		put_screen(char	*screen)
-{
-	write(1, "\e[2J\e[H", 7);
-	for (unsigned int i = 0; i < 120; i++)
-	{
-		memcpy(screen + (i * SCREEN_W + SCREEN_W - 90), "\e[0m", 4);
-		screen[i * SCREEN_W + SCREEN_W - 1] = '\n';
-	}
-	write(1, screen, SCREEN_W * 160);
-}
-
 static void		write_dmg_tile_in_screen(char *screen, char *tile, size_t tile_size,
 				unsigned int x, unsigned int y)
 {
 	unsigned int		i = 0;
-	static const char	*color[4] = {COL0, COL1, COL2, COL3};
+//	static const char	color[4][2] = {{'5', '5'}, {'4', '9'}, {'4', '2'}, {'3', '5'}};
+#if BYTE_ORDER == LITTLE_ENDIAN
+	static const uint16_t	color2[4] = {'5' | ('5' << 8), '4' | ('9' << 8), '4' | ('2' << 8), '3' | ('5' << 8)};
+#else
+	static const uint16_t	color2[4] = {'5' | ('5' << 8), '9' | ('4' << 8), '2' | ('4' << 8), '5' | ('3' << 8)};
+#endif
+/*	
+	#define COPY_2_BYTES(screen, x, y, c)	\
+		screen[ ((y) * SCREEN_W) + (13 * (x)) + 8] = c[0];\
+		screen[ ((y) * SCREEN_W) + (13 * (x)) + 9] = c[1];
+*/
+	#define COPY_2_BYTES_ONE_SHOT(screen, x, y, c)	\
+		*(uint16_t*)(screen + ((y) * REAL_W) + (13 * (x)) + 8) = c;\
 
 	if (tile_size == 64)
 	{
 		while (i < 16)
 		{
-			memcpy(screen + (((i / 2) + y) * SCREEN_W) + (13 * (x + 0)), color[ ((tile[i] & 0x80) >> 7) | ((tile[i + 1] & 0x80) >> 6) ], 13);
-			memcpy(screen + (((i / 2) + y) * SCREEN_W) + (13 * (x + 1)), color[ ((tile[i] & 0x40) >> 6) | ((tile[i + 1] & 0x40) >> 5) ], 13);
-			memcpy(screen + (((i / 2) + y) * SCREEN_W) + (13 * (x + 2)), color[ ((tile[i] & 0x20) >> 5) | ((tile[i + 1] & 0x20) >> 4) ], 13);
-			memcpy(screen + (((i / 2) + y) * SCREEN_W) + (13 * (x + 3)), color[ ((tile[i] & 0x10) >> 4) | ((tile[i + 1] & 0x10) >> 3) ], 13);
-			memcpy(screen + (((i / 2) + y) * SCREEN_W) + (13 * (x + 4)), color[ ((tile[i] & 0x08) >> 3) | ((tile[i + 1] & 0x08) >> 2) ], 13);
-			memcpy(screen + (((i / 2) + y) * SCREEN_W) + (13 * (x + 5)), color[ ((tile[i] & 0x04) >> 2) | ((tile[i + 1] & 0x04) >> 1) ], 13);
-			memcpy(screen + (((i / 2) + y) * SCREEN_W) + (13 * (x + 6)), color[ ((tile[i] & 0x02) >> 1) | ((tile[i + 1] & 0x02) << 0) ], 13);
-			memcpy(screen + (((i / 2) + y) * SCREEN_W) + (13 * (x + 7)), color[ ((tile[i] & 0x01) >> 0) | ((tile[i + 1] & 0x01) << 1) ], 13);
+			COPY_2_BYTES_ONE_SHOT(screen, x + 0, ((i / 2) + y),
+				color2[ ((tile[i] & 0x80) >> 7) | ((tile[i + 1] & 0x80) >> 6) ]);
+			COPY_2_BYTES_ONE_SHOT(screen, x + 1, ((i / 2) + y),
+				color2[ ((tile[i] & 0x40) >> 6) | ((tile[i + 1] & 0x40) >> 5) ]);
+			COPY_2_BYTES_ONE_SHOT(screen, x + 2, ((i / 2) + y),
+				color2[ ((tile[i] & 0x20) >> 5) | ((tile[i + 1] & 0x20) >> 4) ]);
+			COPY_2_BYTES_ONE_SHOT(screen, x + 3, ((i / 2) + y),
+				color2[ ((tile[i] & 0x10) >> 4) | ((tile[i + 1] & 0x10) >> 3) ]);
+			COPY_2_BYTES_ONE_SHOT(screen, x + 4, ((i / 2) + y),
+				color2[ ((tile[i] & 0x08) >> 3) | ((tile[i + 1] & 0x08) >> 2) ]);
+			COPY_2_BYTES_ONE_SHOT(screen, x + 5, ((i / 2) + y),
+				color2[ ((tile[i] & 0x04) >> 2) | ((tile[i + 1] & 0x04) >> 1) ]);
+			COPY_2_BYTES_ONE_SHOT(screen, x + 6, ((i / 2) + y),
+				color2[ ((tile[i] & 0x02) >> 1) | ((tile[i + 1] & 0x02) >> 0) ]);
+			COPY_2_BYTES_ONE_SHOT(screen, x + 7, ((i / 2) + y),
+				color2[ ((tile[i] & 0x01) >> 0) | ((tile[i + 1] & 0x01) << 1) ]);
+			/*
+			COPY_2_BYTES(screen, x + 0, ((i / 2) + y), color[ ((tile[i] & 0x80) >> 7) | ((tile[i + 1] & 0x80) >> 6) ]);
+			COPY_2_BYTES(screen, x + 1, ((i / 2) + y), color[ ((tile[i] & 0x40) >> 6) | ((tile[i + 1] & 0x40) >> 5) ]);
+			COPY_2_BYTES(screen, x + 2, ((i / 2) + y), color[ ((tile[i] & 0x20) >> 5) | ((tile[i + 1] & 0x20) >> 4) ]);
+			COPY_2_BYTES(screen, x + 3, ((i / 2) + y), color[ ((tile[i] & 0x10) >> 4) | ((tile[i + 1] & 0x10) >> 3) ]);
+			COPY_2_BYTES(screen, x + 4, ((i / 2) + y), color[ ((tile[i] & 0x08) >> 3) | ((tile[i + 1] & 0x08) >> 2) ]);
+			COPY_2_BYTES(screen, x + 5, ((i / 2) + y), color[ ((tile[i] & 0x04) >> 2) | ((tile[i + 1] & 0x04) >> 1) ]);
+			COPY_2_BYTES(screen, x + 6, ((i / 2) + y), color[ ((tile[i] & 0x02) >> 1) | ((tile[i + 1] & 0x02) >> 0) ]);
+			COPY_2_BYTES(screen, x + 7, ((i / 2) + y), color[ ((tile[i] & 0x01) >> 0) | ((tile[i + 1] & 0x01) << 1) ]);
+			*/
 			i += 2;
 		}
 	}
@@ -169,12 +201,48 @@ static void		write_dmg_tile_in_screen(char *screen, char *tile, size_t tile_size
 	}
 }
 
+static void		write_debug(char *screen, int line, char *str)
+{
+	register uint32_t	len;
+
+	if ((len = strlen(str)) > 80)
+		len = 80;
+	memcpy(screen + SCREEN_OFFSET(SCREEN_W + 1, line - 1) + 4, str, len);
+}
+
+static void		put_screen(char	*screen)
+{
+	write(1, "\e[2J\e[H", 7);
+	for (unsigned int i = 0; i < SCREEN_H; i++)
+	{
+		memcpy(screen + (REAL_W - 90 + i * REAL_W), "\e[0m", 4);
+		screen[i * REAL_W + REAL_W - 1] = '\n';
+	}
+	write(1, screen, SCREEN_SIZE);
+}
+
+static void		init_screen(char *screen)
+{
+	uint32_t	x = 0, y = 0;
+
+	while (y < SCREEN_H)
+	{
+		memcpy(screen + SCREEN_OFFSET(x, y), COL3, 13);
+		x++;
+		if (x == SCREEN_W) {
+			y++;
+			x = 0;
+		}
+	}
+}
+
 static void		*screen_control_thread(void *unused)
 {
-	char	screen[160 * SCREEN_W] = {0};
+	char	screen[SCREEN_SIZE];
 	char	*tile = "\x3c\x3c\x42\x7e\x85\xfb\x81\xff\xa1\xdf\xb1\xcf\x42\x7e\x3c\x3c";
 
-	strcpy(screen + DEBUG_ZONE, "    \e[1;31mDEBUG \e[0;33mdebug\e[0m");
+	init_screen(screen);
+	write_debug(screen, 5, "---> DEBUG \e[0;33mdebug\e[0m");
 	write_dmg_tile_in_screen(screen, tile, 64, 0, 0);
 	put_screen(screen);
 
@@ -213,7 +281,8 @@ static void		start_game(void)
 	term_noecho_mode(ON);
 	joypad_control_loop();
 	term_noecho_mode(OFF);
-	save_external_ram();
+	if (g_memmap.save_name)
+		save_external_ram();
 }
 
 static void		restore_terminal(int sig)
