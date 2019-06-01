@@ -7,15 +7,8 @@
 #include <sys/types.h>
 #include <ctype.h>
 #include <stdint.h>
-/*
-#include <.h>
-#include <.h>
-#include <.h>
-#include <.h>
-#include <.h>
-#include <.h>
-*/
 
+/*
 static void		put_file_contents(const char *file, const void *content, uint32_t length)
 {
 	const int		fd = open(file, O_WRONLY | O_TRUNC | O_CREAT, 0664);
@@ -32,6 +25,7 @@ static void		put_file_contents(const char *file, const void *content, uint32_t l
 	}
 	close(fd);
 }
+*/
 
 static char		*get_file_contents(const char *file, uint32_t *length)
 {
@@ -81,7 +75,7 @@ char	*convert_sprite(char *sp, unsigned int len, unsigned int *size)
 
 	i = 0;
 	bit	= 0x80U;
-	*size = 0;
+	*size = 2;
 	while (len)
 	{
 		if (*sp == _1) {
@@ -99,23 +93,20 @@ char	*convert_sprite(char *sp, unsigned int len, unsigned int *size)
 			exit(1);
 		}
 
-		if (*sp != '\n')
+		if (*sp == '\n')
 		{
-			if (bit == 0x01U) {
-				bit = 0x80U;
-				i += 2;
-				*size += 2;
-			}
-			else {
-				bit = bit >> 1U;
-			}
-			sp += 2;
-			len -= 2;
+			bit = 0x80U;
+			sp++;
+			if (--len == 0)
+				break;
+			i += 2;
+			*size += 2;
 		}
 		else
 		{
-			sp++;
-			len--;
+			sp += 2;
+			len -= 2;
+			bit >>= 1U;
 		}
 	}
 	return (sprite);
@@ -157,9 +148,7 @@ int		main(int argc, char *argv[])
 
 	if ((sprite = get_file_contents(argv[1], &size)) == NULL)
 		return (1);
-//	if (size != (64 + 8 + 4 + 1) * 2)
-//		return (1);
 	gb_sprite = convert_sprite(sprite, size, &len);
-	put_sprite(gb_sprite, argv[2][0] == '+', len);
+	put_sprite(gb_sprite, argc == 3, len);
 	return (0);
 }

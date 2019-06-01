@@ -25,10 +25,26 @@
 #include <termios.h>
 #include <malloc/malloc.h>
 
+
 #define COL0		"\e[48;5;255m  "
 #define COL1		"\e[48;5;249m  "
 #define COL2		"\e[48;5;242m  "
 #define COL3		"\e[48;5;235m  "
+
+
+#define REAL_W		(64 * 13 + 5)
+#define SCREEN_W	(64)
+#define SCREEN_H	(144)
+#define SCREEN_SIZE	(SCREEN_H * REAL_W)
+
+// 18 * 20
+#define TILE_OFFSET(x, y)	\
+	(((y) * REAL_W * 8) + (13 * 8 * (x)))
+
+// 144 * 160
+#define SCREEN_OFFSET(x, y)	\
+	(((y) * REAL_W) + (13 * (x)))
+
 
 static char		*get_file_contents(const char *file, uint32_t *length)
 {
@@ -66,47 +82,70 @@ static char		*get_file_contents(const char *file, uint32_t *length)
 	return (content);
 }
 
-
-static void		put_screen(char	*screen)
+static void		put_screen(char	*screen, unsigned int y)
 {
-	write(1, "\e[2J\e[H", 7);
-	for (unsigned int i = 0; i < 160; i++)
+	//write(1, "\e[2J\e[H", 7);
+	for (unsigned int i = 0; i < y; i++)
 	{
-		write(1, screen + (i * (145 * 13 + 80)), (145 * 13));
-		write(1, "\e[0m\n", 5);
+		memcpy(screen + (REAL_W - 5 + i * REAL_W), "\e[0m", 4);
+		screen[i * REAL_W + REAL_W - 1] = '\n';
 	}
+	write(1, screen, SCREEN_SIZE - ((SCREEN_H - y) * REAL_W));
 }
 
-static void		write_dmg_tile_in_screen(char *screen, char *tile, size_t tile_size,
-				unsigned int x, unsigned int y)
+static void		init_screen(char *screen)
 {
-	unsigned int		i = 0;
-	static const char	*color[4] = {COL0, COL1, COL2, COL3};
+	uint32_t	x = 0, y = 0;
 
-	if (tile_size == 64)
+	while (y < SCREEN_H)
 	{
-		while (i < 16)
-		{
-			strcpy(screen + (((i / 2) + y) * (145 * 13 + 80)) + (13 * (x + 0)), color[ ((tile[i] & 0x80) >> 7) | ((tile[i + 1] & 0x80) >> 6) ]);
-			strcpy(screen + (((i / 2) + y) * (145 * 13 + 80)) + (13 * (x + 1)), color[ ((tile[i] & 0x40) >> 6) | ((tile[i + 1] & 0x40) >> 5) ]);
-			strcpy(screen + (((i / 2) + y) * (145 * 13 + 80)) + (13 * (x + 2)), color[ ((tile[i] & 0x20) >> 5) | ((tile[i + 1] & 0x20) >> 4) ]);
-			strcpy(screen + (((i / 2) + y) * (145 * 13 + 80)) + (13 * (x + 3)), color[ ((tile[i] & 0x10) >> 4) | ((tile[i + 1] & 0x10) >> 3) ]);
-			strcpy(screen + (((i / 2) + y) * (145 * 13 + 80)) + (13 * (x + 4)), color[ ((tile[i] & 0x08) >> 3) | ((tile[i + 1] & 0x08) >> 2) ]);
-			strcpy(screen + (((i / 2) + y) * (145 * 13 + 80)) + (13 * (x + 5)), color[ ((tile[i] & 0x04) >> 2) | ((tile[i + 1] & 0x04) >> 1) ]);
-			strcpy(screen + (((i / 2) + y) * (145 * 13 + 80)) + (13 * (x + 6)), color[ ((tile[i] & 0x02) >> 1) | ((tile[i + 1] & 0x02) << 0) ]);
-			strcpy(screen + (((i / 2) + y) * (145 * 13 + 80)) + (13 * (x + 7)), color[ ((tile[i] & 0x01) >> 0) | ((tile[i + 1] & 0x01) << 1) ]);
-			i += 2;
+		memcpy(screen + SCREEN_OFFSET(x, y), COL3, 13);
+		x++;
+		if (x == SCREEN_W) {
+			y++;
+			x = 0;
 		}
 	}
-	else
+}
+
+static void		write_tile(char *screen, char *tile, unsigned int x, unsigned int y)
+{
+	unsigned int		i = 0;
+#if BYTE_ORDER == LITTLE_ENDIAN
+	static const uint16_t	color2[4] = {'5' | ('5' << 8), '4' | ('9' << 8), '4' | ('2' << 8), '3' | ('5' << 8)};
+#else
+	static const uint16_t	color2[4] = {'5' | ('5' << 8), '9' | ('4' << 8), '2' | ('4' << 8), '5' | ('3' << 8)};
+#endif
+
+#define COPY_2_BYTES_ONE_SHOT(screen, x, y, c)	\
+	*(uint16_t*)(screen + ((y) * REAL_W) + (13 * (x)) + 8) = c;\
+
+	while (i < 16)
 	{
-		return ;
+		COPY_2_BYTES_ONE_SHOT(screen, x + 0, ((i / 2) + y),
+			color2[ ((tile[i] & 0x80) >> 7) | ((tile[i + 1] & 0x80) >> 6) ]);
+		COPY_2_BYTES_ONE_SHOT(screen, x + 1, ((i / 2) + y),
+			color2[ ((tile[i] & 0x40) >> 6) | ((tile[i + 1] & 0x40) >> 5) ]);
+		COPY_2_BYTES_ONE_SHOT(screen, x + 2, ((i / 2) + y),
+			color2[ ((tile[i] & 0x20) >> 5) | ((tile[i + 1] & 0x20) >> 4) ]);
+		COPY_2_BYTES_ONE_SHOT(screen, x + 3, ((i / 2) + y),
+			color2[ ((tile[i] & 0x10) >> 4) | ((tile[i + 1] & 0x10) >> 3) ]);
+		COPY_2_BYTES_ONE_SHOT(screen, x + 4, ((i / 2) + y),
+			color2[ ((tile[i] & 0x08) >> 3) | ((tile[i + 1] & 0x08) >> 2) ]);
+		COPY_2_BYTES_ONE_SHOT(screen, x + 5, ((i / 2) + y),
+			color2[ ((tile[i] & 0x04) >> 2) | ((tile[i + 1] & 0x04) >> 1) ]);
+		COPY_2_BYTES_ONE_SHOT(screen, x + 6, ((i / 2) + y),
+			color2[ ((tile[i] & 0x02) >> 1) | ((tile[i + 1] & 0x02) >> 0) ]);
+		COPY_2_BYTES_ONE_SHOT(screen, x + 7, ((i / 2) + y),
+			color2[ ((tile[i] & 0x01) >> 0) | ((tile[i + 1] & 0x01) << 1) ]);
+		i += 2;
 	}
 }
+
 
 int		main(int argc, char *argv[])
 {
-	char			screen[160 * ((145 * 13) + 80)] = {0};
+	char			screen[SCREEN_SIZE];
 	char			*tile;
 	unsigned int	len;
 	unsigned int	x = 0, y = 0;
@@ -116,21 +155,25 @@ int		main(int argc, char *argv[])
 	tile = get_file_contents(argv[1], &len);
 	if (!tile || (len & 0x0f))
 	{
-		fprintf(stderr, "ERROR (len - %u)\n", len);
+		fprintf(stderr, "ERROR (len = %u Bytes)\n", len);
 		return (1);
 	}
-	while (len && y < 160)
+	
+	init_screen(screen);
+
+	while (len && y < SCREEN_H)
 	{
-		write_dmg_tile_in_screen(screen, tile, 64, x, y);
+		write_tile(screen, tile, x, y);
 		len -= 16;
 		tile += 16;
 		x += 8;
-		if (x == 144)
+		if (x == SCREEN_W)
 		{
 			x = 0;
 			y += 8;
 		}
 	}
 
-	put_screen(screen);
+	put_screen(screen, y + 8);
+	return (0);
 }
