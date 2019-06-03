@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/24 17:07:32 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/30 11:05:36 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/03 14:46:17 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -203,7 +203,7 @@ exemple:
 ***********************************************/
 # define SVBK	0xff70U // [.....BBB]
 /*
-	Select VRAM bank
+	Select WRAM bank
 
 	BBB:
 		0, 1 = bank 1
@@ -468,7 +468,7 @@ while (1)
 	
 	destination = 0xfe00 - 0xfe9f (OAM)
 	
-	transfer time = 160µs (60µs in double speed)
+	transfer time = 160µs (80µs in double speed)
 
 	write to this register starts the transfer
 

@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/22 21:51:26 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/23 17:03:09 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/03 14:02:11 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -271,7 +271,7 @@ t_strconv	opcodes[] = {
 	{"rst  0x28\n", NONE},
 	{"ld   A, (0xff00+*)\n", ADDR8}, //0xf0
 	{"pop  AF\n", NONE},
-	{"ld   A, (0xff00+C)", NONE}, /**** 2 bytes ?????  */
+	{"ld   A, (0xff00+C)\n", NONE}, /**** 2 bytes ?????  */
 	{"di\n", NONE},
 	{NULL, 0},
 	{"push AF\n", NONE},

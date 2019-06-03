@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/22 22:17:53 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/29 15:24:20 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/03 14:06:39 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -173,6 +173,7 @@ static void		*fmt_strcpy(char *dst, char *src,
 int				disassemble_region(char **disassembled_code, void *binary,
 									unsigned int start, unsigned int end)
 {
+	char		*binstart = (char *)binary;
 	binary	+= start;
 	end		-= start;
 	const void	*ptr_end = binary + end;
@@ -184,6 +185,16 @@ int				disassemble_region(char **disassembled_code, void *binary,
 	*disassembled_code = NULL;
 	while (binary < ptr_end)
 	{
+		if (i + 16 >= buflen)
+		{
+			buflen += 1024;
+			buf = realloc(buf, buflen);
+			if (!buf) {
+				fprintf(stderr, "realloc fatal error\n");
+				exit(1);
+			}
+		}
+		i += sprintf(buf + i, "0x%x:  ", (unsigned int)((char *)binary - binstart));
 		if (*(unsigned char*)binary == 0xcbU)
 		{
 			len = strlen(cb_opcodes[((unsigned char*)binary)[1]].inst);
@@ -279,7 +290,6 @@ void	print_data(const char *filename, int len, int readl)
 
 int main(int ac, char *av[])
 {
-//	char	file[] = "\01\02\03\04\x77\xc4\x2a\x00\x0e\x2a\x1e\xff\xcb\x30\01\02\03\04";
 	char	*dis;
 	char	*file;
 	int		len;
