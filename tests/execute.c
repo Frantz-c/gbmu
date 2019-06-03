@@ -6,7 +6,7 @@
 /*   By: mhouppin <marvin@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/31 11:52:51 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/31 14:27:03 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/03 11:56:09 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -233,6 +233,8 @@ cycle_count_t	execute(registers_t *regs)
 
 	goto *instruction_jumps[opcode];
 
+// No operation
+
 nop:
 	ADD_PC(1);
 	return (4);
@@ -280,6 +282,8 @@ ld_b_imm8:
 	regs->reg_b = imm_8;
 	return (8);
 
+// left-shift a, save bit 7 in carry flag and bit 0 of a
+
 rlca:
 	ADD_PC(1);
 	imm_8 = ((regs->reg_a & BIT_7) == BIT_7) ? BIT_0 : 0;
@@ -287,6 +291,8 @@ rlca:
 	regs->reg_a <<= 1;
 	regs->reg_a |= imm_8;
 	return (4);
+
+// [16-bit immediate] = stack pointer
 
 ld_addr16_sp:
 	ADD_PC(3);
@@ -327,6 +333,8 @@ inc_c:
 		regs->reg_f |= FLAG_H;
 	return (4);
 
+// c--
+
 dec_c:
 	ADD_PC(1);
 	regs->reg_f &= FLAG_CY;
@@ -343,6 +351,8 @@ ld_c_imm8:
 	regs->reg_c = imm_8;
 	return (8);
 
+// right-shift a, save bit 0 in carry flag and bit 7 of a
+
 rrca:
 	ADD_PC(1);
 	imm_8 = ((regs->reg_a & BIT_0) == BIT_0) ? BIT_7 : 0;
@@ -350,6 +360,8 @@ rrca:
 	regs->reg_a >>= 1;
 	regs->reg_a |= imm_8;
 	return (4);
+
+// stop processor AND internal clock until interrupt flag is ok
 
 stop:
 	ADD_PC(1);
@@ -403,6 +415,8 @@ ld_d_imm8:
 	regs->reg_d = imm_8;
 	return (8);
 
+// left-shift a, save bit 7 in carry flag and carry flag in bit 0 of a
+
 rla:
 	ADD_PC(1);
 	imm_8 = ((regs->reg_f & FLAG_CY) == FLAG_CY) ? BIT_0 : 0;
@@ -410,6 +424,8 @@ rla:
 	regs->reg_a <<= 1;
 	regs->reg_a |= imm_8;
 	return (4);
+
+// increment pc with 8-bit immediate value
 
 jr_imm8:
 	ADD_PC(imm_8);
@@ -463,6 +479,8 @@ ld_e_imm8:
 	regs->reg_d = imm_8;
 	return (8);
 
+// right-shift a, save bit 0 in carry flag and carry flag in bit 7 of a
+
 rra:
 	ADD_PC(1);
 	imm_8 = ((regs->reg_f & FLAG_CY) == FLAG_CY) ? BIT_7 : 0;
@@ -470,6 +488,8 @@ rra:
 	regs->reg_a >>= 1;
 	regs->reg_a |= imm_8;
 	return (4);
+
+// increment pc with 8-bit immediate value, if zero flag is not set
 
 jrnz_imm8:
 	if ((regs->reg_f & FLAG_Z) == 0)
@@ -529,6 +549,8 @@ ld_h_imm8:
 
 #define lo_bit opcode
 #define hi_bit imm_8
+
+// decimal-adjust a, used to perform decimal additions on registers
 
 daa:
 	ADD_PC(1);
@@ -592,6 +614,8 @@ daa:
 #undef lo_bit
 #undef hi_bit
 
+// increment pc with 8-bit immediate value, if zero flag is set
+
 jrz_imm8:
 	if ((regs->reg_f & FLAG_Z) == FLAG_Z)
 	{
@@ -653,11 +677,15 @@ ld_l_imm8:
 	regs->reg_l = imm_8;
 	return (8);
 
+// Take the complements of a, same as "not a"
+
 cpl:
 	ADD_PC(1);
 	regs->reg_f |= FLAG_N | FLAG_H;
 	regs->reg_a = ~(regs->reg_a);
 	return (4);
+
+// increment pc with 8-bit immediate value, if carry flag is not set
 
 jrnc_imm8:
 	if ((regs->reg_f & FLAG_CY) == 0)
@@ -719,11 +747,15 @@ ld_hl_imm8:
 	*address = imm_8;
 	return (12);
 
+// Set carry flag
+
 scf:
 	ADD_PC(1);
 	regs->reg_f &= FLAG_Z;
 	regs->reg_f |= FLAG_CY;
 	return (4);
+
+// increment pc with 8-bit immediate value, if carry flag is set
 
 jrc_imm8:
 	if ((regs->reg_f & FLAG_CY) == FLAG_CY)
@@ -785,6 +817,8 @@ ld_a_imm8:
 	ADD_PC(2);
 	regs->reg_a = imm_8;
 	return (8);
+
+// Takes the complements of carry flag, same as "not carry flag"
 
 ccf:
 	ADD_PC(1);
@@ -1079,6 +1113,8 @@ ld_hl_l:
 	WRITE_REGISTER_IF_ROM_AREA(regs->reg_hl, regs->reg_l, 8);
 	*address = regs->reg_l;
 	return (8);
+
+// stop processor until interrupt flag is ok
 
 halt:
 	if (g_memmap.ime == true)
