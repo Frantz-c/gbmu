@@ -6,17 +6,19 @@
 /*   By: mhouppin <marvin@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/31 11:52:51 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/03 11:56:09 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/04 23:37:59 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
+#include "memory_map.h"
 #include "execute.h"
 #include <unistd.h>
+#include "../disassembler/disassemble_table.c"
 
-extern uint8_t		*g_get_real_addr[16];
+//extern uint8_t		*g_get_real_addr[16];
 //extern uint8_t		*g_get_real_write_addr[16];
-extern memory_map_t	g_memmap;
+//extern memory_map_t	g_memmap;
 
 
 #define ADD_PC(offset)	regs->reg_pc += (offset);
@@ -109,6 +111,7 @@ extern memory_map_t	g_memmap;
 		}\
 	} while (0)
 
+#define ENABLE_EXTERNAL_RAM_MBC5()
 // if write on disabled ram is a fatal error,
 // please remove 0x2000 offset
 #define ENABLE_EXTERNAL_RAM_MBC1()	\
@@ -124,6 +127,22 @@ extern memory_map_t	g_memmap;
 	}\
 	g_get_real_addr[10] = EXTERN_RAM;\
 	g_get_real_addr[11] = EXTERN_RAM + 0x1000;\
+
+static char	*get_bin(unsigned char n)
+{
+	static char					buf[128] = {0};
+	unsigned char				curs;
+	unsigned int				i = 0;
+
+	curs = 1UL << 7;
+	while (curs)
+	{
+		buf[i++] = (curs & n) ? '1' : '0';
+		curs >>= 1;
+	}
+	buf[i] = 0;
+	return (buf);
+}
 
 
 cycle_count_t	execute(registers_t *regs)
@@ -224,13 +243,31 @@ cycle_count_t	execute(registers_t *regs)
 	uint8_t			value;
 
 	uint8_t			*address;
+	char			debug[512];
 
 	address = GET_REAL_ADDR(regs->reg_pc);
+	sprintf(debug, "\nPC = 0x%x, flag = %s(ZNHC)\n", regs->reg_pc, get_bin(regs->reg_f));
+	/*
+	sprintf(debug, "\nPC = 0x%x, ADDR = 0x%lx\n"
+					"A = %3u(%2X), B = %3u(%2X)\nC = %3u(%2X), D = %3u(%2X)\n"
+					"E = %3u(%2X), H = %3u(%2X), L = %3u(%2X)\n"
+					"F = %.4s(ZNHC)\n"
+					"AF = %5u(%4X), BC = %5u(%4X), DE = %5u(%4X), HL = %5u(%4X)\n"
+					"SP = %4X\n\t", regs->reg_pc, (unsigned long)address,
+					regs->reg_a, regs->reg_a, regs->reg_b, regs->reg_b, regs->reg_c, regs->reg_c, regs->reg_d, regs->reg_d,
+					regs->reg_e, regs->reg_e, regs->reg_h, regs->reg_h, regs->reg_l, regs->reg_l, get_bin(regs->reg_f), 
+					regs->reg_af, regs->reg_af, regs->reg_bc, regs->reg_bc, regs->reg_de, regs->reg_de, regs->reg_hl, regs->reg_hl,
+					regs->reg_sp
+			);*/
+	plog(debug);
 
-	uint8_t				opcode = address[0];
-	register uint8_t	imm_8 = address[1];
+	uint8_t				opcode = address[0]; register uint8_t	imm_8 = address[1];
 	register uint16_t	imm_16 = (uint16_t)address[1] | ((uint16_t)address[2] << 8);
 
+	if (opcode == 0xcb)
+		plog(cb_opcodes[address[1]].inst);
+	else
+		plog(opcodes[opcode].inst);
 	goto *instruction_jumps[opcode];
 
 // No operation
@@ -365,11 +402,7 @@ rrca:
 
 stop:
 	ADD_PC(1);
-
-	g_memmap.stop_mode = true;
-	while ((g_memmap.complete_block[IF] & BIT_4) == BIT_4)
-		usleep(1000);
-
+	GAMEBOY = STOP_MODE;
 	return (4);
 
 ld_de_imm16:
@@ -428,7 +461,7 @@ rla:
 // increment pc with 8-bit immediate value
 
 jr_imm8:
-	ADD_PC(imm_8);
+	ADD_PC((int8_t)imm_8);
 	return (12);
 
 add_hl_de:
@@ -494,8 +527,8 @@ rra:
 jrnz_imm8:
 	if ((regs->reg_f & FLAG_Z) == 0)
 	{
-		ADD_PC(imm_8);
-		return (12);
+		ADD_PC((int8_t)imm_8);
+	//	ADD_PC(imm_8);
 	}
 	else
 	{
@@ -619,7 +652,7 @@ daa:
 jrz_imm8:
 	if ((regs->reg_f & FLAG_Z) == FLAG_Z)
 	{
-		ADD_PC(imm_8);
+		ADD_PC((int8_t)imm_8);
 		return (12);
 	}
 	else
@@ -690,7 +723,7 @@ cpl:
 jrnc_imm8:
 	if ((regs->reg_f & FLAG_CY) == 0)
 	{
-		ADD_PC(imm_8);
+		ADD_PC((int8_t)imm_8);
 		return (12);
 	}
 	else
@@ -760,7 +793,7 @@ scf:
 jrc_imm8:
 	if ((regs->reg_f & FLAG_CY) == FLAG_CY)
 	{
-		ADD_PC(imm_8);
+		ADD_PC((int8_t)imm_8);
 		return (12);
 	}
 	else
@@ -1118,10 +1151,7 @@ ld_hl_l:
 
 halt:
 	if (g_memmap.ime == true)
-	{
-		while (g_memmap.complete_block[IF] == 0)
-			usleep(1000);
-	}
+		GAMEBOY = HALT_MODE;
 	ADD_PC(1);
 	return (4);
 
@@ -1785,8 +1815,8 @@ xor_a_a:
 	ADD_PC(1);
 	regs->reg_f = 0;
 	regs->reg_a ^= regs->reg_a;
-	if (regs->reg_a == 0)
-		regs->reg_f |= FLAG_Z;
+//	if (regs->reg_a == 0)
+	regs->reg_f |= FLAG_Z;
 	return (4);
 
 or_a_b:

@@ -1,8 +1,8 @@
 NAME = gbmul
-CC = gcc -Wextra -Wall 
+CC = gcc -Wextra -Wall -O3
 FILES = load_cartridge.o\
 main.o\
-mbc_switch.o
+execute.o
 
 all: $(NAME)
 

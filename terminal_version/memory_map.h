@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/23 11:44:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/04 16:10:24 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/04 22:04:33 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -17,7 +17,7 @@
 # include <stdint.h>
 # include <stddef.h>
 # include <stdbool.h>
-# include "execute.h"
+//# include "execute.h"
 # include "ram_registers.h"
 
 /*
@@ -104,6 +104,25 @@ enum	e_cartridge_types
 # define ROM_BANK		g_memmap.rom_banks
 # define CART_REG		g_memmap.cart_reg
 
+# define NORMAL_MODE	0
+# define STOP_MODE		'S'
+# define HALT_MODE		'H'
+
+# define LYC_REGISTER	g_memmap.complete_block[LYC]
+# define LY_REGISTER	g_memmap.complete_block[LY]
+# define TIMA_REGISTER	g_memmap.complete_block[TIMA]
+# define TMA_REGISTER	g_memmap.complete_block[TMA]
+# define TAC_REGISTER	g_memmap.complete_block[TAC]
+# define DIV_REGISTER	g_memmap.complete_block[DIV]
+# define DMA_REGISTER	g_memmap.complete_block[DMA]
+# define IF_REGISTER	g_memmap.complete_block[IF]
+# define LCDC_REGISTER	g_memmap.complete_block[LCDC]
+# define SCX_REGISTER	g_memmap.complete_block[SCX]
+# define SCY_REGISTER	g_memmap.complete_block[SCY]
+# define WX_REGISTER	g_memmap.complete_block[WX]
+# define WY_REGISTER	g_memmap.complete_block[WY]
+//# define _REGISTER	g_memmap.complete_block[]
+
 typedef struct
 {
 	int32_t		jump_addr;				//0x102 - 0x104
@@ -147,8 +166,9 @@ typedef struct	memory_map_s
 		uint8_t	*rom_banks[512];
 	
 	uint8_t		*vram;			// 0x8000 - 0x9800
-	uint8_t		*vram_bg;		// 0x9800 - 0x9fff
 		uint8_t	*vram_banks[2];
+	uint8_t		*vram_bg;		// 0x9800 - 0x9fff
+	uint8_t		*vram_bg2;		// 0x9800 - 0x9fff
 	
 	uint8_t		*extern_ram;	// 0xa000 - 0xbfff
 		uint8_t	*extern_ram_banks[16];
@@ -183,6 +203,7 @@ memory_map_t;
 uint8_t			*g_get_real_addr[16];
 //uint8_t			*g_get_real_write_addr[16] = {NULL};
 memory_map_t	g_memmap;
+uint32_t		GAMEBOY;
 
 # define GET_REAL_ADDR(virtual_addr)	\
 		 (\
@@ -199,5 +220,9 @@ memory_map_t	g_memmap;
 				goto *jump_to_mbcx[g_memmap.mbc][(virtual_addr) >> 12];\
 			}\
 		} while(0)
+
+
+extern void		plog(const char *s);
+extern void		plog2(const char *s, uint32_t size);
 
 #endif

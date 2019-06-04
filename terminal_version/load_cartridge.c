@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/29 17:38:18 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/30 15:46:15 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/04 22:10:05 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -190,9 +190,11 @@ static void	malloc_blocks(cartridge_t *cart)
 	g_memmap.switch_rom = NULL;
 
 	// 0x8000 - 0xa000
-	g_memmap.vram = g_memmap.complete_block + 0x8000;
-	g_memmap.vram_banks[0] = valloc(0x4000);
-	g_memmap.vram_banks[1] = g_memmap.vram_banks[0] + 0x2000;
+	g_memmap.vram = valloc(0x4000);
+	g_memmap.vram_banks[0] = g_memmap.vram;
+	g_memmap.vram_banks[1] = g_memmap.vram + 0x1800;
+	g_memmap.vram_bg = g_memmap.vram + 0x3000;
+	g_memmap.vram_bg2 = g_memmap.vram + 0x3800;
 
 	// 0xa000 - 0xbfff
 	if ((g_memmap.save_size = get_external_ram_size(cart)) == 0)
@@ -278,6 +280,15 @@ static void	load_cartridge_on_memory(uint8_t *mem, cartridge_t *cart, uint32_t t
 		g_memmap.rom_banks[i] = rom;
 		rom += 0x4000;
 	}
+
+	g_get_real_addr[0] = g_memmap.fixed_rom;			//0x0000
+	g_get_real_addr[1] = g_memmap.fixed_rom + 0x1000;	//0x1000
+	g_get_real_addr[2] = g_memmap.fixed_rom + 0x2000;	//0x2000
+	g_get_real_addr[3] = g_memmap.fixed_rom + 0x3000;	//0x3000
+	g_get_real_addr[4] = g_memmap.switch_rom;			//0x4000
+	g_get_real_addr[5] = g_memmap.switch_rom + 0x1000;	//0x5000
+	g_get_real_addr[6] = g_memmap.switch_rom + 0x2000;	//0x6000
+	g_get_real_addr[7] = g_memmap.switch_rom + 0x3000;	//0x7000
 }
 
 static void	load_rom_only_cartridge(uint8_t *mem, cartridge_t *cart)

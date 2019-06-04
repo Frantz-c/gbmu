@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/24 17:07:32 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/04 18:53:48 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/04 21:05:56 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -441,9 +441,8 @@ while (1)
 /*****************************
 ******* CHARACTER DATA *******
 *****************************/
-# define CHR_DATA(number, line, base)	(base + (line << 1) + (n << 4))
+# define CHR_DATA(number, line, base)	((base) + ((line) << 1) + ((number) << 4))
 // line = 0-7, n = 0-?
-# define TILE_CHR(n, base)		(base + (n << 2) + 2)
 
 
 /*******************
