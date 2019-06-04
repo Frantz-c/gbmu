@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/30 09:02:45 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/31 13:43:19 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/04 13:11:34 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -253,6 +253,40 @@ static void		*screen_control_thread(void *unused)
 	return (NULL);
 }
 
+#define	CALL_INTERRUPT(interrupt, regs)	\
+do\
+{\
+	g_memmap.ime = 0;\
+	*GET_REAL_ADDR(regs->reg_sp) = regs->reg_pc;\
+	regs->reg_pc = interrupt;\
+}\
+while (0)
+
+void			check_hardware_registers(register_t *regs)
+{
+	uint16_t	interrupt = 0;
+
+	// vblank
+	// lcdc
+	if (tima_overflow) {
+		g_memmap.complete_block[IF] |= TIMAOVF_INT;
+		if (interrupt == 0) {
+			interrupt = TIMAOVF_INT;
+		}
+	}
+	//serial
+	//joypad
+	if (get_joypad_event()) {
+		g_memmap.complete_block[IF] |= JOYPAD_INT;
+		if (interrupt == 0) {
+			interrupt = JOYPAD_INT;
+		}
+	}
+
+	if (g_memmap.ime)
+		CALL_INTERRUPT(interrupt, regs);
+}
+
 static void		*cpu_control_thread(void *unused)
 {
 	registers_t		regs = {{0}};
@@ -264,8 +298,10 @@ static void		*cpu_control_thread(void *unused)
 
 	CPU_LOOP()
 	{
-		// cycles = execute(&regs);
-		// check interrupts & launch interrupts & sync
+		cycles = execute(&regs);
+
+		// check & call interrupts
+		check_hardware_registers(regs);
 		break;
 	}
 	return (NULL);
