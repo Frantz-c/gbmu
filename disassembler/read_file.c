@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/24 14:40:04 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/24 19:34:36 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/04 12:32:24 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -94,13 +94,20 @@ unsigned char	*get_file_contents(const char *file, unsigned int *length)
 
 void	print_help(const char *prog)
 {
-		fprintf(stderr, "%s \"file\" [option]? [start offset] [end offset]\n\n"
+		fprintf(stderr, "%s [option]? \"file\" ([start offset] [end offset]?)?\n\n"
 						"options:\n"
+						"  without verbose\n"
 						"    --bin: binary\n"
 						"    --hex: hexa\n"
 						"    --dec: decimal\n"
 						"    --chr: ascii\n"
-						"    --mixed: hexa + ascii\n\n", prog);
+						"    --mixed: hexa + ascii\n\n"
+						"  with verbose\n"
+						"    --vbin: binary\n"
+						"    --vhex: hexa\n"
+						"    --vdec: decimal\n"
+						"    --vchr: ascii\n"
+						"    --vmixed: hexa + ascii\n\n", prog);
 }
 
 char	*get_bin(unsigned char n)
@@ -145,23 +152,27 @@ void	print_addr(unsigned int addr, int base)
 		{
 			case 2:
 			case 'h':
-			case 16: fmt = "\e[0;33m0x%x:\e[0m    "; break;
+			case 16: fmt = "0x%-8x: "; break;
 			case 'c':
-			case 10: fmt = "\e[0;33m%u:  \e[0m    "; break;
+			case 10: fmt = "%-10u: "; break;
 		}
 	}
-	printf(fmt, addr);
+	dprintf(2, "\e[0;33m");
+	dprintf(1, fmt, addr);
+	dprintf(2, "\e[0m");
 }
 
-void	print_line(char *buf, int base, unsigned int addr)
+void	print_line(char *buf, int base, unsigned int addr, int verbose)
 {
 	if (*buf)
-		puts(buf);
-	print_addr(addr, base);
+		dprintf(1, "%s\n", buf);
+	if (verbose)
+		print_addr(addr, base);
 }
 
 unsigned int	add_octet(char *buf, unsigned int i, const unsigned char *byte, int base)
 {
+/*
 	static char	*fmt = NULL;
 
 	if (!fmt)
@@ -169,17 +180,18 @@ unsigned int	add_octet(char *buf, unsigned int i, const unsigned char *byte, int
 		switch (base)
 		{
 			case 2: fmt = (void*)1; break;
-			case 10: fmt = "%u "; break;
-			case 16: fmt = "%x "; break;
+			case 10: fmt = "%3u "; break;
+		//	case 16: fmt = "%x "; break;
 			case 'c': fmt = "%c"; break;
 		}
 	}
+	*/
 	if (base == 2)
 		return (i + sprintf(buf + i, "%s ", get_bin(*byte)));
 	else if (base == 'c')
 	{
 	   	if (!isprint(*byte))
-			return (i + sprintf(buf + i, " \e[1;35m%u\e[0m ", *byte));
+			return (i + sprintf(buf + i, " \e[1;35m%3u\e[0m ", *byte));
 		return (i + sprintf(buf + i, "%c", *byte));
 	}
 	else if (base == 16)
@@ -190,29 +202,29 @@ unsigned int	add_octet(char *buf, unsigned int i, const unsigned char *byte, int
 			return (i + sprintf(buf + i, "%s ", get_hex(*byte)));
 		return (i + sprintf(buf + i, "\e[0;33m%c\e[0m  ", *byte));
 	}
-	return (i + sprintf(buf + i, "%u ", *byte));
+	return (i + sprintf(buf + i, "%-3u ", *byte));
 }
 
-void	print_file(unsigned char *file, unsigned int start, unsigned int end, int base)
+void	print_file(unsigned char *file, unsigned int start, unsigned int end, int base, int verbose)
 {
 	char			buf[512] = {0};
 	unsigned int	i;
 
 	i = 0;
-	if (start & 0xf)
+	if (verbose && (start & 0xf))
 		print_addr(start, base);
 	while (start < end)
 	{
 		if ((start & 0xf) == 0)
 		{
-			print_line(buf, base, start);
+			print_line(buf, base, start, verbose);
 			i = 0;
 		}
 		i = add_octet(buf, i, file + start, base);
 		start++;
 	}
 	if (i)
-		print_line(buf, base, start);
+		print_line(buf, base, start, verbose);
 }
 
 int		main(int ac, char *av[])
@@ -220,7 +232,8 @@ int		main(int ac, char *av[])
 	unsigned char	*file;
 	unsigned int	len;
 	unsigned int	start, end;
-	int				base;
+	int				base = 0;
+	int				verbose = 1;
 	unsigned int	i = 1;
 
 	if (ac < 2 || ac > 5)
@@ -229,16 +242,37 @@ int		main(int ac, char *av[])
 		return (1);
 	}
 	base = 0;
-	if (strcmp(av[1], "--bin") == 0)
+	if (strcmp(av[1], "--bin") == 0) {
 		base = 2;
-	else if (strcmp(av[1], "--hex") == 0)
+		verbose = 0;
+	}
+	else if (strcmp(av[1], "--hex") == 0) {
 		base = 16;
-	else if (strcmp(av[1], "--dec") == 0)
+		verbose = 0;
+	}
+	else if (strcmp(av[1], "--dec") == 0) {
 		base = 10;
-	else if (strcmp(av[1], "--chr") == 0)
+		verbose = 0;
+	}
+	else if (strcmp(av[1], "--chr") == 0) {
 		base = 'c';
-	else if (strcmp(av[1], "--mixed") == 0)
+		verbose = 0;
+	}
+	else if (strcmp(av[1], "--mixed") == 0) {
 		base = 'h';
+		verbose = 0;
+	}
+	else if (strcmp(av[1], "--vbin") == 0)
+		base = 2;
+	else if (strcmp(av[1], "--vhex") == 0)
+		base = 16;
+	else if (strcmp(av[1], "--vdec") == 0)
+		base = 10;
+	else if (strcmp(av[1], "--vchr") == 0)
+		base = 'c';
+	else if (strcmp(av[1], "--vmixed") == 0)
+		base = 'h';
+
 	if (base)
 		i++;
 	else
@@ -281,7 +315,7 @@ int		main(int ac, char *av[])
 	if (!base)
 		base = 16;
 
-	print_file(file, start, end, base);
+	print_file(file, start, end, base, verbose);
 	puts("");
 
 	return (0);
