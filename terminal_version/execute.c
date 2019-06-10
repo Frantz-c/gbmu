@@ -6,7 +6,7 @@
 /*   By: mhouppin <marvin@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/31 11:52:51 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/04 23:37:59 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/05 11:42:11 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -241,13 +241,13 @@ cycle_count_t	execute(registers_t *regs)
 
 	cycle_count_t	cycles;
 	uint8_t			value;
+	register int8_t	diff;
 
 	uint8_t			*address;
 	char			debug[512];
 
 	address = GET_REAL_ADDR(regs->reg_pc);
 	sprintf(debug, "\nPC = 0x%x, flag = %s(ZNHC)\n", regs->reg_pc, get_bin(regs->reg_f));
-	/*
 	sprintf(debug, "\nPC = 0x%x, ADDR = 0x%lx\n"
 					"A = %3u(%2X), B = %3u(%2X)\nC = %3u(%2X), D = %3u(%2X)\n"
 					"E = %3u(%2X), H = %3u(%2X), L = %3u(%2X)\n"
@@ -258,7 +258,7 @@ cycle_count_t	execute(registers_t *regs)
 					regs->reg_e, regs->reg_e, regs->reg_h, regs->reg_h, regs->reg_l, regs->reg_l, get_bin(regs->reg_f), 
 					regs->reg_af, regs->reg_af, regs->reg_bc, regs->reg_bc, regs->reg_de, regs->reg_de, regs->reg_hl, regs->reg_hl,
 					regs->reg_sp
-			);*/
+			);
 	plog(debug);
 
 	uint8_t				opcode = address[0]; register uint8_t	imm_8 = address[1];

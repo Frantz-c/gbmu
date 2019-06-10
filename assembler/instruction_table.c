@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/21 16:29:29 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/22 20:42:59 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/10 16:49:50 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -119,8 +119,6 @@ t_inst	str_inst_info[] = {
 	{"jrc", "JRC", custom_jrc_spec},
 	{"cmp", "CMP", cp_spec},
 	{"mov", "MOV", ld_spec},
-	{"movdec", "MOVDEC", ldd_spec},
-	{"movinc", "MOVINC", ldi_spec},
 	{"callnz", "CALLNZ", custom_callnz_spec},
 	{"callz", "CALLZ", custom_callz_spec},
 	{"callnc", "CALLNC", custom_callnc_spec},
@@ -129,7 +127,7 @@ t_inst	str_inst_info[] = {
 	{"retz", "RETZ", custom__spec},
 	{"retc", "RETC", custom__spec},
 	{"retnc", "RETNC", custom__spec},
-	{"", "", custom__spec},
+	{NULL, NULL, NULL},
 };
 
 // AJOUTER les alternatives a ldi dans ld (pareil pour ldd)
@@ -560,7 +558,7 @@ t_spec	xor_spec[] = {
 // AND x --> A = A & x
 t_spec	and_spec[] = {
 	{0xa7, A, 0, 4},
-	{0xa0, B, 0, 4},
+	{0xa0, B, 0, 4}^^^^^^^^^^^^^,
 	{0xa1, C, 0, 4},
 	{0xa2, D, 0, 4},
 	{0xa3, E, 0, 4},
@@ -611,7 +609,7 @@ t_spec	adc_spec[] = {
 	{0x8a, D, 0, 4},
 	{0x8b, E, 0, 4},
 	{0x8c, H, 0, 4},
-	{0x8d, L, 0, 4},
+	{0x8d, L, 0, 4}____,
 	{0x8e, HL_ADDR, 0, 8},
 	{0xce, ____, 0, 8},
 	{-1, 0, 0, 0}
@@ -778,3 +776,227 @@ t_spec	ld_spec[] = {
 	{0x36, HL_ADDR, IMM8, 12},
 	{-1, 0, 0, 0}
 };
+
+/*
+
+	premiere lecture:
+
+		recuperation des directives (.CARTRIDGE, .TITLE, ...)
+
+	deuxieme lecture:
+
+		recuperation des labels
+
+	troisieme lecture:
+
+		compilation(remplacement des defines a la volee, ...)
+
+
+	const void *const	mnemonic[]; // check mnemoniques
+	-> unknown mnemonic:
+		directive_t		directive[]; // %define, %undef, %bytes, %include
+		-> unknown directive:
+			define_t		define[]; // check defines
+			-> not a define: ERROR
+	const void *const operands[][]; // check operand 1
+
+
+	%define	ARGUMENT(a,b)	a, b
+
+	ld	ARGUMENT(C, D)
+
+*/
+
+
+/*
+
+	file1:
+
+	.bank	1, 0
+
+	ld	A, 0x3
+	...
+
+	.bank	1, 0x400
+
+
+*/
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdint.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <ctype.h>
+
+char	*get_file_contents(const char *file, unsigned int *length)
+{
+	unsigned char		*content;
+	const int	fd = open(file, O_RDONLY);
+	struct stat	filestat;
+
+	if (fd == -1)
+	{
+		fprintf(stderr, "can't open file %s\n", file);
+		return (NULL);
+	}
+	lstat(file, &filestat);
+	if (filestat.st_size == 0)
+	{
+		fprintf(stderr, "empty file\n");
+		return (NULL);
+	}
+	if ((content = malloc(filestat.st_size + 1)) != NULL)
+	{
+		*length = read(fd, content, filestat.st_size);
+		close(fd);
+	}
+	return (content);
+}
+
+typedef struct		ll_s
+{
+	char			*name;		// file name
+	char			*content;
+	unsigned int	len;		// file length
+	unsigned int	pos;		// file start position (bank number * 0x4000 + offset)
+	struct ll_s		*next;
+}					ll_t;
+
+typedef struct		error_s
+{
+	char			*display;
+	struct error_s	*next;
+}					error_t;
+
+typedef struct		section_s
+{
+	char				*s;
+	struct section_s	*next;
+	unsigned int		start_pos;
+}					section_t;
+
+void	push_file_name(ll_t **p, char *filename)
+{
+	static ll_t	*ptr = NULL;
+
+	if (ptr == NULL)
+	{
+		ptr = malloc(sizeof(ll_t));
+		*p = ptr;
+		ptr->name = filename;
+		ptr->pos = 0;
+		ptr->next = NULL;
+		return ;
+	}
+	ptr->next = malloc(sizeof(ll_t));
+	ptr = ptr->next;
+	ptr->name = filname;
+	ptr->pos = 0;
+	ptr->next = NULL;
+}
+
+void	set_input_output_file_name(char *v[], ll_t **src, char **dst)
+{
+	unsigned int	gbc = 0;
+
+	for (; *v; v++)
+	{
+		// if (v == "-o") *dst = strdup(v + 1);
+		if (**v == '-' && (*v)[1] == 'o' && (*v)[2] == '\0')
+		{
+			if (v[1] == NULL || v[1][0] == '\0')
+			{
+				fprintf(stderr, "file name expected after -o\n");
+				exit(1);
+			}
+			v++;
+			*dst = strdup(*v);
+		}
+		else if (strcmp(*v, "--gbc"))
+		{
+			if (gbc)
+			{
+				fprintf(stderr, "too many --gbc arguments");
+				exit(1);
+			}
+			gbc = 1;
+		}
+		else
+		{
+			push_file_name(src);
+		}
+	}
+	if (*dst == NULL)
+	{
+		*dst = (gbc) ?
+			strdup("no_name.gbc") :
+			strdup("no_name.gb");
+	}
+}
+
+void	load_files(ll_t *src)
+{
+	int		error;
+
+	while (src)
+	{
+		if ((src->content = get_file_contents(src->name, &src->len)) == NULL)
+			error = 1;
+		src = src->next;
+	}
+	if (error)
+		exit(1);
+}
+
+char	*assemble(char *bin, char *code, unsigned int start, unsigned int end)
+{
+	while (*code)
+}
+
+char	*assemble_sections(section_t *sect, cartridge_t *cart)
+{
+	char			*bin = malloc(cart->rom_size);
+	char			*cur = bin;
+	unsigned int	end;
+
+	for (; sect; sect = sect->next)
+	{
+		end = sect->next ? sect->next->start_pos : ((sect->start_pos / 0x4000) + 1) * 0x4000;
+		bin = assemble(bin, sect->s, sect->start_pos, end);
+	}
+}
+
+int		main(unsigned int argc, char *argv[])
+{
+	cartridge_t		cart;
+	labels_t		label;
+	ll_t			*src = NULL;
+	char			*dst = NULL;
+	char			*content;
+	section_t		*sections;
+	char			*binary;
+
+	if (argc == 1)
+	{
+		print_usage(argv[0]);
+		return (1);
+	}
+	set_input_output_file_name(argv + 1, &src, &dst);
+	load_files(src);
+	set_cartridge_header(&cart, src);	// get cartridge informations in all files (.cartridge_type, .ram_size, .rom_size, ...)
+	content = merge_files(src, &cart);	// merge all files into content.
+	free_list(src);
+
+	sections = get_sections(content);	// cut content into sections (consecutive code areas)
+	free(content);
+
+	binary = assemble_sections(sections, &cart);
+	put_file_contents(binary, cart->rom_size, dst);
+	free(dst);
+
+	return (0);
+}

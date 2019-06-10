@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/29 17:38:18 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/04 22:10:05 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/05 10:47:42 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -429,7 +429,7 @@ static void	load_cartridge(uint8_t *mem, cartridge_t *cart, const char *path)
 
 extern void		open_cartridge(const char *path)
 {
-	cartridge_t		cartridge = {0};
+	cartridge_t		cartridge = {0, {0}};
 	uint8_t			*content;
 
 	if ((content = get_file_contents(path, &cartridge.size)) == NULL)

@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/30 09:02:45 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/04 23:32:50 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/05 13:23:35 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -100,7 +100,7 @@
 
 uint8_t			*g_get_real_addr[16] = {NULL};
 memory_map_t	g_memmap;
-//uint32_t		GAMEBOY = NORMAL_MODE;
+uint32_t		GAMEBOY = NORMAL_MODE;
 
 static void		put_file_contents(const char *file, const void *content, uint32_t length)
 {
@@ -346,7 +346,7 @@ do\
 }\
 while (0)
 
-void			call_interrupt(registers_t *regs, uint16_t interrupt)
+void			call_interrupt(registers_t *regs, uint16_t interrupt, uint8_t reset)
 {
 	// joypad is set before
 
@@ -364,6 +364,7 @@ void			call_interrupt(registers_t *regs, uint16_t interrupt)
 
 	if (interrupt) {
 		//plog("INTERRUPT\n");
+		IF_REGISTER &= reset;
 		CALL_INTERRUPT(interrupt, regs);
 	}
 	// faire tous les calls dans l'ordre ? (si oui, modifier l'instruction ret)
@@ -377,7 +378,7 @@ static void		dma_transfer(void)
 	memcpy(dst, src, 0xa0);
 }
 
-static void		lcd_write_line(char *screen)
+static uint16_t		lcd_write_line(char *screen, uint8_t *reset)
 {
 	char		*bg_chr_code = (char *)((LCDC_REGISTER & 0x08) ? g_memmap.vram_bg + 0x400 : g_memmap.vram_bg);
 	char		*bg_data = (char *)((LCDC_REGISTER & 0x10) ? g_memmap.vram : g_memmap.vram + 0x800);
@@ -446,11 +447,21 @@ static void		lcd_write_line(char *screen)
 	{
 		tile_num = 0; //remove this
 	}
+
+	if (STAT_REGISTER & 0x8)
+	{
+		if (reset)
+			*reset = 0xfeU;
+		IF_REGISTER |= 0x01U;
+		return (LCDC_INT);
+	}
+	return (0);
 }
 
 
 /*
  * add STOP_MODE & HALT_MODE to execute.c
+ * http://www.codeslinger.co.uk/pages/projects/gameboy/graphics.html
 */
 static void		start_cpu_lcd_events(void)
 {
@@ -459,6 +470,9 @@ static void		start_cpu_lcd_events(void)
 	registers_t		regs = {{0}};
 	cycle_count_t	cycles;
 	uint16_t		interrupt = 0;
+	uint8_t			reset_int_flag;
+	uint8_t			counter = 0;
+	//uint16_t		tmp_interrupt;
 
 	regs.reg_pc = 0x100U;
 	regs.reg_sp = 0xfffeU;
@@ -474,21 +488,42 @@ static void		start_cpu_lcd_events(void)
 			cycles = execute(&regs);
 			//plog("execute_end\n");
 		}
+		counter++;
 
 		// Check joypad events
-		interrupt = get_joypad_event();
+		if (IF_REGISTER & 0x10U) {
+			if ((interrupt = get_joypad_event()) != 0)
+				reset_int_flag = 0xefU;
+		}
+		else
+			get_joypad_event();
 
-		// write one line to the buffer and display screen if all lines filled
-		if (((LCDC_REGISTER & 0x80U) && GAMEBOY != STOP_MODE) || LY_REGISTER != 0)
+		if ((counter & 0x3) == 0)
 		{
-			if (LY_REGISTER < 144) {
-				//plog("\nprint_line_start\n");
-				lcd_write_line(true_screen);
-				//plog("print_lin_end\n");
+			// write one line to the buffer and display screen if all lines filled
+			if (((LCDC_REGISTER & 0x80U) && GAMEBOY != STOP_MODE) || LY_REGISTER != 0)
+			{
+				if ((STAT_REGISTER & 0x40) && LY_REGISTER == LYC_REGISTER)
+				{
+					if (interrupt == 0) {
+						interrupt = LCDC_INT;
+						reset_int_flag = 0xfdU;
+					}
+					IF_REGISTER |= 0x02U;
+				}
+				if (LY_REGISTER < 144) {
+					//plog("\nprint_line_start\n");
+					if (interrupt)
+						lcd_write_line(true_screen, NULL);
+					else
+						interrupt = lcd_write_line(true_screen, &reset_int_flag);
+
+					//plog("print_lin_end\n");
+				}
+				if (LY_REGISTER == 143U)
+					lcd_display_screen(true_screen, NULL);
+				LY_REGISTER = (LY_REGISTER == 153U) ? 0 : LY_REGISTER + 1;
 			}
-			if (LY_REGISTER == 143U)
-				lcd_display_screen(true_screen, NULL);
-			LY_REGISTER = (LY_REGISTER == 153U) ? 0 : LY_REGISTER + 1;
 		}
 
 		// DMA transfer if any
@@ -504,22 +539,22 @@ static void		start_cpu_lcd_events(void)
 
 		if (GAMEBOY == HALT_MODE && interrupt) {
 			GAMEBOY = NORMAL_MODE;
-			call_interrupt(&regs, interrupt);
+			call_interrupt(&regs, interrupt, reset_int_flag);
 		}
 		else if (GAMEBOY == STOP_MODE && (interrupt || IF_REGISTER)) {
 			GAMEBOY = NORMAL_MODE;
-			call_interrupt(&regs, interrupt);
+			call_interrupt(&regs, interrupt, reset_int_flag);
 		}
 		else {
 			// call interrupt if any
 			if (g_memmap.ime)
-				call_interrupt(&regs, interrupt);
+				call_interrupt(&regs, interrupt, reset_int_flag);
 		}
-/*
+
 		// sleep after put a frame
 		if (LY_REGISTER == 0)
 			usleep(16500);
-*/
+
 	}
 }
 
@@ -580,7 +615,7 @@ static void		start_game(void)
 	TMA_REGISTER = 0;
 	TAC_REGISTER = 0;
 	DMA_REGISTER = 0xffU;
-	LCDC_REGISTER = 0x80U;
+	LCDC_REGISTER = 0; //0x80U;
 	pthread_create(&div, NULL, div_thread, NULL);
 	pthread_create(&tima, NULL, tima_thread, NULL);
 	term_noecho_mode(ON);
