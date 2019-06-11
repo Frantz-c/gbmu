@@ -6,7 +6,7 @@
 /*   By: mhouppin <marvin@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/31 11:52:51 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/05 11:42:11 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/11 18:45:52 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -144,6 +144,7 @@ static char	*get_bin(unsigned char n)
 	return (buf);
 }
 
+cycle_count_t	totalcycles;
 
 cycle_count_t	execute(registers_t *regs)
 {
@@ -241,33 +242,34 @@ cycle_count_t	execute(registers_t *regs)
 
 	cycle_count_t	cycles;
 	uint8_t			value;
-	register int8_t	diff;
 
 	uint8_t			*address;
 	char			debug[512];
 
 	address = GET_REAL_ADDR(regs->reg_pc);
-	sprintf(debug, "\nPC = 0x%x, flag = %s(ZNHC)\n", regs->reg_pc, get_bin(regs->reg_f));
+	uint8_t				opcode = address[0];
+	register uint8_t	imm_8 = address[1];
+	register uint16_t	imm_16 = (uint16_t)address[1] | ((uint16_t)address[2] << 8);
+/*
+if (totalcycles > 1000000000)
+{*/
 	sprintf(debug, "\nPC = 0x%x, ADDR = 0x%lx\n"
 					"A = %3u(%2X), B = %3u(%2X)\nC = %3u(%2X), D = %3u(%2X)\n"
 					"E = %3u(%2X), H = %3u(%2X), L = %3u(%2X)\n"
 					"F = %.4s(ZNHC)\n"
 					"AF = %5u(%4X), BC = %5u(%4X), DE = %5u(%4X), HL = %5u(%4X)\n"
-					"SP = %4X\n\t", regs->reg_pc, (unsigned long)address,
+					"SP = %4X\n\n\t", regs->reg_pc, (unsigned long)address,
 					regs->reg_a, regs->reg_a, regs->reg_b, regs->reg_b, regs->reg_c, regs->reg_c, regs->reg_d, regs->reg_d,
 					regs->reg_e, regs->reg_e, regs->reg_h, regs->reg_h, regs->reg_l, regs->reg_l, get_bin(regs->reg_f), 
 					regs->reg_af, regs->reg_af, regs->reg_bc, regs->reg_bc, regs->reg_de, regs->reg_de, regs->reg_hl, regs->reg_hl,
 					regs->reg_sp
 			);
 	plog(debug);
-
-	uint8_t				opcode = address[0]; register uint8_t	imm_8 = address[1];
-	register uint16_t	imm_16 = (uint16_t)address[1] | ((uint16_t)address[2] << 8);
-
 	if (opcode == 0xcb)
 		plog(cb_opcodes[address[1]].inst);
 	else
 		plog(opcodes[opcode].inst);
+//}
 	goto *instruction_jumps[opcode];
 
 // No operation
@@ -461,6 +463,7 @@ rla:
 // increment pc with 8-bit immediate value
 
 jr_imm8:
+	ADD_PC(2);
 	ADD_PC((int8_t)imm_8);
 	return (12);
 
@@ -525,13 +528,12 @@ rra:
 // increment pc with 8-bit immediate value, if zero flag is not set
 
 jrnz_imm8:
-	if ((regs->reg_f & FLAG_Z) == 0)
-	{
+	if ((regs->reg_f & FLAG_Z) == 0) {
+		ADD_PC(2);
 		ADD_PC((int8_t)imm_8);
-	//	ADD_PC(imm_8);
+		return (12);
 	}
-	else
-	{
+	else {
 		ADD_PC(2);
 		return (8);
 	}
@@ -652,6 +654,7 @@ daa:
 jrz_imm8:
 	if ((regs->reg_f & FLAG_Z) == FLAG_Z)
 	{
+		ADD_PC(2);
 		ADD_PC((int8_t)imm_8);
 		return (12);
 	}
@@ -723,6 +726,7 @@ cpl:
 jrnc_imm8:
 	if ((regs->reg_f & FLAG_CY) == 0)
 	{
+		ADD_PC(2);
 		ADD_PC((int8_t)imm_8);
 		return (12);
 	}
@@ -793,6 +797,7 @@ scf:
 jrc_imm8:
 	if ((regs->reg_f & FLAG_CY) == FLAG_CY)
 	{
+		ADD_PC(2);
 		ADD_PC((int8_t)imm_8);
 		return (12);
 	}
@@ -2454,7 +2459,7 @@ ei:
 	return (4);
 
 cp_a_imm8:
-	ADD_PC(1);
+	ADD_PC(2);
 	regs->reg_f = FLAG_N;
 	if (regs->reg_a == imm_8)
 		regs->reg_f |= FLAG_Z;

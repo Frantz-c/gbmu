@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/30 09:02:45 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/05 13:23:35 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/11 19:00:05 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -463,12 +463,14 @@ static uint16_t		lcd_write_line(char *screen, uint8_t *reset)
  * add STOP_MODE & HALT_MODE to execute.c
  * http://www.codeslinger.co.uk/pages/projects/gameboy/graphics.html
 */
+
+cycle_count_t	totalcycles;
+
 static void		start_cpu_lcd_events(void)
 {
 	char			screen[SCREEN_SIZE + 8];
 	char			*true_screen = screen + 8;
 	registers_t		regs = {{0}};
-	cycle_count_t	cycles;
 	uint16_t		interrupt = 0;
 	uint8_t			reset_int_flag;
 	uint8_t			counter = 0;
@@ -476,20 +478,21 @@ static void		start_cpu_lcd_events(void)
 
 	regs.reg_pc = 0x100U;
 	regs.reg_sp = 0xfffeU;
-	cycles = 0;
+	totalcycles = 0;
 
 	screen_init(true_screen);
 
+//	alarm(240);
 	for (;;)
 	{
 		// Execute cpu instruction
 		if (GAMEBOY == NORMAL_MODE) {
 			//plog("\nexecute_start\n");
-			cycles = execute(&regs);
+			totalcycles += execute(&regs);
 			//plog("execute_end\n");
 		}
-		counter++;
 
+		counter++;
 		// Check joypad events
 		if (IF_REGISTER & 0x10U) {
 			if ((interrupt = get_joypad_event()) != 0)
@@ -527,7 +530,7 @@ static void		start_cpu_lcd_events(void)
 		}
 
 		// DMA transfer if any
-		if (GAMEBOY != HALT_MODE && GAMEBOY != STOP_MODE)
+		if (GAMEBOY == NORMAL_MODE)
 		{
 			if (DMA_REGISTER < 0xe0U && DMA_REGISTER > 0x7fU) // CGB ? DMA >= 0
 			{
@@ -550,11 +553,13 @@ static void		start_cpu_lcd_events(void)
 			if (g_memmap.ime)
 				call_interrupt(&regs, interrupt, reset_int_flag);
 		}
+//		printf("\e[1Amode = %s     \n", GAMEBOY == NORMAL_MODE ? "NORMAL" : "HALT/STOP");
 
+/*
 		// sleep after put a frame
 		if (LY_REGISTER == 0)
 			usleep(16500);
-
+*/
 	}
 }
 
@@ -635,6 +640,14 @@ static void		restore_terminal(int sig)
 	exit(1);
 }
 
+static void		toto(int sig)
+{
+	fprintf(stderr, "cycle_count = %lu\n\n\n", totalcycles);
+	restore_terminal(0);
+	exit(156);
+	return ;
+}
+
 int		main(int argc, char *argv[])
 {
 	if (argc != 2)
@@ -644,7 +657,8 @@ int		main(int argc, char *argv[])
 	}
 
 	signal(SIGINT, restore_terminal);
-	
+	signal(SIGALRM, toto);
+
 	remove("log_gbmul");
 
 	open_cartridge(argv[1]);

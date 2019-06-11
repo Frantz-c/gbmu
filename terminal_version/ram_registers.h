@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/24 17:07:32 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/04 21:05:56 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/11 19:48:02 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -395,12 +395,12 @@ while (1)
 /*
 	LY to compare register (LYC == LY interrupt, ...)
 */
-# define BGP	0xff47U // [33221100] BG palette (R/W), non CGB-only
+# define BGP	0xff47U // [ddccbbaa] BG palette (R/W), non CGB-only
 /*
-	00 = shade for color number 0
-	11 = shade for color number 1
-	22 = shade for color number 2
-	33 = shade for color number 3
+	aa = shade for color number 0
+	bb = shade for color number 1
+	cc = shade for color number 2
+	dd = shade for color number 3
 
 	00 -> white
 	01 -> light gray
