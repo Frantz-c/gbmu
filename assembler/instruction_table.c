@@ -558,7 +558,7 @@ t_spec	xor_spec[] = {
 // AND x --> A = A & x
 t_spec	and_spec[] = {
 	{0xa7, A, 0, 4},
-	{0xa0, B, 0, 4}^^^^^^^^^^^^^,
+	{0xa0, B, 0, 4},
 	{0xa1, C, 0, 4},
 	{0xa2, D, 0, 4},
 	{0xa3, E, 0, 4},
@@ -609,7 +609,7 @@ t_spec	adc_spec[] = {
 	{0x8a, D, 0, 4},
 	{0x8b, E, 0, 4},
 	{0x8c, H, 0, 4},
-	{0x8d, L, 0, 4}____,
+	{0x8d, L, 0, 4},
 	{0x8e, HL_ADDR, 0, 8},
 	{0xce, ____, 0, 8},
 	{-1, 0, 0, 0}
@@ -872,11 +872,27 @@ typedef struct		error_s
 	struct error_s	*next;
 }					error_t;
 
+typedef struct		parsed_s
+{
+	unsigned int	type; // MNEMONIC, OPERAND, LABEL, DIRECTIVE
+	char			*data;
+	struct parsed_s	*next;
+	unsigned int	hash;
+}					parsed_t;
+
+typedef struct		line_s
+{
+	
+	struct parsed_s		*code;
+	struct line_s		*next;
+	unsigned int		line;
+}					line_t;
+
 typedef struct		section_s
 {
-	char				*s;
+	struct line_s		*line;
 	struct section_s	*next;
-	unsigned int		start_pos;
+	char				*file;
 }					section_t;
 
 void	push_file_name(ll_t **p, char *filename)
@@ -952,9 +968,54 @@ void	load_files(ll_t *src)
 		exit(1);
 }
 
-char	*assemble(char *bin, char *code, unsigned int start, unsigned int end)
+#define MNEMONIC_EXISTS(hash)	check_mnemonic[hash]
+#define DIRECTIVE_EXISTS(hash)	check_directive[hash]
+
+
+void	push_mnemonic(parsed_t *p, )
 {
-	while (*code)
+	static const void *const	opcode[] = {
+		
+	};
+
+	if (strcmp("push", p->data) != 0)
+	{
+		push_error(filename, line->line, "Unknown directive \"%s\"\n", line->code->data);
+		return ;
+	}
+}
+
+char	*assemble(char *bin, line_t *line, char *filename, unsigned int end)
+{
+	void	(*check_mnemonic[])() = {
+		//
+	};
+	void	(*check_directive[])() = {
+		//
+	};
+
+	for (line = code->line; line; line = line->next)
+	{
+		if (line->code->type == MNEMONIC)
+		{
+			if (MNEMONIC_EXISTS(line->code->hash))
+				check_mnemonic[code->hash](line->code);
+			else
+				push_error(filename, line->line, "Unknown mnemonic \"%s\"\n", line->code->data);
+		}
+		else if (line->code->type == DIRECTIVE)
+		{
+			if (DIRECTIVE_EXISTS(code->hash))
+				check_directive[code->hash](line->code);
+			else
+				push_error(filename, line->line, "Unknown directive \"%s\"\n", line->code->data);
+		}
+		else
+		{
+			fprintf(stderr, "Fatal error\n");
+			exit(1);
+		}
+	}
 }
 
 char	*assemble_sections(section_t *sect, cartridge_t *cart)
@@ -966,7 +1027,7 @@ char	*assemble_sections(section_t *sect, cartridge_t *cart)
 	for (; sect; sect = sect->next)
 	{
 		end = sect->next ? sect->next->start_pos : ((sect->start_pos / 0x4000) + 1) * 0x4000;
-		bin = assemble(bin, sect->s, sect->start_pos, end);
+		bin = assemble(bin, sect->line, sect->file, end);
 	}
 }
 
@@ -987,11 +1048,11 @@ int		main(unsigned int argc, char *argv[])
 	}
 	set_input_output_file_name(argv + 1, &src, &dst);
 	load_files(src);
-	set_cartridge_header(&cart, src);	// get cartridge informations in all files (.cartridge_type, .ram_size, .rom_size, ...)
+	set_cartridge_header(&cart, src);	// get cartridge informations in all files (.cartridge_type, .ram_size, .rom_size, ...), at the begining of the files
 	content = merge_files(src, &cart);	// merge all files into content.
 	free_list(src);
 
-	sections = get_sections(content);	// cut content into sections (consecutive code areas)
+	sections = get_sections(content, &label);	// cut content into sections (consecutive code areas). sect->code = words table
 	free(content);
 
 	binary = assemble_sections(sections, &cart);
