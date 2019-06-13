@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/30 09:02:45 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/12 18:32:05 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/13 13:57:45 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -372,7 +372,7 @@ void			call_interrupt(registers_t *regs, uint16_t interrupt, uint8_t reset)
 
 static void		dma_transfer(void)
 {
-	uint8_t	*src = (uint8_t*)(DMA_REGISTER << 8);
+	uint8_t	*src = (uint8_t*)((unsigned long)DMA_REGISTER << 8);
 	uint8_t	*dst = g_memmap.complete_block + 0xfe00;
 
 	memcpy(dst, src, 0xa0);
