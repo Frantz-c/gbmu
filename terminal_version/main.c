@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/30 09:02:45 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/11 19:00:05 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/12 18:32:05 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -466,6 +466,9 @@ static uint16_t		lcd_write_line(char *screen, uint8_t *reset)
 
 cycle_count_t	totalcycles;
 
+/*
+ * set STAT for each mode (HBlank, ...)
+*/
 static void		start_cpu_lcd_events(void)
 {
 	char			screen[SCREEN_SIZE + 8];
@@ -504,8 +507,6 @@ static void		start_cpu_lcd_events(void)
 		if ((counter & 0x3) == 0)
 		{
 			// write one line to the buffer and display screen if all lines filled
-			if (((LCDC_REGISTER & 0x80U) && GAMEBOY != STOP_MODE) || LY_REGISTER != 0)
-			{
 				if ((STAT_REGISTER & 0x40) && LY_REGISTER == LYC_REGISTER)
 				{
 					if (interrupt == 0) {
@@ -516,17 +517,18 @@ static void		start_cpu_lcd_events(void)
 				}
 				if (LY_REGISTER < 144) {
 					//plog("\nprint_line_start\n");
-					if (interrupt)
-						lcd_write_line(true_screen, NULL);
-					else
-						interrupt = lcd_write_line(true_screen, &reset_int_flag);
-
+					if (((LCDC_REGISTER & 0x80U) && GAMEBOY != STOP_MODE) || LY_REGISTER != 0)
+					{
+						if (interrupt)
+							lcd_write_line(true_screen, NULL);
+						else
+							interrupt = lcd_write_line(true_screen, &reset_int_flag);
+					}
 					//plog("print_lin_end\n");
 				}
 				if (LY_REGISTER == 143U)
 					lcd_display_screen(true_screen, NULL);
 				LY_REGISTER = (LY_REGISTER == 153U) ? 0 : LY_REGISTER + 1;
-			}
 		}
 
 		// DMA transfer if any
@@ -621,6 +623,16 @@ static void		start_game(void)
 	TAC_REGISTER = 0;
 	DMA_REGISTER = 0xffU;
 	LCDC_REGISTER = 0; //0x80U;
+	g_memmap.cart_reg[0] = 0;
+	g_memmap.cart_reg[1] = 0;
+	g_memmap.cart_reg[2] = 0;
+	g_memmap.cart_reg[3] = 0;
+	g_memmap.cart_reg[4] = 0;
+	g_memmap.cart_reg[5] = 0;
+	g_memmap.cart_reg[6] = 0;
+	g_memmap.cart_reg[7] = 0;
+	g_memmap.ime = false;
+
 	pthread_create(&div, NULL, div_thread, NULL);
 	pthread_create(&tima, NULL, tima_thread, NULL);
 	term_noecho_mode(ON);

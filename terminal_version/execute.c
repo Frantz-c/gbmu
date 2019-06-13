@@ -3,16 +3,19 @@
 /*                                                              /             */
 /*   execute.c                                        .::    .:/ .      .::   */
 /*                                                 +:+:+   +:    +:  +:+:+    */
-/*   By: mhouppin <marvin@le-101.fr>                +:+   +:    +:    +:+     */
+/*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
-/*   Created: 2019/05/31 11:52:51 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/11 18:45:52 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Created: 2019/06/12 18:09:06 by fcordon      #+#   ##    ##    #+#       */
+/*   Updated: 2019/06/12 18:09:13 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
 #include "memory_map.h"
 #include "execute.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include "../disassembler/disassemble_table.c"
 
@@ -102,12 +105,12 @@
 	do\
 	{\
 		if (g_memmap.cart_reg[MBC1_MODE]) {\
-			SET_MBC1_MODE_0_ROM_ADDR();\
-			SET_MBC1_MODE_0_RAM_ADDR();\
-		}\
-		else {\
 			SET_MBC1_MODE_1_ROM_ADDR();\
 			SET_MBC1_MODE_1_RAM_ADDR();\
+		}\
+		else {\
+			SET_MBC1_MODE_0_ROM_ADDR();\
+			SET_MBC1_MODE_0_RAM_ADDR();\
 		}\
 	} while (0)
 
@@ -141,6 +144,150 @@ static char	*get_bin(unsigned char n)
 		curs >>= 1;
 	}
 	buf[i] = 0;
+	return (buf);
+}
+
+static inline const char		*left_trim(const char *s)
+{
+	while (*s == ' ' || *s == '\t')
+		s++;
+	if (*s == '0' && s[1] == 'x')
+	{
+		s += 2;
+		while (*s == '0')
+			s++;
+		return (s);
+	}
+	return (NULL);
+}
+
+static unsigned int				get_base_value(char c)
+{
+	if (c >= 'a' && c <= 'f')
+		return (c - ('a' - 10));
+	if (c >= 'A' && c <= 'F')
+		return (c - ('a' - 10));
+	return (c - '0');
+}
+
+static inline unsigned int		ft_strtoi(const char *s)
+{
+	unsigned int	n;
+
+	n = 0;
+	while (1)
+	{
+		if (*s > 'f' || (*s > 'F' && *s < 'a')
+				|| (*s > '9' && *s < 'A') || *s < '0')
+			break ;
+		n *= 16;
+		n += get_base_value(*(s++));
+	}
+	return (n);
+}
+
+extern inline unsigned int		atoi_hexa(const char *s)
+{
+	if ((s = left_trim(s)) == NULL)
+		return (0);
+	return (ft_strtoi(s));
+}
+
+
+static char		*itoazx(int n, int size)
+{
+	static char	s[8];
+	int			i = 6;
+	int			negative = 0;
+
+	if (n < 0)
+	{
+		negative++;
+		n = 0 - n;
+	}
+
+	s[7] = '\0';
+	while (n)
+	{
+		s[i] = ((n % 16) + '0');
+		if (s[i] > '9')
+			s[i] += 39;
+		i--;
+		n /= 16;
+	}
+	while (i > 4 - size)
+	{
+		s[i--] = '0';
+	}
+	s[i + 2] = 'x';
+	if (negative)
+	{
+		s[i] = '-';
+		return (s + i);
+	}
+	return (s + i + 1);
+}
+
+int				get_int16_from_little_endian(void *memory)
+{
+#if BYTE_ORDER == LITTLE_ENDIAN
+	return (*(int16_t*)memory);
+#else
+	return ((int16_t)(*(unsigned char*)memory + *((unsigned char*)(memory + 1)) << 8));
+#endif
+}
+
+unsigned int	get_uint16_from_little_endian(void *memory)
+{
+#if BYTE_ORDER == LITTLE_ENDIAN
+	return (*(uint16_t*)memory);
+#else
+	return (*(unsigned char*)memory + *((unsigned char*)(memory + 1)) << 8);
+#endif
+}
+
+static char		*fmt_strcpy(char *src,
+							enum e_operand_type optype, void *bin)
+{
+	static char buf[512];
+	char		*dst = buf;
+	int			value;
+	char		*numeric = NULL;
+
+	while (*src != '*' && (*(dst++) = *(src)))
+		src++;
+	if (*src == 0)
+		return (buf);
+	src++;
+
+	if (optype == IMM8)
+	{
+		value = *((int8_t*)bin);
+		numeric = itoazx(value, 2);
+	}
+	else if (optype == IMM16)
+	{
+		value = get_int16_from_little_endian(bin);
+		numeric = itoazx(value, 4);
+	}
+	else if (optype == ADDR8)
+	{
+		value = *((uint8_t*)bin);
+		numeric = itoazx(value, 2);
+	}
+	else if (optype == ADDR16)
+	{
+		value = get_uint16_from_little_endian(bin);
+		numeric = itoazx(value, 4);
+	}
+	else
+	{
+		fprintf(stderr, "\e[0;31mFATAL ERROR\e[0m\n");
+		exit(1);
+	}
+	strcpy(dst, numeric);
+	dst += strlen(numeric);
+	while ((*(dst++) = *(src++)));
 	return (buf);
 }
 
@@ -268,7 +415,7 @@ if (totalcycles > 1000000000)
 	if (opcode == 0xcb)
 		plog(cb_opcodes[address[1]].inst);
 	else
-		plog(opcodes[opcode].inst);
+		plog(fmt_strcpy(opcodes[opcode].inst, opcodes[opcode].optype, address + 1));
 //}
 	goto *instruction_jumps[opcode];
 
@@ -2016,20 +2163,18 @@ jp_imm16:
 	return (16);
 
 callnz_imm16:
+	ADD_PC(3);
 	if ((regs->reg_f & FLAG_Z) == 0)
 	{
 		address = GET_REAL_ADDR(regs->reg_sp);
 		regs->reg_sp -= 2;
-		address[-1] = (uint8_t)(imm_16 >> 8);
-		address[-2] = (uint8_t)(imm_16);
+		address[-1] = (uint8_t)(regs->reg_pc >> 8);
+		address[-2] = (uint8_t)(regs->reg_pc);
 		SET_PC(imm_16);
 		return (24);
 	}
 	else
-	{
-		ADD_PC(3);
 		return (12);
-	}
 
 push_bc:
 	ADD_PC(1);
@@ -2093,26 +2238,25 @@ jpz_imm16:
 	}
 
 callz_imm16:
+	ADD_PC(3);
 	if ((regs->reg_f & FLAG_Z) == FLAG_Z)
 	{
 		address = GET_REAL_ADDR(regs->reg_sp);
 		regs->reg_sp -= 2;
-		address[-1] = (uint8_t)(imm_16 >> 8);
-		address[-2] = (uint8_t)(imm_16);
+		address[-1] = (uint8_t)(regs->reg_pc >> 8);
+		address[-2] = (uint8_t)(regs->reg_pc);
 		SET_PC(imm_16);
 		return (24);
 	}
 	else
-	{
-		ADD_PC(3);
 		return (12);
-	}
 
 call_imm16:
+	ADD_PC(3);
 	address = GET_REAL_ADDR(regs->reg_sp);
 	regs->reg_sp -= 2;
-	address[-1] = (uint8_t)(imm_16 >> 8);
-	address[-2] = (uint8_t)(imm_16);
+	address[-1] = (uint8_t)(regs->reg_pc >> 8);
+	address[-2] = (uint8_t)(regs->reg_pc);
 	SET_PC(imm_16);
 	return (24);
 
@@ -2175,20 +2319,18 @@ jpnc_imm16:
 	}
 
 callnc_imm16:
+	ADD_PC(3);
 	if ((regs->reg_f & FLAG_CY) == 0)
 	{
 		address = GET_REAL_ADDR(regs->reg_sp);
 		regs->reg_sp -= 2;
-		address[-1] = (uint8_t)(imm_16 >> 8);
-		address[-2] = (uint8_t)(imm_16);
+		address[-1] = (uint8_t)(regs->reg_pc >> 8);
+		address[-2] = (uint8_t)(regs->reg_pc);
 		SET_PC(imm_16);
 		return (24);
 	}
 	else
-	{
-		ADD_PC(3);
 		return (12);
-	}
 
 push_de:
 	ADD_PC(1);
@@ -2255,20 +2397,18 @@ jpc_imm16:
 	}
 
 callc_imm16:
+	ADD_PC(3);
 	if ((regs->reg_f & FLAG_CY) == FLAG_CY)
 	{
 		address = GET_REAL_ADDR(regs->reg_sp);
 		regs->reg_sp -= 2;
-		address[-1] = (uint8_t)(imm_16 >> 8);
-		address[-2] = (uint8_t)(imm_16);
+		address[-1] = (uint8_t)(regs->reg_pc >> 8);
+		address[-2] = (uint8_t)(regs->reg_pc);
 		SET_PC(imm_16);
 		return (24);
 	}
 	else
-	{
-		ADD_PC(3);
 		return (12);
-	}
 
 sbc_a_imm8:
 	ADD_PC(1);

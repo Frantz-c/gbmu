@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/24 17:07:32 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/11 19:48:02 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/12 16:22:01 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -164,7 +164,7 @@ exemple:
 	S = Serial interrupt
 	T = Timer interrupt
 	L = LCDC interrupt
-	V = VBank interrupt
+	V = VBlank interrupt
 
 	0 = disable, 1 = enable
 */
