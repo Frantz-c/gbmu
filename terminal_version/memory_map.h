@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/23 11:44:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/05 13:03:01 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/14 15:34:48 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -122,6 +122,7 @@ enum	e_cartridge_types
 # define WX_REGISTER	g_memmap.complete_block[WX]
 # define WY_REGISTER	g_memmap.complete_block[WY]
 # define STAT_REGISTER	g_memmap.complete_block[STAT]
+# define IE_REGISTER	g_memmap.complete_block[IE]
 //# define _REGISTER	g_memmap.complete_block[]
 
 typedef struct

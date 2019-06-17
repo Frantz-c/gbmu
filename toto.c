@@ -6,10 +6,12 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/06/13 14:10:16 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/13 14:16:03 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/13 15:37:11 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
+
+#include "terminal_version/ram_registers.h"
 
 void Emulator::RenderTiles( )
 {
@@ -18,10 +20,10 @@ void Emulator::RenderTiles( )
 	bool unsig = true;
 
 	// where to draw the visual area and the window
-	BYTE scrollY = ReadMemory(0xFF42);
-	BYTE scrollX = ReadMemory(0xFF43);
-	BYTE windowY = ReadMemory(0xFF4A);
-	BYTE windowX = ReadMemory(0xFF4B) - 7;
+	BYTE scrollY = ReadMemory(SCY);
+	BYTE scrollX = ReadMemory(SCX);
+	BYTE windowY = ReadMemory(WY);
+	BYTE windowX = ReadMemory(WX) - 7;
 
 	bool usingWindow = false;
 
@@ -30,7 +32,7 @@ void Emulator::RenderTiles( )
 	{
 		// is the current scanline we're drawing
 		// within the windows Y pos?,
-		if (windowY <= ReadMemory(0xFF44))
+		if (windowY <= ReadMemory(LY))
 			usingWindow = true;
 	}
 
@@ -48,7 +50,7 @@ void Emulator::RenderTiles( )
 	}
 
 	// which background mem?
-	if (false == usingWindow)
+	if (usingWindow == false)
 	{
 		if (TestBit(lcdControl, 3))
 			backgroundMemory = 0x9C00;
@@ -69,9 +71,9 @@ void Emulator::RenderTiles( )
 	// yPos is used to calculate which of 32 vertical tiles the
 	// current scanline is drawing
 	if (!usingWindow)
-		yPos = scrollY + ReadMemory(0xFF44);
+		yPos = scrollY + ReadMemory(LY);
 	else
-		yPos = ReadMemory(0xFF44) - windowY;
+		yPos = ReadMemory(LY) - windowY;
 
 	// which of the 8 vertical pixels of the current
 	// tile is the scanline on?
@@ -81,7 +83,7 @@ void Emulator::RenderTiles( )
 	// for this scanline
 	for (int pixel = 0; pixel < 160; pixel++)
 	{
-		BYTE xPos = pixel+scrollX;
+		BYTE xPos = pixel + scrollX;
 
 		// translate the current x pos to window space if necessary
 		if (usingWindow)
@@ -93,7 +95,7 @@ void Emulator::RenderTiles( )
 		}
 
 		// which of the 32 horizontal tiles does this xPos fall within?
-		WORD tileCol = (xPos/8);
+		WORD tileCol = (xPos / 8);
 		SIGNED_WORD tileNum;
 
 		// get the tile identity number. Remember it can be signed
@@ -135,7 +137,7 @@ void Emulator::RenderTiles( )
 
 		// now we have the colour id get the actual
 		// colour from palette 0xFF47
-		COLOUR col = GetColour(colourNum, 0xFF47);
+		COLOUR col = GetColour(colourNum, BGP);
 		int red = 0;
 		int green = 0;
 		int blue = 0;
@@ -154,7 +156,7 @@ void Emulator::RenderTiles( )
 				break;
 		}
 
-		int finaly = ReadMemory(0xFF44);
+		int finaly = ReadMemory(LY);
 
 		// safety check to make sure what im about
 		// to set is int the 160x144 bounds

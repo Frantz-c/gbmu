@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/30 09:02:45 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/13 13:57:45 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/17 12:35:07 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -29,6 +29,7 @@
 #include "execute.h"
 #include <malloc/malloc.h>
 
+#define TILE_TEST	(uint8_t*)"\x22\xc1\xff\xff\x48\x30\x24\x18\x00\xff\xff\xff\x0a\x04\x05\x02"
 
 #define COL0		"\e[48;5;255m  "
 #define COL1		"\e[48;5;249m  "
@@ -341,7 +342,8 @@ uint16_t	get_joypad_event(void)
 do\
 {\
 	g_memmap.ime = 0;\
-	*GET_REAL_ADDR(regs->reg_sp) = regs->reg_pc;\
+	*(short*)GET_REAL_ADDR(regs->reg_sp) = (short)regs->reg_pc;\
+	regs->reg_sp -= 2;\
 	regs->reg_pc = interrupt;\
 }\
 while (0)
@@ -350,13 +352,13 @@ void			call_interrupt(registers_t *regs, uint16_t interrupt, uint8_t reset)
 {
 	// joypad is set before
 
-	// lcdc
-	if (interrupt == 0 && (IF_REGISTER & 0x02))
-		interrupt = LCDC_INT;
-
 	// vblank
 	if (interrupt == 0 && (IF_REGISTER & 0x01))
 		interrupt = VBLANK_INT;
+
+	// lcdc
+	if (interrupt == 0 && (IF_REGISTER & 0x02))
+		interrupt = LCDC_INT;
 
 	// tima
 	if (interrupt == 0 && (IF_REGISTER & 0x04))
@@ -372,11 +374,37 @@ void			call_interrupt(registers_t *regs, uint16_t interrupt, uint8_t reset)
 
 static void		dma_transfer(void)
 {
-	uint8_t	*src = (uint8_t*)((unsigned long)DMA_REGISTER << 8);
+	uint8_t	*src = GET_REAL_ADDR((unsigned long)(DMA_REGISTER) << 8);
 	uint8_t	*dst = g_memmap.complete_block + 0xfe00;
 
 	memcpy(dst, src, 0xa0);
 }
+
+#define STAT_HBLANK	(STAT_REGISTER & 0x8U)
+#define STAT_VBLANK	(STAT_REGISTER & 0x10U)
+#define STAT_OAM	(STAT_REGISTER & 0x20U)
+#define STAT_LYC	(STAT_REGISTER & 0x40U)
+
+#define JOYPAD_INT_ENABLE()		(IE_REGISTER & 0x10U)
+#define TIMER_INT_ENABLE()		(IE_REGISTER & 0x04U)
+#define LCDC_INT_ENABLE()		(IE_REGISTER & 0x02U)
+#define VBLANK_INT_ENABLE()		(IE_REGISTER & 0x01U)
+
+#define LCDC_LYC_INT_ENABLE()		\
+	(\
+		STAT_LYC && LCDC_INT_ENABLE()\
+	)
+
+#define LCDC_VBLANK_INT_ENABLE()		\
+	(\
+		STAT_VBLANK && LCDC_INT_ENABLE()\
+	)
+
+#define LCDC_HBLANK_INT_ENABLE()		\
+	(\
+		STAT_HBLANK && LCDC_INT_ENABLE()\
+	)
+
 
 static uint16_t		lcd_write_line(char *screen, uint8_t *reset)
 {
@@ -448,11 +476,11 @@ static uint16_t		lcd_write_line(char *screen, uint8_t *reset)
 		tile_num = 0; //remove this
 	}
 
-	if (STAT_REGISTER & 0x8)
+	if (LCDC_HBLANK_INT_ENABLE())
 	{
 		if (reset)
-			*reset = 0xfeU;
-		IF_REGISTER |= 0x01U;
+			*reset = 0xfdU;
+		IF_REGISTER |= 0x02U;
 		return (LCDC_INT);
 	}
 	return (0);
@@ -496,18 +524,11 @@ static void		start_cpu_lcd_events(void)
 		}
 
 		counter++;
-		// Check joypad events
-		if (IF_REGISTER & 0x10U) {
-			if ((interrupt = get_joypad_event()) != 0)
-				reset_int_flag = 0xefU;
-		}
-		else
-			get_joypad_event();
 
 		if ((counter & 0x3) == 0)
 		{
 			// write one line to the buffer and display screen if all lines filled
-				if ((STAT_REGISTER & 0x40) && LY_REGISTER == LYC_REGISTER)
+				if (LCDC_LYC_INT_ENABLE() && LY_REGISTER == LYC_REGISTER)
 				{
 					if (interrupt == 0) {
 						interrupt = LCDC_INT;
@@ -527,7 +548,25 @@ static void		start_cpu_lcd_events(void)
 					//plog("print_lin_end\n");
 				}
 				if (LY_REGISTER == 143U)
+				{
 					lcd_display_screen(true_screen, NULL);
+					if (LCDC_VBLANK_INT_ENABLE())
+					{
+						if (!interrupt) {
+							interrupt = LCDC_INT;
+							reset_int_flag = 0xfdU;
+						}
+						IF_REGISTER |= 0x2U;
+					}
+					else if (VBLANK_INT_ENABLE())
+					{
+						if (!interrupt) {
+							interrupt = VBLANK_INT;
+							reset_int_flag = 0xfeU;
+						}
+						IF_REGISTER |= 0x1U;
+					}
+				}
 				LY_REGISTER = (LY_REGISTER == 153U) ? 0 : LY_REGISTER + 1;
 		}
 
@@ -542,6 +581,15 @@ static void		start_cpu_lcd_events(void)
 			}
 		}
 
+		// Check joypad events
+		if (JOYPAD_INT_ENABLE()) {
+			if ((interrupt = get_joypad_event()) != 0)
+				reset_int_flag = 0xefU;
+		}
+		else
+			get_joypad_event();
+
+
 		if (GAMEBOY == HALT_MODE && interrupt) {
 			GAMEBOY = NORMAL_MODE;
 			call_interrupt(&regs, interrupt, reset_int_flag);
@@ -555,6 +603,7 @@ static void		start_cpu_lcd_events(void)
 			if (g_memmap.ime)
 				call_interrupt(&regs, interrupt, reset_int_flag);
 		}
+		interrupt = 0;
 //		printf("\e[1Amode = %s     \n", GAMEBOY == NORMAL_MODE ? "NORMAL" : "HALT/STOP");
 
 /*
@@ -613,16 +662,36 @@ static void		*tima_thread(void *unused)
 	}
 }
 
+void	write_background_in_vram(void)
+{
+//	uint8_t	*tile = TILE_TEST;
+	uint8_t	*bg_data;
+	uint8_t	*bg_chr;
+
+	bg_data = GET_REAL_ADDR(0x8800);
+	bg_chr = GET_REAL_ADDR(0x9800);
+	
+	memcpy(bg_data, TILE_TEST, 16);
+	for (uint32_t i = 0; i < 0xffU; i++)
+	{
+		bg_chr[i] = 0;
+	}
+}
+
 static void		start_game(void)
 {
-	pthread_t	div;
-	pthread_t	tima;
+//	pthread_t	div;
+//	pthread_t	tima;
 
+	IF_REGISTER = 0;
+	IE_REGISTER = 0;
+	SCY_REGISTER = 0;
+	SCX_REGISTER = 0;
 	LY_REGISTER = 0;
-	TMA_REGISTER = 0;
+	TIMA_REGISTER = 0;
 	TAC_REGISTER = 0;
 	DMA_REGISTER = 0xffU;
-	LCDC_REGISTER = 0; //0x80U;
+	LCDC_REGISTER = 0x83U;
 	g_memmap.cart_reg[0] = 0;
 	g_memmap.cart_reg[1] = 0;
 	g_memmap.cart_reg[2] = 0;
@@ -633,8 +702,10 @@ static void		start_game(void)
 	g_memmap.cart_reg[7] = 0;
 	g_memmap.ime = false;
 
-	pthread_create(&div, NULL, div_thread, NULL);
-	pthread_create(&tima, NULL, tima_thread, NULL);
+	write_background_in_vram();
+
+//	pthread_create(&div, NULL, div_thread, NULL);
+//	pthread_create(&tima, NULL, tima_thread, NULL);
 	term_noecho_mode(ON);
 	start_cpu_lcd_events();
 //	joypad_control_loop();
