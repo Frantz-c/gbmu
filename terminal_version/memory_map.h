@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/23 11:44:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/14 15:34:48 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/18 10:57:22 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -169,8 +169,7 @@ typedef struct	memory_map_s
 	
 	uint8_t		*vram;			// 0x8000 - 0x9800
 		uint8_t	*vram_banks[2];
-	uint8_t		*vram_bg;		// 0x9800 - 0x9fff
-	uint8_t		*vram_bg2;		// 0x9800 - 0x9fff
+	uint8_t		*vram_bg[2];		// 0x9800 - 0x9fff
 	
 	uint8_t		*extern_ram;	// 0xa000 - 0xbfff
 		uint8_t	*extern_ram_banks[16];

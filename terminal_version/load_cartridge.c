@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/29 17:38:18 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/12 18:03:44 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/18 10:59:24 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -192,9 +192,9 @@ static void	malloc_blocks(cartridge_t *cart)
 	// 0x8000 - 0xa000
 	g_memmap.vram = valloc(0x4000);
 	g_memmap.vram_banks[0] = g_memmap.vram;
-	g_memmap.vram_banks[1] = g_memmap.vram + 0x1800;
-	g_memmap.vram_bg = g_memmap.vram + 0x3000;
-	g_memmap.vram_bg2 = g_memmap.vram + 0x3800;
+	g_memmap.vram_banks[1] = g_memmap.vram + 0x2000;
+	g_memmap.vram_bg[0] = g_memmap.vram + 0x1800;
+	g_memmap.vram_bg[1] = g_memmap.vram + 0x3800;
 
 	// 0xa000 - 0xbfff
 	if ((g_memmap.save_size = get_external_ram_size(cart)) == 0)
