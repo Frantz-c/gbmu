@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/06/12 18:09:06 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/18 15:22:52 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/18 20:41:41 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -139,18 +139,21 @@
 
 static char	*get_bin(unsigned char n)
 {
-	static char					buf[128] = {0};
+	static char					buf[16][9] = {{0}};
+	static uint32_t				cur = 0;
 	unsigned char				curs;
 	unsigned int				i = 0;
 
+	if (cur == 16)
+		cur = 0;
 	curs = 1UL << 7;
 	while (curs)
 	{
-		buf[i++] = (curs & n) ? '1' : '0';
+		buf[cur][i++] = (curs & n) ? '1' : '0';
 		curs >>= 1;
 	}
-	buf[i] = 0;
-	return (buf);
+	buf[cur++][i] = 0;
+	return (buf[cur - 1]);
 }
 
 static inline const char		*left_trim(const char *s)
@@ -409,11 +412,21 @@ cycle_count_t	execute(registers_t *regs)
 					"E = %3u(%2X), H = %3u(%2X), L = %3u(%2X)\n"
 					"F = %.4s(ZNHC)\n"
 					"AF = %5u(%4X), BC = %5u(%4X), DE = %5u(%4X), HL = %5u(%4X)\n"
-					"SP = %4X\n\n\t", regs->reg_pc, (unsigned long)address,
+					"SP = %4X,\n"
+					"P1 = %s, LCDC = %s, STAT = %s,\n"
+					"SCX = %hhu, SCY = %hhu, LY = %hhu, LYC = %hhu,\n"
+					"BGP = %s, OBP0 = %s, OBP1 = %s, WX = %hhu, WY = %hhu,\n"
+					"DIV = 0x%hhx, TIMA = 0x%hhx, TMA = 0x%hhx, TAC = %s,\n"
+					"IF = %s, IE = %s, SVBK = %s, VBK = %s, DMA = 0x%hhx\n\n\t",
+					regs->reg_pc, (unsigned long)address,
 					regs->reg_a, regs->reg_a, regs->reg_b, regs->reg_b, regs->reg_c, regs->reg_c, regs->reg_d, regs->reg_d,
 					regs->reg_e, regs->reg_e, regs->reg_h, regs->reg_h, regs->reg_l, regs->reg_l, get_bin(regs->reg_f), 
 					regs->reg_af, regs->reg_af, regs->reg_bc, regs->reg_bc, regs->reg_de, regs->reg_de, regs->reg_hl, regs->reg_hl,
-					regs->reg_sp
+					regs->reg_sp, get_bin(P1_REGISTER), get_bin(LCDC_REGISTER), get_bin(STAT_REGISTER),
+					SCX_REGISTER, SCY_REGISTER, LY_REGISTER, LYC_REGISTER,
+					get_bin(BGP_REGISTER), get_bin(OBP0_REGISTER), get_bin(OBP1_REGISTER), WX_REGISTER, WY_REGISTER,
+					DIV_REGISTER, TIMA_REGISTER, TMA_REGISTER, get_bin(TAC_REGISTER),
+					get_bin(IF_REGISTER), get_bin(IE_REGISTER), get_bin(SVBK_REGISTER), get_bin(VBK_REGISTER), DMA_REGISTER
 			);
 	plog(debug);
 
@@ -2664,7 +2677,7 @@ ldff_imm8_a:
 plog("ldff_imm8_a\n");
 	ADD_PC(2);
 	address = GET_REAL_ADDR(0xFF00u + (uint16_t)imm_8);
-	WRITE_REGISTER_IF_ROM_AREA(0xFF00u + (uint16_t)imm_8, regs->reg_a, 8);
+//	WRITE_REGISTER_IF_ROM_AREA(0xFF00u + (uint16_t)imm_8, regs->reg_a, 8);
 	*address = regs->reg_a;
 	return (8);
 
@@ -2680,7 +2693,7 @@ ldff_c_a:
 plog("ldff_c_a\n");
 	ADD_PC(1);
 	address = GET_REAL_ADDR(0xFF00u + (uint16_t)regs->reg_c);
-	WRITE_REGISTER_IF_ROM_AREA(0xFF00u + (uint16_t)regs->reg_c, regs->reg_a, 8);
+//	WRITE_REGISTER_IF_ROM_AREA(0xFF00u + (uint16_t)regs->reg_c, regs->reg_a, 8);
 	*address = regs->reg_a;
 	return (8);
 

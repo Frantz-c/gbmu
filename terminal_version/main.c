@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/30 09:02:45 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/17 12:35:07 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/18 20:21:32 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -406,84 +406,62 @@ static void		dma_transfer(void)
 	)
 
 
-static uint16_t		lcd_write_line(char *screen, uint8_t *reset)
+static void		lcd_write_line(char *screen)
 {
-	char		*bg_chr_code = (char *)((LCDC_REGISTER & 0x08) ? g_memmap.vram_bg + 0x400 : g_memmap.vram_bg);
-	char		*bg_data = (char *)((LCDC_REGISTER & 0x10) ? g_memmap.vram : g_memmap.vram + 0x800);
-	char		*win_chr_code = (char *)((LCDC_REGISTER & 0x40) ? g_memmap.vram_bg + 0x400 : g_memmap.vram_bg);
-	uint32_t	offset = (LCDC_REGISTER & 0x10) ? 0 : 128;
-	uint32_t	tile_num, tile_end, line_end;
-	uint32_t	padding;
-	uint32_t	x, y;
+	uint8_t	*data_area;
+	uint8_t	*bg_code_area;
+	uint8_t	*wn_code_area;
 
-	// background
-	if (LCDC_REGISTER & 0x01)
-	{
-		x = SCX_REGISTER / 8;
-		y = SCY_REGISTER / 8;
-		tile_num = x + y * 32; // 32 = BG_W_TILES
-		tile_end = tile_num + 20;
-		line_end = y * 32 + 32;
-		if (tile_end >= line_end)
-			tile_end -= 32;
-		padding = (SCX_REGISTER & 0x7);
+	uint8_t		offset = (LCDC_REGISTER & 0x10) ? 0x00u : 0x80u;
+	uint32_t	y, px;
+	uint32_t	case_num;
+	uint32_t	case_end;
+	uint8_t		tile_num;
+	char		*tile;
 
-		x = 0;
-		y = LY_REGISTER;
-		if (padding)
-		{
-			fill_8_pixels_start(
-				screen, x, y,
-				CHR_DATA( bg_chr_code[(uint8_t)(tile_num + offset)], (LY_REGISTER & 0x7), bg_data),
-				padding
-			);
-			tile_num++;
-			x += (LY_REGISTER & 0x7);
-		}
-		for (; tile_num != tile_end; tile_num++, x += 8)
-		{
-			if (tile_num == line_end)
-			{
-				for (tile_num -= 32; tile_num != tile_end; tile_num++, x += 8)
-					fill_8_pixels(
-						screen, x, y,
-						CHR_DATA( bg_chr_code[(uint8_t)(tile_num + offset)], (LY_REGISTER & 0x7), bg_data)
-					);
-				break;
-			}
-			fill_8_pixels(
-				screen, x, y,
-				CHR_DATA( bg_chr_code[(uint8_t)(tile_num + offset)], (LY_REGISTER & 0x7), bg_data)
-			);
-		}
-		if (padding)
-		{
-			fill_8_pixels_end(
-				screen, x, y,
-				CHR_DATA( bg_chr_code[(uint8_t)(tile_num + offset)], (LY_REGISTER & 0x7), bg_data),
-				8U - padding
-			);
-		}
-	}
-	// window
-	if (LCDC_REGISTER & 0x20)
+	data_area		= (LCDC_REGISTER & 0x10) ?
+						GET_REAL_ADDR(0x8000) : GET_REAL_ADDR(0x8800);
+	bg_code_area	= (LCDC_REGISTER & 0x08) ?
+						g_memmap.vram_bg[0] + 0x400 : g_memmap.vram_bg[0];
+	wn_code_area	= (LCDC_REGISTER & 0x40) ?
+						g_memmap.vram_bg[0] + 0x400 : g_memmap.vram_bg[0];
+						//GET_REAL_ADDR(0x9c00) : GET_REAL_ADDR(0x9800);
+
+	/*
+	 *	print background
+	*/
+	y = SCY_REGISTER & ~7u;
+	case_num = y * 32 + (SCX_REGISTER & ~7u);
+	case_end = case_num + 21;
+	if (case_end > 31)
+		case_end -= 32;
+
+	px = 0;
+	// print truncated left tile
+	if (SCX_REGISTER & 7u)
 	{
-		tile_num = ((WX_REGISTER - 7) / 8) + (WY_REGISTER / 8) * 32; // 32 = BG_W_TILES
+		tile_num = *(bg_code_area + case_num);
+		tile = (char*)(data_area + (uint8_t)(tile_num - offset));
+		fill_8_pixels_start(screen, px, LY_REGISTER, tile + ((LY_REGISTER & 7u) * 2), (SCX_REGISTER & 7u));
+		px += 8;
 	}
-	// objects
-	if (LCDC_REGISTER & 0x02)
+	// print full tiles
+	for (++case_num; case_num != case_end; px += 8)
 	{
-		tile_num = 0; //remove this
+		tile_num = *(bg_code_area + case_num);
+		tile = (char*)(data_area + (uint8_t)(tile_num - offset));
+		fill_8_pixels(screen, px, LY_REGISTER, tile + ((LY_REGISTER & 7u) * 2));
+		if ((++case_num & 0x1f) == 0)
+			case_num -= 32;
+	}
+	// print truncated right tile
+	if (SCX_REGISTER & 7u)
+	{
+		tile_num = *(bg_code_area + case_num);
+		tile = (char*)(data_area + (uint8_t)(tile_num - offset));
+		fill_8_pixels_start(screen, px, LY_REGISTER, tile + ((LY_REGISTER & 7u) * 2), (8u - (SCX_REGISTER & 7u)));
 	}
 
-	if (LCDC_HBLANK_INT_ENABLE())
-	{
-		if (reset)
-			*reset = 0xfdU;
-		IF_REGISTER |= 0x02U;
-		return (LCDC_INT);
-	}
-	return (0);
 }
 
 
@@ -528,46 +506,51 @@ static void		start_cpu_lcd_events(void)
 		if ((counter & 0x3) == 0)
 		{
 			// write one line to the buffer and display screen if all lines filled
-				if (LCDC_LYC_INT_ENABLE() && LY_REGISTER == LYC_REGISTER)
+			if (LCDC_LYC_INT_ENABLE() && LY_REGISTER == LYC_REGISTER)
+			{
+				if (interrupt == 0) {
+					interrupt = LCDC_INT;
+					reset_int_flag = 0xfdU;
+				}
+				IF_REGISTER |= 0x02U;
+			}
+			if (LY_REGISTER < 144) {
+				//plog("\nprint_line_start\n");
+				if (((LCDC_REGISTER & 0x80U) && GAMEBOY != STOP_MODE) || LY_REGISTER != 0)
 				{
-					if (interrupt == 0) {
+					lcd_write_line(true_screen);
+				}
+				//plog("print_lin_end\n");
+			}
+			if (LY_REGISTER == 143U)
+			{
+				lcd_display_screen(true_screen, NULL);
+				if (LCDC_VBLANK_INT_ENABLE())
+				{
+					if (!interrupt) {
 						interrupt = LCDC_INT;
 						reset_int_flag = 0xfdU;
 					}
-					IF_REGISTER |= 0x02U;
+					IF_REGISTER |= 0x2U;
 				}
-				if (LY_REGISTER < 144) {
-					//plog("\nprint_line_start\n");
-					if (((LCDC_REGISTER & 0x80U) && GAMEBOY != STOP_MODE) || LY_REGISTER != 0)
-					{
-						if (interrupt)
-							lcd_write_line(true_screen, NULL);
-						else
-							interrupt = lcd_write_line(true_screen, &reset_int_flag);
-					}
-					//plog("print_lin_end\n");
-				}
-				if (LY_REGISTER == 143U)
+				if (VBLANK_INT_ENABLE())
 				{
-					lcd_display_screen(true_screen, NULL);
-					if (LCDC_VBLANK_INT_ENABLE())
-					{
-						if (!interrupt) {
-							interrupt = LCDC_INT;
-							reset_int_flag = 0xfdU;
-						}
-						IF_REGISTER |= 0x2U;
+					if (!interrupt) {
+						interrupt = VBLANK_INT;
+						reset_int_flag = 0xfeU;
 					}
-					else if (VBLANK_INT_ENABLE())
-					{
-						if (!interrupt) {
-							interrupt = VBLANK_INT;
-							reset_int_flag = 0xfeU;
-						}
-						IF_REGISTER |= 0x1U;
-					}
+					IF_REGISTER |= 0x1U;
 				}
-				LY_REGISTER = (LY_REGISTER == 153U) ? 0 : LY_REGISTER + 1;
+			}
+			LY_REGISTER = (LY_REGISTER == 153U) ? 0 : LY_REGISTER + 1;
+			if (LCDC_LYC_INT_ENABLE() && LY_REGISTER == LYC_REGISTER)
+			{
+				if (!interrupt) {
+					interrupt = LCDC_INT;
+					reset_int_flag = 0xfdU;
+				}
+				IF_REGISTER |= 0x2U;
+			}
 		}
 
 		// DMA transfer if any
@@ -669,19 +652,19 @@ void	write_background_in_vram(void)
 	uint8_t	*bg_chr;
 
 	bg_data = GET_REAL_ADDR(0x8800);
-	bg_chr = GET_REAL_ADDR(0x9800);
+	bg_chr = g_memmap.vram_bg[0];
 	
 	memcpy(bg_data, TILE_TEST, 16);
 	for (uint32_t i = 0; i < 0xffU; i++)
 	{
-		bg_chr[i] = 0;
+		bg_chr[i] = 0x80U;
 	}
 }
 
 static void		start_game(void)
 {
-//	pthread_t	div;
-//	pthread_t	tima;
+	pthread_t	div;
+	pthread_t	tima;
 
 	IF_REGISTER = 0;
 	IE_REGISTER = 0;
@@ -704,8 +687,8 @@ static void		start_game(void)
 
 	write_background_in_vram();
 
-//	pthread_create(&div, NULL, div_thread, NULL);
-//	pthread_create(&tima, NULL, tima_thread, NULL);
+	pthread_create(&div, NULL, div_thread, NULL);
+	pthread_create(&tima, NULL, tima_thread, NULL);
 	term_noecho_mode(ON);
 	start_cpu_lcd_events();
 //	joypad_control_loop();
