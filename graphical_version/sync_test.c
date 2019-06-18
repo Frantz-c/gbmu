@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/30 09:02:45 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/18 14:43:30 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/18 17:39:56 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -138,7 +138,7 @@ void			draw_dmg_line(object_t *obj, uint8_t size, uint8_t line)
 	int32_t	bgp[4];
 	int32_t	obp[8];
 
-	uint8_t	*vram = g_memmap.vram_banks[0];
+	uint8_t	*vram = g_memmap.vram;
 
 	bgp[0] = (int32_t)(BGP_REGISTER & (BIT_0 | BIT_1));
 	bgp[1] = (int32_t)(BGP_REGISTER & (BIT_2 | BIT_3)) >> 2;
@@ -225,13 +225,13 @@ void			draw_dmg_line(object_t *obj, uint8_t size, uint8_t line)
 				uint8_t dot1, dot2;
 				if ((LCDC_REGISTER & BIT_4) == BIT_4 || obj[i].code >= 0x80u)
 				{
-					dot1 = (vram[obj[i].code * 16 + obj_ypos * 2] >> rx) & 1;
-					dot2 = (vram[obj[i].code * 16 + obj_ypos * 2 + 1] >> rx) & 1;
+					dot1 = (vram[(uint16_t)obj[i].code * 16 + (uint16_t)obj_ypos * 2] >> x) & 1;
+					dot2 = (vram[(uint16_t)obj[i].code * 16 + (uint16_t)obj_ypos * 2 + 1] >> x) & 1;
 				}
 				else
 				{
-					dot1 = (vram[obj[i].code * 16 + 4096 + obj_ypos * 2] >> rx) & 1;
-					dot2 = (vram[obj[i].code * 16 + 4097 + obj_ypos * 2] >> rx) & 1;
+					dot1 = (vram[(uint16_t)obj[i].code * 16 + 4096 + (uint16_t)obj_ypos * 2] >> x) & 1;
+					dot2 = (vram[(uint16_t)obj[i].code * 16 + 4097 + (uint16_t)obj_ypos * 2] >> x) & 1;
 				}
 				int32_t pxl = bgp[dot1 + dot2 + dot2];
 				pixels[(uint16_t)rx + (uint16_t)line * 160] = pxl;
@@ -640,6 +640,7 @@ void			auto_rst(registers_t *regs, uint16_t new_pc, uint8_t if_mask)
 {
 	uint8_t		*address;
 
+	GAMEBOY = NORMAL_MODE;
 	IF_REGISTER &= ~(if_mask);
 	address = GET_REAL_ADDR(regs->reg_sp);
 	regs->reg_sp -= 2;
@@ -650,7 +651,7 @@ void			auto_rst(registers_t *regs, uint16_t new_pc, uint8_t if_mask)
 
 static void		check_if_ime(registers_t *regs)
 {
-	if (g_memmap.ime == false)
+	if (g_memmap.ime == false && GAMEBOY == NORMAL_MODE)
 		return ;
 	if ((IF_REGISTER & BIT_0) == BIT_0)
 		auto_rst(regs, 0x40, BIT_0);
@@ -662,10 +663,12 @@ static void		check_if_ime(registers_t *regs)
 		auto_rst(regs, 0x60, BIT_4);
 }
 
-#define TVALUE 100
+#define TVALUE 12
 
 static void		start_cpu_lcd_events(void)
 {
+	const char		*stable[3] = {"normal", "halted", "stopped"};
+	cycle_count_t	tinsns = 0;
 	cycle_count_t	cycles;
 	registers_t		registers;
 
@@ -679,18 +682,53 @@ static void		start_cpu_lcd_events(void)
 	registers.reg_e = 0xD8u;
 	registers.reg_h = 0x01u;
 	registers.reg_l = 0x4Du;
+	printf("\e[6B");
 	while (1)
 	{
 		if (GAMEBOY == NORMAL_MODE)
 			cycles = execute(&registers);
 		else
 			cycles = 4;
+		tinsns++;
 		elapsed_cycles += cycles;
+		if (tinsns % TVALUE == 0)
+		{
+			printf(	"\e[6A\rA  %4hhx F  %4hhx B  %4hhx C  %4hhx D  %4hhx E  %4hhx H  %4hhx L  %4hhx\n"
+					"AF %4hx         BC %4hx         DE %4hx         HL %4hx\n"
+					"PC %4hx         SP %4hx\n\nSTATUS %s IF %hhx IE %hhx IME %s TIMA %hhu TMA %hhu TAC %hhx    \n"
+					"LCDC %hhx STAT %hhx\nINSTS %lu", registers.reg_a, registers.reg_f,
+					registers.reg_b, registers.reg_c, registers.reg_d, registers.reg_e,
+					registers.reg_h, registers.reg_l, registers.reg_af, registers.reg_bc,
+					registers.reg_de, registers.reg_hl, registers.reg_pc, registers.reg_sp,
+					stable[GAMEBOY], IF_REGISTER, IE_REGISTER, g_memmap.ime ? "enabled" : "disabled",
+					TIMA_REGISTER, TMA_REGISTER, TAC_REGISTER, LCDC_REGISTER, STAT_REGISTER,
+					tinsns);
+			fflush(stdout);
+			usleep(15000);
+		}
 		check_what_should_do_lcd(cycles / g_memmap.cpu_speed);
-		check_if_timer_needs_to_be_incremented(cycles);
+		if (GAMEBOY != STOP_MODE)
+			check_if_timer_needs_to_be_incremented(cycles);
 		check_if_events(cycles);
 		check_if_dma(cycles);
 		check_if_ime(&registers);
+	}
+}
+
+#define TILE_TEST	(uint8_t*)"\x22\xc1\xff\xff\x48\x30\x24\x18\x00\xff\xff\xff\x0a\x04\x05\x02"
+
+static void		test_display(void)
+{
+	uint8_t		*bg_data;
+	uint8_t		*bg_chr;
+
+	bg_data = GET_REAL_ADDR(0x9000);
+	bg_chr = GET_REAL_ADDR(0x9800);
+
+	memcpy(bg_data, TILE_TEST, 16);
+	for (uint32_t i = 0; i < 0xFFu; i++)
+	{
+		bg_chr[i] = 0;
 	}
 }
 
@@ -724,6 +762,9 @@ static void		start_game(void)
 	ticks = SDL_GetTicks();
 
 	g_memmap.cpu_speed = 1;
+	OBP0_REGISTER = 0xE4u;
+	OBP1_REGISTER = 0xE4u;
+	BGP_REGISTER = 0xE4u;
 	P1_REGISTER = 0;
 	TIMA_REGISTER = 0;
 	TAC_REGISTER = 0;
@@ -736,12 +777,8 @@ static void		start_game(void)
 	WY_REGISTER = 0;
 	WX_REGISTER = 0;
 	DMA_REGISTER = 0xffU;
+	test_display();
 	start_cpu_lcd_events();
-	//	joypad_control_loop();
-	/*
-	   if (g_memmap.save_name)
-	   save_external_ram();
-	   */
 }
 
 int		main(int argc, char *argv[])

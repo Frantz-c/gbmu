@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/06/12 18:09:06 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/18 13:37:47 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/18 17:25:05 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -25,9 +25,9 @@
 //extern memory_map_t	g_memmap;
 
 
-#define ADD_PC(offset)	regs->reg_pc += (offset);
-#define SET_PC(value)	regs->reg_pc = (value);
-	
+#define ADD_PC(offset)	regs->reg_pc += (offset)
+#define SET_PC(value)	regs->reg_pc = (value)
+
 #define SET_LOW_ROM_NUMBER_MBC5()	\
 	CART_REG[1] = value;\
 	SWITCH_ROM = ROM_BANK [ CART_REG[1] | (CART_REG[2] << 8) ];\
@@ -55,13 +55,15 @@
 	do\
 	{/* if file contain empty banks at 0x20, 0x40, 0x60 */\
 		if ((CART_REG[1] | (CART_REG[2] << 5)) == 0x20)\
-			SWITCH_ROM = ROM_BANK [0x21];\
+			SWITCH_ROM = ROM_BANK [0x20];\
 		else if ((CART_REG[1] | (CART_REG[2] << 5)) == 0x40)\
-			SWITCH_ROM = ROM_BANK [0x41];\
+			SWITCH_ROM = ROM_BANK [0x40];\
 		else if ((CART_REG[1] | (CART_REG[2] << 5)) == 0x60)\
-			SWITCH_ROM = ROM_BANK [0x61];\
+			SWITCH_ROM = ROM_BANK [0x60];\
+		else if ((CART_REG[1] | (CART_REG[2] << 5)) > 0)\
+			SWITCH_ROM = ROM_BANK [ (CART_REG[1] | (CART_REG[2] << 5)) - 1];\
 		else\
-			SWITCH_ROM = ROM_BANK [ CART_REG[1] | (CART_REG[2] << 5) ];\
+			SWITCH_ROM = ROM_BANK [0];\
 		g_get_real_addr[4] = SWITCH_ROM;\
 		g_get_real_addr[5] = SWITCH_ROM + 0x1000;\
 		g_get_real_addr[6] = SWITCH_ROM + 0x2000;\
@@ -71,7 +73,10 @@
 #define SET_MBC1_MODE_1_ROM_ADDR()	\
 	do\
 	{\
-		SWITCH_ROM = ROM_BANK [ CART_REG [MBC1_ROM_NUM] ];\
+		if (CART_REG [MBC1_ROM_NUM] > 0)\
+			SWITCH_ROM = ROM_BANK [ CART_REG [MBC1_ROM_NUM] - 1 ];\
+		else\
+			SWITCH_ROM = ROM_BANK [0];\
 		g_get_real_addr[4] = SWITCH_ROM;\
 		g_get_real_addr[5] = SWITCH_ROM + 0x1000;\
 		g_get_real_addr[6] = SWITCH_ROM + 0x2000;\
@@ -493,15 +498,13 @@ rra:
 // increment pc with 8-bit immediate value, if zero flag is not set
 
 jrnz_imm8:
-	if ((regs->reg_f & FLAG_Z) == 0) {
-		ADD_PC(2);
+	ADD_PC(2);
+	if ((regs->reg_f & FLAG_Z) == 0)
+	{
 		ADD_PC((int8_t)imm_8);
 		return (12);
 	}
-	else {
-		ADD_PC(2);
-		return (8);
-	}
+	return (8);
 
 ld_hl_imm16:
 	ADD_PC(3);
@@ -617,17 +620,13 @@ daa:
 // increment pc with 8-bit immediate value, if zero flag is set
 
 jrz_imm8:
+	ADD_PC(2);
 	if ((regs->reg_f & FLAG_Z) == FLAG_Z)
 	{
-		ADD_PC(2);
 		ADD_PC((int8_t)imm_8);
 		return (12);
 	}
-	else
-	{
-		ADD_PC(2);
-		return (8);
-	}
+	return (8);
 
 add_hl_hl:
 	ADD_PC(1);
@@ -689,17 +688,13 @@ cpl:
 // increment pc with 8-bit immediate value, if carry flag is not set
 
 jrnc_imm8:
+	ADD_PC(2);
 	if ((regs->reg_f & FLAG_CY) == 0)
 	{
-		ADD_PC(2);
 		ADD_PC((int8_t)imm_8);
 		return (12);
 	}
-	else
-	{
-		ADD_PC(2);
-		return (8);
-	}
+	return (8);
 
 ld_sp_imm16:
 	ADD_PC(3);
@@ -760,17 +755,13 @@ scf:
 // increment pc with 8-bit immediate value, if carry flag is set
 
 jrc_imm8:
+	ADD_PC(2);
 	if ((regs->reg_f & FLAG_CY) == FLAG_CY)
 	{
-		ADD_PC(2);
 		ADD_PC((int8_t)imm_8);
 		return (12);
 	}
-	else
-	{
-		ADD_PC(2);
-		return (8);
-	}
+	return (8);
 
 add_hl_sp:
 	ADD_PC(1);
@@ -1120,9 +1111,8 @@ ld_hl_l:
 // stop processor until interrupt flag is ok
 
 halt:
-	if (g_memmap.ime == true)
-		GAMEBOY = HALT_MODE;
 	ADD_PC(1);
+	GAMEBOY = HALT_MODE;
 	return (4);
 
 ld_hl_a:
@@ -2159,7 +2149,7 @@ push_de:
 	return (16);
 
 sub_a_imm8:
-	ADD_PC(1);
+	ADD_PC(2);
 	regs->reg_f = FLAG_N;
 	imm_8 = regs->reg_a - imm_8;
 	if (imm_8 > regs->reg_a)
@@ -2229,7 +2219,7 @@ callc_imm16:
 		return (12);
 
 sbc_a_imm8:
-	ADD_PC(1);
+	ADD_PC(2);
 	tmpflag = regs->reg_f;
 	regs->reg_f = FLAG_N;
 	imm_8 = regs->reg_a - imm_8;
@@ -2257,7 +2247,6 @@ rst_18h:
 ldff_imm8_a:
 	ADD_PC(2);
 	address = GET_REAL_ADDR(0xFF00u + (uint16_t)imm_8);
-	WRITE_REGISTER_IF_ROM_AREA(0xFF00u + (uint16_t)imm_8, regs->reg_a, 8);
 	*address = regs->reg_a;
 	return (8);
 
@@ -2271,7 +2260,6 @@ pop_hl:
 ldff_c_a:
 	ADD_PC(1);
 	address = GET_REAL_ADDR(0xFF00u + (uint16_t)regs->reg_c);
-	WRITE_REGISTER_IF_ROM_AREA(0xFF00u + (uint16_t)regs->reg_c, regs->reg_a, 8);
 	*address = regs->reg_a;
 	return (8);
 

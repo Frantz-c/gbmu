@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/23 11:44:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/18 11:17:23 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/18 17:11:29 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -105,8 +105,8 @@ enum	e_cartridge_types
 # define CART_REG		g_memmap.cart_reg
 
 # define NORMAL_MODE	0
-# define STOP_MODE		'S'
-# define HALT_MODE		'H'
+# define HALT_MODE		1
+# define STOP_MODE		2
 
 # define LYC_REGISTER	g_memmap.complete_block[LYC]
 # define LY_REGISTER	g_memmap.complete_block[LY]
