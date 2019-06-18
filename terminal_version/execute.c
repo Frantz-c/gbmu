@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/06/12 18:09:06 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/17 19:56:54 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/18 15:22:52 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -24,9 +24,9 @@
 //extern memory_map_t	g_memmap;
 
 
-#define ADD_PC(offset)	regs->reg_pc += (offset);
-#define SET_PC(value)	regs->reg_pc = (value);
-	
+#define ADD_PC(offset)	regs->reg_pc += (offset)
+#define SET_PC(value)	regs->reg_pc = value
+
 #define SET_LOW_ROM_NUMBER_MBC5()	\
 	CART_REG[1] = value;\
 	SWITCH_ROM = ROM_BANK [ CART_REG[1] | (CART_REG[2] << 8) ];\
@@ -54,13 +54,15 @@
 	do\
 	{/* if file contain empty banks at 0x20, 0x40, 0x60 */\
 		if ((CART_REG[1] | (CART_REG[2] << 5)) == 0x20)\
-			SWITCH_ROM = ROM_BANK [0x21];\
+			SWITCH_ROM = ROM_BANK [0x20];\
 		else if ((CART_REG[1] | (CART_REG[2] << 5)) == 0x40)\
-			SWITCH_ROM = ROM_BANK [0x41];\
+			SWITCH_ROM = ROM_BANK [0x40];\
 		else if ((CART_REG[1] | (CART_REG[2] << 5)) == 0x60)\
-			SWITCH_ROM = ROM_BANK [0x61];\
+			SWITCH_ROM = ROM_BANK [0x60];\
+		else if ((CART_REG[1] | (CART_REG[2] << 5)) > 0)\
+			SWITCH_ROM = ROM_BANK [ (CART_REG[1] | (CART_REG[2] << 5)) - 1];\
 		else\
-			SWITCH_ROM = ROM_BANK [ CART_REG[1] | (CART_REG[2] << 5) ];\
+			SWITCH_ROM = ROM_BANK [0];\
 		g_get_real_addr[4] = SWITCH_ROM;\
 		g_get_real_addr[5] = SWITCH_ROM + 0x1000;\
 		g_get_real_addr[6] = SWITCH_ROM + 0x2000;\
@@ -70,7 +72,10 @@
 #define SET_MBC1_MODE_1_ROM_ADDR()	\
 	do\
 	{\
-		SWITCH_ROM = ROM_BANK [ CART_REG [MBC1_ROM_NUM] ];\
+		if (CART_REG [MBC1_ROM_NUM] > 0)\
+			SWITCH_ROM = ROM_BANK [ CART_REG [MBC1_ROM_NUM] - 1 ];\
+		else\
+			SWITCH_ROM = ROM_BANK [0];\
 		g_get_real_addr[4] = SWITCH_ROM;\
 		g_get_real_addr[5] = SWITCH_ROM + 0x1000;\
 		g_get_real_addr[6] = SWITCH_ROM + 0x2000;\
@@ -109,6 +114,7 @@
 			SET_MBC1_MODE_1_RAM_ADDR();\
 		}\
 		else {\
+			plog("MODE = 0 (addr = cart_reg[0] | cart_reg[1] << 5\n");\
 			SET_MBC1_MODE_0_ROM_ADDR();\
 			SET_MBC1_MODE_0_RAM_ADDR();\
 		}\
@@ -4687,24 +4693,27 @@ plog("set_7_a\n");
 **    MBC_1    **
 ****************/
 mbc1_0:
+	plog("\nmbc1_0:\n\n");
 	ENABLE_EXTERNAL_RAM_MBC1();
 	return (cycles);
 
 
 mbc1_1:
+	plog("\nmbc1_1:\n\n");
 	/* 5 bits register */
-	g_memmap.cart_reg[MBC1_ROM_NUM] =
-		((value & 0x1f) == 0) ? 0 : (value & 0x1f) - 1;
+	g_memmap.cart_reg[MBC1_ROM_NUM] = (value & 0x1f);
 	SWITCH_RAM_ROM_MBC1();
 	return (cycles);
 
 mbc1_2:
+	plog("\nmbc1_2:\n\n");
 	/* 3 bits register */
 	g_memmap.cart_reg[MBC1_RAM_NUM] = (value & 0x03);
 	SWITCH_RAM_ROM_MBC1();
 	return (cycles);
 
 mbc1_3:
+	plog("\nmbc1_3:\n\n");
 	/* 1 bit register */
 	g_memmap.cart_reg[MBC1_MODE] = (value & 0x01);
 	SWITCH_RAM_ROM_MBC1();

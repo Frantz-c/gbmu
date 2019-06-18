@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/29 17:38:18 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/18 10:59:24 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/18 15:22:01 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -266,7 +266,7 @@ static void	load_cartridge_on_memory(uint8_t *mem, cartridge_t *cart, uint32_t t
 	rom = valloc(cartsize);
 	memcpy(rom, mem, cartsize);
 	g_memmap.fixed_rom = rom;
-	rom += 0x8000;
+	rom += 0x4000;
 	for (uint32_t i = 0; i < cart->n_rom_banks; i++)
 	{
 		g_memmap.rom_banks[i] = rom;
@@ -288,6 +288,7 @@ static void	load_cartridge_on_memory(uint8_t *mem, cartridge_t *cart, uint32_t t
 static void	load_rom_only_cartridge(uint8_t *mem, cartridge_t *cart)
 {
 	cart->mbc = ROM_ONLY;
+	g_memmap.mbc = 0;
 	malloc_blocks(cart);
 	load_cartridge_on_memory(mem, cart, ROM_ONLY);
 	puts("\e[0;32mCARTRIDGE LOADED WITH SUCCESS\e[0m");
@@ -296,6 +297,7 @@ static void	load_rom_only_cartridge(uint8_t *mem, cartridge_t *cart)
 static void	load_MBC1_cartridge(uint8_t *mem, cartridge_t *cart)
 {
 	cart->mbc = MBC1;
+	g_memmap.mbc = 1;
 	malloc_blocks(cart);
 	load_cartridge_on_memory(mem, cart, MBC1);
 	puts("\e[0;32mCARTRIDGE LOADED WITH SUCCESS\e[0m");
@@ -304,6 +306,7 @@ static void	load_MBC1_cartridge(uint8_t *mem, cartridge_t *cart)
 static void	load_MBC2_cartridge(uint8_t *mem, cartridge_t *cart)
 {
 	cart->mbc = MBC2;
+	g_memmap.mbc = 2;
 	malloc_blocks(cart);
 	load_cartridge_on_memory(mem, cart, MBC2);
 	puts("\e[0;32mCARTRIDGE LOADED WITH SUCCESS\e[0m");
@@ -312,6 +315,7 @@ static void	load_MBC2_cartridge(uint8_t *mem, cartridge_t *cart)
 static void	load_MBC3_cartridge(uint8_t *mem, cartridge_t *cart)
 {
 	cart->mbc = MBC3;
+	g_memmap.mbc = 3;
 	malloc_blocks(cart);
 	load_cartridge_on_memory(mem, cart, MBC3);
 	puts("\e[0;32mCARTRIDGE LOADED WITH SUCCESS\e[0m");
@@ -320,6 +324,7 @@ static void	load_MBC3_cartridge(uint8_t *mem, cartridge_t *cart)
 static void	load_MBC5_cartridge(uint8_t *mem, cartridge_t *cart)
 {
 	cart->mbc = MBC5;
+	g_memmap.mbc = 4;
 	malloc_blocks(cart);
 	load_cartridge_on_memory(mem, cart, MBC5);
 	puts("\e[0;32mCARTRIDGE LOADED WITH SUCCESS\e[0m");

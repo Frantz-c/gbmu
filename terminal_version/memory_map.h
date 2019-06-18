@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/23 11:44:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/18 10:57:22 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/18 14:29:37 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -216,8 +216,11 @@ uint32_t		GAMEBOY;
 		do {\
 			if ((virtual_addr) < 0x8000)\
 			{\
+				plog("\nWRITE_TO_CARTRIDGE_REGISTER\n");\
 				cycles = (_cycles);\
 				value = (_value); \
+				sprintf(debug, ">> jump[%d][%d]\n\n", g_memmap.mbc, ((virtual_addr) >> 12));\
+				plog(debug);\
 				goto *jump_to_mbcx[g_memmap.mbc][(virtual_addr) >> 12];\
 			}\
 		} while(0)
