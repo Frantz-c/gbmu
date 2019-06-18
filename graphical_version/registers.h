@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/29 09:45:00 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/05/30 14:49:23 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/18 12:26:35 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -16,7 +16,7 @@
 
 # include <stdint.h>
 
-# if (BYTE_ORDER == LITTLE_ENDIAN)
+# if (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
 
 #  define reg_a		bytes[0]
 #  define reg_f		bytes[1]

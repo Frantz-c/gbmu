@@ -6,13 +6,14 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/06/12 18:09:06 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/17 13:16:48 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/18 13:37:47 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
 #include "memory_map.h"
 #include "execute.h"
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -234,9 +235,9 @@ cycle_count_t	execute(registers_t *regs)
 	uint8_t				opcode = address[0];
 	register uint8_t	imm_8 = address[1];
 	register uint16_t	imm_16 = (uint16_t)address[1] | ((uint16_t)address[2] << 8);
+
 	goto *instruction_jumps[opcode];
 
-// No operation
 
 nop:
 	ADD_PC(1);
@@ -2268,7 +2269,7 @@ pop_hl:
 	return (12);
 
 ldff_c_a:
-	ADD_PC(2);
+	ADD_PC(1);
 	address = GET_REAL_ADDR(0xFF00u + (uint16_t)regs->reg_c);
 	WRITE_REGISTER_IF_ROM_AREA(0xFF00u + (uint16_t)regs->reg_c, regs->reg_a, 8);
 	*address = regs->reg_a;
@@ -2353,7 +2354,7 @@ pop_af:
 	return (12);
 
 ldff_a_c:
-	ADD_PC(2);
+	ADD_PC(1);
 	address = GET_REAL_ADDR(0xFF00u + (uint16_t)regs->reg_c);
 	regs->reg_a = *address;
 	return (8);
