@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/23 11:44:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/17 12:16:31 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/18 11:17:23 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -124,6 +124,10 @@ enum	e_cartridge_types
 # define WY_REGISTER	g_memmap.complete_block[WY]
 # define STAT_REGISTER	g_memmap.complete_block[STAT]
 # define P1_REGISTER	g_memmap.complete_block[P1]
+# define BGP_REGISTER	g_memmap.complete_block[BGP]
+# define OBP0_REGISTER	g_memmap.complete_block[OBP0]
+# define OBP1_REGISTER	g_memmap.complete_block[OBP1]
+# define VBK_REGISTER	g_memmap.complete_block[VBK]
 //# define _REGISTER	g_memmap.complete_block[]
 
 typedef struct
@@ -170,8 +174,7 @@ typedef struct	memory_map_s
 	
 	uint8_t		*vram;			// 0x8000 - 0x9800
 		uint8_t	*vram_banks[2];
-	uint8_t		*vram_bg;		// 0x9800 - 0x9fff
-	uint8_t		*vram_bg2;		// 0x9800 - 0x9fff
+	uint8_t		*vram_bg[2];	// 0x9800 - 0x9fff
 	
 	uint8_t		*extern_ram;	// 0xa000 - 0xbfff
 		uint8_t	*extern_ram_banks[16];
