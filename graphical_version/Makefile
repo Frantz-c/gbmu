@@ -6,7 +6,7 @@
 #    By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+      #
 #                                                  #+#   #+    #+    #+#       #
 #    Created: 2019/06/19 08:20:37 by mhouppin     #+#   ##    ##    #+#        #
-#    Updated: 2019/06/19 08:25:38 by mhouppin    ###    #+. /#+    ###.fr      #
+#    Updated: 2019/06/19 17:28:39 by mhouppin    ###    #+. /#+    ###.fr      #
 #                                                          /                   #
 #                                                         /                    #
 # **************************************************************************** #
@@ -32,7 +32,7 @@ $(NAME): $(OBJECTS)
 	$(COMPILE) -o $@ $^ $(shell sdl2-config --libs)
 
 %.o: %.c
-	$(COMPILE) -O3 -march=native -c -MMD $(shell sdl2-config --cflags) -o $@ $<
+	$(COMPILE) -O3 -g3 -march=native -c -MMD $(shell sdl2-config --cflags) -o $@ $<
 
 -include $(DEPENDS)
 
