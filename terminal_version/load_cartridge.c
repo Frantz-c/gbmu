@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/29 17:38:18 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/18 15:22:01 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/18 15:41:54 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -211,7 +211,7 @@ static void	malloc_blocks(cartridge_t *cart)
 	g_memmap.fixed_ram = valloc(0x8000);
 	g_memmap.switch_ram = g_memmap.fixed_ram + 0x1000;
 	g_memmap.ram_banks[0] = g_memmap.switch_ram;
-	for (uint32_t i = 1; i < 8; i++)
+	for (uint32_t i = 1; i < 7; i++)
 		g_memmap.ram_banks[i] = g_memmap.ram_banks[i - 1] + 0x1000;
 
 	// Bootstrap ??? 0xe000 - 0xfdff
@@ -229,7 +229,7 @@ static void	malloc_blocks(cartridge_t *cart)
 
 	// convertion virtual addresse to real addresse
 	g_get_real_addr[8] = g_memmap.vram;				//0x8000
-	g_get_real_addr[9] = g_memmap.vram + 0x1000;		//0x9000
+	g_get_real_addr[9] = g_memmap.vram + 0x1000;	//0x9000
 	if (g_memmap.extern_ram == NULL)
 	{
 		g_get_real_addr[10] = g_memmap.complete_block;	//0xa000
