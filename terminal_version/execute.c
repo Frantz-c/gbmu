@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/06/12 18:09:06 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/19 13:54:11 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/19 16:47:06 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -417,7 +417,8 @@ cycle_count_t	execute(registers_t *regs)
 					"SCX = %hhu, SCY = %hhu, LY = %hhu, LYC = %hhu,\n"
 					"BGP = %s, OBP0 = %s, OBP1 = %s, WX = %hhu, WY = %hhu,\n"
 					"DIV = 0x%hhx, TIMA = 0x%hhx, TMA = 0x%hhx, TAC = %s,\n"
-					"IF = %s, IE = %s, SVBK = %s, VBK = %s, DMA = 0x%hhx\n\n\t",
+					"IF = %s, IE = %s, IME = %u,\n"
+					"SVBK = %s, VBK = %s, DMA = 0x%hhx\n\n\t",
 					regs->reg_pc, (unsigned long)address,
 					regs->reg_a, regs->reg_a, regs->reg_b, regs->reg_b, regs->reg_c, regs->reg_c, regs->reg_d, regs->reg_d,
 					regs->reg_e, regs->reg_e, regs->reg_h, regs->reg_h, regs->reg_l, regs->reg_l, get_bin(regs->reg_f), 
@@ -426,7 +427,8 @@ cycle_count_t	execute(registers_t *regs)
 					SCX_REGISTER, SCY_REGISTER, LY_REGISTER, LYC_REGISTER,
 					get_bin(BGP_REGISTER), get_bin(OBP0_REGISTER), get_bin(OBP1_REGISTER), WX_REGISTER, WY_REGISTER,
 					DIV_REGISTER, TIMA_REGISTER, TMA_REGISTER, get_bin(TAC_REGISTER),
-					get_bin(IF_REGISTER), get_bin(IE_REGISTER), get_bin(SVBK_REGISTER), get_bin(VBK_REGISTER), DMA_REGISTER
+					get_bin(IF_REGISTER), get_bin(IE_REGISTER), IME_REGISTER,
+					get_bin(SVBK_REGISTER), get_bin(VBK_REGISTER), DMA_REGISTER
 			);
 	plog(debug);
 
@@ -2736,8 +2738,7 @@ plog("add_sp_imm8\n");
 
 jp_hl:
 plog("jp_hl\n");
-	address = GET_REAL_ADDR(regs->reg_hl);
-	SET_PC((uint16_t)address[0] | ((uint16_t)address[1] << 8));
+	SET_PC(regs->reg_hl);
 	return (4);
 
 ld_imm16_a:

@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/23 11:44:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/18 20:34:57 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/19 15:49:42 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -114,7 +114,7 @@ enum	e_cartridge_types
 # define BGP_REGISTER	g_memmap.complete_block[BGP]
 # define OBP0_REGISTER	g_memmap.complete_block[OBP0]
 # define OBP1_REGISTER	g_memmap.complete_block[OBP1]
-//# define _REGISTER	g_memmap.complete_block[]
+# define IME_REGISTER	g_memmap.ime
 # define LYC_REGISTER	g_memmap.complete_block[LYC]
 # define LY_REGISTER	g_memmap.complete_block[LY]
 # define TIMA_REGISTER	g_memmap.complete_block[TIMA]
