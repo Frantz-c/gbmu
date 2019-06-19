@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/06/12 18:09:06 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/18 20:41:41 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/19 13:54:11 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -1438,8 +1438,7 @@ plog("ld_hl_l\n");
 
 halt:
 plog("halt\n");
-	if (g_memmap.ime == true)
-		GAMEBOY = HALT_MODE;
+	GAMEBOY = HALT_MODE;
 	ADD_PC(1);
 	return (4);
 
@@ -2571,7 +2570,7 @@ plog("push_de\n");
 
 sub_a_imm8:
 plog("sub_a_imm8\n");
-	ADD_PC(1);
+	ADD_PC(2);
 	regs->reg_f = FLAG_N;
 	imm_8 = regs->reg_a - imm_8;
 	if (imm_8 > regs->reg_a)
@@ -2647,7 +2646,7 @@ plog("callc_imm16\n");
 
 sbc_a_imm8:
 plog("sbc_a_imm8\n");
-	ADD_PC(1);
+	ADD_PC(2);
 	tmpflag = regs->reg_f;
 	regs->reg_f = FLAG_N;
 	imm_8 = regs->reg_a - imm_8;
@@ -2677,7 +2676,6 @@ ldff_imm8_a:
 plog("ldff_imm8_a\n");
 	ADD_PC(2);
 	address = GET_REAL_ADDR(0xFF00u + (uint16_t)imm_8);
-//	WRITE_REGISTER_IF_ROM_AREA(0xFF00u + (uint16_t)imm_8, regs->reg_a, 8);
 	*address = regs->reg_a;
 	return (8);
 
@@ -2693,7 +2691,6 @@ ldff_c_a:
 plog("ldff_c_a\n");
 	ADD_PC(1);
 	address = GET_REAL_ADDR(0xFF00u + (uint16_t)regs->reg_c);
-//	WRITE_REGISTER_IF_ROM_AREA(0xFF00u + (uint16_t)regs->reg_c, regs->reg_a, 8);
 	*address = regs->reg_a;
 	return (8);
 

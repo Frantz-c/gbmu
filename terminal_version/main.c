@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/30 09:02:45 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/18 20:21:32 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/19 14:57:25 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -102,6 +102,7 @@
 uint8_t			*g_get_real_addr[16] = {NULL};
 memory_map_t	g_memmap;
 uint32_t		GAMEBOY = NORMAL_MODE;
+int				log_file;
 
 static void		put_file_contents(const char *file, const void *content, uint32_t length)
 {
@@ -120,6 +121,22 @@ static void		put_file_contents(const char *file, const void *content, uint32_t l
 	close(fd);
 }
 
+static void		open_log_file(void)
+{
+	log_file = open("log_gbmul", O_WRONLY | O_TRUNC | O_CREAT, 0664);
+
+	if (log_file == -1)
+	{
+		fprintf(stderr, "FUCK YOU !\n");
+		exit (1);
+	}
+}
+
+static void		close_log_file(void)
+{
+	close(log_file);
+}
+
 extern void		plog2(const char *s, uint32_t size)
 {
 	put_file_contents("log_gbmul", s, size);
@@ -127,7 +144,8 @@ extern void		plog2(const char *s, uint32_t size)
 
 extern void		plog(const char *s)
 {
-	put_file_contents("log_gbmul", s, strlen(s));
+	write(log_file, s, strlen(s));
+//	put_file_contents("log_gbmul", s, strlen(s));
 }
 
 static int		term_noecho_mode(int stat)
@@ -286,7 +304,7 @@ static void		screen_init(char *screen)
 	memcpy(screen + (REAL_W + 143 * REAL_W), "\e[0m", 4);
 }
 
-uint16_t	get_joypad_event(void)
+void	get_joypad_event(void)
 {
 	unsigned long	key = 0;
 	unsigned int	button;
@@ -294,34 +312,38 @@ uint16_t	get_joypad_event(void)
 
 	read(0, &key, sizeof(unsigned long));
 	if (key == K_ESC)
+	{
+		close_log_file();
 		exit(0);
-
-	if ((g_memmap.complete_block[P1] & 0x30) == 0x30) {
-		g_memmap.complete_block[P1] = 0;
-		return (0);
 	}
-	if ((g_memmap.complete_block[P1] & 0x30) == 0)
-		return (0);
 
+	if ((P1_REGISTER & 0x30) == 0x30) {
+		P1_REGISTER = 0;
+		return;
+	}
+	if ((P1_REGISTER & 0x30) == 0)
+		return;
+
+	
 	if (key)
 	{
-		if (g_memmap.complete_block[P1] & 0x10)
+		if ((P1_REGISTER & 0x30U) == 0x10U)
 		{
-			button = 0xff;
+			button = 0xffU;
 			switch (key)
 			{
-				case A:			button = ~0x01; break;
-				case B:			button = ~0x02; break;
-				case SELECT:	button = ~0x04; break;
-				case START:		button = ~0x08; break;
+				case A:			button = ~0x01U; break;
+				case B:			button = ~0x02U; break;
+				case SELECT:	button = ~0x04U; break;
+				case START:		button = ~0x08U; break;
 			}
-			g_memmap.complete_block[0xff00] &= button;
-			IF_REGISTER |= 0x10;
-			return (JOYPAD_INT);
+			P1_REGISTER &= button;
+			if (button != 0xffU)
+				IF_REGISTER |= 0x10U;
 		}
-		else if (g_memmap.complete_block[P1] & 0x20)
+		else if ((P1_REGISTER & 0x30U) == 0x20U)
 		{
-			arrows = 0xff;
+			arrows = 0xffU;
 			switch (key)
 			{
 				case K_RIGHT:	arrows = ~0x01; break;
@@ -329,12 +351,11 @@ uint16_t	get_joypad_event(void)
 				case K_UP:		arrows = ~0x04; break;
 				case K_DOWN:	arrows = ~0x08; break;
 			}		
-			g_memmap.complete_block[0xff00] &= arrows;
-			IF_REGISTER |= 0x10;
-			return (JOYPAD_INT);
+			P1_REGISTER &= arrows;
+			if (arrows != 0xffU)
+				IF_REGISTER |= 0x10U;
 		}
 	}
-	return (0);
 }
 
 
@@ -470,7 +491,6 @@ static void		lcd_write_line(char *screen)
  * http://www.codeslinger.co.uk/pages/projects/gameboy/graphics.html
 */
 
-cycle_count_t	totalcycles;
 
 /*
  * set STAT for each mode (HBlank, ...)
@@ -483,7 +503,7 @@ static void		start_cpu_lcd_events(void)
 	uint16_t		interrupt = 0;
 	uint8_t			reset_int_flag;
 	uint8_t			counter = 0;
-	//uint16_t		tmp_interrupt;
+	cycle_count_t	cycles;
 
 	regs.reg_pc = 0x100U;
 	regs.reg_sp = 0xfffeU;
@@ -497,7 +517,7 @@ static void		start_cpu_lcd_events(void)
 		// Execute cpu instruction
 		if (GAMEBOY == NORMAL_MODE) {
 			//plog("\nexecute_start\n");
-			totalcycles += execute(&regs);
+			cycles += execute(&regs);
 			//plog("execute_end\n");
 		}
 
@@ -505,52 +525,22 @@ static void		start_cpu_lcd_events(void)
 
 		if ((counter & 0x3) == 0)
 		{
-			// write one line to the buffer and display screen if all lines filled
-			if (LCDC_LYC_INT_ENABLE() && LY_REGISTER == LYC_REGISTER)
+			if (LY_REGISTER < 144)
 			{
-				if (interrupt == 0) {
-					interrupt = LCDC_INT;
-					reset_int_flag = 0xfdU;
-				}
-				IF_REGISTER |= 0x02U;
-			}
-			if (LY_REGISTER < 144) {
-				//plog("\nprint_line_start\n");
 				if (((LCDC_REGISTER & 0x80U) && GAMEBOY != STOP_MODE) || LY_REGISTER != 0)
-				{
 					lcd_write_line(true_screen);
-				}
-				//plog("print_lin_end\n");
 			}
 			if (LY_REGISTER == 143U)
 			{
 				lcd_display_screen(true_screen, NULL);
 				if (LCDC_VBLANK_INT_ENABLE())
-				{
-					if (!interrupt) {
-						interrupt = LCDC_INT;
-						reset_int_flag = 0xfdU;
-					}
-					IF_REGISTER |= 0x2U;
-				}
+					IF_REGISTER |= 0x02U;
 				if (VBLANK_INT_ENABLE())
-				{
-					if (!interrupt) {
-						interrupt = VBLANK_INT;
-						reset_int_flag = 0xfeU;
-					}
-					IF_REGISTER |= 0x1U;
-				}
+					IF_REGISTER |= 0x01U;
 			}
 			LY_REGISTER = (LY_REGISTER == 153U) ? 0 : LY_REGISTER + 1;
 			if (LCDC_LYC_INT_ENABLE() && LY_REGISTER == LYC_REGISTER)
-			{
-				if (!interrupt) {
-					interrupt = LCDC_INT;
-					reset_int_flag = 0xfdU;
-				}
 				IF_REGISTER |= 0x2U;
-			}
 		}
 
 		// DMA transfer if any
@@ -558,18 +548,15 @@ static void		start_cpu_lcd_events(void)
 		{
 			if (DMA_REGISTER < 0xe0U && DMA_REGISTER > 0x7fU) // CGB ? DMA >= 0
 			{
-				//plog("\nDMA transfer start\n");
+				plog("\nDMA transfer start\n");
 				dma_transfer();
-				//plog("DMA transfer end\n");
+				DMA_REGISTER = 0xffU;
+				plog("DMA transfer end\n");
 			}
 		}
 
 		// Check joypad events
 		if (JOYPAD_INT_ENABLE()) {
-			if ((interrupt = get_joypad_event()) != 0)
-				reset_int_flag = 0xefU;
-		}
-		else
 			get_joypad_event();
 
 
@@ -703,15 +690,8 @@ static void		restore_terminal(int sig)
 {
 	(void)sig;
 	term_noecho_mode(OFF);
+	close_log_file();
 	exit(1);
-}
-
-static void		toto(int sig)
-{
-	fprintf(stderr, "cycle_count = %lu\n\n\n", totalcycles);
-	restore_terminal(0);
-	exit(156);
-	return ;
 }
 
 int		main(int argc, char *argv[])
@@ -723,9 +703,12 @@ int		main(int argc, char *argv[])
 	}
 
 	signal(SIGINT, restore_terminal);
-	signal(SIGALRM, toto);
+	signal(SIGSEGV, restore_terminal);
+	signal(SIGFPE, restore_terminal);
+	signal(SIGBUS, restore_terminal);
 
-	remove("log_gbmul");
+//	remove("log_gbmul");
+	open_log_file();
 
 	open_cartridge(argv[1]);
 	start_game();
