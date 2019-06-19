@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/30 09:02:45 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/18 17:39:56 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/19 14:11:36 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -636,11 +636,15 @@ not_handled_input:
 	}
 }
 
-void			auto_rst(registers_t *regs, uint16_t new_pc, uint8_t if_mask)
+void			auto_sri(registers_t *regs, uint16_t new_pc, uint8_t if_mask)
 {
 	uint8_t		*address;
 
-	GAMEBOY = NORMAL_MODE;
+	if (GAMEBOY != NORMAL_MODE)
+	{
+		GAMEBOY = NORMAL_MODE;
+		return ;
+	}
 	IF_REGISTER &= ~(if_mask);
 	address = GET_REAL_ADDR(regs->reg_sp);
 	regs->reg_sp -= 2;
@@ -653,21 +657,21 @@ static void		check_if_ime(registers_t *regs)
 {
 	if (g_memmap.ime == false && GAMEBOY == NORMAL_MODE)
 		return ;
-	if ((IF_REGISTER & BIT_0) == BIT_0)
-		auto_rst(regs, 0x40, BIT_0);
-	else if ((IF_REGISTER & BIT_1) == BIT_1)
-		auto_rst(regs, 0x48, BIT_1);
-	else if ((IF_REGISTER & BIT_2) == BIT_2)
-		auto_rst(regs, 0x50, BIT_2);
+	if ((IF_REGISTER & BIT_0) == BIT_0 && GAMEBOY != STOP_MODE)
+		auto_sri(regs, 0x40, BIT_0);
+	else if ((IF_REGISTER & BIT_1) == BIT_1 && GAMEBOY != STOP_MODE)
+		auto_sri(regs, 0x48, BIT_1);
+	else if ((IF_REGISTER & BIT_2) == BIT_2 && GAMEBOY != STOP_MODE)
+		auto_sri(regs, 0x50, BIT_2);
 	else if ((IF_REGISTER & BIT_4) == BIT_4)
-		auto_rst(regs, 0x60, BIT_4);
+		auto_sri(regs, 0x60, BIT_4);
 }
 
-#define TVALUE 12
+#define TVALUE 20
 
 static void		start_cpu_lcd_events(void)
 {
-	const char		*stable[3] = {"normal", "halted", "stopped"};
+	const char		*stable[3] = {" normal", " halted", "stopped"};
 	cycle_count_t	tinsns = 0;
 	cycle_count_t	cycles;
 	registers_t		registers;
@@ -695,13 +699,24 @@ static void		start_cpu_lcd_events(void)
 		{
 			printf(	"\e[6A\rA  %4hhx F  %4hhx B  %4hhx C  %4hhx D  %4hhx E  %4hhx H  %4hhx L  %4hhx\n"
 					"AF %4hx         BC %4hx         DE %4hx         HL %4hx\n"
-					"PC %4hx         SP %4hx\n\nSTATUS %s IF %hhx IE %hhx IME %s TIMA %hhu TMA %hhu TAC %hhx    \n"
-					"LCDC %hhx STAT %hhx\nINSTS %lu", registers.reg_a, registers.reg_f,
+					"PC %4hx         SP %4hx\n\nSTATUS %s IE %c%c%c%c%c IME %s TIMA %3hhu TMA %3hhu TAC %2hhx\n"
+					"LCDC %c%c%c%c%c%c%c%c STAT %c%c%c%c%c%hhx\nINSTS %9lu", registers.reg_a, registers.reg_f,
 					registers.reg_b, registers.reg_c, registers.reg_d, registers.reg_e,
 					registers.reg_h, registers.reg_l, registers.reg_af, registers.reg_bc,
 					registers.reg_de, registers.reg_hl, registers.reg_pc, registers.reg_sp,
-					stable[GAMEBOY], IF_REGISTER, IE_REGISTER, g_memmap.ime ? "enabled" : "disabled",
-					TIMA_REGISTER, TMA_REGISTER, TAC_REGISTER, LCDC_REGISTER, STAT_REGISTER,
+					stable[GAMEBOY],
+					(IE_REGISTER & BIT_4) ? 'J' : '.', (IE_REGISTER & BIT_3) ? 'S' : '.',
+					(IE_REGISTER & BIT_2) ? 'T' : '.', (IE_REGISTER & BIT_1) ? 'L' : '.',
+					(IE_REGISTER & BIT_0) ? 'V' : '.',
+					g_memmap.ime ? " enabled" : "disabled",
+					TIMA_REGISTER, TMA_REGISTER, TAC_REGISTER,
+					(LCDC_REGISTER & BIT_7) ? 'L' : '.', (LCDC_REGISTER & BIT_6) ? '1' : '0',
+					(LCDC_REGISTER & BIT_5) ? 'W' : '.', (LCDC_REGISTER & BIT_4) ? '1' : '0',
+					(LCDC_REGISTER & BIT_3) ? '1' : '0', (LCDC_REGISTER & BIT_2) ? 'D' : 'S',
+					(LCDC_REGISTER & BIT_1) ? 'O' : '.', (LCDC_REGISTER & BIT_0) ? 'B' : '.',
+					(STAT_REGISTER & BIT_6) ? 'L' : '.', (STAT_REGISTER & BIT_5) ? 'O' : '.',
+					(STAT_REGISTER & BIT_4) ? 'V' : '.', (STAT_REGISTER & BIT_3) ? 'H' : '.',
+					(STAT_REGISTER & BIT_2) ? 'Y' : '.', (STAT_REGISTER & (BIT_0 | BIT_1)),
 					tinsns);
 			fflush(stdout);
 			usleep(15000);
