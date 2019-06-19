@@ -29,7 +29,6 @@
 #include "memory_map.h"
 #include "registers.h"
 #include "execute.h"
-#include <malloc/malloc.h>
 
 #define TILE_TEST	(uint8_t*)"\x22\xc1\xff\xff\x48\x30\x24\x18\x00\xff\xff\xff\x0a\x04\x05\x02"
 cartridge_t		g_cart;
