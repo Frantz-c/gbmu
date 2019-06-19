@@ -123,7 +123,7 @@ void			load_oam(oam_t *oam, int line)
 		if (!cgb_mode)
 			oam->obj[i].prior += (255 - oam->obj[i].lcd_x);
 		oam->obj[i].next_prior = (255 - oam->obj[i].code);
-//		printf("Object %hhx: y(%hhu), x(%hhu), code(0x%hhx), attrib(0x%hhx)\n",
+//		printf("Object %zx: y(%hhu), x(%hhu), code(0x%hhx), attrib(0x%hhx)\n",
 //				i,
 //				oam->obj[i].lcd_y,
 //				oam->obj[i].lcd_x,
@@ -209,22 +209,45 @@ void			draw_dmg_line(object_t *obj, uint8_t size, uint8_t line)
 				uint8_t rx = obj_xpos;
 
 				if ((attrib & BIT_5) == BIT_5)
-					rx += 7 - x;
-				else
 					rx += x;
-
-				if (rx >= 160)
-					continue;
-
-				uint8_t	dot1 = (vram[obj[i].code * 16 + obj_ypos * 2] >> rx) & 1;
-				uint8_t	dot2 = (vram[obj[i].code * 16 + obj_ypos * 2 + 1] >> rx) & 1;
-				int32_t	pxl;
-				if ((attrib & BIT_4) == BIT_4)
-					pxl = obp[4 + dot1 + dot2 + dot2];
 				else
-					pxl = obp[dot1 + dot2 + dot2];
-				if (pxl != 0xffffff)
-					pixels[(uint16_t)rx + (uint16_t)line * 160] = pxl;
+					rx += 7 - x;
+
+				if (rx < 160)
+				{
+
+					uint8_t	dot1 = (vram[(uint16_t)obj[i].code * 16 + (uint16_t)obj_ypos * 2] >> x) & 1;
+					uint8_t	dot2 = (vram[(uint16_t)obj[i].code * 16 + (uint16_t)obj_ypos * 2 + 1] >> x) & 1;
+					int32_t	pxl;
+					if ((attrib & BIT_4) == BIT_4)
+						pxl = obp[4 + dot1 + dot2 + dot2];
+					else
+						pxl = obp[dot1 + dot2 + dot2];
+					if (pxl != 0xffffff)
+						pixels[(uint16_t)rx + (uint16_t)line * 160] = pxl;
+				}
+				if ((LCDC_REGISTER & BIT_2) == 0)
+					continue ;
+
+				rx = obj_xpos + 8;
+
+				if ((attrib & BIT_5) == BIT_5)
+					rx += x;
+				else
+					rx += 7 - x;
+
+				if (rx < 160)
+				{
+					uint8_t dot1 = (vram[(uint16_t)obj[i].code * 16 + (uint16_t)obj_ypos * 2 + 16] >> x) & 1;
+					uint8_t dot2 = (vram[(uint16_t)obj[i].code * 16 + (uint16_t)obj_ypos * 2 + 17] >> x) & 1;
+					int32_t	pxl;
+					if ((attrib & BIT_4) == BIT_4)
+						pxl = obp[4 + dot1 + dot2 + dot2];
+					else
+						pxl = obp[dot1 + dot2 + dot2];
+					if (pxl != 0xffffff)
+						pixels[(uint16_t)rx + (uint16_t)line * 160] = pxl;
+				}
 			}
 		}
 		else if (obj[i].type == WINDOW_TILE)
@@ -234,14 +257,13 @@ void			draw_dmg_line(object_t *obj, uint8_t size, uint8_t line)
 		else
 		{
 			uint8_t obj_ypos = obj[i].lcd_y;
-			uint8_t	obj_xpos = obj[i].lcd_x;
+			uint8_t	obj_xpos = obj[i].lcd_x + SCX_REGISTER;
 
 			obj_ypos -= (SCY_REGISTER + line) & ~(7);
 
 			for (uint8_t x = 0; x < 8; x++)
 			{
-				uint8_t	rx = x + obj_xpos;
-
+				uint8_t	rx = obj_xpos + 7 - x;
 				if (rx >= 160)
 					continue;
 
@@ -257,7 +279,8 @@ void			draw_dmg_line(object_t *obj, uint8_t size, uint8_t line)
 					dot2 = (vram[(uint16_t)obj[i].code * 16 + 4097 + (uint16_t)obj_ypos * 2] >> x) & 1;
 				}
 				int32_t pxl = bgp[dot1 + dot2 + dot2];
-				pixels[(uint16_t)rx + (uint16_t)line * 160] = pxl;
+				if (pxl != 0xffffff)
+					pixels[(uint16_t)rx + (uint16_t)line * 160] = pxl;
 			}
 		}
 	}
@@ -324,7 +347,7 @@ void			draw_line(oam_t *oam, int line)
 			oam->obj[offset + x].lcd_x = x << 3;
 
 			oam->obj[offset + x].code =
-				g_memmap.vram_bg[0][address + align_scy * 32 + x];
+				g_memmap.vram_bg[0][address + (uint16_t)align_scy * 32 + x];
 
 			if (g_cart.cgb_support_code == 0x0u)
 			{
@@ -407,6 +430,13 @@ static void		check_what_should_do_lcd(cycle_count_t cycles)
 	static int				line_render = 0;
 	static int				render_status = OAM_READ;
 
+	if ((LCDC_REGISTER & BIT_7) == 0 || GAMEBOY == STOP_MODE)
+	{
+		lcd_cycles = 0;
+		line_render = 0;
+		render_status = OAM_READ;
+		return ;
+	}
 	lcd_cycles += cycles;
 	if (line_render < 144)
 	{
@@ -465,6 +495,8 @@ static void		check_what_should_do_lcd(cycle_count_t cycles)
 					SDL_RenderPresent(render);
 					int pitch;
 					SDL_LockTexture(texture, NULL, (void **)&pixels, &pitch);
+					for (size_t i = 0; i < 144 * 160; i++)
+						pixels[i] = 0xffffff;
 					wait_some_time();
 				}
 				else if ((STAT_REGISTER & BIT_5) == BIT_5 &&
@@ -550,13 +582,13 @@ static void		check_if_dma(cycle_count_t cycles)
 {
 	if (DMA_REGISTER < 0xE0u)
 	{
-		long	*src = (long *)(GET_REAL_ADDR(((uint16_t)DMA_REGISTER) << 8));
-		long	*dst = (long *)(g_memmap.complete_block + 0xfe00);
+		uint8_t	*src = GET_REAL_ADDR(((uint16_t)DMA_REGISTER) << 8);
+		uint8_t	*dst = g_memmap.complete_block + 0xfe00;
 
 		dst = __builtin_assume_aligned(dst, 32);
 		src = __builtin_assume_aligned(src, 32);
 
-		for (size_t i = 0; i < 0xA0u / sizeof(long); i++)
+		for (size_t i = 0; i < 160; i++)
 		{
 			dst[i] = src[i];
 		}
@@ -802,14 +834,15 @@ static void		start_game(void)
 
 	int pitch;
 	assert(SDL_LockTexture(texture, NULL, (void **)&pixels, &pitch) == 0);
-	bzero(pixels, sizeof(int32_t) * 160 * 144);
+	for (size_t i = 0; i < 144 * 160; i++)
+		pixels[i] = 0xffffff;
 
 	ticks = SDL_GetTicks();
 
 	g_memmap.cpu_speed = 1;
-	OBP0_REGISTER = 0xE4u;
-	OBP1_REGISTER = 0xE4u;
-	BGP_REGISTER = 0xE4u;
+	OBP0_REGISTER = 0x0u;
+	OBP1_REGISTER = 0x0u;
+	BGP_REGISTER = 0x0u;
 	P1_REGISTER = 0;
 	TIMA_REGISTER = 0;
 	TAC_REGISTER = 0;
@@ -833,7 +866,7 @@ static void		start_game(void)
 	g_memmap.cart_reg[7] = 0;
 	g_memmap.ime = false;
 
-	write_background_in_vram();
+//	write_background_in_vram();
 	start_cpu_lcd_events();
 }
 
