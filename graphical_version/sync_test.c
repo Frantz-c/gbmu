@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/30 09:02:45 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/19 14:11:36 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/19 17:34:15 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -31,6 +31,7 @@
 #include "execute.h"
 #include <malloc/malloc.h>
 
+#define TILE_TEST	(uint8_t*)"\x22\xc1\xff\xff\x48\x30\x24\x18\x00\xff\xff\xff\x0a\x04\x05\x02"
 cartridge_t		g_cart;
 
 uint8_t			*g_get_real_addr[16] = {NULL};
@@ -45,6 +46,7 @@ uint32_t		GAMEBOY = NORMAL_MODE;
 #define OAM_READ		0
 #define OAM_VRAM_READ	1
 #define HZ_BLANK		2
+int				log_file;
 
 #define OAM_READ_CYCLES			68
 #define OAM_VRAM_READ_CYCLES	216
@@ -76,6 +78,28 @@ typedef struct	oam_s
 	object_t	obj[104];
 	_Bool		active;
 }				oam_t;
+
+
+static void		open_log_file(void)
+{
+	log_file = open("log_gbmul", O_WRONLY | O_TRUNC | O_CREAT, 0664);
+
+	if (log_file == -1)
+	{
+		fprintf(stderr, "FUCK YOU !\n");
+		exit(1);
+	}
+}
+
+static void		close_log_file(void)
+{
+	close(log_file);
+}
+
+extern void		plog(const char *s)
+{
+	write(log_file, s, strlen(s));
+}
 
 void			load_oam(oam_t *oam, int line)
 {
@@ -430,10 +454,10 @@ static void		check_what_should_do_lcd(cycle_count_t cycles)
 						{
 							IF_REGISTER |= BIT_1;
 						}
-						if ((IE_REGISTER & BIT_0) == BIT_0)
-						{
-							IF_REGISTER |= BIT_0;
-						}
+					}
+					if ((IE_REGISTER & BIT_0) == BIT_0)
+					{
+						IF_REGISTER |= BIT_0;
 					}
 					STAT_REGISTER &= ~(BIT_0 | BIT_1);
 					STAT_REGISTER |= (BIT_0);
@@ -547,6 +571,8 @@ void __attribute__((noreturn))	quit_program(void)
 	SDL_DestroyRenderer(render);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
+	close_log_file();
+	printf("\nElapsed cycles: %lu\n", elapsed_cycles);
 	exit(0);
 }
 
@@ -645,6 +671,7 @@ void			auto_sri(registers_t *regs, uint16_t new_pc, uint8_t if_mask)
 		GAMEBOY = NORMAL_MODE;
 		return ;
 	}
+	g_memmap.ime = false;
 	IF_REGISTER &= ~(if_mask);
 	address = GET_REAL_ADDR(regs->reg_sp);
 	regs->reg_sp -= 2;
@@ -672,7 +699,7 @@ static void		check_if_ime(registers_t *regs)
 static void		start_cpu_lcd_events(void)
 {
 	const char		*stable[3] = {" normal", " halted", "stopped"};
-	cycle_count_t	tinsns = 0;
+//	cycle_count_t	tinsns = 0;
 	cycle_count_t	cycles;
 	registers_t		registers;
 
@@ -686,25 +713,31 @@ static void		start_cpu_lcd_events(void)
 	registers.reg_e = 0xD8u;
 	registers.reg_h = 0x01u;
 	registers.reg_l = 0x4Du;
-	printf("\e[6B");
+//	printf("\e[6B");
 	while (1)
 	{
 		if (GAMEBOY == NORMAL_MODE)
+		{
+//			dprintf(log_file, "Instruction nº %lu\n", tinsns);
+//			tinsns++;
 			cycles = execute(&registers);
+		}
 		else
 			cycles = 4;
-		tinsns++;
 		elapsed_cycles += cycles;
-		if (tinsns % TVALUE == 0)
+/*		if (tinsns % TVALUE == 0)
 		{
 			printf(	"\e[6A\rA  %4hhx F  %4hhx B  %4hhx C  %4hhx D  %4hhx E  %4hhx H  %4hhx L  %4hhx\n"
 					"AF %4hx         BC %4hx         DE %4hx         HL %4hx\n"
-					"PC %4hx         SP %4hx\n\nSTATUS %s IE %c%c%c%c%c IME %s TIMA %3hhu TMA %3hhu TAC %2hhx\n"
+					"PC %4hx         SP %4hx\n\nSTATUS %s IF %c%c%c%c%c IE %c%c%c%c%c IME %s TIMA %3hhu TMA %3hhu TAC %2hhx\n"
 					"LCDC %c%c%c%c%c%c%c%c STAT %c%c%c%c%c%hhx\nINSTS %9lu", registers.reg_a, registers.reg_f,
 					registers.reg_b, registers.reg_c, registers.reg_d, registers.reg_e,
 					registers.reg_h, registers.reg_l, registers.reg_af, registers.reg_bc,
 					registers.reg_de, registers.reg_hl, registers.reg_pc, registers.reg_sp,
 					stable[GAMEBOY],
+					(IF_REGISTER & BIT_4) ? 'J' : '.', (IF_REGISTER & BIT_3) ? 'S' : '.',
+					(IF_REGISTER & BIT_2) ? 'T' : '.', (IF_REGISTER & BIT_1) ? 'L' : '.',
+					(IF_REGISTER & BIT_0) ? 'V' : '.',
 					(IE_REGISTER & BIT_4) ? 'J' : '.', (IE_REGISTER & BIT_3) ? 'S' : '.',
 					(IE_REGISTER & BIT_2) ? 'T' : '.', (IE_REGISTER & BIT_1) ? 'L' : '.',
 					(IE_REGISTER & BIT_0) ? 'V' : '.',
@@ -720,7 +753,7 @@ static void		start_cpu_lcd_events(void)
 					tinsns);
 			fflush(stdout);
 			usleep(15000);
-		}
+		}*/
 		check_what_should_do_lcd(cycles / g_memmap.cpu_speed);
 		if (GAMEBOY != STOP_MODE)
 			check_if_timer_needs_to_be_incremented(cycles);
@@ -730,9 +763,7 @@ static void		start_cpu_lcd_events(void)
 	}
 }
 
-#define TILE_TEST	(uint8_t*)"\x22\xc1\xff\xff\x48\x30\x24\x18\x00\xff\xff\xff\x0a\x04\x05\x02"
-
-static void		test_display(void)
+void		write_background_in_vram(void)
 {
 	uint8_t		*bg_data;
 	uint8_t		*bg_chr;
@@ -783,8 +814,8 @@ static void		start_game(void)
 	P1_REGISTER = 0;
 	TIMA_REGISTER = 0;
 	TAC_REGISTER = 0;
+	IF_REGISTER = 0;
 	IE_REGISTER = 0;
-	LCDC_REGISTER = 0x83u;
 	SCY_REGISTER = 0;
 	SCX_REGISTER = 0;
 	LYC_REGISTER = 0;
@@ -792,7 +823,18 @@ static void		start_game(void)
 	WY_REGISTER = 0;
 	WX_REGISTER = 0;
 	DMA_REGISTER = 0xffU;
-	test_display();
+	LCDC_REGISTER = 0x83U;
+	g_memmap.cart_reg[0] = 0;
+	g_memmap.cart_reg[1] = 0;
+	g_memmap.cart_reg[2] = 0;
+	g_memmap.cart_reg[3] = 0;
+	g_memmap.cart_reg[4] = 0;
+	g_memmap.cart_reg[5] = 0;
+	g_memmap.cart_reg[6] = 0;
+	g_memmap.cart_reg[7] = 0;
+	g_memmap.ime = false;
+
+	write_background_in_vram();
 	start_cpu_lcd_events();
 }
 
@@ -804,7 +846,8 @@ int		main(int argc, char *argv[])
 		return (1);
 	}
 
-	remove("log_gbmul");
+//	remove("log_gbmul");
+	open_log_file();
 
 	open_cartridge(argv[1]);
 	start_game();
