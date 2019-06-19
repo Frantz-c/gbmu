@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/30 09:02:45 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/19 14:57:25 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/19 18:30:24 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -50,6 +50,33 @@
 // 144 * 160
 #define SCREEN_OFFSET(x, y)	\
 	(((y) * REAL_W) + (13 * (x)))
+
+
+#define STAT_HBLANK	(STAT_REGISTER & 0x8U)
+#define STAT_VBLANK	(STAT_REGISTER & 0x10U)
+#define STAT_OAM	(STAT_REGISTER & 0x20U)
+#define STAT_LYC	(STAT_REGISTER & 0x40U)
+
+#define JOYPAD_INT_ENABLE()		(IE_REGISTER & 0x10U)
+#define TIMA_INT_ENABLE()		(IE_REGISTER & 0x04U)
+#define LCDC_INT_ENABLE()		(IE_REGISTER & 0x02U)
+#define VBLANK_INT_ENABLE()		(IE_REGISTER & 0x01U)
+
+#define LCDC_LYC_INT_ENABLE()		\
+	(\
+		STAT_LYC && LCDC_INT_ENABLE()\
+	)
+
+#define LCDC_VBLANK_INT_ENABLE()		\
+	(\
+		STAT_VBLANK && LCDC_INT_ENABLE()\
+	)
+
+#define LCDC_HBLANK_INT_ENABLE()		\
+	(\
+		STAT_HBLANK && LCDC_INT_ENABLE()\
+	)
+
 
 
 #define K_UP		0x415b1bUL
@@ -306,7 +333,7 @@ static void		screen_init(char *screen)
 
 void	get_joypad_event(void)
 {
-	unsigned long	key = 0;
+	unsigned long	key = 0UL;
 	unsigned int	button;
 	unsigned int	arrows;
 
@@ -317,13 +344,12 @@ void	get_joypad_event(void)
 		exit(0);
 	}
 
-	if ((P1_REGISTER & 0x30) == 0x30) {
-		P1_REGISTER = 0;
+	if ((P1_REGISTER & 0x30U) == 0x30U) {
+		P1_REGISTER = 0U;
 		return;
 	}
-	if ((P1_REGISTER & 0x30) == 0)
+	if ((P1_REGISTER & 0x30U) == 0U)
 		return;
-
 	
 	if (key)
 	{
@@ -337,24 +363,21 @@ void	get_joypad_event(void)
 				case SELECT:	button = ~0x04U; break;
 				case START:		button = ~0x08U; break;
 			}
-			P1_REGISTER &= button;
-			if (button != 0xffU)
-				IF_REGISTER |= 0x10U;
 		}
-		else if ((P1_REGISTER & 0x30U) == 0x20U)
+		else // if ((P1_REGISTER & 0x30U) == 0x20U)
 		{
-			arrows = 0xffU;
+			button = 0xffU;
 			switch (key)
 			{
-				case K_RIGHT:	arrows = ~0x01; break;
-				case K_LEFT:	arrows = ~0x02; break;
-				case K_UP:		arrows = ~0x04; break;
-				case K_DOWN:	arrows = ~0x08; break;
+				case K_RIGHT:	button = ~0x01; break;
+				case K_LEFT:	button = ~0x02; break;
+				case K_UP:		button = ~0x04; break;
+				case K_DOWN:	button = ~0x08; break;
 			}		
-			P1_REGISTER &= arrows;
-			if (arrows != 0xffU)
-				IF_REGISTER |= 0x10U;
 		}
+		if (JOYPAD_INT_ENABLE() && button != 0xffU)
+			IF_REGISTER |= 0x10U;
+		P1_REGISTER &= button;
 	}
 }
 
@@ -362,6 +385,7 @@ void	get_joypad_event(void)
 #define	CALL_INTERRUPT(interrupt, regs)	\
 do\
 {\
+	dprintf(log_file, "\n~~ INTERRUPT 0x%hX ~~\n\n", interrupt);\
 	g_memmap.ime = 0;\
 	*(short*)GET_REAL_ADDR(regs->reg_sp) = (short)regs->reg_pc;\
 	regs->reg_sp -= 2;\
@@ -369,28 +393,45 @@ do\
 }\
 while (0)
 
-void			call_interrupt(registers_t *regs, uint16_t interrupt, uint8_t reset)
+#define	CALL_INTERRUPT_2(interrupt, regs)	\
+do\
+{\
+	dprintf(log_file, "\n~~ INTERRUPT 0x%hX ~~\n\n", interrupt);\
+	g_memmap.ime = 0;\
+	*(short*)GET_REAL_ADDR(regs.reg_sp) = (short)regs.reg_pc;\
+	regs.reg_sp -= 2;\
+	regs.reg_pc = interrupt;\
+}\
+while (0)
+
+
+void			call_interrupt(registers_t *regs)
 {
-	// joypad is set before
+	if (IF_REGISTER)
+	{
+		// vblank
+		if (VBLANK_INT_ENABLE() && (IF_REGISTER & 0x01U)) {
+			IF_REGISTER ^= 0x01U;
+			CALL_INTERRUPT((uint16_t)0x0040U, regs);
+		}
 
-	// vblank
-	if (interrupt == 0 && (IF_REGISTER & 0x01))
-		interrupt = VBLANK_INT;
+		// lcdc
+		if (LCDC_INT_ENABLE() && (IF_REGISTER & 0x02U)) {
+			IF_REGISTER ^= 0x01U;
+			CALL_INTERRUPT((uint16_t)0x0048U, regs);
+		}
 
-	// lcdc
-	if (interrupt == 0 && (IF_REGISTER & 0x02))
-		interrupt = LCDC_INT;
+		// tima
+		if (TIMA_INT_ENABLE() && (IF_REGISTER & 0x04U)) {
+			IF_REGISTER ^= 0x01U;
+			CALL_INTERRUPT((uint16_t)0x0050U, regs);
+		}
 
-	// tima
-	if (interrupt == 0 && (IF_REGISTER & 0x04))
-		interrupt = TIMAOVF_INT;
-
-	if (interrupt) {
-		//plog("INTERRUPT\n");
-		IF_REGISTER &= reset;
-		CALL_INTERRUPT(interrupt, regs);
+		if (JOYPAD_INT_ENABLE() && (IF_REGISTER & 0x10U)) {
+			IF_REGISTER ^= 0x01U;
+			CALL_INTERRUPT((uint16_t)0x0060U, regs);
+		}
 	}
-	// faire tous les calls dans l'ordre ? (si oui, modifier l'instruction ret)
 }
 
 static void		dma_transfer(void)
@@ -400,31 +441,6 @@ static void		dma_transfer(void)
 
 	memcpy(dst, src, 0xa0);
 }
-
-#define STAT_HBLANK	(STAT_REGISTER & 0x8U)
-#define STAT_VBLANK	(STAT_REGISTER & 0x10U)
-#define STAT_OAM	(STAT_REGISTER & 0x20U)
-#define STAT_LYC	(STAT_REGISTER & 0x40U)
-
-#define JOYPAD_INT_ENABLE()		(IE_REGISTER & 0x10U)
-#define TIMER_INT_ENABLE()		(IE_REGISTER & 0x04U)
-#define LCDC_INT_ENABLE()		(IE_REGISTER & 0x02U)
-#define VBLANK_INT_ENABLE()		(IE_REGISTER & 0x01U)
-
-#define LCDC_LYC_INT_ENABLE()		\
-	(\
-		STAT_LYC && LCDC_INT_ENABLE()\
-	)
-
-#define LCDC_VBLANK_INT_ENABLE()		\
-	(\
-		STAT_VBLANK && LCDC_INT_ENABLE()\
-	)
-
-#define LCDC_HBLANK_INT_ENABLE()		\
-	(\
-		STAT_HBLANK && LCDC_INT_ENABLE()\
-	)
 
 
 static void		lcd_write_line(char *screen)
@@ -500,14 +516,12 @@ static void		start_cpu_lcd_events(void)
 	char			screen[SCREEN_SIZE + 8];
 	char			*true_screen = screen + 8;
 	registers_t		regs = {{0}};
-	uint16_t		interrupt = 0;
-	uint8_t			reset_int_flag;
-	uint8_t			counter = 0;
-	cycle_count_t	cycles;
+	cycle_count_t	cycles = 0;
+	uint64_t		counter = 0;
+	uint64_t		instruction_no = 0;
 
 	regs.reg_pc = 0x100U;
 	regs.reg_sp = 0xfffeU;
-	totalcycles = 0;
 
 	screen_init(true_screen);
 
@@ -517,30 +531,33 @@ static void		start_cpu_lcd_events(void)
 		// Execute cpu instruction
 		if (GAMEBOY == NORMAL_MODE) {
 			//plog("\nexecute_start\n");
+			dprintf(log_file, ">>>> Instruction numero %llu\n", instruction_no++);
 			cycles += execute(&regs);
 			//plog("execute_end\n");
 		}
 
 		counter++;
 
-		if ((counter & 0x3) == 0)
+		if ((counter & 0x7U) == 0)
 		{
-			if (LY_REGISTER < 144)
+			if ((LCDC_REGISTER & 0x80U) && GAMEBOY != STOP_MODE)
 			{
-				if (((LCDC_REGISTER & 0x80U) && GAMEBOY != STOP_MODE) || LY_REGISTER != 0)
+				if (LY_REGISTER < 144U)
 					lcd_write_line(true_screen);
+				if (LY_REGISTER == 143U)
+				{
+					lcd_display_screen(true_screen, NULL);
+					if (LCDC_VBLANK_INT_ENABLE())
+						IF_REGISTER |= 0x02U;
+					if (VBLANK_INT_ENABLE())
+						IF_REGISTER |= 0x01U;
+				}
+				LY_REGISTER = (LY_REGISTER == 153U) ? 0 : LY_REGISTER + 1;
+				if (LCDC_LYC_INT_ENABLE() && LY_REGISTER == LYC_REGISTER)
+					IF_REGISTER |= 0x2U;
 			}
-			if (LY_REGISTER == 143U)
-			{
-				lcd_display_screen(true_screen, NULL);
-				if (LCDC_VBLANK_INT_ENABLE())
-					IF_REGISTER |= 0x02U;
-				if (VBLANK_INT_ENABLE())
-					IF_REGISTER |= 0x01U;
-			}
-			LY_REGISTER = (LY_REGISTER == 153U) ? 0 : LY_REGISTER + 1;
-			if (LCDC_LYC_INT_ENABLE() && LY_REGISTER == LYC_REGISTER)
-				IF_REGISTER |= 0x2U;
+			else
+				LY_REGISTER = 0;
 		}
 
 		// DMA transfer if any
@@ -556,31 +573,34 @@ static void		start_cpu_lcd_events(void)
 		}
 
 		// Check joypad events
-		if (JOYPAD_INT_ENABLE()) {
-			get_joypad_event();
+		get_joypad_event();
 
-
-		if (GAMEBOY == HALT_MODE && interrupt) {
-			GAMEBOY = NORMAL_MODE;
-			call_interrupt(&regs, interrupt, reset_int_flag);
+		if (IF_REGISTER)
+		{
+			if (GAMEBOY == HALT_MODE)
+			{
+				GAMEBOY = NORMAL_MODE;
+				if (IME_REGISTER)
+					call_interrupt(&regs);
+			}
+			else if (GAMEBOY == STOP_MODE && (IF_REGISTER & 0x10U))
+			{
+				GAMEBOY = NORMAL_MODE;
+				if (IME_REGISTER)
+				{
+					if (JOYPAD_INT_ENABLE()) {
+						IF_REGISTER ^= 0x01U;
+						CALL_INTERRUPT_2((uint16_t)0x0060U, regs);
+					}
+				}
+			}
+			else
+			{
+				// call interrupt if any
+				if (IME_REGISTER)
+					call_interrupt(&regs);
+			}
 		}
-		else if (GAMEBOY == STOP_MODE && (interrupt || IF_REGISTER)) {
-			GAMEBOY = NORMAL_MODE;
-			call_interrupt(&regs, interrupt, reset_int_flag);
-		}
-		else {
-			// call interrupt if any
-			if (g_memmap.ime)
-				call_interrupt(&regs, interrupt, reset_int_flag);
-		}
-		interrupt = 0;
-//		printf("\e[1Amode = %s     \n", GAMEBOY == NORMAL_MODE ? "NORMAL" : "HALT/STOP");
-
-/*
-		// sleep after put a frame
-		if (LY_REGISTER == 0)
-			usleep(16500);
-*/
 	}
 }
 
