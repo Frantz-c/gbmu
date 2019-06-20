@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/30 09:02:45 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/20 16:46:02 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/20 17:38:29 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -77,7 +77,7 @@ typedef struct	oam_s
 {
 	object_t	obj[104];
 	_Bool		active;
-}				oam_t;
+}IIII				oam_t;
 
 
 static void		open_log_file(void)
@@ -220,12 +220,14 @@ void			draw_dmg_line(object_t *obj, uint8_t size, uint8_t line)
 					uint8_t	dot1 = (vram[(uint16_t)obj[i].code * 16 + (uint16_t)obj_ypos * 2] >> x) & 1;
 					uint8_t	dot2 = (vram[(uint16_t)obj[i].code * 16 + (uint16_t)obj_ypos * 2 + 1] >> x) & 1;
 					int32_t	pxl;
-					if ((attrib & BIT_4) == BIT_4)
-						pxl = obp[4 + dot1 + dot2 + dot2];
-					else
-						pxl = obp[dot1 + dot2 + dot2];
-					if (pxl != 0xffffff)
+					if (dot1 + dot2 + dot2 != 0)
+					{
+						if ((attrib & BIT_4) == BIT_4)
+							pxl = obp[4 + dot1 + dot2 + dot2];
+						else
+							pxl = obp[dot1 + dot2 + dot2];
 						pixels[(uint16_t)rx + (uint16_t)line * 160] = pxl;
+					}
 				}
 				if ((LCDC_REGISTER & BIT_2) == 0)
 					continue ;
@@ -242,12 +244,14 @@ void			draw_dmg_line(object_t *obj, uint8_t size, uint8_t line)
 					uint8_t dot1 = (vram[(uint16_t)obj[i].code * 16 + (uint16_t)obj_ypos * 2 + 16] >> x) & 1;
 					uint8_t dot2 = (vram[(uint16_t)obj[i].code * 16 + (uint16_t)obj_ypos * 2 + 17] >> x) & 1;
 					int32_t	pxl;
-					if ((attrib & BIT_4) == BIT_4)
-						pxl = obp[4 + dot1 + dot2 + dot2];
-					else
-						pxl = obp[dot1 + dot2 + dot2];
-					if (pxl != 0xffffff)
+					if (dot1 + dot2 + dot2 != 0)
+					{
+						if ((attrib & BIT_4) == BIT_4)
+							pxl = obp[4 + dot1 + dot2 + dot2];
+						else
+							pxl = obp[dot1 + dot2 + dot2];
 						pixels[(uint16_t)rx + (uint16_t)line * 160] = pxl;
+					}
 				}
 			}
 		}
@@ -280,8 +284,7 @@ void			draw_dmg_line(object_t *obj, uint8_t size, uint8_t line)
 					dot2 = (vram[(uint16_t)obj[i].code * 16 + 4097 + (uint16_t)obj_ypos * 2] >> x) & 1;
 				}
 				int32_t pxl = bgp[dot1 + dot2 + dot2];
-				if (pxl != 0xffffff)
-					pixels[(uint16_t)rx + (uint16_t)line * 160] = pxl;
+				pixels[(uint16_t)rx + (uint16_t)line * 160] = pxl;
 			}
 		}
 	}
@@ -312,7 +315,7 @@ void			draw_line(oam_t *oam, int line)
 			oam->obj[offset + x].lcd_x = x << 3;
 
 			oam->obj[offset + x].code =
-				g_memmap.vram_bg[0][address + align_wy * 32 + x];
+				g_memmap.vram_bg[0][address + (uint16_t)align_wy * 32 + x];
 
 			if (g_cart.cgb_support_code == 0x0u)
 			{
@@ -338,6 +341,8 @@ void			draw_line(oam_t *oam, int line)
 	{
 		// Load BG tiles
 
+		print_memory(g_memmap.vram_bg[0], 4096);
+
 		uint16_t	address = ((LCDC_REGISTER & BIT_3) == BIT_3) ?
 			0x400u : 0x0u;
 
@@ -357,7 +362,7 @@ void			draw_line(oam_t *oam, int line)
 			else
 			{
 				oam->obj[offset + x].attrib =
-					g_memmap.vram_bg[1][address + align_scy * 32 + x];
+					g_memmap.vram_bg[1][address + (uint16_t)align_scy * 32 + x];
 			}
 
 			if ((oam->obj[offset + x].attrib & BIT_7) == BIT_7)

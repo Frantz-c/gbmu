@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/06/12 18:09:06 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/20 16:27:47 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/20 17:00:59 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -974,7 +974,7 @@ plog("ld_hld_a\n");
 	ADD_PC(1);
 	address = GET_REAL_ADDR(regs->reg_hl);
 	regs->reg_hl -= 1;
-	WRITE_REGISTER_IF_ROM_AREA(regs->reg_hl - 1, regs->reg_a, 8);
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_hl + 1, regs->reg_a, 8);
 	*address = regs->reg_a;
 	return (8);
 
@@ -2423,6 +2423,7 @@ plog("add_a_imm8\n");
 		regs->reg_f |= FLAG_H;
 	if (imm_8 == 0)
 		regs->reg_f |= FLAG_Z;
+	regs->reg_a = imm_8;
 	return (8);
 
 rst_00h:
@@ -2510,6 +2511,7 @@ plog("adc_a_imm8\n");
 		regs->reg_f |= FLAG_H;
 	if (imm_8 == 0)
 		regs->reg_f |= FLAG_Z;
+	regs->reg_a = imm_8;
 	return (8);
 
 rst_08h:
