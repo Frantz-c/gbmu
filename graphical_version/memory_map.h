@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/23 11:44:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/18 17:11:29 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/20 16:44:15 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -19,6 +19,9 @@
 # include <stdbool.h>
 //# include "execute.h"
 # include "ram_registers.h"
+
+# define _REG_DUMP	false
+# define _CPU_LOG	false
 
 /*
 		memory_map_t	memmap;

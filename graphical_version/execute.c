@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/06/12 18:09:06 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/19 16:47:49 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/20 16:27:47 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -406,12 +406,15 @@ cycle_count_t	execute(registers_t *regs)
 	register uint8_t	imm_8 = address[1];
 	register uint16_t	imm_16 = (uint16_t)address[1] | ((uint16_t)address[2] << 8);
 
-/*	dprintf(log_file,
+#if (_CPU_LOG == true)
+
+	dprintf(log_file,
 			"\n\n\n\n\nA = %2hhx,    F = %2hhx(%c%c%c%c), B = %2hhx,    C = %2hhx\n"
 			"D = %2hhx,    E = %2hhx,       H = %2hhx,    L = %2hhx\n"
 			"AF = %4hx, BC = %4hx,    DE = %4hx, HL = %4hx\n"
 			"PC = %4hx, ADDR = %p,   SP = %4hx\n\n"
 			"LCDC = %c%c%c%c%c%c%c%c, STAT = %c%c%c%c%c%hhx\n\n"
+			"SCY = %2hhx, SCX = %2hhx, LY = %2hhx, LYC = %2hhx\n\n"
 			"DIV = %2hhx, TIMA = %3hhu, TMA = %3hhu, TAC = %2hhx\n\n"
 			"IF = %c%c%c%c%c, IE = %c%c%c%c%c, IME = %s\n",
 			regs->reg_a, regs->reg_f, (regs->reg_f & FLAG_Z) ? 'Z' : '.',
@@ -427,6 +430,7 @@ cycle_count_t	execute(registers_t *regs)
 			(STAT_REGISTER & BIT_6) ? 'L' : '.', (STAT_REGISTER & BIT_5) ? 'O' : '.',
 			(STAT_REGISTER & BIT_4) ? 'V' : '.', (STAT_REGISTER & BIT_3) ? 'H' : '.',
 			(STAT_REGISTER & BIT_2) ? 'Y' : '.', (STAT_REGISTER & (BIT_0 | BIT_1)),
+			SCY_REGISTER, SCX_REGISTER, LY_REGISTER, LYC_REGISTER,
 			DIV_REGISTER, TIMA_REGISTER, TMA_REGISTER, TAC_REGISTER,
 			(IF_REGISTER & BIT_4) ? 'J' : '.', (IF_REGISTER & BIT_3) ? 'S' : '.',
 			(IF_REGISTER & BIT_2) ? 'T' : '.', (IF_REGISTER & BIT_1) ? 'L' : '.',
@@ -440,7 +444,9 @@ cycle_count_t	execute(registers_t *regs)
 		plog(cb_opcodes[address[1]].inst);
 	else
 		plog(fmt_strcpy(opcodes[opcode].inst, opcodes[opcode].optype, address + 1));
-*/
+
+#endif
+
 	goto *instruction_jumps[opcode];
 
 #undef plog
@@ -715,7 +721,7 @@ plog("dec_e\n");
 ld_e_imm8:
 plog("ld_e_imm8\n");
 	ADD_PC(2);
-	regs->reg_d = imm_8;
+	regs->reg_e = imm_8;
 	return (8);
 
 // right-shift a, save bit 0 in carry flag and carry flag in bit 7 of a

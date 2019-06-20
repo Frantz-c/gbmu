@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/30 09:02:45 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/19 17:34:15 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/20 16:46:02 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -45,11 +45,12 @@ uint32_t		GAMEBOY = NORMAL_MODE;
 #define OAM_READ		0
 #define OAM_VRAM_READ	1
 #define HZ_BLANK		2
+
 int				log_file;
 
-#define OAM_READ_CYCLES			68
-#define OAM_VRAM_READ_CYCLES	216
-#define HZ_BLANK_CYCLES			177
+#define OAM_READ_CYCLES			80
+#define OAM_VRAM_READ_CYCLES	192
+#define HZ_BLANK_CYCLES			204
 #define VT_BLANK_WAITING_CYCLES	2879
 
 #define BG_TILE			1
@@ -428,7 +429,7 @@ static void		check_what_should_do_lcd(cycle_count_t cycles)
 {
 	static cycle_count_t	lcd_cycles = 0;
 	static int				line_render = 0;
-	static int				render_status = OAM_READ;
+	static int				render_status = HZ_BLANK;
 
 	if ((LCDC_REGISTER & BIT_7) == 0 || GAMEBOY == STOP_MODE)
 	{
@@ -553,9 +554,9 @@ static void		check_if_timer_needs_to_be_incremented(cycle_count_t cycles)
 	uint8_t						shift;
 
 	div_cycles += cycles;
-	if (div_cycles > 512)
+	if (div_cycles > 256)
 	{
-		div_cycles -= 512;
+		div_cycles -= 256;
 		DIV_REGISTER += 1;
 	}
 	if ((TAC_REGISTER & BIT_2) == BIT_2)
@@ -725,38 +726,83 @@ static void		check_if_ime(registers_t *regs)
 		auto_sri(regs, 0x60, BIT_4);
 }
 
-#define TVALUE 20
+const uint8_t	bootstrap_code[256] =
+"\x31\xfe\xff\xaf\x21\xff\x9f\x32\xcb\x7c\x20\xfb\x21\x26\xff\x0e"
+"\x11\x3e\x80\x32\xe2\x0c\x3e\xf3\xe2\x32\x3e\x77\x77\x3e\xfc\xe0"
+"\x47\x11\x04\x01\x21\x10\x80\x1a\xcd\x95\x00\xcd\x96\x00\x13\x7b"
+"\xfe\x34\x20\xf3\x11\xd8\x00\x06\x08\x1a\x13\x22\x23\x05\x20\xf9"
+"\x3e\x19\xea\x10\x99\x21\x2f\x99\x0e\x0c\x3d\x28\x08\x32\x0d\x20"
+"\xf9\x2e\x0f\x18\xf3\x67\x3e\x64\x57\xe0\x42\x3e\x91\xe0\x40\x04"
+"\x1e\x02\x0e\x0c\xf0\x44\xfe\x90\x20\xfa\x0d\x20\xf7\x1d\x20\xf2"
+"\x0e\x13\x24\x7c\x1e\x83\xfe\x62\x28\x06\x1e\xc1\xfe\x64\x20\x06"
+"\x7b\xe2\x0c\x3e\x87\xe2\xf0\x42\x90\xe0\x42\x15\x20\xd2\x05\x20"
+"\x4f\x16\x20\x18\xcb\x4f\x06\x04\xc5\xcb\x11\x17\xc1\xcb\x11\x17"
+"\x05\x20\xf5\x22\x23\x22\x23\xc9\xce\xed\x66\x66\xcc\x0d\x00\x0b"
+"\x03\x73\x00\x83\x00\x0c\x00\x0d\x00\x08\x11\x1f\x88\x89\x00\x0e"
+"\xdc\xcc\x6e\xe6\xdd\xdd\xd9\x99\xbb\xbb\x67\x63\x6e\x0e\xec\xcc"
+"\xdd\xdc\x99\x9f\xbb\xb9\x33\x3e\x3c\x42\xb9\xa5\xb9\xa5\x42\x3c"
+"\x21\x04\x01\x11\xa8\x00\x1a\x13\xbe\x20\xfe\x23\x7d\xfe\x34\x20"
+"\xf5\x06\x19\x78\x86\x23\x05\x20\xfb\x86\x20\xfe\x3e\x01\xe0\x50";
+
+uint8_t			bootstrap_overwrite[256];
+
+static void		check_if_bootstrap(void)
+{
+	uint8_t	*address = GET_REAL_ADDR(0xFF50u);
+
+	if (*address == 0x01)
+	{
+		*address = 0x0;
+		memcpy(g_memmap.fixed_rom, bootstrap_overwrite, 256);
+	}
+}
+
+#define TVALUE 10
 
 static void		start_cpu_lcd_events(void)
 {
 	const char		*stable[3] = {" normal", " halted", "stopped"};
-//	cycle_count_t	tinsns = 0;
+	cycle_count_t	tinsns = 0;
 	cycle_count_t	cycles;
 	registers_t		registers;
 
 	registers.reg_sp = 0xFFFEu;
 	registers.reg_pc = 0x100u;
-	registers.reg_f = FLAG_N | FLAG_H | FLAG_CY;
 	registers.reg_a = 0x01u;
+	registers.reg_f = 0xB0u;
 	registers.reg_b = 0x00u;
 	registers.reg_c = 0x13u;
 	registers.reg_d = 0x00u;
 	registers.reg_e = 0xD8u;
 	registers.reg_h = 0x01u;
 	registers.reg_l = 0x4Du;
-//	printf("\e[6B");
+
+#if (_REG_DUMP == true)
+
+	printf("\e[6B");
+
+#endif
+
 	while (1)
 	{
 		if (GAMEBOY == NORMAL_MODE)
 		{
-//			dprintf(log_file, "Instruction nº %lu\n", tinsns);
-//			tinsns++;
+
+#if (_CPU_LOG == true)
+
+			dprintf(log_file, "Instruction nº %lu\n", tinsns);
+#endif
+
+			tinsns++;
 			cycles = execute(&registers);
 		}
 		else
 			cycles = 4;
 		elapsed_cycles += cycles;
-/*		if (tinsns % TVALUE == 0)
+
+#if (_REG_DUMP == true)
+
+		if (tinsns % TVALUE == 0)
 		{
 			printf(	"\e[6A\rA  %4hhx F  %4hhx B  %4hhx C  %4hhx D  %4hhx E  %4hhx H  %4hhx L  %4hhx\n"
 					"AF %4hx         BC %4hx         DE %4hx         HL %4hx\n"
@@ -784,13 +830,17 @@ static void		start_cpu_lcd_events(void)
 					tinsns);
 			fflush(stdout);
 			usleep(15000);
-		}*/
+		}
+
+#endif
+
 		check_what_should_do_lcd(cycles / g_memmap.cpu_speed);
 		if (GAMEBOY != STOP_MODE)
 			check_if_timer_needs_to_be_incremented(cycles);
 		check_if_events(cycles);
 		check_if_dma(cycles);
 		check_if_ime(&registers);
+		check_if_bootstrap();
 	}
 }
 
@@ -839,14 +889,17 @@ static void		start_game(void)
 
 	ticks = SDL_GetTicks();
 
+	g_memmap.complete_block[0xFF50] = 0;
 	g_memmap.cpu_speed = 1;
-	OBP0_REGISTER = 0x0u;
-	OBP1_REGISTER = 0x0u;
-	BGP_REGISTER = 0x0u;
-	P1_REGISTER = 0;
+	LCDC_REGISTER = 0x91u;
+	OBP0_REGISTER = 0xFFu;
+	OBP1_REGISTER = 0xFFu;
+	BGP_REGISTER = 0xFCu;
+	P1_REGISTER = 0xCFu;
 	TIMA_REGISTER = 0;
-	TAC_REGISTER = 0;
-	IF_REGISTER = 0;
+	TMA_REGISTER = 0;
+	TAC_REGISTER = 0xF8u;
+	IF_REGISTER = 0xE1u;
 	IE_REGISTER = 0;
 	SCY_REGISTER = 0;
 	SCX_REGISTER = 0;
@@ -854,8 +907,8 @@ static void		start_game(void)
 	LY_REGISTER = 0;
 	WY_REGISTER = 0;
 	WX_REGISTER = 0;
-	DMA_REGISTER = 0xffU;
-	LCDC_REGISTER = 0x83U;
+	DMA_REGISTER = 0xFFu;
+	DIV_REGISTER = 0xD3u;
 	g_memmap.cart_reg[0] = 0;
 	g_memmap.cart_reg[1] = 0;
 	g_memmap.cart_reg[2] = 0;
@@ -865,6 +918,9 @@ static void		start_game(void)
 	g_memmap.cart_reg[6] = 0;
 	g_memmap.cart_reg[7] = 0;
 	g_memmap.ime = false;
+
+//	memcpy((uint8_t *)bootstrap_overwrite, g_memmap.fixed_rom, 256);
+//	memcpy(g_memmap.fixed_rom, (const uint8_t *)bootstrap_code, 256);
 
 //	write_background_in_vram();
 	start_cpu_lcd_events();
