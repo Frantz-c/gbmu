@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/30 09:02:45 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/21 11:22:00 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/21 12:33:16 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -239,7 +239,7 @@ void			draw_dmg_line(object_t *obj, uint8_t size, uint8_t line)
 		else
 		{
 			uint8_t obj_ypos = obj[i].lcd_y;
-			uint8_t	obj_xpos = obj[i].lcd_x + SCX_REGISTER;
+			uint8_t	obj_xpos = obj[i].lcd_x - SCX_REGISTER;
 
 			obj_ypos -= (SCY_REGISTER + line) & ~(7);
 
@@ -317,7 +317,6 @@ void			draw_line(oam_t *oam, int line)
 	if ((LCDC_REGISTER & BIT_0) == BIT_0 || g_cart.cgb_support_code == 0xC0u)
 	{
 		// Load BG tiles
-
 
 		uint16_t	address = ((LCDC_REGISTER & BIT_3) == BIT_3) ?
 			0x400u : 0x0u;
@@ -413,12 +412,7 @@ static void		check_what_should_do_lcd(cycle_count_t cycles)
 	static int				render_status = HZ_BLANK;
 
 	if ((LCDC_REGISTER & BIT_7) == 0 || GAMEBOY == STOP_MODE)
-	{
-		lcd_cycles = 0;
-		line_render = 0;
-		render_status = OAM_READ;
 		return ;
-	}
 	lcd_cycles += cycles;
 	if (line_render < 144)
 	{
@@ -602,75 +596,12 @@ void			check_if_events(cycle_count_t cycles)
 	if (ev_cycles > 10000)
 	{
 		ev_cycles -= 10000;
-		SDL_Event	ev;
+		SDL_Event ev;
 
 		while (SDL_PollEvent(&ev))
 		{
-			if (ev.type == SDL_QUIT)
+			if (ev.type == SDL_QUIT || (ev.type == SDL_KEYDOWN && ev.key.keysym.sym == SDLK_ESCAPE))
 				quit_program();
-			if (ev.type == SDL_KEYDOWN)
-			{
-				switch (ev.key.keysym.sym)
-				{
-					case SDLK_ESCAPE:
-						quit_program();
-						break ;
-
-					case SDLK_DOWN:
-					case SDLK_s:
-						if ((P1_REGISTER & BIT_4) == 0)
-							P1_REGISTER &= ~(BIT_3);
-						goto int_maybe;
-
-					case SDLK_UP:
-					case SDLK_w:
-						if ((P1_REGISTER & BIT_4) == 0)
-							P1_REGISTER &= ~(BIT_2);
-						goto int_maybe;
-
-					case SDLK_LEFT:
-					case SDLK_a:
-						if ((P1_REGISTER & BIT_4) == 0)
-							P1_REGISTER &= ~(BIT_1);
-						goto int_maybe;
-
-					case SDLK_RIGHT:
-					case SDLK_d:
-						if ((P1_REGISTER & BIT_4) == 0)
-							P1_REGISTER &= ~(BIT_0);
-						goto int_maybe;
-
-					case SDLK_KP_SPACE:
-						if ((P1_REGISTER & BIT_5) == 0)
-							P1_REGISTER &= ~(BIT_3);
-						goto int_maybe;
-
-					case SDLK_LALT:
-					case SDLK_RALT:
-						if ((P1_REGISTER & BIT_5) == 0)
-							P1_REGISTER &= ~(BIT_2);
-						goto int_maybe;
-
-					case SDLK_BACKSPACE:
-						if ((P1_REGISTER & BIT_5) == 0)
-							P1_REGISTER &= ~(BIT_1);
-						goto int_maybe;
-
-					case SDLK_RETURN:
-						if ((P1_REGISTER & BIT_5) == 0)
-							P1_REGISTER &= ~(BIT_0);
-						goto int_maybe;
-
-					default:
-						goto not_handled_input;
-				}
-int_maybe:
-				if ((IE_REGISTER & BIT_4) == BIT_4)
-					IF_REGISTER |= BIT_4;
-
-not_handled_input:
-				ev.key.keysym.sym = 0;
-			}
 		}
 	}
 }
@@ -760,7 +691,7 @@ static void		start_cpu_lcd_events(void)
 
 #if (_REG_DUMP == true)
 
-	printf("\e[12B");
+	printf("\e[6B");
 
 #endif
 
@@ -785,10 +716,10 @@ static void		start_cpu_lcd_events(void)
 
 		if (tinsns % TVALUE == 0)
 		{
-			printf(	"\e[12A\rA  %4hhx F  %4hhx B  %4hhx C  %4hhx D  %4hhx E  %4hhx H  %4hhx L  %4hhx\n"
+			printf(	"\e[6A\rA  %4hhx F  %4hhx B  %4hhx C  %4hhx D  %4hhx E  %4hhx H  %4hhx L  %4hhx\n"
 					"AF %4hx         BC %4hx         DE %4hx         HL %4hx\n"
 					"PC %4hx         SP %4hx\n\nSTATUS %s IF %c%c%c%c%c IE %c%c%c%c%c IME %s TIMA %3hhu TMA %3hhu TAC %2hhx\n"
-					"LCDC %c%c%c%c%c%c%c%c STAT %c%c%c%c%c%hhx\nINSTS %9lu\n", registers.reg_a, registers.reg_f,
+					"LCDC %c%c%c%c%c%c%c%c STAT %c%c%c%c%c%hhx\nINSTS %9lu", registers.reg_a, registers.reg_f,
 					registers.reg_b, registers.reg_c, registers.reg_d, registers.reg_e,
 					registers.reg_h, registers.reg_l, registers.reg_af, registers.reg_bc,
 					registers.reg_de, registers.reg_hl, registers.reg_pc, registers.reg_sp,
@@ -809,7 +740,6 @@ static void		start_cpu_lcd_events(void)
 					(STAT_REGISTER & BIT_4) ? 'V' : '.', (STAT_REGISTER & BIT_3) ? 'H' : '.',
 					(STAT_REGISTER & BIT_2) ? 'Y' : '.', (STAT_REGISTER & (BIT_0 | BIT_1)),
 					tinsns);
-			print_memory(g_memmap.complete_block + 0xFE00u, 160);
 			fflush(stdout);
 			usleep(15000);
 		}
@@ -862,7 +792,7 @@ static void		start_game(void)
 
 	assert(texture != NULL);
 
-	SDL_SetEventFilter(&my_event_filter, NULL);
+//	SDL_SetEventFilter(&my_event_filter, NULL);
 
 	int pitch;
 	assert(SDL_LockTexture(texture, NULL, (void **)&pixels, &pitch) == 0);
@@ -901,10 +831,10 @@ static void		start_game(void)
 	g_memmap.cart_reg[7] = 0;
 	g_memmap.ime = false;
 
-//	memcpy((uint8_t *)bootstrap_overwrite, g_memmap.fixed_rom, 256);
-//	memcpy(g_memmap.fixed_rom, (const uint8_t *)bootstrap_code, 256);
+	//	memcpy((uint8_t *)bootstrap_overwrite, g_memmap.fixed_rom, 256);
+	//	memcpy(g_memmap.fixed_rom, (const uint8_t *)bootstrap_code, 256);
 
-//	write_background_in_vram();
+	//	write_background_in_vram();
 	start_cpu_lcd_events();
 }
 
@@ -916,7 +846,7 @@ int		main(int argc, char *argv[])
 		return (1);
 	}
 
-//	remove("log_gbmul");
+	//	remove("log_gbmul");
 	open_log_file();
 
 	open_cartridge(argv[1]);
