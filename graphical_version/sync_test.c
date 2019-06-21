@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/30 09:02:45 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/21 18:25:45 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/21 18:35:10 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -239,13 +239,13 @@ void			draw_dmg_line(object_t *obj, uint8_t size, uint8_t line)
 
 			obj_ypos -= WY_REGISTER;
 			obj_ypos &= 7;
+			obj_xpos += WX_REGISTER;
 
 			for (uint8_t x = 0; x < 8; x++)
 			{
-				uint8_t rx = obj_xpos + 7 - x;
-				if (rx >= 166 || rx <= WX_REGISTER)
+				uint8_t rx = obj_xpos - x;
+				if (rx >= 160 || rx <= WX_REGISTER - 7)
 					continue;
-				rx -= 7;
 
 				uint8_t dot1, dot2;
 				if (obj[i].code >= 0x80u)
@@ -779,7 +779,7 @@ static void		start_cpu_lcd_events(void)
 
 #if (_REG_DUMP == true)
 
-	printf("\e[6B");
+	printf("\e[71B");
 
 #endif
 
@@ -804,10 +804,10 @@ static void		start_cpu_lcd_events(void)
 
 		if (tinsns % TVALUE == 0)
 		{
-			printf(	"\e[6A\rA  %4hhx F  %4hhx B  %4hhx C  %4hhx D  %4hhx E  %4hhx H  %4hhx L  %4hhx\n"
+			printf(	"\e[71A\rA  %4hhx F  %4hhx B  %4hhx C  %4hhx D  %4hhx E  %4hhx H  %4hhx L  %4hhx\n"
 					"AF %4hx         BC %4hx         DE %4hx         HL %4hx\n"
 					"PC %4hx         SP %4hx\n\nSTATUS %s IF %c%c%c%c%c IE %c%c%c%c%c IME %s TIMA %3hhu TMA %3hhu TAC %2hhx\n"
-					"LCDC %c%c%c%c%c%c%c%c STAT %c%c%c%c%c%hhx\nINSTS %9lu", registers.reg_a, registers.reg_f,
+					"LCDC %c%c%c%c%c%c%c%c STAT %c%c%c%c%c%hhx\nINSTS %9lu\n", registers.reg_a, registers.reg_f,
 					registers.reg_b, registers.reg_c, registers.reg_d, registers.reg_e,
 					registers.reg_h, registers.reg_l, registers.reg_af, registers.reg_bc,
 					registers.reg_de, registers.reg_hl, registers.reg_pc, registers.reg_sp,
@@ -828,6 +828,7 @@ static void		start_cpu_lcd_events(void)
 					(STAT_REGISTER & BIT_4) ? 'V' : '.', (STAT_REGISTER & BIT_3) ? 'H' : '.',
 					(STAT_REGISTER & BIT_2) ? 'Y' : '.', (STAT_REGISTER & (BIT_0 | BIT_1)),
 					tinsns);
+			print_memory(g_memmap.vram_bg[0], 2048);
 			fflush(stdout);
 			usleep(15000);
 		}
