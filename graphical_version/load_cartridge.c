@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/29 17:38:18 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/20 13:36:44 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/21 16:05:30 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -50,7 +50,7 @@ static void		put_file_contents(const char *file, const void *content, uint32_t l
 
 extern void		save_external_ram(void)
 {
-	put_file_contents(g_memmap.save_name, g_memmap.extern_ram, g_memmap.save_size);
+	put_file_contents(g_memmap.save_name, g_memmap.extern_ram_banks[0], g_memmap.save_size);
 }
 
 static unsigned char	*get_file_contents(const char *file, uint32_t *length)

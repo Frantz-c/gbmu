@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/30 09:02:45 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/21 14:16:36 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/21 16:05:48 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -234,7 +234,33 @@ void			draw_dmg_line(object_t *obj, uint8_t size, uint8_t line)
 		}
 		else if (obj[i].type == WINDOW_TILE)
 		{
-			// Window tiles' handler
+			uint8_t	obj_ypos = obj[i].lcd_y;
+			uint8_t	obj_xpos = obj[i].lcd_x;
+
+			obj_ypos -= WY_REGISTER;
+			obj_ypos &= 7;
+
+			for (uint8_t x = 0; x < 8; x++)
+			{
+				uint8_t rx = obj_xpos + 7 - x;
+				if (rx >= 166 || rx <= WX_REGISTER)
+					continue;
+				rx -= 7;
+
+				uint8_t dot1, dot2;
+				if (obj[i].code >= 0x80u)
+				{
+					dot1 = (vram[(uint16_t)obj[i].code * 16 + (uint16_t)obj_ypos * 2] >> x) & 1;
+					dot2 = (vram[(uint16_t)obj[i].code * 16 + (uint16_t)obj_ypos * 2 + 1] >> x) & 1;
+				}
+				else
+				{
+					dot1 = (vram[(uint16_t)obj[i].code * 16 + 4096 + (uint16_t)obj_ypos * 2] >> x) & 1;
+					dot2 = (vram[(uint16_t)obj[i].code * 16 + 4097 + (uint16_t)obj_ypos * 2] >> x) & 1;
+				}
+				int32_t pxl = bgp[dot1 + dot2 + dot2];
+				pixels[(uint16_t)rx + (uint16_t)line * 160] = pxl;
+			}
 		}
 		else
 		{
@@ -285,14 +311,14 @@ void			draw_line(oam_t *oam, int line)
 		uint16_t	address = ((LCDC_REGISTER & BIT_6) == BIT_6) ?
 			0x400u : 0x0u;
 
-		uint8_t align_wy = (WY_REGISTER + (uint8_t)line) & ~(7);
+		uint8_t align_wy = ((uint8_t)line - WY_REGISTER) & ~(7);
 		for (uint8_t x = 0; x < 32; x++)
 		{
-			oam->obj[offset + x].lcd_y = (WY_REGISTER + (uint8_t)line);
+			oam->obj[offset + x].lcd_y = (uint8_t)line;
 			oam->obj[offset + x].lcd_x = x << 3;
 
 			oam->obj[offset + x].code =
-				g_memmap.vram_bg[0][address + (uint16_t)align_wy * 32 + x];
+				g_memmap.vram_bg[0][address + (uint16_t)align_wy * 4 + x];
 
 			if (g_cart.cgb_support_code == 0x0u)
 			{
@@ -301,7 +327,7 @@ void			draw_line(oam_t *oam, int line)
 			else
 			{
 				oam->obj[offset + x].attrib =
-					g_memmap.vram_bg[1][address + align_wy * 32 + x];
+					g_memmap.vram_bg[1][address + align_wy * 4 + x];
 			}
 
 			if ((oam->obj[offset + x].attrib & BIT_7) == BIT_7)
@@ -469,6 +495,8 @@ static void		check_what_should_do_lcd(cycle_count_t cycles)
 					SDL_UnlockTexture(texture);
 					SDL_RenderCopy(render, texture, NULL, NULL);
 					SDL_RenderPresent(render);
+					print_memory(g_memmap.extern_ram_banks[0], 0x2000);
+					printf("\e[64A");
 					int pitch;
 					SDL_LockTexture(texture, NULL, (void **)&pixels, &pitch);
 					for (size_t i = 0; i < 144 * 160; i++)

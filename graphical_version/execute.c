@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/06/12 18:09:06 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/20 17:00:59 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/21 15:55:03 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -799,73 +799,51 @@ plog("ld_h_imm8\n");
 	regs->reg_h = imm_8;
 	return (8);
 
-#define lo_bit opcode
-#define hi_bit imm_8
+#define old_a	opcode
+#define old_f	imm_8
 
 // decimal-adjust a, used to perform decimal additions on registers
 
 daa:
 plog("daa\n");
 	ADD_PC(1);
-	lo_bit = regs->reg_a & 0xFu;
-	hi_bit = regs->reg_a >> 4;
-	if ((regs->reg_f & FLAG_N) == FLAG_N)
+	old_a = regs->reg_a;
+	old_f = regs->reg_f;
+	regs->reg_f &= FLAG_N;
+	if (old_f & FLAG_N)
 	{
-		if ((regs->reg_f & FLAG_H) == FLAG_H)
+		if ((old_a & 0xFu) > 0x9 || (old_f & FLAG_H))
 		{
-			if ((regs->reg_f & FLAG_CY) == FLAG_CY || hi_bit >= 0xAu)
-			{
-				regs->reg_a += 0x66u;
+			regs->reg_a -= 0x6u;
+			if (regs->reg_a >= 0xFAu)
 				regs->reg_f |= FLAG_CY;
-			}
-			else
-			{
-				regs->reg_a += 0x06u;
-			}
 		}
-		else if (lo_bit >= 0xAu)
+		if ((old_a > 0x99u) || (old_f & FLAG_CY))
 		{
-			if ((regs->reg_f & FLAG_CY) == FLAG_CY || hi_bit >= 0x9u)
-			{
-				regs->reg_a += 0x66u;
-				regs->reg_f |= FLAG_CY;
-			}
-			else
-			{
-				regs->reg_a += 0x06u;
-			}
-		}
-		else if ((regs->reg_f & FLAG_CY) == FLAG_CY || hi_bit >= 0xAu)
-		{
-			regs->reg_a += 0x60u;
+			regs->reg_a -= 0x60u;
 			regs->reg_f |= FLAG_CY;
 		}
 	}
 	else
 	{
-		if ((regs->reg_f & FLAG_H) == FLAG_H)
+		if ((old_a & 0xFu) > 0x9u || (old_f & FLAG_H))
 		{
-			if ((regs->reg_f & FLAG_CY) == FLAG_CY)
-			{
-				regs->reg_a += 0x9Au;
-			}
-			else
-			{
-				regs->reg_a += 0xFAu;
-			}
+			regs->reg_a += 0x6u;
+			if (regs->reg_a < 0x6u)
+				regs->reg_f |= FLAG_CY;
 		}
-		else if ((regs->reg_f & FLAG_CY) == FLAG_CY)
+		if ((old_a > 0x99u) || (old_f & FLAG_CY))
 		{
-			regs->reg_a += 0xA0u;
+			regs->reg_a += 0x60u;
+			regs->reg_f |= FLAG_CY;
 		}
 	}
-	regs->reg_f &= ~(FLAG_H);
 	if (regs->reg_a == 0)
 		regs->reg_f |= FLAG_Z;
 	return (4);
 
-#undef lo_bit
-#undef hi_bit
+#undef old_a
+#undef old_f
 
 // increment pc with 8-bit immediate value, if zero flag is set
 
