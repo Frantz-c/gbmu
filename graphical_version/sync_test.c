@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/30 09:02:45 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/21 16:05:48 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/21 18:25:45 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -495,8 +495,6 @@ static void		check_what_should_do_lcd(cycle_count_t cycles)
 					SDL_UnlockTexture(texture);
 					SDL_RenderCopy(render, texture, NULL, NULL);
 					SDL_RenderPresent(render);
-					print_memory(g_memmap.extern_ram_banks[0], 0x2000);
-					printf("\e[64A");
 					int pitch;
 					SDL_LockTexture(texture, NULL, (void **)&pixels, &pitch);
 					for (size_t i = 0; i < 144 * 160; i++)
