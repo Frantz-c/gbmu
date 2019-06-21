@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/30 09:02:45 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/21 12:33:16 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/21 14:16:36 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -579,6 +579,7 @@ void __attribute__((noreturn))	quit_program(void)
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 	close_log_file();
+	save_external_ram();
 	printf("\nElapsed cycles: %lu\n", elapsed_cycles);
 	exit(0);
 }
@@ -591,6 +592,67 @@ int				my_event_filter(void *userdata, SDL_Event *ev)
 void			check_if_events(cycle_count_t cycles)
 {
 	static cycle_count_t	ev_cycles = 0;
+	static uint8_t			p1_last = 0xCFu;
+
+	if (p1_last != P1_REGISTER)
+	{
+		P1_REGISTER |= 0xFu;
+
+		_Bool			kint = false;
+		const uint8_t	*keystate = SDL_GetKeyboardState(NULL);
+
+		if ((P1_REGISTER & BIT_4) == 0 && (P1_REGISTER & BIT_5) == BIT_5)
+		{
+			if (keystate[SDL_SCANCODE_S] || keystate[SDL_SCANCODE_DOWN])
+			{
+				P1_REGISTER &= ~(BIT_3);
+				kint = true;
+			}
+			if (keystate[SDL_SCANCODE_W] || keystate[SDL_SCANCODE_UP])
+			{
+				P1_REGISTER &= ~(BIT_2);
+				kint = true;
+			}
+			if (keystate[SDL_SCANCODE_A] || keystate[SDL_SCANCODE_LEFT])
+			{
+				P1_REGISTER &= ~(BIT_1);
+				kint = true;
+			}
+			if (keystate[SDL_SCANCODE_D] || keystate[SDL_SCANCODE_RIGHT])
+			{
+				P1_REGISTER &= ~(BIT_0);
+				kint = true;
+			}
+		}
+		if ((P1_REGISTER & BIT_4) == BIT_4 && (P1_REGISTER & BIT_5) == 0)
+		{
+			if (keystate[SDL_SCANCODE_SPACE])
+			{
+				P1_REGISTER &= ~(BIT_3);
+				kint = true;
+			}
+			if (keystate[SDL_SCANCODE_RALT] || keystate[SDL_SCANCODE_LALT])
+			{
+				P1_REGISTER &= ~(BIT_2);
+				kint = true;
+			}
+			if (keystate[SDL_SCANCODE_BACKSPACE])
+			{
+				P1_REGISTER &= ~(BIT_1);
+				kint = true;
+			}
+			if (keystate[SDL_SCANCODE_RETURN])
+			{
+				P1_REGISTER &= ~(BIT_0);
+				kint = true;
+			}
+		}
+		if (kint && (IE_REGISTER & BIT_4) == BIT_4)
+		{
+			IF_REGISTER |= BIT_4;
+		}
+	}
+	p1_last = P1_REGISTER;
 
 	ev_cycles += cycles;
 	if (ev_cycles > 10000)
