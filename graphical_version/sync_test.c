@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/30 09:02:45 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/20 17:38:29 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/21 10:32:54 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -77,7 +77,7 @@ typedef struct	oam_s
 {
 	object_t	obj[104];
 	_Bool		active;
-}IIII				oam_t;
+}				oam_t;
 
 
 static void		open_log_file(void)
@@ -112,8 +112,8 @@ void			load_oam(oam_t *oam, int line)
 	_Bool cgb_mode = (g_cart.cgb_support_code == 0xC0u);
 	for (size_t i = 0; i < 40; i++)
 	{
-		oam->obj[i].lcd_y =		g_memmap.complete_block[0xFE00u + i * 4];
-		oam->obj[i].lcd_x =		g_memmap.complete_block[0xFE01u + i * 4];
+		oam->obj[i].lcd_y =		g_memmap.complete_block[0xFE00u + i * 4] - 16;
+		oam->obj[i].lcd_x =		g_memmap.complete_block[0xFE01u + i * 4] - 8;
 		oam->obj[i].code =		g_memmap.complete_block[0xFE02u + i * 4];
 		oam->obj[i].attrib =	g_memmap.complete_block[0xFE03u + i * 4];
 		if ((oam->obj[i].attrib & BIT_7) == BIT_7)
@@ -341,7 +341,6 @@ void			draw_line(oam_t *oam, int line)
 	{
 		// Load BG tiles
 
-		print_memory(g_memmap.vram_bg[0], 4096);
 
 		uint16_t	address = ((LCDC_REGISTER & BIT_3) == BIT_3) ?
 			0x400u : 0x0u;
@@ -353,7 +352,7 @@ void			draw_line(oam_t *oam, int line)
 			oam->obj[offset + x].lcd_x = x << 3;
 
 			oam->obj[offset + x].code =
-				g_memmap.vram_bg[0][address + (uint16_t)align_scy * 32 + x];
+				g_memmap.vram_bg[0][address + (uint16_t)align_scy * 4 + x];
 
 			if (g_cart.cgb_support_code == 0x0u)
 			{
@@ -362,7 +361,7 @@ void			draw_line(oam_t *oam, int line)
 			else
 			{
 				oam->obj[offset + x].attrib =
-					g_memmap.vram_bg[1][address + (uint16_t)align_scy * 32 + x];
+					g_memmap.vram_bg[1][address + (uint16_t)align_scy * 4 + x];
 			}
 
 			if ((oam->obj[offset + x].attrib & BIT_7) == BIT_7)
@@ -762,7 +761,7 @@ static void		check_if_bootstrap(void)
 	}
 }
 
-#define TVALUE 10
+#define TVALUE 40
 
 static void		start_cpu_lcd_events(void)
 {
@@ -784,7 +783,7 @@ static void		start_cpu_lcd_events(void)
 
 #if (_REG_DUMP == true)
 
-	printf("\e[6B");
+	printf("\e[12B");
 
 #endif
 
@@ -798,21 +797,21 @@ static void		start_cpu_lcd_events(void)
 			dprintf(log_file, "Instruction nº %lu\n", tinsns);
 #endif
 
-			tinsns++;
 			cycles = execute(&registers);
 		}
 		else
 			cycles = 4;
+		tinsns++;
 		elapsed_cycles += cycles;
 
 #if (_REG_DUMP == true)
 
 		if (tinsns % TVALUE == 0)
 		{
-			printf(	"\e[6A\rA  %4hhx F  %4hhx B  %4hhx C  %4hhx D  %4hhx E  %4hhx H  %4hhx L  %4hhx\n"
+			printf(	"\e[12A\rA  %4hhx F  %4hhx B  %4hhx C  %4hhx D  %4hhx E  %4hhx H  %4hhx L  %4hhx\n"
 					"AF %4hx         BC %4hx         DE %4hx         HL %4hx\n"
 					"PC %4hx         SP %4hx\n\nSTATUS %s IF %c%c%c%c%c IE %c%c%c%c%c IME %s TIMA %3hhu TMA %3hhu TAC %2hhx\n"
-					"LCDC %c%c%c%c%c%c%c%c STAT %c%c%c%c%c%hhx\nINSTS %9lu", registers.reg_a, registers.reg_f,
+					"LCDC %c%c%c%c%c%c%c%c STAT %c%c%c%c%c%hhx\nINSTS %9lu\n", registers.reg_a, registers.reg_f,
 					registers.reg_b, registers.reg_c, registers.reg_d, registers.reg_e,
 					registers.reg_h, registers.reg_l, registers.reg_af, registers.reg_bc,
 					registers.reg_de, registers.reg_hl, registers.reg_pc, registers.reg_sp,
@@ -833,6 +832,7 @@ static void		start_cpu_lcd_events(void)
 					(STAT_REGISTER & BIT_4) ? 'V' : '.', (STAT_REGISTER & BIT_3) ? 'H' : '.',
 					(STAT_REGISTER & BIT_2) ? 'Y' : '.', (STAT_REGISTER & (BIT_0 | BIT_1)),
 					tinsns);
+			print_memory(g_memmap.complete_block + 0xFE00u, 160);
 			fflush(stdout);
 			usleep(15000);
 		}
