@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/30 09:02:45 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/21 10:32:54 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/21 11:22:00 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -194,17 +194,18 @@ void			draw_dmg_line(object_t *obj, uint8_t size, uint8_t line)
 
 			uint8_t obj_ypos = obj[i].lcd_y;
 			uint8_t	obj_xpos = obj[i].lcd_x;
+			uint8_t	tile_size = (LCDC_REGISTER & BIT_2) ? 15 : 7;
 
 			obj_ypos = line - obj_ypos;
 
 			// Check if the object isn't displayed on this line
-			if (obj_ypos > 7)
+			if (obj_ypos > tile_size)
 				continue;
 
 			uint8_t attrib = obj[i].attrib;
 
 			if ((attrib & BIT_6) == BIT_6)
-				obj_ypos = 7 - obj_ypos;
+				obj_ypos = tile_size - obj_ypos;
 			for (uint8_t x = 0; x < 8; x++)
 			{
 				uint8_t rx = obj_xpos;
@@ -219,30 +220,6 @@ void			draw_dmg_line(object_t *obj, uint8_t size, uint8_t line)
 
 					uint8_t	dot1 = (vram[(uint16_t)obj[i].code * 16 + (uint16_t)obj_ypos * 2] >> x) & 1;
 					uint8_t	dot2 = (vram[(uint16_t)obj[i].code * 16 + (uint16_t)obj_ypos * 2 + 1] >> x) & 1;
-					int32_t	pxl;
-					if (dot1 + dot2 + dot2 != 0)
-					{
-						if ((attrib & BIT_4) == BIT_4)
-							pxl = obp[4 + dot1 + dot2 + dot2];
-						else
-							pxl = obp[dot1 + dot2 + dot2];
-						pixels[(uint16_t)rx + (uint16_t)line * 160] = pxl;
-					}
-				}
-				if ((LCDC_REGISTER & BIT_2) == 0)
-					continue ;
-
-				rx = obj_xpos + 8;
-
-				if ((attrib & BIT_5) == BIT_5)
-					rx += x;
-				else
-					rx += 7 - x;
-
-				if (rx < 160)
-				{
-					uint8_t dot1 = (vram[(uint16_t)obj[i].code * 16 + (uint16_t)obj_ypos * 2 + 16] >> x) & 1;
-					uint8_t dot2 = (vram[(uint16_t)obj[i].code * 16 + (uint16_t)obj_ypos * 2 + 17] >> x) & 1;
 					int32_t	pxl;
 					if (dot1 + dot2 + dot2 != 0)
 					{
