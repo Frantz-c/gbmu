@@ -26,38 +26,14 @@ int32_t				*g_dpixels;
 
 int32_t				vimcol[256] =
 {
-0x000000,
-0x800000,
-0x008000,
-0x808000,
-0x000080,
-0x800080,
-0x008080,
-0xc0c0c0,
-0x808080,
-0xff0000,
-0x00ff00,
-0xffff00,
-0x0000ff,
-0xff00ff,
-0x00ffff,
-0xffffff,
-0x000000,
-0x00005f,
-0x000087,
-0x0000af,
-0x0000d7,
-0x0000ff,
-0x005f00,
-0x005f5f,
-0x005f87,
-0x005faf,
-0x005fd7,
-0x005fff,
-0x008700,
-0x00875f,
-0x008787,
-0x0087af,
+0x000000,	0x800000,	0x008000,	0x808000,
+0x000080,	0x800080,	0x008080,	0xc0c0c0,
+0x808080,	0xff0000,	0x00ff00,	0xffff00,
+0x0000ff,	0xff00ff,	0x00ffff,	0xffffff,
+0x000000,	0x00005f,	0x000087,	0x0000af,
+0x0000d7,	0x0000ff,	0x005f00,	0x005f5f,
+0x005f87,	0x005faf,	0x005fd7,	0x005fff,
+0x008700,	0x00875f,	0x008787,	0x0087af,
 0x0087d7,
 0x0087ff,
 0x00af00,
@@ -303,12 +279,12 @@ void	init_dumps(void)
 		return ;
 
 	g_dwindow = SDL_CreateWindow("RAM dump",
-		SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-		256, g_memmap.save_size >> 8, 0);
+			SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+			512, (g_memmap.save_size >> 8) * 2, 0);
 
 	g_drender = SDL_CreateRenderer(g_dwindow, -1, 0);
 	g_dtexture = SDL_CreateTexture(g_drender, SDL_PIXELFORMAT_ARGB8888,
-		SDL_TEXTUREACCESS_STREAMING, 256, g_memmap.save_size >> 8);
+			SDL_TEXTUREACCESS_STREAMING, 512, (g_memmap.save_size >> 8) * 2);
 
 	assert(g_dwindow && g_drender && g_dtexture);
 }
@@ -317,7 +293,7 @@ void	stop_dumps(void)
 {
 	if (g_memmap.save_size == 0)
 		return ;
-	
+
 	SDL_DestroyTexture(g_dtexture);
 	SDL_DestroyRenderer(g_drender);
 	SDL_DestroyWindow(g_dwindow);
@@ -330,9 +306,16 @@ void	dump_rams(void)
 
 	int pitch;
 	SDL_LockTexture(g_dtexture, NULL, (void **)&g_dpixels, &pitch);
-	for (size_t i = 0; i < g_memmap.save_size; i++)
+	for (size_t y = 0; y < g_memmap.save_size >> 8; y++)
 	{
-		g_dpixels[i] = vimcol[g_memmap.extern_ram_banks[0][i]];
+		for (size_t x = 0; x < 256; x++)
+		{
+			int32_t	col = vimcol[g_memmap.extern_ram_banks[0][y * 256 + x]];
+			g_dpixels[(y << 9) + x + x] = col;
+			g_dpixels[(y << 9) + x + x + 1] = col;
+			g_dpixels[(y << 9) + x + x + 512] = col;
+			g_dpixels[(y << 9) + x + x + 513] = col;
+		}
 	}
 	SDL_UnlockTexture(g_dtexture);
 	SDL_RenderCopy(g_drender, g_dtexture, NULL, NULL);
