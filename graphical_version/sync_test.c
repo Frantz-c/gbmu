@@ -935,9 +935,13 @@ static void		start_game(void)
 
 static void		close_log_file_and_exit(int sig)
 {
-	(void)sig;
 	close(log_file);
-	puts("SEGFAULT... log_gbmul saved");
+	if (sig == SIGSEGV)
+		puts("SEGFAULT... log_gbmul saved");
+	else if (sig == SIGFPE)
+		puts("FPE... log_gbmul saved");
+	else if (sig == SIGBUS)
+		puts("BUS ERROR... log_gbmul saved");
 	exit(1);
 }
 
