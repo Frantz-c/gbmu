@@ -132,6 +132,8 @@ enum	e_cartridge_types
 # define OBP0_REGISTER	g_memmap.complete_block[OBP0]
 # define OBP1_REGISTER	g_memmap.complete_block[OBP1]
 # define VBK_REGISTER	g_memmap.complete_block[VBK]
+# define SVBK_REGISTER	g_memmap.complete_block[SVBK]
+# define IME_REGISTER	g_memmap.ime
 //# define _REGISTER	g_memmap.complete_block[]
 
 typedef struct

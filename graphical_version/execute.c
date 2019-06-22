@@ -19,17 +19,19 @@
 #include <unistd.h>
 #include "../disassembler/disassemble_table.c"
 
-//extern uint8_t		*g_get_real_addr[16];
-//extern uint8_t		*g_get_real_write_addr[16];
-//extern memory_map_t	g_memmap;
-
 
 #define ADD_PC(offset)	regs->reg_pc += (offset)
 #define SET_PC(value)	regs->reg_pc = value
 
+/*
+**	MBC 5
+*/
 #define SET_LOW_ROM_NUMBER_MBC5()	\
 	CART_REG[1] = value;\
-	SWITCH_ROM = ROM_BANK [ CART_REG[1] | (CART_REG[2] << 8) ];\
+	if ((CART_REG[1] | CART_REG[2] << 8) == 0)\
+		SWITCH_ROM = ROM_BANK[0];\
+	else\
+		SWITCH_ROM = ROM_BANK [ CART_REG[1] | (CART_REG[2] << 8) - 1];\
 	g_get_real_addr[4] = SWITCH_ROM;\
 	g_get_real_addr[5] = SWITCH_ROM + 0x1000;\
 	g_get_real_addr[6] = SWITCH_ROM + 0x2000;\
@@ -37,7 +39,10 @@
 
 #define SET_HI_ROM_NUMBER_MBC5()	\
 	CART_REG[2] = (value & 0x01);\
-	SWITCH_ROM = ROM_BANK [ CART_REG[1] | (CART_REG[2] << 8) ];\
+	if ((CART_REG[1] | CART_REG[2] << 8) == 0)\
+		SWITCH_ROM = ROM_BANK[0];\
+	else\
+		SWITCH_ROM = ROM_BANK [ CART_REG[1] | (CART_REG[2] << 8) - 1];\
 	g_get_real_addr[4] = SWITCH_ROM;\
 	g_get_real_addr[5] = SWITCH_ROM + 0x1000;\
 	g_get_real_addr[6] = SWITCH_ROM + 0x2000;\
@@ -45,20 +50,37 @@
 
 #define SET_RAM_NUMBER_MBC5()		\
 	CUR_RAM = (value & 0x0f); /*CART_REG[3]*/\
+	CART_REG[3] = CUR_RAM; /*unused*/\
 	EXTERN_RAM = RAM_BANK[CUR_RAM];\
 	g_get_real_addr[10] = EXTERN_RAM;\
 	g_get_real_addr[11] = EXTERN_RAM + 0x1000;\
 
+#define ENABLE_EXTERNAL_RAM_MBC5()	\
+	if (value == 0x0a)\
+	{\
+		g_memmap.cart_reg[0] = 1;\
+		EXTERN_RAM = RAM_BANK[CUR_RAM];\
+	}\
+	else\
+	{\
+		g_memmap.cart_reg[0] = 0;\
+		EXTERN_RAM = g_memmap.complete_block + 0x2000;\
+	}\
+	g_get_real_addr[10] = EXTERN_RAM;\
+	g_get_real_addr[11] = EXTERN_RAM + 0x1000;
 
+/*
+**	MBC 1
+*/
 #define SET_MBC1_MODE_0_ROM_ADDR()	\
 	do\
 	{/* if file contain empty banks at 0x20, 0x40, 0x60 */\
-		if ((CART_REG[1] | (CART_REG[2] << 5)) == 0x20)\
-			SWITCH_ROM = ROM_BANK [0x20];\
-		else if ((CART_REG[1] | (CART_REG[2] << 5)) == 0x40)\
-			SWITCH_ROM = ROM_BANK [0x40];\
-		else if ((CART_REG[1] | (CART_REG[2] << 5)) == 0x60)\
-			SWITCH_ROM = ROM_BANK [0x60];\
+		if ((CART_REG[1] | (CART_REG[2] << 5)) == 0x21)\
+			SWITCH_ROM = ROM_BANK [0x21];\
+		else if ((CART_REG[1] | (CART_REG[2] << 5)) == 0x41)\
+			SWITCH_ROM = ROM_BANK [0x41];\
+		else if ((CART_REG[1] | (CART_REG[2] << 5)) == 0x61)\
+			SWITCH_ROM = ROM_BANK [0x61];\
 		else if ((CART_REG[1] | (CART_REG[2] << 5)) > 0)\
 			SWITCH_ROM = ROM_BANK [ (CART_REG[1] | (CART_REG[2] << 5)) - 1];\
 		else\
@@ -67,6 +89,7 @@
 		g_get_real_addr[5] = SWITCH_ROM + 0x1000;\
 		g_get_real_addr[6] = SWITCH_ROM + 0x2000;\
 		g_get_real_addr[7] = SWITCH_ROM + 0x3000;\
+		dprintf(log_file, "MODE = 0 -> rom bank %u - 1\n", (CART_REG[1] | CART_REG[2] << 5));\
 	} while (0)
 
 #define SET_MBC1_MODE_1_ROM_ADDR()	\
@@ -80,6 +103,7 @@
 		g_get_real_addr[5] = SWITCH_ROM + 0x1000;\
 		g_get_real_addr[6] = SWITCH_ROM + 0x2000;\
 		g_get_real_addr[7] = SWITCH_ROM + 0x3000;\
+		dprintf(log_file, "MODE = 1 -> rom bank %u - 1\n", CART_REG[MBC1_ROM_NUM]);\
 	} while (0)
 
 #define SET_MBC1_MODE_0_RAM_ADDR()	\
@@ -92,6 +116,7 @@
 			g_get_real_addr[11] = EXTERN_RAM + 0x1000;\
 		}\
 		CUR_RAM = 0;\
+		dprintf(log_file, "MODE = 0 -> ram bank = 0 (1)\n");\
 	} while (0)
 
 #define SET_MBC1_MODE_1_RAM_ADDR()	\
@@ -104,6 +129,7 @@
 			g_get_real_addr[11] = EXTERN_RAM + 0x1000;\
 		}\
 		CUR_RAM = CART_REG[2];\
+		dprintf(log_file, "MODE = 1 -> ram bank = %u - 1\n", CUR_RAM);\
 	} while (0)
 
 #define	SWITCH_RAM_ROM_MBC1()	\
@@ -114,13 +140,11 @@
 			SET_MBC1_MODE_1_RAM_ADDR();\
 		}\
 		else {\
-			plog("MODE = 0 (addr = cart_reg[0] | cart_reg[1] << 5\n");\
 			SET_MBC1_MODE_0_ROM_ADDR();\
 			SET_MBC1_MODE_0_RAM_ADDR();\
 		}\
 	} while (0)
 
-#define ENABLE_EXTERNAL_RAM_MBC5()
 // if write on disabled ram is a fatal error,
 // please remove 0x2000 offset
 #define ENABLE_EXTERNAL_RAM_MBC1()	\
@@ -136,6 +160,7 @@
 	}\
 	g_get_real_addr[10] = EXTERN_RAM;\
 	g_get_real_addr[11] = EXTERN_RAM + 0x1000;\
+
 
 static char	*get_bin(unsigned char n)
 {
@@ -2952,60 +2977,60 @@ rlc_b:
 plog("rlc_b\n");
 	imm_8 = ((regs->reg_b & BIT_7) == BIT_7) ? BIT_0 : 0;
 	regs->reg_f = imm_8 << 4;
-	if (regs->reg_b == 0)
-		regs->reg_f |= FLAG_Z;
 	regs->reg_b <<= 1;
 	regs->reg_b |= imm_8;
+	if (regs->reg_b == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 rlc_c:
 plog("rlc_c\n");
 	imm_8 = ((regs->reg_c & BIT_7) == BIT_7) ? BIT_0 : 0;
 	regs->reg_f = imm_8 << 4;
-	if (regs->reg_c == 0)
-		regs->reg_f |= FLAG_Z;
 	regs->reg_c <<= 1;
 	regs->reg_c |= imm_8;
+	if (regs->reg_c == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 rlc_d:
 plog("rlc_d\n");
 	imm_8 = ((regs->reg_d & BIT_7) == BIT_7) ? BIT_0 : 0;
 	regs->reg_f = imm_8 << 4;
-	if (regs->reg_d == 0)
-		regs->reg_f |= FLAG_Z;
 	regs->reg_d <<= 1;
 	regs->reg_d |= imm_8;
+	if (regs->reg_d == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 rlc_e:
 plog("rlc_e\n");
 	imm_8 = ((regs->reg_e & BIT_7) == BIT_7) ? BIT_0 : 0;
 	regs->reg_f = imm_8 << 4;
-	if (regs->reg_e == 0)
-		regs->reg_f |= FLAG_Z;
 	regs->reg_e <<= 1;
 	regs->reg_e |= imm_8;
+	if (regs->reg_e == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 rlc_h:
 plog("rlc_h\n");
 	imm_8 = ((regs->reg_h & BIT_7) == BIT_7) ? BIT_0 : 0;
 	regs->reg_f = imm_8 << 4;
-	if (regs->reg_h == 0)
-		regs->reg_f |= FLAG_Z;
 	regs->reg_h <<= 1;
 	regs->reg_h |= imm_8;
+	if (regs->reg_h == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 rlc_l:
 plog("rlc_l\n");
 	imm_8 = ((regs->reg_l & BIT_7) == BIT_7) ? BIT_0 : 0;
 	regs->reg_f = imm_8 << 4;
-	if (regs->reg_l == 0)
-		regs->reg_f |= FLAG_Z;
 	regs->reg_l <<= 1;
 	regs->reg_l |= imm_8;
+	if (regs->reg_l == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 rlc_hl:
@@ -3013,80 +3038,80 @@ plog("rlc_hl\n");
 	address = GET_REAL_ADDR(regs->reg_hl);
 	imm_8 = ((*address & BIT_7) == BIT_7) ? BIT_0 : 0;
 	regs->reg_f = imm_8 << 4;
-	if (*address == 0)
-		regs->reg_f |= FLAG_Z;
 	*address <<= 1;
 	*address |= imm_8;
+	if (*address == 0)
+		regs->reg_f |= FLAG_Z;
 	return (16);
 
 rlc_a:
 plog("rlc_a\n");
 	imm_8 = ((regs->reg_a & BIT_7) == BIT_7) ? BIT_0 : 0;
 	regs->reg_f = imm_8 << 4;
-	if (regs->reg_a == 0)
-		regs->reg_f |= FLAG_Z;
 	regs->reg_a <<= 1;
 	regs->reg_a |= imm_8;
+	if (regs->reg_a == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 rrc_b:
 plog("rrc_b\n");
 	imm_8 = ((regs->reg_b & BIT_0) == BIT_0) ? BIT_7 : 0;
 	regs->reg_f = imm_8 >> 3;
-	if (regs->reg_b == 0)
-		regs->reg_f |= FLAG_Z;
 	regs->reg_b >>= 1;
 	regs->reg_b |= imm_8;
+	if (regs->reg_b == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 rrc_c:
 plog("rrc_c\n");
 	imm_8 = ((regs->reg_c & BIT_0) == BIT_0) ? BIT_7 : 0;
 	regs->reg_f = imm_8 >> 3;
-	if (regs->reg_c == 0)
-		regs->reg_f |= FLAG_Z;
 	regs->reg_c >>= 1;
 	regs->reg_c |= imm_8;
+	if (regs->reg_c == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 rrc_d:
 plog("rrc_d\n");
 	imm_8 = ((regs->reg_d & BIT_0) == BIT_0) ? BIT_7 : 0;
 	regs->reg_f = imm_8 >> 3;
-	if (regs->reg_d == 0)
-		regs->reg_f |= FLAG_Z;
 	regs->reg_d >>= 1;
 	regs->reg_d |= imm_8;
+	if (regs->reg_d == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 rrc_e:
 plog("rrc_e\n");
 	imm_8 = ((regs->reg_e & BIT_0) == BIT_0) ? BIT_7 : 0;
 	regs->reg_f = imm_8 >> 3;
-	if (regs->reg_e == 0)
-		regs->reg_f |= FLAG_Z;
 	regs->reg_e >>= 1;
 	regs->reg_e |= imm_8;
+	if (regs->reg_e == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 rrc_h:
 plog("rrc_h\n");
 	imm_8 = ((regs->reg_h & BIT_0) == BIT_0) ? BIT_7 : 0;
 	regs->reg_f = imm_8 >> 3;
-	if (regs->reg_h == 0)
-		regs->reg_f |= FLAG_Z;
 	regs->reg_h >>= 1;
 	regs->reg_h |= imm_8;
+	if (regs->reg_h == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 rrc_l:
 plog("rrc_l\n");
 	imm_8 = ((regs->reg_l & BIT_0) == BIT_0) ? BIT_7 : 0;
 	regs->reg_f = imm_8 >> 3;
-	if (regs->reg_l == 0)
-		regs->reg_f |= FLAG_Z;
 	regs->reg_l >>= 1;
 	regs->reg_l |= imm_8;
+	if (regs->reg_l == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 rrc_hl:
@@ -3094,80 +3119,80 @@ plog("rrc_hl\n");
 	address = GET_REAL_ADDR(regs->reg_hl);
 	imm_8 = ((*address & BIT_0) == BIT_0) ? BIT_7 : 0;
 	regs->reg_f = imm_8 >> 3;
-	if (*address == 0)
-		regs->reg_f |= FLAG_Z;
 	*address >>= 1;
 	*address |= imm_8;
+	if (*address == 0)
+		regs->reg_f |= FLAG_Z;
 	return (16);
 
 rrc_a:
 plog("rrc_a\n");
 	imm_8 = ((regs->reg_a & BIT_0) == BIT_0) ? BIT_7 : 0;
 	regs->reg_f = imm_8 >> 3;
-	if (regs->reg_a == 0)
-		regs->reg_f |= FLAG_Z;
 	regs->reg_a >>= 1;
 	regs->reg_a |= imm_8;
+	if (regs->reg_a == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 rl_b:
 plog("rl_b\n");
 	imm_8 = ((regs->reg_f & FLAG_CY) == FLAG_CY) ? BIT_0 : 0;
 	regs->reg_f = ((regs->reg_b & BIT_7) == BIT_7) ? FLAG_CY : 0;
-	if (regs->reg_b == 0)
-		regs->reg_f |= FLAG_Z;
 	regs->reg_b <<= 1;
 	regs->reg_b |= imm_8;
+	if (regs->reg_b == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 rl_c:
 plog("rl_c\n");
 	imm_8 = ((regs->reg_f & FLAG_CY) == FLAG_CY) ? BIT_0 : 0;
 	regs->reg_f = ((regs->reg_c & BIT_7) == BIT_7) ? FLAG_CY : 0;
-	if (regs->reg_c == 0)
-		regs->reg_f |= FLAG_Z;
 	regs->reg_c <<= 1;
 	regs->reg_c |= imm_8;
+	if (regs->reg_c == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 rl_d:
 plog("rl_d\n");
 	imm_8 = ((regs->reg_f & FLAG_CY) == FLAG_CY) ? BIT_0 : 0;
 	regs->reg_f = ((regs->reg_d & BIT_7) == BIT_7) ? FLAG_CY : 0;
-	if (regs->reg_d == 0)
-		regs->reg_f |= FLAG_Z;
 	regs->reg_d <<= 1;
 	regs->reg_d |= imm_8;
+	if (regs->reg_d == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 rl_e:
 plog("rl_e\n");
 	imm_8 = ((regs->reg_f & FLAG_CY) == FLAG_CY) ? BIT_0 : 0;
 	regs->reg_f = ((regs->reg_e & BIT_7) == BIT_7) ? FLAG_CY : 0;
-	if (regs->reg_e == 0)
-		regs->reg_f |= FLAG_Z;
 	regs->reg_e <<= 1;
 	regs->reg_e |= imm_8;
+	if (regs->reg_e == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 rl_h:
 plog("rl_h\n");
 	imm_8 = ((regs->reg_f & FLAG_CY) == FLAG_CY) ? BIT_0 : 0;
 	regs->reg_f = ((regs->reg_h & BIT_7) == BIT_7) ? FLAG_CY : 0;
-	if (regs->reg_h == 0)
-		regs->reg_f |= FLAG_Z;
 	regs->reg_h <<= 1;
 	regs->reg_h |= imm_8;
+	if (regs->reg_h == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 rl_l:
 plog("rl_l\n");
 	imm_8 = ((regs->reg_f & FLAG_CY) == FLAG_CY) ? BIT_0 : 0;
 	regs->reg_f = ((regs->reg_l & BIT_7) == BIT_7) ? FLAG_CY : 0;
-	if (regs->reg_l == 0)
-		regs->reg_f |= FLAG_Z;
 	regs->reg_l <<= 1;
 	regs->reg_l |= imm_8;
+	if (regs->reg_l == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 rl_hl:
@@ -3175,80 +3200,80 @@ plog("rl_hl\n");
 	address = GET_REAL_ADDR(regs->reg_hl);
 	imm_8 = ((regs->reg_f & FLAG_CY) == FLAG_CY) ? BIT_0 : 0;
 	regs->reg_f = ((*address & BIT_7) == BIT_7) ? FLAG_CY : 0;
-	if (*address == 0)
-		regs->reg_f |= FLAG_Z;
 	*address <<= 1;
 	*address |= imm_8;
+	if (*address == 0)
+		regs->reg_f |= FLAG_Z;
 	return (16);
 
 rl_a:
 plog("rl_a\n");
 	imm_8 = ((regs->reg_f & FLAG_CY) == FLAG_CY) ? BIT_0 : 0;
 	regs->reg_f = ((regs->reg_a & BIT_7) == BIT_7) ? FLAG_CY : 0;
-	if (regs->reg_a == 0)
-		regs->reg_f |= FLAG_Z;
 	regs->reg_a <<= 1;
 	regs->reg_a |= imm_8;
+	if (regs->reg_a == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 rr_b:
 plog("rr_b\n");
 	imm_8 = ((regs->reg_f & FLAG_CY) == FLAG_CY) ? BIT_7 : 0;
 	regs->reg_f = ((regs->reg_b & BIT_0) == BIT_0) ? FLAG_CY : 0;
-	if (regs->reg_b == 0)
-		regs->reg_f |= FLAG_Z;
 	regs->reg_b >>= 1;
 	regs->reg_b |= imm_8;
+	if (regs->reg_b == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 rr_c:
 plog("rr_c\n");
 	imm_8 = ((regs->reg_f & FLAG_CY) == FLAG_CY) ? BIT_7 : 0;
 	regs->reg_f = ((regs->reg_c & BIT_0) == BIT_0) ? FLAG_CY : 0;
-	if (regs->reg_c == 0)
-		regs->reg_f |= FLAG_Z;
 	regs->reg_c >>= 1;
 	regs->reg_c |= imm_8;
+	if (regs->reg_c == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 rr_d:
 plog("rr_d\n");
 	imm_8 = ((regs->reg_f & FLAG_CY) == FLAG_CY) ? BIT_7 : 0;
 	regs->reg_f = ((regs->reg_d & BIT_0) == BIT_0) ? FLAG_CY : 0;
-	if (regs->reg_d == 0)
-		regs->reg_f |= FLAG_Z;
 	regs->reg_d >>= 1;
 	regs->reg_d |= imm_8;
+	if (regs->reg_d == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 rr_e:
 plog("rr_e\n");
 	imm_8 = ((regs->reg_f & FLAG_CY) == FLAG_CY) ? BIT_7 : 0;
 	regs->reg_f = ((regs->reg_e & BIT_0) == BIT_0) ? FLAG_CY : 0;
-	if (regs->reg_e == 0)
-		regs->reg_f |= FLAG_Z;
 	regs->reg_e >>= 1;
 	regs->reg_e |= imm_8;
+	if (regs->reg_e == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 rr_h:
 plog("rr_h\n");
 	imm_8 = ((regs->reg_f & FLAG_CY) == FLAG_CY) ? BIT_7 : 0;
 	regs->reg_f = ((regs->reg_h & BIT_0) == BIT_0) ? FLAG_CY : 0;
-	if (regs->reg_h == 0)
-		regs->reg_f |= FLAG_Z;
 	regs->reg_h >>= 1;
 	regs->reg_h |= imm_8;
+	if (regs->reg_h == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 rr_l:
 plog("rr_l\n");
 	imm_8 = ((regs->reg_f & FLAG_CY) == FLAG_CY) ? BIT_7 : 0;
 	regs->reg_f = ((regs->reg_l & BIT_0) == BIT_0) ? FLAG_CY : 0;
-	if (regs->reg_l == 0)
-		regs->reg_f |= FLAG_Z;
 	regs->reg_l >>= 1;
 	regs->reg_l |= imm_8;
+	if (regs->reg_l == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 rr_hl:
@@ -3256,85 +3281,85 @@ plog("rr_hl\n");
 	address = GET_REAL_ADDR(regs->reg_hl);
 	imm_8 = ((regs->reg_f & FLAG_CY) == FLAG_CY) ? BIT_7 : 0;
 	regs->reg_f = ((*address & BIT_0) == BIT_0) ? FLAG_CY : 0;
-	if (*address == 0)
-		regs->reg_f |= FLAG_Z;
 	*address >>= 1;
 	*address |= imm_8;
+	if (*address == 0)
+		regs->reg_f |= FLAG_Z;
 	return (16);
 
 rr_a:
 plog("rr_a\n");
 	imm_8 = ((regs->reg_f & FLAG_CY) == FLAG_CY) ? BIT_7 : 0;
 	regs->reg_f = ((regs->reg_a & BIT_0) == BIT_0) ? FLAG_CY : 0;
-	if (regs->reg_a == 0)
-		regs->reg_f |= FLAG_Z;
 	regs->reg_a >>= 1;
 	regs->reg_a |= imm_8;
+	if (regs->reg_a == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 sla_b:
 plog("sla_b\n");
 	regs->reg_f = ((regs->reg_b & BIT_7) == BIT_7) ? FLAG_CY : 0;
+	regs->reg_b <<= 1;
 	if (regs->reg_b == 0)
 		regs->reg_f |= FLAG_Z;
-	regs->reg_b <<= 1;
 	return (8);
 
 sla_c:
 plog("sla_c\n");
 	regs->reg_f = ((regs->reg_c & BIT_7) == BIT_7) ? FLAG_CY : 0;
+	regs->reg_c <<= 1;
 	if (regs->reg_c == 0)
 		regs->reg_f |= FLAG_Z;
-	regs->reg_c <<= 1;
 	return (8);
 
 sla_d:
 plog("sla_d\n");
 	regs->reg_f = ((regs->reg_d & BIT_7) == BIT_7) ? FLAG_CY : 0;
+	regs->reg_d <<= 1;
 	if (regs->reg_d == 0)
 		regs->reg_f |= FLAG_Z;
-	regs->reg_d <<= 1;
 	return (8);
 
 sla_e:
 plog("sla_e\n");
 	regs->reg_f = ((regs->reg_e & BIT_7) == BIT_7) ? FLAG_CY : 0;
+	regs->reg_e <<= 1;
 	if (regs->reg_e == 0)
 		regs->reg_f |= FLAG_Z;
-	regs->reg_e <<= 1;
 	return (8);
 
 sla_h:
 plog("sla_h\n");
 	regs->reg_f = ((regs->reg_h & BIT_7) == BIT_7) ? FLAG_CY : 0;
+	regs->reg_h <<= 1;
 	if (regs->reg_h == 0)
 		regs->reg_f |= FLAG_Z;
-	regs->reg_h <<= 1;
 	return (8);
 
 sla_l:
 plog("sla_l\n");
 	regs->reg_f = ((regs->reg_l & BIT_7) == BIT_7) ? FLAG_CY : 0;
+	regs->reg_l <<= 1;
 	if (regs->reg_l == 0)
 		regs->reg_f |= FLAG_Z;
-	regs->reg_l <<= 1;
 	return (8);
 
 sla_hl:
 plog("sla_hl\n");
 	address = GET_REAL_ADDR(regs->reg_hl);
 	regs->reg_f = ((*address & BIT_7) == BIT_7) ? FLAG_CY : 0;
+	*address <<= 1;
 	if (*address == 0)
 		regs->reg_f |= FLAG_Z;
-	*address <<= 1;
 	return (16);
 
 sla_a:
 plog("sla_a\n");
 	regs->reg_f = ((regs->reg_a & BIT_7) == BIT_7) ? FLAG_CY : 0;
+	regs->reg_a <<= 1;
 	if (regs->reg_a == 0)
 		regs->reg_f |= FLAG_Z;
-	regs->reg_a <<= 1;
 	return (8);
 
 sra_b:
@@ -3343,6 +3368,8 @@ plog("sra_b\n");
 	imm_8 = regs->reg_b & BIT_7;
 	regs->reg_b >>= 1;
 	regs->reg_b |= imm_8;
+	if (regs->reg_b == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 sra_c:
@@ -3351,6 +3378,8 @@ plog("sra_c\n");
 	imm_8 = regs->reg_c & BIT_7;
 	regs->reg_c >>= 1;
 	regs->reg_c |= imm_8;
+	if (regs->reg_c == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 sra_d:
@@ -3359,6 +3388,8 @@ plog("sra_d\n");
 	imm_8 = regs->reg_d & BIT_7;
 	regs->reg_d >>= 1;
 	regs->reg_d |= imm_8;
+	if (regs->reg_d == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 sra_e:
@@ -3367,6 +3398,8 @@ plog("sra_e\n");
 	imm_8 = regs->reg_e & BIT_7;
 	regs->reg_e >>= 1;
 	regs->reg_e |= imm_8;
+	if (regs->reg_e == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 sra_h:
@@ -3375,6 +3408,8 @@ plog("sra_h\n");
 	imm_8 = regs->reg_h & BIT_7;
 	regs->reg_h >>= 1;
 	regs->reg_h |= imm_8;
+	if (regs->reg_h == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 sra_l:
@@ -3383,6 +3418,8 @@ plog("sra_l\n");
 	imm_8 = regs->reg_l & BIT_7;
 	regs->reg_l >>= 1;
 	regs->reg_l |= imm_8;
+	if (regs->reg_l == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 sra_hl:
@@ -3392,6 +3429,8 @@ plog("sra_hl\n");
 	imm_8 = *address & BIT_7;
 	*address >>= 1;
 	*address |= imm_8;
+	if (*address == 0)
+		regs->reg_f |= FLAG_Z;
 	return (16);
 
 sra_a:
@@ -3400,6 +3439,8 @@ plog("sra_a\n");
 	imm_8 = regs->reg_a & BIT_7;
 	regs->reg_a >>= 1;
 	regs->reg_a |= imm_8;
+	if (regs->reg_a == 0)
+		regs->reg_f |= FLAG_Z;
 	return (8);
 
 swap_b:
@@ -3454,66 +3495,66 @@ plog("swap_a\n");
 srl_b:
 plog("srl_b\n");
 	regs->reg_f = ((regs->reg_b & BIT_0) == BIT_0) ? FLAG_CY : 0;
+	regs->reg_b >>= 1;
 	if (regs->reg_b == 0)
 		regs->reg_f |= FLAG_Z;
-	regs->reg_b >>= 1;
 	return (8);
 
 srl_c:
 plog("srl_c\n");
 	regs->reg_f = ((regs->reg_c & BIT_0) == BIT_0) ? FLAG_CY : 0;
+	regs->reg_c >>= 1;
 	if (regs->reg_c == 0)
 		regs->reg_f |= FLAG_Z;
-	regs->reg_c >>= 1;
 	return (8);
 
 srl_d:
 plog("srl_d\n");
 	regs->reg_f = ((regs->reg_d & BIT_0) == BIT_0) ? FLAG_CY : 0;
+	regs->reg_d >>= 1;
 	if (regs->reg_d == 0)
 		regs->reg_f |= FLAG_Z;
-	regs->reg_d >>= 1;
 	return (8);
 
 srl_e:
 plog("srl_e\n");
 	regs->reg_f = ((regs->reg_e & BIT_0) == BIT_0) ? FLAG_CY : 0;
+	regs->reg_e >>= 1;
 	if (regs->reg_e == 0)
 		regs->reg_f |= FLAG_Z;
-	regs->reg_e >>= 1;
 	return (8);
 
 srl_h:
 plog("srl_h\n");
 	regs->reg_f = ((regs->reg_h & BIT_0) == BIT_0) ? FLAG_CY : 0;
+	regs->reg_h >>= 1;
 	if (regs->reg_h == 0)
 		regs->reg_f |= FLAG_Z;
-	regs->reg_h >>= 1;
 	return (8);
 
 srl_l:
 plog("srl_l\n");
 	regs->reg_f = ((regs->reg_l & BIT_0) == BIT_0) ? FLAG_CY : 0;
+	regs->reg_l >>= 1;
 	if (regs->reg_l == 0)
 		regs->reg_f |= FLAG_Z;
-	regs->reg_l >>= 1;
 	return (8);
 
 srl_hl:
 plog("srl_hl\n");
 	address = GET_REAL_ADDR(regs->reg_hl);
 	regs->reg_f = ((*address & BIT_0) == BIT_0) ? FLAG_CY : 0;
+	*address >>= 1;
 	if (*address == 0)
 		regs->reg_f |= FLAG_Z;
-	*address >>= 1;
 	return (16);
 
 srl_a:
 plog("srl_a\n");
 	regs->reg_f = ((regs->reg_a & BIT_0) == BIT_0) ? FLAG_CY : 0;
+	regs->reg_a >>= 1;
 	if (regs->reg_a == 0)
 		regs->reg_f |= FLAG_Z;
-	regs->reg_a >>= 1;
 	return (8);
 
 bit_0_b:

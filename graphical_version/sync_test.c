@@ -706,10 +706,8 @@ void			auto_sri(registers_t *regs, uint16_t new_pc, uint8_t if_mask)
 	uint8_t		*address;
 
 	if (GAMEBOY != NORMAL_MODE)
-	{
 		GAMEBOY = NORMAL_MODE;
-		return ;
-	}
+
 	g_memmap.ime = false;
 	IF_REGISTER &= ~(if_mask);
 	address = GET_REAL_ADDR(regs->reg_sp);
@@ -935,6 +933,14 @@ static void		start_game(void)
 	start_cpu_lcd_events();
 }
 
+static void		close_log_file_and_exit(int sig)
+{
+	(void)sig;
+	close(log_file);
+	puts("SEGFAULT... log_gbmul saved");
+	exit(1);
+}
+
 int		main(int argc, char *argv[])
 {
 	if (argc != 2)
@@ -942,6 +948,11 @@ int		main(int argc, char *argv[])
 		fprintf(stderr, "%s \"cartridge path\"\n", argv[0]);
 		return (1);
 	}
+
+	signal(SIGINT, close_log_file_and_exit);
+	signal(SIGSEGV, close_log_file_and_exit);
+	signal(SIGFPE, close_log_file_and_exit);
+	signal(SIGBUS, close_log_file_and_exit);
 
 	//	remove("log_gbmul");
 	open_log_file();
@@ -951,41 +962,3 @@ int		main(int argc, char *argv[])
 
 	return (0);
 }
-
-
-/*
-   static void		write_tile(char *screen, char *tile, size_t tile_size,
-   unsigned int x, unsigned int y)
-   {
-   unsigned int		i = 0;
-
-   if (tile_size == 64)
-   {
-   while (i < 16)
-   {
-   COPY_2_BYTES(screen, x + 0, ((i / 2) + y),
-   color2[ ((tile[i] & 0x80) >> 7) | ((tile[i + 1] & 0x80) >> 6) ]);
-   COPY_2_BYTES(screen, x + 1, ((i / 2) + y),
-   color2[ ((tile[i] & 0x40) >> 6) | ((tile[i + 1] & 0x40) >> 5) ]);
-   COPY_2_BYTES(screen, x + 2, ((i / 2) + y),
-   color2[ ((tile[i] & 0x20) >> 5) | ((tile[i + 1] & 0x20) >> 4) ]);
-   COPY_2_BYTES(screen, x + 3, ((i / 2) + y),
-   color2[ ((tile[i] & 0x10) >> 4) | ((tile[i + 1] & 0x10) >> 3) ]);
-   COPY_2_BYTES(screen, x + 4, ((i / 2) + y),
-   color2[ ((tile[i] & 0x08) >> 3) | ((tile[i + 1] & 0x08) >> 2) ]);
-   COPY_2_BYTES(screen, x + 5, ((i / 2) + y),
-   color2[ ((tile[i] & 0x04) >> 2) | ((tile[i + 1] & 0x04) >> 1) ]);
-   COPY_2_BYTES(screen, x + 6, ((i / 2) + y),
-   color2[ ((tile[i] & 0x02) >> 1) | ((tile[i + 1] & 0x02) >> 0) ]);
-   COPY_2_BYTES(screen, x + 7, ((i / 2) + y),
-   color2[ ((tile[i] & 0x01) >> 0) | ((tile[i + 1] & 0x01) << 1) ]);
-
-   i += 2;
-   }
-   }
-   else
-   {
-   return ;
-   }
-   }
-   */
