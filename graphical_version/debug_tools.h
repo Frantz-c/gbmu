@@ -18,4 +18,8 @@
 
 void	print_memory(const void *addr, size_t size);
 
+void	init_dumps(void);
+void	stop_dumps(void);
+void	dump_rams(void);
+
 #endif

@@ -32,7 +32,7 @@ $(NAME): $(OBJECTS)
 	$(COMPILE) -o $@ $^ $(shell sdl2-config --libs)
 
 %.o: %.c
-	$(COMPILE) -O3 -g3 -march=native -c -MMD $(shell sdl2-config --cflags) -o $@ $<
+	$(COMPILE) -O3 -march=native -Wno-unused-result -c -MMD $(shell sdl2-config --cflags) -o $@ $<
 
 -include $(DEPENDS)
 

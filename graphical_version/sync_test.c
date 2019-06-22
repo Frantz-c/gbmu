@@ -116,7 +116,7 @@ void			load_oam(oam_t *oam, int line)
 		oam->obj[i].lcd_x =		g_memmap.complete_block[0xFE01u + i * 4] - 8;
 		oam->obj[i].code =		g_memmap.complete_block[0xFE02u + i * 4];
 		oam->obj[i].attrib =	g_memmap.complete_block[0xFE03u + i * 4];
-		if ((oam->obj[i].attrib & BIT_7) == BIT_7)
+		if ((oam->obj[i].attrib & BIT_7) == BIT_7 && cgb_mode)
 			oam->obj[i].prior = OBJ_BG_PRIOR;
 		else
 			oam->obj[i].prior = OBJ_OBJ_PRIOR;
@@ -495,6 +495,7 @@ static void		check_what_should_do_lcd(cycle_count_t cycles)
 					SDL_UnlockTexture(texture);
 					SDL_RenderCopy(render, texture, NULL, NULL);
 					SDL_RenderPresent(render);
+					dump_rams();
 					int pitch;
 					SDL_LockTexture(texture, NULL, (void **)&pixels, &pitch);
 					for (size_t i = 0; i < 144 * 160; i++)
@@ -603,6 +604,7 @@ void __attribute__((noreturn))	quit_program(void)
 	SDL_DestroyTexture(texture);
 	SDL_DestroyRenderer(render);
 	SDL_DestroyWindow(window);
+	stop_dumps();
 	SDL_Quit();
 	close_log_file();
 	save_external_ram();
@@ -670,6 +672,11 @@ void			check_if_events(cycle_count_t cycles)
 			if (keystate[SDL_SCANCODE_RETURN])
 			{
 				P1_REGISTER &= ~(BIT_0);
+				kint = true;
+			}
+			if (keystate[SDL_SCANCODE_P])
+			{
+				P1_REGISTER &= ~(BIT_0 | BIT_1 | BIT_2 | BIT_3);
 				kint = true;
 			}
 		}
@@ -888,6 +895,7 @@ static void		start_game(void)
 	for (size_t i = 0; i < 144 * 160; i++)
 		pixels[i] = 0xffffff;
 
+	init_dumps();
 	ticks = SDL_GetTicks();
 
 	g_memmap.complete_block[0xFF50] = 0;
