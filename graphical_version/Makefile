@@ -6,7 +6,7 @@
 #    By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+      #
 #                                                  #+#   #+    #+    #+#       #
 #    Created: 2019/06/19 08:20:37 by mhouppin     #+#   ##    ##    #+#        #
-#    Updated: 2019/06/21 08:58:49 by mhouppin    ###    #+. /#+    ###.fr      #
+#    Updated: 2019/06/24 11:47:51 by mhouppin    ###    #+. /#+    ###.fr      #
 #                                                          /                   #
 #                                                         /                    #
 # **************************************************************************** #
@@ -17,22 +17,17 @@ OBJECTS	:= execute.o load_cartridge.o sync_test.o debug_tools.o
 
 DEPENDS	:= $(patsubst %.o,%.d,$(OBJECTS))
 
-COMPILE	:= gcc
+DEBUG	:= -fsanitize=address -g3
 
-ifneq ($(shell which gcc-8),)
-	COMPILE	:= gcc-8
-endif
-ifneq ($(shell which gcc-9),)
-	COMPILE	:= gcc-9
-endif
+COMPILE	?= gcc
 
 all: $(NAME)
 
 $(NAME): $(OBJECTS)
-	$(COMPILE) -o $@ $^ $(shell sdl2-config --libs)
+	$(COMPILE) $(DEBUG) -o $@ $^ $(shell sdl2-config --libs)
 
 %.o: %.c
-	$(COMPILE) -O3 -march=native -Wno-unused-result -c -MMD $(shell sdl2-config --cflags) -o $@ $<
+	$(COMPILE) $(DEBUG) -c -MMD $(shell sdl2-config --cflags) -o $@ $<
 
 -include $(DEPENDS)
 

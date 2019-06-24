@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/06/12 18:09:06 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/21 15:55:03 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/24 11:22:21 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -28,10 +28,10 @@
 */
 #define SET_LOW_ROM_NUMBER_MBC5()	\
 	CART_REG[1] = value;\
-	if ((CART_REG[1] | CART_REG[2] << 8) == 0)\
+	if ((CART_REG[1] | (CART_REG[2] << 8)) == 0)\
 		SWITCH_ROM = ROM_BANK[0];\
 	else\
-		SWITCH_ROM = ROM_BANK [ CART_REG[1] | (CART_REG[2] << 8) - 1];\
+		SWITCH_ROM = ROM_BANK [ (CART_REG[1] | (CART_REG[2] << 8)) - 1];\
 	g_get_real_addr[4] = SWITCH_ROM;\
 	g_get_real_addr[5] = SWITCH_ROM + 0x1000;\
 	g_get_real_addr[6] = SWITCH_ROM + 0x2000;\
@@ -39,10 +39,10 @@
 
 #define SET_HI_ROM_NUMBER_MBC5()	\
 	CART_REG[2] = (value & 0x01);\
-	if ((CART_REG[1] | CART_REG[2] << 8) == 0)\
+	if ((CART_REG[1] | (CART_REG[2] << 8)) == 0)\
 		SWITCH_ROM = ROM_BANK[0];\
 	else\
-		SWITCH_ROM = ROM_BANK [ CART_REG[1] | (CART_REG[2] << 8) - 1];\
+		SWITCH_ROM = ROM_BANK [ (CART_REG[1] | (CART_REG[2] << 8)) - 1];\
 	g_get_real_addr[4] = SWITCH_ROM;\
 	g_get_real_addr[5] = SWITCH_ROM + 0x1000;\
 	g_get_real_addr[6] = SWITCH_ROM + 0x2000;\
@@ -162,7 +162,7 @@
 	g_get_real_addr[11] = EXTERN_RAM + 0x1000;\
 
 
-static char	*get_bin(unsigned char n)
+static char	__attribute__((unused)) *get_bin(unsigned char n)
 {
 	static char					buf[16][9] = {{0}};
 	static uint32_t				cur = 0;
@@ -280,7 +280,7 @@ unsigned int	get_uint16_from_little_endian(void *memory)
 #endif
 }
 
-static char		*fmt_strcpy(char *src,
+static char __attribute__((unused))	*fmt_strcpy(char *src,
 							enum e_operand_type optype, void *bin)
 {
 	static char buf[512];
@@ -422,7 +422,7 @@ cycle_count_t	execute(registers_t *regs)
 	};
 	extern int		log_file;
 	cycle_count_t	cycles;
-	uint8_t			value;
+	uint8_t			value = 0;
 
 	uint8_t			*address;
 
@@ -4732,6 +4732,8 @@ set_7_a:
 plog("set_7_a\n");
 	regs->reg_a |= (BIT_7);
 	return (8);
+
+#undef plog
 
 /****************
 **    MBC_1    **

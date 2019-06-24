@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/29 17:38:18 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/21 16:05:30 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/24 10:09:03 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -244,7 +244,7 @@ static void	malloc_blocks(cartridge_t *cart)
 	g_get_real_addr[13] = g_memmap.switch_ram;			//0xd000
 }
 
-static void	load_cartridge_on_memory(uint8_t *mem, cartridge_t *cart, uint32_t type)
+static void	load_cartridge_on_memory(uint8_t *mem, cartridge_t *cart, uint32_t type __attribute__((unused)))
 {
 	uint32_t	cartsize = 0x8000;
 	uint8_t		*rom;
@@ -430,7 +430,7 @@ extern cartridge_t	g_cart;
 
 extern void		open_cartridge(const char *path)
 {
-	g_cart = (cartridge_t){0, {0}};
+	bzero(&g_cart, sizeof(cartridge_t));
 	uint8_t			*content;
 
 	if ((content = get_file_contents(path, &g_cart.size)) == NULL)

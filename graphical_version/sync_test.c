@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/30 09:02:45 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/21 18:35:10 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/24 11:06:10 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -101,7 +101,7 @@ extern void		plog(const char *s)
 	write(log_file, s, strlen(s));
 }
 
-void			load_oam(oam_t *oam, int line)
+void			load_oam(oam_t *oam)
 {
 	if ((LCDC_REGISTER & BIT_1) != BIT_1)
 	{
@@ -155,6 +155,9 @@ int				cmp_prior(const void *l, const void *r)
 
 void			draw_cgb_line(object_t *obj, uint8_t size, uint8_t line)
 {
+	(void)obj;
+	(void)size;
+	(void)line;
 }
 
 void			draw_dmg_line(object_t *obj, uint8_t size, uint8_t line)
@@ -397,7 +400,7 @@ static void		lcd_function(int line, int type)
 
 	if (type == OAM_READ)
 	{
-		load_oam(&oam, line);
+		load_oam(&oam);
 		LY_REGISTER = line;
 		if (LYC_REGISTER == LY_REGISTER)
 		{
@@ -581,7 +584,7 @@ static void		check_if_timer_needs_to_be_incremented(cycle_count_t cycles)
 	}
 }
 
-static void		check_if_dma(cycle_count_t cycles)
+static void		check_if_dma(cycle_count_t cycles __attribute__((unused)))
 {
 	if (DMA_REGISTER < 0xE0u)
 	{
@@ -612,7 +615,7 @@ void __attribute__((noreturn))	quit_program(void)
 	exit(0);
 }
 
-int				my_event_filter(void *userdata, SDL_Event *ev)
+int				my_event_filter(void *userdata __attribute__((unused)), SDL_Event *ev)
 {
 	return (ev->type == SDL_QUIT || ev->type == SDL_KEYDOWN);
 }
@@ -766,7 +769,7 @@ static void		check_if_bootstrap(void)
 
 static void		start_cpu_lcd_events(void)
 {
-	const char		*stable[3] = {" normal", " halted", "stopped"};
+	const char		*stable[3] __attribute__((unused)) = {" normal", " halted", "stopped"};
 	cycle_count_t	tinsns = 0;
 	cycle_count_t	cycles;
 	registers_t		registers;
@@ -867,8 +870,6 @@ void		write_background_in_vram(void)
 
 static void		start_game(void)
 {
-	pthread_t	p;
-
 	assert(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) == 0);
 
 	window = SDL_CreateWindow(g_cart.game_title,
@@ -926,8 +927,8 @@ static void		start_game(void)
 	g_memmap.cart_reg[7] = 0;
 	g_memmap.ime = false;
 
-	//	memcpy((uint8_t *)bootstrap_overwrite, g_memmap.fixed_rom, 256);
-	//	memcpy(g_memmap.fixed_rom, (const uint8_t *)bootstrap_code, 256);
+//	memcpy((uint8_t *)bootstrap_overwrite, g_memmap.fixed_rom, 256);
+//	memcpy(g_memmap.fixed_rom, (const uint8_t *)bootstrap_code, 256);
 
 	//	write_background_in_vram();
 	start_cpu_lcd_events();

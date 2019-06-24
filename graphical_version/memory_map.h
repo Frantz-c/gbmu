@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/23 11:44:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/21 19:00:46 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/24 10:02:41 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -221,7 +221,7 @@ uint32_t		GAMEBOY;
 # define GET_REAL_ADDR(virtual_addr)	\
 		 (\
 			(g_get_real_addr[((virtual_addr) >> 12)]) ?\
-				g_get_real_addr[((virtual_addr) >> 12)] + (virtual_addr & 0xfff) :\
+				g_get_real_addr[((virtual_addr) >> 12)] + ((virtual_addr) & 0xfff) :\
 				(virtual_addr) + g_memmap.complete_block\
 		 )
 # define WRITE_REGISTER_IF_ROM_AREA(virtual_addr, _value, _cycles)	\
