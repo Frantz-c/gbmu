@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/30 09:02:45 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/25 17:59:56 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/25 18:52:27 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -1025,6 +1025,7 @@ static inline unsigned int		atoi_hexa(char **s)
  *		get 0xaddr\n
  *		set 0xaddr=0xvalue\n
  *		dump 0xstart-0xend
+ *		fdump filename
  *
 */
 void	*cheat_input(void *unused)
@@ -1045,9 +1046,11 @@ void	*cheat_input(void *unused)
 __read:
 		read(0, &chr, 1);
 		if (chr == 127) {
-			buf[i--] = 0;
+			if (i > 0)
+				buf[i--] = 0;
 			goto __read;
 		}
+		buf[i++] = chr;
 		write(1, &chr, 1);
 		if (chr == '\n')
 		{
@@ -1108,9 +1111,48 @@ __read:
 				}
 			}
 		}
+		else if (strncmp(buf, "fdump ", 6) == 0)
+		{
+			int				fd;
+			unsigned int	j;
+			unsigned int	start, end;
+			char			mem[0x4000 + g_memmap.save_size + 0x1000];
+
+			p = buf + 6;
+			if (*p != '\0')
+			{
+				fd = open(p, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+				if (fd > 0)
+				{
+					j = 0;
+					start = GET_REAL_ADDR(0xa000);
+					end = start + 0x2000;
+					while (start != end)
+					{
+						if ((addr & 0xf) == 0)
+							j += sprintf(mem + j, "\n%p:", (void*)start);
+						j += sprintf(mem + j, "%5hhx ", *(GET_REAL_ADDR(start)));
+						start++;
+					}
+					write(fd, mem, j);
+
+					j = 0;
+					start = GET_REAL_ADDR(0xa000);
+					end = start + 0x2000;
+					while (start != end)
+					{
+						if ((addr & 0xf) == 0)
+							mem[j++] = '\n';
+						j += sprintf(mem + j, "%5hhx ", *start);
+						start++;
+					}
+					write(fd, mem, j);
+				}
+			}
+		}
 		else
 		{
-			buf[i++] = chr;
+			write(1, "syntax error\n", 13);
 		}
 	}
 	term_noecho_mode(0);
