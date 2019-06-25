@@ -1038,6 +1038,7 @@ void	*cheat_input(void *unused)
 	unsigned short	addr;
 	unsigned short	addr2;
 	unsigned char	value;
+	unsigned int	tmp;
 
 	(void)unused;
 	term_noecho_mode(1);
@@ -1045,13 +1046,12 @@ void	*cheat_input(void *unused)
 	{
 __read:
 		read(0, &chr, 1);
+		write(1, &chr, 1);
 		if (chr == 127) {
 			if (i > 0)
 				buf[i--] = 0;
 			goto __read;
 		}
-		buf[i++] = chr;
-		write(1, &chr, 1);
 		if (chr == '\n')
 		{
 			buf[i] = '\0';
@@ -1102,58 +1102,136 @@ __read:
 					addr2 = (unsigned short)atoi_hexa(&p);
 					for (; addr < addr2; addr++)
 					{
-						if ((addr & 0xf) == 0)
-							write(1, "\n", 1);
+						if ((addr & 0xf) == 0) {
+							tmp = sprintf(buf2, "\n%p:  ", (void*)addr);
+							write(1, buf2, tmp);
+						}
 						sprintf(buf2, "%#5hhx ", *(GET_REAL_ADDR(addr)));
 						write(1, buf2, strlen(buf2));
 					}
 					write(1, "\n", 1);
 				}
 			}
-		}
-		else if (strncmp(buf, "fdump ", 6) == 0)
-		{
-			int				fd;
-			unsigned int	j;
-			unsigned int	start, end;
-			char			mem[0x4000 + g_memmap.save_size + 0x1000];
-
-			p = buf + 6;
-			if (*p != '\0')
+			else if (strncmp(buf, "fdump ", 6) == 0)
 			{
-				fd = open(p, O_WRONLY | O_CREAT | O_TRUNC, 0666);
-				if (fd > 0)
-				{
-					j = 0;
-					start = GET_REAL_ADDR(0xa000);
-					end = start + 0x2000;
-					while (start != end)
-					{
-						if ((addr & 0xf) == 0)
-							j += sprintf(mem + j, "\n%p:", (void*)start);
-						j += sprintf(mem + j, "%5hhx ", *(GET_REAL_ADDR(start)));
-						start++;
-					}
-					write(fd, mem, j);
+				int				fd;
+				unsigned int	j;
+				unsigned int	start, end;
+				unsigned char	*ptr, *ptr_end;
+				char			*mem;
 
-					j = 0;
-					start = GET_REAL_ADDR(0xa000);
-					end = start + 0x2000;
-					while (start != end)
+				p = buf + 6;
+				if (*p != '\0')
+				{
+					p = buf + 6;
+					fd = open(p, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+					if (fd > 0)
 					{
-						if ((addr & 0xf) == 0)
-							mem[j++] = '\n';
-						j += sprintf(mem + j, "%5hhx ", *start);
-						start++;
+						mem = malloc(0x10000);
+
+						start = 0xa000;
+						ptr = GET_REAL_ADDR(0xa000);
+						ptr_end = ptr + g_memmap.save_size;
+						j = sprintf(mem, "==> EXTERNAL RAM (cartridge: 0xa000)\n\n");
+						while (ptr != ptr_end)
+						{
+							if ((start & 0xf) == 0)
+								j += sprintf(mem + j, "\n%p:  ", (void*)start);
+							j += sprintf(mem + j, "%4hhx ", *(ptr++));
+							if (j >= 0xfff0)
+							{
+								write(fd, mem, j);
+								j = 0;
+							}
+							start++;
+						}
+						if (j)
+							write(fd, mem, j);
+
+						start = 0xc000;
+						end = start + 0x2000;
+						j = sprintf(mem, "\n\n\n==> UNIT WORKING RAM (gameboy: 0xc000)\n\n");
+						while (start != end)
+						{
+							if ((start & 0xf) == 0)
+								j += sprintf(mem + j, "\n%p:  ", (void*)start);
+							j += sprintf(mem + j, "%4hhx ", *GET_REAL_ADDR(start));
+							if (j >= 0xfff0)
+							{
+								write(fd, mem, j);
+								j = 0;
+							}
+							start++;
+						}
+						if (j)
+							write(fd, mem, j);
+
+						start = 0xff80;
+						end = start + 0x7f;
+						j = sprintf(mem, "\n\n\n==> WORKING & STACK RAM (gameboy: 0xff80)\n\n");
+						while (start != end)
+						{
+							if ((start & 0xf) == 0)
+								j += sprintf(mem + j, "\n%p:  ", (void*)start);
+							j += sprintf(mem + j, "%4hhx ", *GET_REAL_ADDR(start));
+							if (j >= 0xfff0)
+							{
+								write(fd, mem, j);
+								j = 0;
+							}
+							start++;
+						}
+						if (j)
+							write(fd, mem, j);
+
+						start = 0xfe00;
+						end = start + 0xa0;
+						j = sprintf(mem, "\n\n\n==> OAM (gameboy: 0xfe00)\n\n");
+						while (start != end)
+						{
+							if ((start & 0xf) == 0)
+								j += sprintf(mem + j, "\n%p:  ", (void*)start);
+							j += sprintf(mem + j, "%4hhx ", *GET_REAL_ADDR(start));
+							if (j >= 0xfff0)
+							{
+								write(fd, mem, j);
+								j = 0;
+							}
+							start++;
+						}
+						if (j)
+							write(fd, mem, j);
+						
+						start = 0x8000;
+						end = start + 0x2000;
+						j = sprintf(mem, "\n\n\n==> VRAM (cartridge: 0x8000)\n\n");
+						while (start != end)
+						{
+							if ((start& 0xf) == 0)
+								j += sprintf(mem + j, "\n%p:  ", (void*)start);
+							j += sprintf(mem + j, "%4hhx ", *GET_REAL_ADDR(start));
+							if (j >= 0xfff0)
+							{
+								write(fd, mem, j);
+								j = 0;
+							}
+							start++;
+						}
+						if (j)
+							write(fd, mem, j);
+						free(mem);
+
+						close(fd);
 					}
-					write(fd, mem, j);
 				}
+			}
+			else
+			{
+				write(1, "syntax error\n", 13);
 			}
 		}
 		else
-		{
-			write(1, "syntax error\n", 13);
-		}
+			buf[i++] = chr;
 	}
 	term_noecho_mode(0);
 }
