@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/29 17:38:18 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/24 10:09:03 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/25 14:33:08 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -107,7 +107,7 @@ static int		set_cartridge_info(uint8_t *mem, cartridge_t *cart)
 		return (-1);
 	mem += 2;
 
-#if BYTE_ORDER == LITTLE_ENDIAN
+#if __BYTE_ORDER == __ORDER_LITTLE_ENDIAN
 	cart->jump_addr = *(unsigned short*)mem;
 #else
 	cart->jump_addr = (*mem | (mem[1] << 8));
@@ -198,17 +198,22 @@ static void	malloc_blocks(cartridge_t *cart)
 
 	// 0xa000 - 0xbfff
 	if ((g_memmap.save_size = get_external_ram_size(cart)) == 0)
+	{
 		g_memmap.extern_ram = NULL;
+		// 0xc000 : intern ram
+		g_memmap.fixed_ram = valloc(0x8000);
+	}
 	else
 	{
-		g_memmap.extern_ram = valloc(g_memmap.save_size);
+		g_memmap.extern_ram = valloc(g_memmap.save_size + 0x8000);
 		g_memmap.extern_ram_banks[0] = g_memmap.extern_ram;
 		for (unsigned int i = 1; i < cart->n_ram_banks; i++)
 			g_memmap.extern_ram_banks[i] = g_memmap.extern_ram_banks[i - 1] + 0x2000;
+		// 0xc000 : intern ram
+		g_memmap.fixed_ram = g_memmap.extern_ram + g_memmap.save_size;
 	}
 
 	// 0xc000 - 0xcfff (+ 7 banks allocations)
-	g_memmap.fixed_ram = valloc(0x8000);
 	g_memmap.switch_ram = g_memmap.fixed_ram + 0x1000;
 	g_memmap.ram_banks[0] = g_memmap.switch_ram;
 	for (uint32_t i = 1; i < 7; i++)
@@ -288,7 +293,6 @@ static void	load_cartridge_on_memory(uint8_t *mem, cartridge_t *cart, uint32_t t
 static void	load_rom_only_cartridge(uint8_t *mem, cartridge_t *cart)
 {
 	cart->mbc = ROM_ONLY;
-	g_memmap.mbc = 0;
 	malloc_blocks(cart);
 	load_cartridge_on_memory(mem, cart, ROM_ONLY);
 	puts("\e[0;32mCARTRIDGE LOADED WITH SUCCESS\e[0m");
@@ -297,7 +301,6 @@ static void	load_rom_only_cartridge(uint8_t *mem, cartridge_t *cart)
 static void	load_MBC1_cartridge(uint8_t *mem, cartridge_t *cart)
 {
 	cart->mbc = MBC1;
-	g_memmap.mbc = 1;
 	malloc_blocks(cart);
 	load_cartridge_on_memory(mem, cart, MBC1);
 	puts("\e[0;32mCARTRIDGE LOADED WITH SUCCESS\e[0m");
@@ -306,7 +309,6 @@ static void	load_MBC1_cartridge(uint8_t *mem, cartridge_t *cart)
 static void	load_MBC2_cartridge(uint8_t *mem, cartridge_t *cart)
 {
 	cart->mbc = MBC2;
-	g_memmap.mbc = 2;
 	malloc_blocks(cart);
 	load_cartridge_on_memory(mem, cart, MBC2);
 	puts("\e[0;32mCARTRIDGE LOADED WITH SUCCESS\e[0m");
@@ -315,7 +317,6 @@ static void	load_MBC2_cartridge(uint8_t *mem, cartridge_t *cart)
 static void	load_MBC3_cartridge(uint8_t *mem, cartridge_t *cart)
 {
 	cart->mbc = MBC3;
-	g_memmap.mbc = 3;
 	malloc_blocks(cart);
 	load_cartridge_on_memory(mem, cart, MBC3);
 	puts("\e[0;32mCARTRIDGE LOADED WITH SUCCESS\e[0m");
@@ -324,7 +325,6 @@ static void	load_MBC3_cartridge(uint8_t *mem, cartridge_t *cart)
 static void	load_MBC5_cartridge(uint8_t *mem, cartridge_t *cart)
 {
 	cart->mbc = MBC5;
-	g_memmap.mbc = 4;
 	malloc_blocks(cart);
 	load_cartridge_on_memory(mem, cart, MBC5);
 	puts("\e[0;32mCARTRIDGE LOADED WITH SUCCESS\e[0m");
@@ -356,7 +356,7 @@ static void	load_saved_external_ram(cartridge_t *cart, const char *path)
 	if ((save = get_file_contents(save_name, &length)) == NULL)
 	{
 		bzero(g_memmap.extern_ram, g_memmap.save_size);
-		return ;
+		return;
 	}
 	if (length != g_memmap.save_size)
 	{
@@ -373,7 +373,7 @@ static void	load_cartridge(uint8_t *mem, cartridge_t *cart, const char *path)
 	if (set_cartridge_info(mem, cart) == -1)
 	{
 		fprintf(stderr, "Invalid cartridge\n");
-		exit (1);
+		exit(1);
 	}
 
 	switch (cart->type)
@@ -416,14 +416,9 @@ static void	load_cartridge(uint8_t *mem, cartridge_t *cart, const char *path)
 		case 0x10:
 		case 0x13:
 		case 0x1b:
-		case 0x1e: load_saved_external_ram(cart, path);
+		case 0x1e:	load_saved_external_ram(cart, path);
 	}
 	g_memmap.cur_extern_ram = 0;
-	g_memmap.cart_reg[0] = 0;
-	g_memmap.cart_reg[1] = 0;
-	g_memmap.cart_reg[2] = 0;
-	g_memmap.cart_reg[3] = 0;
-	g_memmap.cart_reg[4] = 0;
 }
 
 extern cartridge_t	g_cart;

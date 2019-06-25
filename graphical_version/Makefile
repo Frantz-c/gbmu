@@ -6,7 +6,7 @@
 #    By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+      #
 #                                                  #+#   #+    #+    #+#       #
 #    Created: 2019/06/19 08:20:37 by mhouppin     #+#   ##    ##    #+#        #
-#    Updated: 2019/06/24 11:47:51 by mhouppin    ###    #+. /#+    ###.fr      #
+#    Updated: 2019/06/25 14:37:26 by fcordon     ###    #+. /#+    ###.fr      #
 #                                                          /                   #
 #                                                         /                    #
 # **************************************************************************** #
@@ -17,7 +17,7 @@ OBJECTS	:= execute.o load_cartridge.o sync_test.o debug_tools.o
 
 DEPENDS	:= $(patsubst %.o,%.d,$(OBJECTS))
 
-DEBUG	:= -fsanitize=address -g3
+DEBUG	:= -fsanitize=address -g3 -Wall -Wextra
 
 COMPILE	?= gcc
 
