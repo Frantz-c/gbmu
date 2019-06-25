@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/06/12 18:09:06 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/25 12:49:43 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/25 16:20:23 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -22,6 +22,14 @@
 
 #define ADD_PC(offset)	regs->reg_pc += (offset)
 #define SET_PC(value)	regs->reg_pc = value
+
+#if (_CPU_LOG == false)
+	#undef dprintf
+	int	dprintf(int fd, const char *fmt, ...)
+	{
+		return (0);
+	}
+#endif
 
 /*
 **	MBC 5
@@ -49,12 +57,11 @@
 	g_get_real_addr[7] = SWITCH_ROM + 0x3000;\
 
 #define SET_RAM_NUMBER_MBC5()		\
-	CUR_RAM = (value & 0x0f); /*CART_REG[3]*/\
-	CART_REG[3] = CUR_RAM; /*unused*/\
-	EXTERN_RAM = RAM_BANK[CUR_RAM];\
+	CART_REG[3] = (value & 0x0f);\
+	EXTERN_RAM = RAM_BANK[CART_REG[3]];\
 	g_get_real_addr[10] = EXTERN_RAM;\
 	g_get_real_addr[11] = EXTERN_RAM + 0x1000;\
-	dprintf(log_file, "RAM Bank %d selected\n", (int)CUR_RAM);
+	dprintf(log_file, "RAM Bank %d selected\n", (int)CART_REG[3]);
 
 #define ENABLE_EXTERNAL_RAM_MBC5()	\
 	if ((value & 0xf) == 0x0a)\
@@ -78,6 +85,12 @@
 #define SET_MBC1_MODE_0_ROM_ADDR()	\
 	do\
 	{/* if file contain empty banks at 0x20, 0x40, 0x60 */\
+		if ((uint32_t)(CART_REG[1] | (CART_REG[2] << 5)) > g_cart.n_rom_banks)\
+		{\
+			CART_REG[1] = 0x1f & (((CART_REG[1] | (CART_REG[2] << 5))) % g_cart.n_rom_banks);\
+			CART_REG[2] = (0x60 & ((CART_REG[1] | (CART_REG[2] << 5)) % g_cart.n_rom_banks)) >> 5;\
+			dprintf(log_file, "ovf --> ");\
+		}\
 		if ((CART_REG[1] | (CART_REG[2] << 5)) == 0x20)\
 			SWITCH_ROM = ROM_BANK [0x20];\
 		else if ((CART_REG[1] | (CART_REG[2] << 5)) == 0x40)\
@@ -98,47 +111,61 @@
 #define SET_MBC1_MODE_1_ROM_ADDR()	\
 	do\
 	{\
-		if (CART_REG [MBC1_ROM_NUM] > 0)\
-			SWITCH_ROM = ROM_BANK [ CART_REG [MBC1_ROM_NUM] - 1 ];\
+		if (CART_REG[1] > 0)\
+			SWITCH_ROM = ROM_BANK [ CART_REG[1] - 1 ];\
 		else\
-			SWITCH_ROM = ROM_BANK [0];\
+			SWITCH_ROM = ROM_BANK[0];\
 		g_get_real_addr[4] = SWITCH_ROM;\
 		g_get_real_addr[5] = SWITCH_ROM + 0x1000;\
 		g_get_real_addr[6] = SWITCH_ROM + 0x2000;\
 		g_get_real_addr[7] = SWITCH_ROM + 0x3000;\
-		dprintf(log_file, "MODE = 1 -> rom bank %u - 1\n", CART_REG[MBC1_ROM_NUM]);\
+		dprintf(log_file, "MODE = 1 -> rom bank %d - 1\n", CART_REG[1]);\
 	} while (0)
 
 #define SET_MBC1_MODE_0_RAM_ADDR()	\
 	do\
 	{\
-		if (CART_REG[0])\
-		{\
-			EXTERN_RAM = RAM_BANK[0];\
-			g_get_real_addr[10] = EXTERN_RAM;\
-			g_get_real_addr[11] = EXTERN_RAM + 0x1000;\
-		}\
-		CUR_RAM = 0;\
+		EXTERN_RAM = RAM_BANK[0];\
+		g_get_real_addr[10] = EXTERN_RAM;\
+		g_get_real_addr[11] = EXTERN_RAM + 0x1000;\
 		dprintf(log_file, "MODE = 0 -> ram bank = 0 (1)\n");\
 	} while (0)
 
 #define SET_MBC1_MODE_1_RAM_ADDR()	\
 	do\
 	{\
-		if (CART_REG[0])\
-		{\
-			EXTERN_RAM = RAM_BANK [ CART_REG[2] ];\
-			g_get_real_addr[10] = EXTERN_RAM;\
-			g_get_real_addr[11] = EXTERN_RAM + 0x1000;\
+		EXTERN_RAM = RAM_BANK [ CART_REG[2] ];\
+		g_get_real_addr[10] = EXTERN_RAM;\
+		g_get_real_addr[11] = EXTERN_RAM + 0x1000;\
+		dprintf(log_file, "MODE = 1 -> ram bank = %u\n", CART_REG[2]);\
+	} while (0)
+
+#define	SWITCH_RAM_MBC1()	\
+	do\
+	{\
+		if (CART_REG[3]) {\
+			SET_MBC1_MODE_1_RAM_ADDR();\
 		}\
-		CUR_RAM = CART_REG[2];\
-		dprintf(log_file, "MODE = 1 -> ram bank = %u - 1\n", CUR_RAM);\
+		else {\
+			SET_MBC1_MODE_0_RAM_ADDR();\
+		}\
+	} while (0)
+
+#define	SWITCH_ROM_MBC1()	\
+	do\
+	{\
+		if (CART_REG[3]) {\
+			SET_MBC1_MODE_1_ROM_ADDR();\
+		}\
+		else {\
+			SET_MBC1_MODE_0_ROM_ADDR();\
+		}\
 	} while (0)
 
 #define	SWITCH_RAM_ROM_MBC1()	\
 	do\
 	{\
-		if (g_memmap.cart_reg[MBC1_MODE]) {\
+		if (CART_REG[3]) {\
 			SET_MBC1_MODE_1_ROM_ADDR();\
 			SET_MBC1_MODE_1_RAM_ADDR();\
 		}\
@@ -153,14 +180,16 @@
 #define ENABLE_EXTERNAL_RAM_MBC1()	\
 	if ((value & 0xf) == 0x0a)\
 	{\
-		g_memmap.cart_reg[0] = 1;\
-		EXTERN_RAM = RAM_BANK[CUR_RAM];\
+		CART_REG[0] = 1;\
+		EXTERN_RAM = RAM_BANK [ CART_REG[2] ];\
 		g_get_real_addr[10] = EXTERN_RAM;\
 		g_get_real_addr[11] = EXTERN_RAM + 0x1000;\
+		dprintf(log_file, "enable cartridge ram\n");\
 	}\
 	else\
 	{\
-		g_memmap.cart_reg[0] = 0;\
+		CART_REG[0] = 0;\
+		dprintf(log_file, "disable cartridge ram\n");\
 	/*	EXTERN_RAM = g_memmap.complete_block + 0x2000;*/\
 	}
 
@@ -4762,8 +4791,6 @@ plog("set_7_a\n");
 	regs->reg_a |= (BIT_7);
 	return (8);
 
-#undef plog
-
 /****************
 **    MBC_1    **
 ****************/
@@ -4776,15 +4803,23 @@ mbc1_0:
 mbc1_1:
 	plog("\nmbc1_1:\n\n");
 	/* 5 bits register */
-	g_memmap.cart_reg[MBC1_ROM_NUM] = (value & 0x1f);
-	SWITCH_RAM_ROM_MBC1();
+	dprintf(log_file, "value = %d\n", (int)value);
+	CART_REG[1] = (value & 0x1f);
+	dprintf(log_file, "cart_reg[1] = %d\n", (int)CART_REG[1]);
+	SWITCH_ROM_MBC1();
 	return (cycles);
 
 mbc1_2:
 	plog("\nmbc1_2:\n\n");
 	/* 3 bits register */
 	g_memmap.cart_reg[MBC1_RAM_NUM] = (value & 0x03);
-	SWITCH_RAM_ROM_MBC1();
+	if (g_memmap.cart_reg[3] == 1) {
+		//SWITCH_RAM_ROM_MBC1();
+		SWITCH_RAM_MBC1();
+	}
+	else {
+		SWITCH_ROM_MBC1();
+	}
 	return (cycles);
 
 mbc1_3:
