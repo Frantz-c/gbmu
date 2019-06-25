@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/06/12 18:09:06 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/25 12:13:20 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/25 12:49:43 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -54,18 +54,21 @@
 	EXTERN_RAM = RAM_BANK[CUR_RAM];\
 	g_get_real_addr[10] = EXTERN_RAM;\
 	g_get_real_addr[11] = EXTERN_RAM + 0x1000;\
+	dprintf(log_file, "RAM Bank %d selected\n", (int)CUR_RAM);
 
 #define ENABLE_EXTERNAL_RAM_MBC5()	\
-	if (value == 0x0a)\
+	if ((value & 0xf) == 0x0a)\
 	{\
 		g_memmap.cart_reg[0] = 1;\
 		EXTERN_RAM = RAM_BANK[CUR_RAM];\
 		g_get_real_addr[10] = EXTERN_RAM;\
 		g_get_real_addr[11] = EXTERN_RAM + 0x1000;\
+		dprintf(log_file, "Extern RAM enabled\n");\
 	}\
 	else\
 	{\
 		g_memmap.cart_reg[0] = 0;\
+		dprintf(log_file, "Extern RAM disabled\n");\
 		/*EXTERN_RAM = g_memmap.complete_block + 0x2000;*/\
 	}
 
@@ -148,7 +151,7 @@
 // if write on disabled ram is a fatal error,
 // please remove 0x2000 offset
 #define ENABLE_EXTERNAL_RAM_MBC1()	\
-	if (value == 0x0a)\
+	if ((value & 0xf) == 0x0a)\
 	{\
 		g_memmap.cart_reg[0] = 1;\
 		EXTERN_RAM = RAM_BANK[CUR_RAM];\
