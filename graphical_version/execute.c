@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/06/12 18:09:06 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/24 11:22:21 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/25 12:13:20 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -60,14 +60,14 @@
 	{\
 		g_memmap.cart_reg[0] = 1;\
 		EXTERN_RAM = RAM_BANK[CUR_RAM];\
+		g_get_real_addr[10] = EXTERN_RAM;\
+		g_get_real_addr[11] = EXTERN_RAM + 0x1000;\
 	}\
 	else\
 	{\
 		g_memmap.cart_reg[0] = 0;\
-		EXTERN_RAM = g_memmap.complete_block + 0x2000;\
-	}\
-	g_get_real_addr[10] = EXTERN_RAM;\
-	g_get_real_addr[11] = EXTERN_RAM + 0x1000;
+		/*EXTERN_RAM = g_memmap.complete_block + 0x2000;*/\
+	}
 
 /*
 **	MBC 1
@@ -75,12 +75,12 @@
 #define SET_MBC1_MODE_0_ROM_ADDR()	\
 	do\
 	{/* if file contain empty banks at 0x20, 0x40, 0x60 */\
-		if ((CART_REG[1] | (CART_REG[2] << 5)) == 0x21)\
-			SWITCH_ROM = ROM_BANK [0x21];\
-		else if ((CART_REG[1] | (CART_REG[2] << 5)) == 0x41)\
-			SWITCH_ROM = ROM_BANK [0x41];\
-		else if ((CART_REG[1] | (CART_REG[2] << 5)) == 0x61)\
-			SWITCH_ROM = ROM_BANK [0x61];\
+		if ((CART_REG[1] | (CART_REG[2] << 5)) == 0x20)\
+			SWITCH_ROM = ROM_BANK [0x20];\
+		else if ((CART_REG[1] | (CART_REG[2] << 5)) == 0x40)\
+			SWITCH_ROM = ROM_BANK [0x40];\
+		else if ((CART_REG[1] | (CART_REG[2] << 5)) == 0x60)\
+			SWITCH_ROM = ROM_BANK [0x60];\
 		else if ((CART_REG[1] | (CART_REG[2] << 5)) > 0)\
 			SWITCH_ROM = ROM_BANK [ (CART_REG[1] | (CART_REG[2] << 5)) - 1];\
 		else\
@@ -152,14 +152,14 @@
 	{\
 		g_memmap.cart_reg[0] = 1;\
 		EXTERN_RAM = RAM_BANK[CUR_RAM];\
+		g_get_real_addr[10] = EXTERN_RAM;\
+		g_get_real_addr[11] = EXTERN_RAM + 0x1000;\
 	}\
 	else\
 	{\
 		g_memmap.cart_reg[0] = 0;\
-		EXTERN_RAM = g_memmap.complete_block + 0x2000;\
-	}\
-	g_get_real_addr[10] = EXTERN_RAM;\
-	g_get_real_addr[11] = EXTERN_RAM + 0x1000;\
+	/*	EXTERN_RAM = g_memmap.complete_block + 0x2000;*/\
+	}
 
 
 static char	__attribute__((unused)) *get_bin(unsigned char n)
@@ -264,7 +264,7 @@ static char		*itoazx(int n, int size)
 
 int				get_int16_from_little_endian(void *memory)
 {
-#if BYTE_ORDER == LITTLE_ENDIAN
+#if __BYTE_ORDER == __ORDER_LITTLE_ENDIAN
 	return (*(int16_t*)memory);
 #else
 	return ((int16_t)(*(unsigned char*)memory + *((unsigned char*)(memory + 1)) << 8));
@@ -273,7 +273,7 @@ int				get_int16_from_little_endian(void *memory)
 
 unsigned int	get_uint16_from_little_endian(void *memory)
 {
-#if BYTE_ORDER == LITTLE_ENDIAN
+#if __BYTE_ORDER == __ORDER_LITTLE_ENDIAN
 	return (*(uint16_t*)memory);
 #else
 	return (*(unsigned char*)memory + *((unsigned char*)(memory + 1)) << 8);
@@ -348,7 +348,7 @@ cycle_count_t	execute(registers_t *regs)
 			&&mbc3_2,		&&mbc3_2,		&&mbc3_3,		&&mbc3_3
 		},
 		{
-			&&mbc1_0,		&&mbc1_0,		&&mbc5_1,		&&mbc5_2,
+			&&mbc5_0,		&&mbc5_0,		&&mbc5_1,		&&mbc5_2,
 			&&mbc5_3,		&&mbc5_3,		&&redzone_ret,	&&redzone_ret
 		}
 	};
@@ -547,9 +547,7 @@ plog("rlca\n");
 ld_addr16_sp:
 plog("ld_addr16_sp\n");
 	ADD_PC(3);
-	address = GET_REAL_ADDR(imm_16);
-	address[0] = regs->reg_sl;
-	address[1] = regs->reg_sh;
+	regs->reg_sp = imm_16;
 	return (20);
 
 add_hl_bc:
@@ -2398,7 +2396,9 @@ plog("callnz_imm16\n");
 	{
 		address = GET_REAL_ADDR(regs->reg_sp);
 		regs->reg_sp -= 2;
+		WRITE_REGISTER_IF_ROM_AREA(regs->reg_sp + 1, (uint8_t)(regs->reg_pc >> 8), 16);
 		address[-1] = (uint8_t)(regs->reg_pc >> 8);
+		WRITE_REGISTER_IF_ROM_AREA(regs->reg_sp, (uint8_t)(regs->reg_pc), 16);
 		address[-2] = (uint8_t)(regs->reg_pc);
 		SET_PC(imm_16);
 		return (24);
@@ -2411,7 +2411,9 @@ plog("push_bc\n");
 	ADD_PC(1);
 	address = GET_REAL_ADDR(regs->reg_sp);
 	regs->reg_sp -= 2;
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_sp + 1, (uint8_t)(regs->reg_bc >> 8), 16);
 	address[-1] = (uint8_t)(regs->reg_bc >> 8);
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_sp, (uint8_t)(regs->reg_bc), 16);
 	address[-2] = (uint8_t)(regs->reg_bc);
 	return (16);
 
@@ -2481,7 +2483,9 @@ plog("callz_imm16\n");
 	{
 		address = GET_REAL_ADDR(regs->reg_sp);
 		regs->reg_sp -= 2;
+		WRITE_REGISTER_IF_ROM_AREA(regs->reg_sp + 1, (uint8_t)(regs->reg_pc >> 8), 16);
 		address[-1] = (uint8_t)(regs->reg_pc >> 8);
+		WRITE_REGISTER_IF_ROM_AREA(regs->reg_sp, (uint8_t)(regs->reg_pc), 16);
 		address[-2] = (uint8_t)(regs->reg_pc);
 		SET_PC(imm_16);
 		return (24);
@@ -2522,7 +2526,9 @@ plog("rst_08h\n");
 	ADD_PC(1);
 	address = GET_REAL_ADDR(regs->reg_sp);
 	regs->reg_sp -= 2;
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_sp + 1, (uint8_t)(regs->reg_pc >> 8), 16);
 	address[-1] = (uint8_t)(regs->reg_pc >> 8);
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_sp, (uint8_t)(regs->reg_pc), 16);
 	address[-2] = (uint8_t)(regs->reg_pc);
 	regs->reg_pc = 0x08u;
 	return (16);
@@ -2570,7 +2576,9 @@ plog("callnc_imm16\n");
 	{
 		address = GET_REAL_ADDR(regs->reg_sp);
 		regs->reg_sp -= 2;
+		WRITE_REGISTER_IF_ROM_AREA(regs->reg_sp + 1, (uint8_t)(regs->reg_pc >> 8), 16);
 		address[-1] = (uint8_t)(regs->reg_pc >> 8);
+		WRITE_REGISTER_IF_ROM_AREA(regs->reg_sp, (uint8_t)(regs->reg_pc), 16);
 		address[-2] = (uint8_t)(regs->reg_pc);
 		SET_PC(imm_16);
 		return (24);
@@ -2583,7 +2591,9 @@ plog("push_de\n");
 	ADD_PC(1);
 	address = GET_REAL_ADDR(regs->reg_sp);
 	regs->reg_sp -= 2;
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_sp + 1, (uint8_t)(regs->reg_de >> 8), 16);
 	address[-1] = (uint8_t)(regs->reg_de >> 8);
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_sp, (uint8_t)(regs->reg_de), 16);
 	address[-2] = (uint8_t)(regs->reg_de);
 	return (16);
 
@@ -2606,7 +2616,9 @@ plog("rst_10h\n");
 	ADD_PC(1);
 	address = GET_REAL_ADDR(regs->reg_sp);
 	regs->reg_sp -= 2;
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_sp + 1, (uint8_t)(regs->reg_pc >> 8), 16);
 	address[-1] = (uint8_t)(regs->reg_pc >> 8);
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_sp, (uint8_t)(regs->reg_pc), 16);
 	address[-2] = (uint8_t)(regs->reg_pc);
 	regs->reg_pc = 0x10u;
 	return (16);
@@ -2655,7 +2667,9 @@ plog("callc_imm16\n");
 	{
 		address = GET_REAL_ADDR(regs->reg_sp);
 		regs->reg_sp -= 2;
+		WRITE_REGISTER_IF_ROM_AREA(regs->reg_sp + 1, (uint8_t)(regs->reg_pc >> 8), 16);
 		address[-1] = (uint8_t)(regs->reg_pc >> 8);
+		WRITE_REGISTER_IF_ROM_AREA(regs->reg_sp, (uint8_t)(regs->reg_pc), 16);
 		address[-2] = (uint8_t)(regs->reg_pc);
 		SET_PC(imm_16);
 		return (24);
@@ -2686,7 +2700,9 @@ plog("rst_18h\n");
 	ADD_PC(1);
 	address = GET_REAL_ADDR(regs->reg_sp);
 	regs->reg_sp -= 2;
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_sp + 1, (uint8_t)(regs->reg_pc >> 8), 16);
 	address[-1] = (uint8_t)(regs->reg_pc >> 8);
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_sp, (uint8_t)(regs->reg_pc), 16);
 	address[-2] = (uint8_t)(regs->reg_pc);
 	regs->reg_pc = 0x18u;
 	return (16);
@@ -2718,7 +2734,9 @@ plog("push_hl\n");
 	ADD_PC(1);
 	address = GET_REAL_ADDR(regs->reg_sp);
 	regs->reg_sp -= 2;
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_sp + 1, (uint8_t)(regs->reg_hl >> 8), 16);
 	address[-1] = (uint8_t)(regs->reg_hl >> 8);
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_sp, (uint8_t)(regs->reg_hl), 16);
 	address[-2] = (uint8_t)(regs->reg_hl);
 	return (16);
 
@@ -2736,7 +2754,9 @@ plog("rst_20h\n");
 	ADD_PC(1);
 	address = GET_REAL_ADDR(regs->reg_sp);
 	regs->reg_sp -= 2;
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_sp + 1, (uint8_t)(regs->reg_pc >> 8), 16);
 	address[-1] = (uint8_t)(regs->reg_pc >> 8);
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_sp, (uint8_t)(regs->reg_pc), 16);
 	address[-2] = (uint8_t)(regs->reg_pc);
 	regs->reg_pc = 0x20u;
 	return (16);
@@ -2780,7 +2800,9 @@ plog("rst_28h\n");
 	ADD_PC(1);
 	address = GET_REAL_ADDR(regs->reg_sp);
 	regs->reg_sp -= 2;
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_sp + 1, (uint8_t)(regs->reg_pc >> 8), 16);
 	address[-1] = (uint8_t)(regs->reg_pc >> 8);
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_sp, (uint8_t)(regs->reg_pc), 16);
 	address[-2] = (uint8_t)(regs->reg_pc);
 	regs->reg_pc = 0x28u;
 	return (16);
@@ -2836,7 +2858,9 @@ plog("rst_30h\n");
 	ADD_PC(1);
 	address = GET_REAL_ADDR(regs->reg_sp);
 	regs->reg_sp -= 2;
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_sp + 1, (uint8_t)(regs->reg_pc >> 8), 16);
 	address[-1] = (uint8_t)(regs->reg_pc >> 8);
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_sp, (uint8_t)(regs->reg_pc), 16);
 	address[-2] = (uint8_t)(regs->reg_pc);
 	regs->reg_pc = 0x30u;
 	return (16);
@@ -2845,7 +2869,7 @@ ld_hl_sp_imm8:
 plog("ld_hl_sp_imm8\n");
 	ADD_PC(2);
 	regs->reg_f = 0;
-	imm_16 = regs->reg_sp + imm_8;
+	imm_16 = regs->reg_sp + (int8_t)imm_8;
 	if (imm_16 < regs->reg_sp)
 		regs->reg_f |= FLAG_CY;
 	if ((imm_16 & 0xFFFu) < (regs->reg_sp & 0xFFFu))
@@ -2856,7 +2880,7 @@ plog("ld_hl_sp_imm8\n");
 ld_sp_hl:
 plog("ld_sp_hl\n");
 	ADD_PC(1);
-	regs->reg_hl = regs->reg_sp;
+	regs->reg_sp = regs->reg_hl;
 	return (8);
 
 ld_a_imm16:
@@ -2889,7 +2913,9 @@ plog("rst_38h\n");
 	ADD_PC(1);
 	address = GET_REAL_ADDR(regs->reg_sp);
 	regs->reg_sp -= 2;
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_sp + 1, (uint8_t)(regs->reg_pc >> 8), 16);
 	address[-1] = (uint8_t)(regs->reg_pc >> 8);
+	WRITE_REGISTER_IF_ROM_AREA(regs->reg_sp, (uint8_t)(regs->reg_pc), 16);
 	address[-2] = (uint8_t)(regs->reg_pc);
 	regs->reg_pc = 0x38u;
 	return (16);
@@ -4762,7 +4788,6 @@ mbc1_3:
 	plog("\nmbc1_3:\n\n");
 	/* 1 bit register */
 	g_memmap.cart_reg[MBC1_MODE] = (value & 0x01);
-	SWITCH_RAM_ROM_MBC1();
 	return (cycles);
 
 

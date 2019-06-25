@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/30 09:02:45 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/24 11:06:10 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/25 11:31:59 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -765,7 +765,7 @@ static void		check_if_bootstrap(void)
 	}
 }
 
-#define TVALUE 40
+#define TVALUE 100
 
 static void		start_cpu_lcd_events(void)
 {
@@ -943,6 +943,8 @@ static void		close_log_file_and_exit(int sig)
 		puts("FPE... log_gbmul saved");
 	else if (sig == SIGBUS)
 		puts("BUS ERROR... log_gbmul saved");
+	else if (sig == SIGABRT)
+		puts("ABORT... log_gbmul saved");
 	exit(1);
 }
 
@@ -957,6 +959,7 @@ int		main(int argc, char *argv[])
 	signal(SIGINT, close_log_file_and_exit);
 	signal(SIGSEGV, close_log_file_and_exit);
 	signal(SIGFPE, close_log_file_and_exit);
+	signal(SIGABRT, close_log_file_and_exit);
 	signal(SIGBUS, close_log_file_and_exit);
 
 	//	remove("log_gbmul");

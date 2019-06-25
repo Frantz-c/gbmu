@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/23 11:44:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/24 10:02:41 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/25 11:50:25 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -231,6 +231,10 @@ uint32_t		GAMEBOY;
 				cycles = (_cycles);\
 				value = (_value); \
 				goto *jump_to_mbcx[g_memmap.mbc][(virtual_addr) >> 12];\
+			}\
+			else if (g_memmap.cart_reg[0] != 0x0a && (virtual_addr) >= 0xa000 && (virtual_addr) < 0xc000)\
+			{\
+				return (_cycles);\
 			}\
 		} while(0)
 
