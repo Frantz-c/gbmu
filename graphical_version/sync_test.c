@@ -1020,6 +1020,48 @@ static inline unsigned int		atoi_hexa(char **s)
 	return (ft_strtoi(s));
 }
 
+static void		write_dump_switchable_mem_fd(int fd, void *start, unsigned int length, char *buf, const char *title)
+{
+	unsigned int	j;
+	uint8_t			*ptr;
+
+	ptr = GET_REAL_ADDR((uint16_t)start);
+	memcpy(buf, title, (j = strlen(title)));
+	for (uint8_t *ptr_end = ptr + length; ptr != ptr_end; start++, ptr++)
+	{
+		if (((uint16_t)start & 0xf) == 0)
+			j += sprintf(buf + j, "\n%p:  ", start);
+		j += sprintf(buf + j, "%4hhx ", *ptr);
+		if (j >= 0xfff0)
+		{
+			write(fd, buf, j);
+			j = 0;
+		}
+	}
+	if (j)
+		write(fd, buf, j);
+}
+
+static void		write_dump_fd(int fd, void *start, unsigned int length, char *buf, const char *title)
+{
+	unsigned int	j;
+
+	memcpy(buf, title, (j = strlen(title)));
+	for (void *end = start + length; start != end; start++)
+	{
+		if (((uint16_t)start & 0xf) == 0)
+			j += sprintf(buf + j, "\n%p:  ", start);
+		j += sprintf(buf + j, "%4hhx ", *GET_REAL_ADDR((uint16_t)start));
+		if (j >= 0xfff0)
+		{
+			write(fd, buf, j);
+			j = 0;
+		}
+	}
+	if (j)
+		write(fd, buf, j);
+}
+
 /*
  *	commandes : 
  *		get 0xaddr\n
@@ -1103,7 +1145,7 @@ __read:
 					for (; addr < addr2; addr++)
 					{
 						if ((addr & 0xf) == 0) {
-							tmp = sprintf(buf2, "\n%p:  ", (void*)addr);
+							tmp = sprintf(buf2, "\n%p:  ", (void*)((unsigned long)addr));
 							write(1, buf2, tmp);
 						}
 						sprintf(buf2, "%#5hhx ", *(GET_REAL_ADDR(addr)));
@@ -1115,9 +1157,6 @@ __read:
 			else if (strncmp(buf, "fdump ", 6) == 0)
 			{
 				int				fd;
-				unsigned int	j;
-				unsigned int	start, end;
-				unsigned char	*ptr, *ptr_end;
 				char			*mem;
 
 				p = buf + 6;
@@ -1128,99 +1167,12 @@ __read:
 					if (fd > 0)
 					{
 						mem = malloc(0x10000);
-
-						start = 0xa000;
-						ptr = GET_REAL_ADDR(0xa000);
-						ptr_end = ptr + g_memmap.save_size;
-						j = sprintf(mem, "==> EXTERNAL RAM (cartridge: 0xa000)\n\n");
-						while (ptr != ptr_end)
-						{
-							if ((start & 0xf) == 0)
-								j += sprintf(mem + j, "\n%p:  ", (void*)start);
-							j += sprintf(mem + j, "%4hhx ", *(ptr++));
-							if (j >= 0xfff0)
-							{
-								write(fd, mem, j);
-								j = 0;
-							}
-							start++;
-						}
-						if (j)
-							write(fd, mem, j);
-
-						start = 0xc000;
-						end = start + 0x2000;
-						j = sprintf(mem, "\n\n\n==> UNIT WORKING RAM (gameboy: 0xc000)\n\n");
-						while (start != end)
-						{
-							if ((start & 0xf) == 0)
-								j += sprintf(mem + j, "\n%p:  ", (void*)start);
-							j += sprintf(mem + j, "%4hhx ", *GET_REAL_ADDR(start));
-							if (j >= 0xfff0)
-							{
-								write(fd, mem, j);
-								j = 0;
-							}
-							start++;
-						}
-						if (j)
-							write(fd, mem, j);
-
-						start = 0xff80;
-						end = start + 0x7f;
-						j = sprintf(mem, "\n\n\n==> WORKING & STACK RAM (gameboy: 0xff80)\n\n");
-						while (start != end)
-						{
-							if ((start & 0xf) == 0)
-								j += sprintf(mem + j, "\n%p:  ", (void*)start);
-							j += sprintf(mem + j, "%4hhx ", *GET_REAL_ADDR(start));
-							if (j >= 0xfff0)
-							{
-								write(fd, mem, j);
-								j = 0;
-							}
-							start++;
-						}
-						if (j)
-							write(fd, mem, j);
-
-						start = 0xfe00;
-						end = start + 0xa0;
-						j = sprintf(mem, "\n\n\n==> OAM (gameboy: 0xfe00)\n\n");
-						while (start != end)
-						{
-							if ((start & 0xf) == 0)
-								j += sprintf(mem + j, "\n%p:  ", (void*)start);
-							j += sprintf(mem + j, "%4hhx ", *GET_REAL_ADDR(start));
-							if (j >= 0xfff0)
-							{
-								write(fd, mem, j);
-								j = 0;
-							}
-							start++;
-						}
-						if (j)
-							write(fd, mem, j);
-						
-						start = 0x8000;
-						end = start + 0x2000;
-						j = sprintf(mem, "\n\n\n==> VRAM (cartridge: 0x8000)\n\n");
-						while (start != end)
-						{
-							if ((start& 0xf) == 0)
-								j += sprintf(mem + j, "\n%p:  ", (void*)start);
-							j += sprintf(mem + j, "%4hhx ", *GET_REAL_ADDR(start));
-							if (j >= 0xfff0)
-							{
-								write(fd, mem, j);
-								j = 0;
-							}
-							start++;
-						}
-						if (j)
-							write(fd, mem, j);
+						write_dump_switchable_mem_fd(fd, (void*)0xa000, g_memmap.save_size, mem, "==> EXTERNAL RAM (cartridge: 0xa000)\n\n");
+						write_dump_fd(fd, (void*)0xc000, 0x2000, mem, "\n\n\n==> UNIT WORKING RAM (gameboy: 0xc000)\n\n");
+						write_dump_fd(fd, (void*)0xff80, 0x7f, mem, "\n\n\n==> WORKING & STACK RAM (gameboy: 0xff80)\n\n");
+						write_dump_fd(fd, (void*)0xfe00, 0xa0, mem, "\n\n\n==> OAM (gameboy: 0xfe00)\n\n");
+						write_dump_fd(fd, (void*)0x8000, 0x2000, mem, "\n\n\n==> VRAM (cartridge: 0x8000)\n\n");
 						free(mem);
-
 						close(fd);
 					}
 				}
