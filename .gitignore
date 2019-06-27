@@ -2,3 +2,6 @@ ressources
 *.o
 *.dSYM
 log_gbmul
+*.sav
+*.d
+.*.d

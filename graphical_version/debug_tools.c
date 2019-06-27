@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/06/20 17:39:24 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/21 18:30:03 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/25 12:23:31 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -280,11 +280,11 @@ void	init_dumps(void)
 
 	g_dwindow = SDL_CreateWindow("RAM dump",
 			SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-			512, (g_memmap.save_size >> 8) * 2, 0);
+			256, g_memmap.save_size >> 8, 0);
 
 	g_drender = SDL_CreateRenderer(g_dwindow, -1, 0);
 	g_dtexture = SDL_CreateTexture(g_drender, SDL_PIXELFORMAT_ARGB8888,
-			SDL_TEXTUREACCESS_STREAMING, 512, (g_memmap.save_size >> 8) * 2);
+			SDL_TEXTUREACCESS_STREAMING, 256, g_memmap.save_size >> 8);
 
 	assert(g_dwindow && g_drender && g_dtexture);
 }
@@ -311,10 +311,7 @@ void	dump_rams(void)
 		for (size_t x = 0; x < 256; x++)
 		{
 			int32_t	col = vimcol[g_memmap.extern_ram_banks[0][y * 256 + x]];
-			g_dpixels[(y << 9) + x + x] = col;
-			g_dpixels[(y << 9) + x + x + 1] = col;
-			g_dpixels[(y << 9) + x + x + 512] = col;
-			g_dpixels[(y << 9) + x + x + 513] = col;
+			g_dpixels[(y << 8) + x] = col;
 		}
 	}
 	SDL_UnlockTexture(g_dtexture);

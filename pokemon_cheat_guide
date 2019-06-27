@@ -1,0 +1,158 @@
+================================
+<<<<<<<<<<<<< OBJETS >>>>>>>>>>>
+================================
+
+version verte:
+	0xd2a1 -> objets dans l'inventaire
+	0xd4b9 -> objets dans l'ordinateur
+
+version rouge:
+	0xd322 -> objets dans l'inventaire
+	0xd53f -> objets dans l'ordinateur
+
+	[nombre d'objets dans l'inventaire]
+	([numero objet], [quantite]), ...
+	[0xff] (fin)
+
+
+liste des objets:
+{
+	0x00 -> rien
+	0x01 -> masterball
+	0x02 -> hyperball
+	0x03 -> superball
+	0x04 -> pokeball
+	0x05 -> carte de la region
+	0x06 -> velo
+	0x07 -> ?????
+	0x08 -> safariball
+	0x09 -> pokedex
+	0x0a -> pierre lune
+	0x0b -> antidote
+	0x0c -> anti-brulure
+	0x0d -> anti-gele
+	0x0e -> reveil
+	0x0f -> anti-paralysie
+	0x10 -> guerison ?
+	0x11 -> mantan ? super guerison ?
+	0x12 -> mega-potion
+	0x13 -> super-potion
+	0x14 -> potion
+
+	0x15 -> badge gris
+	0x16 -> badge bleu
+	0x17 -> badge orange
+	0x18 -> badge arc-en-ciel
+	0x19 -> badge rose
+	0x1a -> badge or
+	0x1b -> badge cramoisi
+	0x1c -> badge vert
+
+	0x1d -> corde sortie
+	0x1e -> repousse
+	0x1f -> ambre secrete ?
+	0x20 -> pierre feu
+	0x21 -> pierre foudre
+	0x22 -> pierre eau
+	0x23 -> max up ?
+	0x24 -> taurine ?
+	0x25 -> bromhexine ?
+	0x26 -> indometacine ?
+	0x27 -> lysotium ?
+	0x28 -> super bonbon
+	0x29 -> fossile terre
+	0x2a -> fossile eau
+	0x2b -> cle secrete
+	0x2c -> ?????
+	0x2d -> billet a echanger (velo?)
+	0x2e -> precision+ (en combat)
+	0x2f -> pierre feuille
+	0x30 -> carte badge ?
+	0x31 -> boule en or
+	0x32 -> point up
+	0x33 -> poupee pippi
+	0x34 -> gueri tout
+	0x35 -> ressucite et restaure 50% pv
+	0x36 -> ressucite et restaure 100% pv
+	0x37 -> effect garde ?
+	0x38 -> super repousse
+	0x39 -> mega repousse
+	0x3a -> coup critique+ (en combat)
+	0x3b -> jeton
+	0x3c -> eau
+	0x3d -> soda
+	0x3e -> jus d'orange ?
+	0x3f -> ticket bateau
+	0x40 -> dent en or
+	0x41 -> attaque+ (en combat)
+	0x42 -> defense+ (en combat)
+	0x43 -> vitesse+ (en combat)
+	0x44 -> special+ (en combat)
+	0x45 -> boite jeton
+	0x46 -> colis (pour le prof chen/ookido)
+	0x47 -> cherche objet
+	0x48 -> silth scope
+	0x49 -> pokeflute
+	0x4a -> cle de l'elevateur
+	0x4b -> multiexp
+	0x4c -> canne
+	0x4d -> super canne
+	0x4e -> mega canne
+	0x4f -> pp+
+	0x50 -> pp recover (10)
+	0x51 -> pp recover (max)
+	0x52 -> pp recover (10 toutes les attaques)
+	0x53 -> pp recover (max toutes les attaques)
+
+	0x62 -> badge foudre
+	0x63 -> badge coquillage
+	0x64 - 0x6a -> badges...
+	0x6b -> oeufs (wtf)
+	0x6c -> poussin (WTF)
+	...
+
+	0xc9 -> CT01
+	0xca -> CT02
+	...
+	0xfe -> CT54
+}
+
+
+================================
+<<<<<<<<<<<<< ARGENT >>>>>>>>>>>
+================================
+
+pokemon vert:
+	0xd2cb, 0xd2cc, 0xd2cd
+
+exemple -> 0x22 0x0 0x36 = 220036
+
+
+=================================
+<<<<<<<<<<<<< POKEMON >>>>>>>>>>>
+=================================
+
+pokemon vert:
+	
+	0xd123 -> nombre de pokemons
+	0xd124 -> numero des pokemons (1 octet) + fin (0xff)
+
+	> pokemon 1
+		0xd12b -> numero du pokemon
+		0xd12c -> pv restants
+		0xd133 -> attaque 1
+		0xd134 -> attaque 2
+		0xd135 -> attaque 3
+		0xd136 -> attaque 4
+		0xd137 -> id (3 octets)
+		0xd139 -> total xp (3 octets)
+		0xd148 -> pp attaque 1 (courant + suppl)
+		0xd149 -> pp attaque 2 (courant + suppl)
+		0xd14a -> pp attaque 3 (courant + suppl)
+		0xd14b -> pp attaque 4 (courant + suppl)
+		0xd14d -> pv (2 octets)
+		0xd14c -> niveau
+		0xd14f -> attack (2 octets)
+		0xd151 -> defense (2 octets)
+		0xd153 -> vitesse (2 octets)
+		0xd155 -> special (2 octets)

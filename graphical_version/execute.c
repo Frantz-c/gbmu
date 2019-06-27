@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/06/12 18:09:06 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/25 16:20:23 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/27 15:11:36 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -19,17 +19,8 @@
 #include <unistd.h>
 #include "../disassembler/disassemble_table.c"
 
-
 #define ADD_PC(offset)	regs->reg_pc += (offset)
 #define SET_PC(value)	regs->reg_pc = value
-
-#if (_CPU_LOG == false)
-	#undef dprintf
-	int	dprintf(int fd, const char *fmt, ...)
-	{
-		return (0);
-	}
-#endif
 
 /*
 **	MBC 5
@@ -61,7 +52,8 @@
 	EXTERN_RAM = RAM_BANK[CART_REG[3]];\
 	g_get_real_addr[10] = EXTERN_RAM;\
 	g_get_real_addr[11] = EXTERN_RAM + 0x1000;\
-	dprintf(log_file, "RAM Bank %d selected\n", (int)CART_REG[3]);
+	if (_CPU_LOG == true)\
+		dprintf(log_file, "RAM Bank %d selected\n", (int)CART_REG[3]);
 
 #define ENABLE_EXTERNAL_RAM_MBC5()	\
 	if ((value & 0xf) == 0x0a)\
@@ -70,12 +62,14 @@
 		EXTERN_RAM = RAM_BANK[CUR_RAM];\
 		g_get_real_addr[10] = EXTERN_RAM;\
 		g_get_real_addr[11] = EXTERN_RAM + 0x1000;\
-		dprintf(log_file, "Extern RAM enabled\n");\
+		if (_CPU_LOG == true)\
+			dprintf(log_file, "Extern RAM enabled\n");\
 	}\
 	else\
 	{\
 		g_memmap.cart_reg[0] = 0;\
-		dprintf(log_file, "Extern RAM disabled\n");\
+		if (_CPU_LOG == true)\
+			dprintf(log_file, "Extern RAM disabled\n");\
 		/*EXTERN_RAM = g_memmap.complete_block + 0x2000;*/\
 	}
 
@@ -89,7 +83,8 @@
 		{\
 			CART_REG[1] = 0x1f & (((CART_REG[1] | (CART_REG[2] << 5))) % g_cart.n_rom_banks);\
 			CART_REG[2] = (0x60 & ((CART_REG[1] | (CART_REG[2] << 5)) % g_cart.n_rom_banks)) >> 5;\
-			dprintf(log_file, "ovf --> ");\
+			if (_CPU_LOG == true)\
+				dprintf(log_file, "ovf --> ");\
 		}\
 		if ((CART_REG[1] | (CART_REG[2] << 5)) == 0x20)\
 			SWITCH_ROM = ROM_BANK [0x20];\
@@ -105,7 +100,8 @@
 		g_get_real_addr[5] = SWITCH_ROM + 0x1000;\
 		g_get_real_addr[6] = SWITCH_ROM + 0x2000;\
 		g_get_real_addr[7] = SWITCH_ROM + 0x3000;\
-		dprintf(log_file, "MODE = 0 -> rom bank %u - 1\n", (CART_REG[1] | CART_REG[2] << 5));\
+		if (_CPU_LOG == true)\
+			dprintf(log_file, "MODE = 0 -> rom bank %u - 1\n", (CART_REG[1] | CART_REG[2] << 5));\
 	} while (0)
 
 #define SET_MBC1_MODE_1_ROM_ADDR()	\
@@ -119,7 +115,8 @@
 		g_get_real_addr[5] = SWITCH_ROM + 0x1000;\
 		g_get_real_addr[6] = SWITCH_ROM + 0x2000;\
 		g_get_real_addr[7] = SWITCH_ROM + 0x3000;\
-		dprintf(log_file, "MODE = 1 -> rom bank %d - 1\n", CART_REG[1]);\
+		if (_CPU_LOG == true)\
+			dprintf(log_file, "MODE = 1 -> rom bank %d - 1\n", CART_REG[1]);\
 	} while (0)
 
 #define SET_MBC1_MODE_0_RAM_ADDR()	\
@@ -128,7 +125,8 @@
 		EXTERN_RAM = RAM_BANK[0];\
 		g_get_real_addr[10] = EXTERN_RAM;\
 		g_get_real_addr[11] = EXTERN_RAM + 0x1000;\
-		dprintf(log_file, "MODE = 0 -> ram bank = 0 (1)\n");\
+		if (_CPU_LOG == true)\
+			dprintf(log_file, "MODE = 0 -> ram bank = 0 (1)\n");\
 	} while (0)
 
 #define SET_MBC1_MODE_1_RAM_ADDR()	\
@@ -137,7 +135,8 @@
 		EXTERN_RAM = RAM_BANK [ CART_REG[2] ];\
 		g_get_real_addr[10] = EXTERN_RAM;\
 		g_get_real_addr[11] = EXTERN_RAM + 0x1000;\
-		dprintf(log_file, "MODE = 1 -> ram bank = %u\n", CART_REG[2]);\
+		if (_CPU_LOG == true)\
+			dprintf(log_file, "MODE = 1 -> ram bank = %u\n", CART_REG[2]);\
 	} while (0)
 
 #define	SWITCH_RAM_MBC1()	\
@@ -184,12 +183,14 @@
 		EXTERN_RAM = RAM_BANK [ CART_REG[2] ];\
 		g_get_real_addr[10] = EXTERN_RAM;\
 		g_get_real_addr[11] = EXTERN_RAM + 0x1000;\
-		dprintf(log_file, "enable cartridge ram\n");\
+		if (_CPU_LOG == true)\
+			dprintf(log_file, "enable cartridge ram\n");\
 	}\
 	else\
 	{\
 		CART_REG[0] = 0;\
-		dprintf(log_file, "disable cartridge ram\n");\
+		if (_CPU_LOG == true)\
+			dprintf(log_file, "disable cartridge ram\n");\
 	/*	EXTERN_RAM = g_memmap.complete_block + 0x2000;*/\
 	}
 
@@ -463,10 +464,11 @@ cycle_count_t	execute(registers_t *regs)
 	register uint8_t	imm_8 = address[1];
 	register uint16_t	imm_16 = (uint16_t)address[1] | ((uint16_t)address[2] << 8);
 
-#if (_CPU_LOG == true)
-
-	dprintf(log_file,
-			"\n\n\n\n\nA = %2hhx,    F = %2hhx(%c%c%c%c), B = %2hhx,    C = %2hhx\n"
+	if (_CPU_LOG == true)
+	{
+		/*
+		dprintf(log_file,
+			"\nA = %2hhx,    F = %2hhx(%c%c%c%c), B = %2hhx,    C = %2hhx\n"
 			"D = %2hhx,    E = %2hhx,       H = %2hhx,    L = %2hhx\n"
 			"AF = %4hx, BC = %4hx,    DE = %4hx, HL = %4hx\n"
 			"PC = %4hx, ADDR = %p,   SP = %4hx\n\n"
@@ -496,13 +498,37 @@ cycle_count_t	execute(registers_t *regs)
 			(IE_REGISTER & BIT_2) ? 'T' : '.', (IE_REGISTER & BIT_1) ? 'L' : '.',
 			(IE_REGISTER & BIT_0) ? 'V' : '.',
 			g_memmap.ime ? "enabled" : "disabled");
+*/
+		dprintf(log_file,
+			"\nPC = 0x%x, ADDR = 0x%lx\n"
+			"A = %3u(%2X), B = %3u(%2X)\nC = %3u(%2X), D = %3u(%2X)\n"
+			"E = %3u(%2X), H = %3u(%2X), L = %3u(%2X)\n"
+			"F = %.4s(ZNHC)\n"
+			"AF = %5u(%4X), BC = %5u(%4X), DE = %5u(%4X), HL = %5u(%4X)\n"
+			"SP = %4X,\n"
+			"P1 = %s, LCDC = %s, STAT = %s,\n"
+			"SCX = %hhu, SCY = %hhu, LY = %hhu, LYC = %hhu,\n"
+			"BGP = %s, OBP0 = %s, OBP1 = %s, WX = %hhu, WY = %hhu,\n"
+			"DIV = 0x%hhx, TIMA = 0x%hhx, TMA = 0x%hhx, TAC = %s,\n"
+			"IF = %s, IE = %s, IME = %u,\n"
+			"SVBK = %s, VBK = %s, DMA = 0x%hhx\n\n\t",
+			regs->reg_pc, (unsigned long)address,
+			regs->reg_a, regs->reg_a, regs->reg_b, regs->reg_b, regs->reg_c, regs->reg_c, regs->reg_d, regs->reg_d,
+			regs->reg_e, regs->reg_e, regs->reg_h, regs->reg_h, regs->reg_l, regs->reg_l, get_bin(regs->reg_f), 
+			regs->reg_af, regs->reg_af, regs->reg_bc, regs->reg_bc, regs->reg_de, regs->reg_de, regs->reg_hl, regs->reg_hl,
+			regs->reg_sp, get_bin(P1_REGISTER), get_bin(LCDC_REGISTER), get_bin(STAT_REGISTER),
+			SCX_REGISTER, SCY_REGISTER, LY_REGISTER, LYC_REGISTER,
+			get_bin(BGP_REGISTER), get_bin(OBP0_REGISTER), get_bin(OBP1_REGISTER), WX_REGISTER, WY_REGISTER,
+			DIV_REGISTER, TIMA_REGISTER, TMA_REGISTER, get_bin(TAC_REGISTER),
+			get_bin(IF_REGISTER), get_bin(IE_REGISTER), IME_REGISTER,
+			get_bin(SVBK_REGISTER), get_bin(VBK_REGISTER), DMA_REGISTER
+		);
 
-	if (opcode == 0xcb)
-		plog(cb_opcodes[address[1]].inst);
-	else
-		plog(fmt_strcpy(opcodes[opcode].inst, opcodes[opcode].optype, address + 1));
-
-#endif
+		if (opcode == 0xcb)
+			plog(cb_opcodes[address[1]].inst);
+		else
+			plog(fmt_strcpy(opcodes[opcode].inst, opcodes[opcode].optype, address + 1));
+	}
 
 	goto *instruction_jumps[opcode];
 
@@ -4803,9 +4829,11 @@ mbc1_0:
 mbc1_1:
 	plog("\nmbc1_1:\n\n");
 	/* 5 bits register */
-	dprintf(log_file, "value = %d\n", (int)value);
+	if (_CPU_LOG == true)
+		dprintf(log_file, "value = %d\n", (int)value);
 	CART_REG[1] = (value & 0x1f);
-	dprintf(log_file, "cart_reg[1] = %d\n", (int)CART_REG[1]);
+	if (_CPU_LOG == true)
+		dprintf(log_file, "cart_reg[1] = %d\n", (int)CART_REG[1]);
 	SWITCH_ROM_MBC1();
 	return (cycles);
 

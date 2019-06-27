@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/23 11:44:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/27 14:36:12 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/27 15:04:20 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -21,8 +21,7 @@
 # include "ram_registers.h"
 # include "debug_tools.h"
 
-bool	_REG_DUMP	= false
-bool	_CPU_LOG	= false
+#define	_REG_DUMP		false
 
 enum	e_cartridge_types
 {
@@ -158,11 +157,10 @@ typedef struct	memory_map_s
 }
 memory_map_t;
 
-
-uint8_t					*g_get_real_addr[16];
-//uint8_t			*g_get_real_write_addr[16] = {NULL};
-memory_map_t			g_memmap;
-uint32_t				GAMEBOY;
+extern bool				_CPU_LOG;
+extern uint8_t			*g_get_real_addr[16];
+extern memory_map_t		g_memmap;
+extern uint32_t			GAMEBOY;
 extern cartridge_t		g_cart;
 
 # define GET_REAL_ADDR(virtual_addr)	\

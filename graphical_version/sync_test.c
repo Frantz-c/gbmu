@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/30 09:02:45 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/27 14:37:00 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/27 22:29:17 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -30,12 +30,14 @@
 #include "registers.h"
 #include "execute.h"
 
-#define TILE_TEST	(uint8_t*)"\x22\xc1\xff\xff\x48\x30\x24\x18\x00\xff\xff\xff\x0a\x04\x05\x02"
-cartridge_t		g_cart;
 
+bool			_CPU_LOG = false;
 uint8_t			*g_get_real_addr[16] = {NULL};
 memory_map_t	g_memmap;
 uint32_t		GAMEBOY = NORMAL_MODE;
+cartridge_t		g_cart;
+
+#define TILE_TEST	(uint8_t*)"\x22\xc1\xff\xff\x48\x30\x24\x18\x00\xff\xff\xff\x0a\x04\x05\x02"
 
 /*
  * add STOP_MODE & HALT_MODE to execute.c
@@ -624,7 +626,7 @@ int				my_event_filter(void *userdata __attribute__((unused)), SDL_Event *ev)
 void			check_if_events(cycle_count_t cycles)
 {
 	static cycle_count_t	ev_cycles = 0;
-	static uint8_t			p1_last = 0xCFu;
+	static uint8_t			p1_last = 0xFFu;
 
 	if (p1_last != P1_REGISTER)
 	{
@@ -701,6 +703,19 @@ void			check_if_events(cycle_count_t cycles)
 		{
 			if (ev.type == SDL_QUIT || (ev.type == SDL_KEYDOWN && ev.key.keysym.sym == SDLK_ESCAPE))
 				quit_program();
+			if (ev.type == SDL_KEYDOWN && ev.key.keysym.sym == SDLK_l)
+			{
+				if (_CPU_LOG == true)
+				{
+					write (1, "CPU_LOG_DISABLE\n", 16);
+					_CPU_LOG = false;
+				}
+				else
+				{
+					write (1, "CPU_LOG_ENABLE\n", 15);
+					_CPU_LOG = true;
+				}
+			}
 		}
 	}
 }
@@ -797,10 +812,8 @@ static void		start_cpu_lcd_events(void)
 		if (GAMEBOY == NORMAL_MODE)
 		{
 
-#if (_CPU_LOG == true)
-
-			dprintf(log_file, "Instruction nº %lu\n", tinsns);
-#endif
+			if (_CPU_LOG == true)
+				dprintf(log_file, "\n\n\nInstruction nº %lu", tinsns);
 
 			cycles = execute(&registers);
 		}
@@ -808,6 +821,8 @@ static void		start_cpu_lcd_events(void)
 			cycles = 4;
 		tinsns++;
 		elapsed_cycles += cycles;
+
+		P1_REGISTER |= 0xc0U;
 
 #if (_REG_DUMP == true)
 
@@ -1021,23 +1036,71 @@ static inline unsigned int		atoi_hexa(char **s)
 	return (ft_strtoi(s));
 }
 
+static void		write_dump_switchable_mem_fd(int fd, void *start, unsigned int length, char *buf, const char *title)
+{
+	unsigned int	j;
+	uint8_t			*ptr;
+
+	ptr = GET_REAL_ADDR((uint16_t)start);
+	memcpy(buf, title, (j = strlen(title)));
+	for (uint8_t *ptr_end = ptr + length; ptr != ptr_end; start++, ptr++)
+	{
+		if (((uint16_t)start & 0xf) == 0)
+			j += sprintf(buf + j, "\n%p:  ", start);
+		j += sprintf(buf + j, "%4hhx ", *ptr);
+		if (j >= 0xfff0)
+		{
+			write(fd, buf, j);
+			j = 0;
+		}
+	}
+	if (j)
+		write(fd, buf, j);
+}
+
+static void		write_dump_fd(int fd, void *start, unsigned int length, char *buf, const char *title)
+{
+	unsigned int	j;
+
+	memcpy(buf, title, (j = strlen(title)));
+	for (void *end = start + length; start != end; start++)
+	{
+		if (((uint16_t)start & 0xf) == 0)
+			j += sprintf(buf + j, "\n%p:  ", start);
+		j += sprintf(buf + j, "%4hhx ", *GET_REAL_ADDR((uint16_t)start));
+		if (j >= 0xfff0)
+		{
+			write(fd, buf, j);
+			j = 0;
+		}
+	}
+	if (j)
+		write(fd, buf, j);
+}
+
 /*
  *	commandes : 
  *		get 0xaddr\n
  *		set 0xaddr=0xvalue\n
  *		dump 0xstart-0xend
+<<<<<<< HEAD
+=======
+ *		fdump filename
+>>>>>>> ce65a35440f43c7cc688cb3ec9ab12c621defe9e
  *
 */
 void	*cheat_input(void *unused)
 {
-	char			buf[512];
-	char			buf2[32];
+	char			buf[512] = {0};
+	char			hist[512] = {0};
+	char			buf2[32] = {0};
 	char			*p;
 	unsigned int	i = 0;
 	char			chr;
 	unsigned short	addr;
 	unsigned short	addr2;
 	unsigned char	value;
+	unsigned int	tmp;
 
 	(void)unused;
 	term_noecho_mode(1);
@@ -1045,21 +1108,55 @@ void	*cheat_input(void *unused)
 	{
 __read:
 		read(0, &chr, 1);
+
+		if (*buf)
+			write(1, "\e[512D\e[2K", 10);
+
 		if (chr == 127) {
-			buf[i--] = 0;
-			goto __read;
+			if (i > 0) {
+				i--;
+				buf[i] = 0;
+			}
 		}
-		write(1, &chr, 1);
-		if (chr == '\n')
+		else {
+			buf[i++] = chr;
+			buf[i] = 0;
+		}
+		if (*buf)
+			write(1, buf, strlen(buf));
+		if (chr == 127)
+			goto __read;
+		else if (chr == '\n')
 		{
-			buf[i] = '\0';
-			i = 0;
+			buf[i - 1] = '\0';
 			if (strcmp(buf, "exit") == 0)
 			{
 				term_noecho_mode(0);
 				close_log_file_and_exit(0);
 			}
-			if (strncmp(buf, "set ", 4) == 0)
+			if (strncmp(buf, "rset ", 5) == 0)
+			{
+				p = buf + 5;
+				addr = (unsigned short)atoi_hexa(&p);
+				while (*p == ' ') p++;
+				if (*p != '=')
+					puts("\n\e[0;31msyntax error\e[0m");
+				else
+				{
+				__next_set:
+					p++;
+					while (*p == ' ') p++;
+					value = atoi_hexa(&p);
+
+					*(GET_REAL_ADDR(addr)) = value;
+					addr++;
+					
+					while (*p == ' ') p++;
+					if (*p == ',')
+						goto __next_set;
+				}
+			}
+			else if (strncmp(buf, "set ", 4) == 0)
 			{
 				p = buf + 4;
 				addr = (unsigned short)atoi_hexa(&p);
@@ -1071,8 +1168,8 @@ __read:
 					p++;
 					while (*p == ' ') p++;
 					value = atoi_hexa(&p);
+					*(GET_REAL_ADDR(addr)) = value;
 				}
-				*(GET_REAL_ADDR(addr)) = value;
 			}
 			else if (strncmp(buf, "get ", 4) == 0)
 			{
@@ -1100,33 +1197,70 @@ __read:
 					addr2 = (unsigned short)atoi_hexa(&p);
 					for (; addr < addr2; addr++)
 					{
-						if ((addr & 0xf) == 0)
-							write(1, "\n", 1);
+						if ((addr & 0xf) == 0) {
+							tmp = sprintf(buf2, "\n%p:  ", (void*)((unsigned long)addr));
+							write(1, buf2, tmp);
+						}
 						sprintf(buf2, "%#5hhx ", *(GET_REAL_ADDR(addr)));
 						write(1, buf2, strlen(buf2));
 					}
 					write(1, "\n", 1);
 				}
 			}
-		}
-		else
-		{
-			buf[i++] = chr;
+			else if (strncmp(buf, "fdump ", 6) == 0)
+			{
+				int				fd;
+				char			*mem;
+
+				p = buf + 6;
+				if (*p != '\0')
+				{
+					p = buf + 6;
+					fd = open(p, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+					if (fd > 0)
+					{
+						mem = malloc(0x10000);
+						write_dump_switchable_mem_fd(fd, (void*)0xa000, g_memmap.save_size, mem, "==> EXTERNAL RAM (cartridge: 0xa000)\n\n");
+						write_dump_fd(fd, (void*)0xc000, 0x2000, mem, "\n\n\n==> UNIT WORKING RAM (gameboy: 0xc000)\n\n");
+						write_dump_fd(fd, (void*)0xff80, 0x7f, mem, "\n\n\n==> WORKING & STACK RAM (gameboy: 0xff80)\n\n");
+						write_dump_fd(fd, (void*)0xfe00, 0xa0, mem, "\n\n\n==> OAM (gameboy: 0xfe00)\n\n");
+						write_dump_fd(fd, (void*)0x8000, 0x2000, mem, "\n\n\n==> VRAM (cartridge: 0x8000)\n\n");
+						free(mem);
+						close(fd);
+					}
+				}
+			}
+			else if (*buf == '\0')
+			{
+				strcpy(buf, hist);
+				i = strlen(buf);
+				write(1, "\e[300D\e[2K", 10);
+				write(1, buf, i);
+				goto __read;
+			}
+			else
+			{
+				write(1, "syntax error\n", 13);
+			}
+			strcpy(hist, buf);
+			buf[i = 0] = '\0';
 		}
 	}
 	term_noecho_mode(0);
 }
 
+
+
 int		main(int argc, char *argv[])
 {
 	pthread_t	cheat;
 
-	if (argc != 2)
+	if (argc != 2 && argc != 3)
 	{
 		fprintf(stderr, "%s \"cartridge path\"\n", argv[0]);
 		return (1);
 	}
-
+	
 	signal(SIGINT, close_log_file_and_exit);
 	signal(SIGSEGV, close_log_file_and_exit);
 	signal(SIGFPE, close_log_file_and_exit);
@@ -1137,6 +1271,8 @@ int		main(int argc, char *argv[])
 	open_log_file();
 
 	open_cartridge(argv[1]);
+	if (argc == 3)
+		_CPU_LOG = (strcmp(argv[2], "--log") == 0) ? true : false;
 	pthread_create(&cheat, NULL, cheat_input, NULL);
 	start_game();
 

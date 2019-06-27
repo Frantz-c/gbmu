@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/29 17:38:18 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/25 14:25:00 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/27 14:42:21 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -416,7 +416,7 @@ static void	load_cartridge(uint8_t *mem, cartridge_t *cart, const char *path)
 		case 0x10:
 		case 0x13:
 		case 0x1b:
-		case 0x1e: load_saved_external_ram(cart, path);
+		case 0x1e:	load_saved_external_ram(cart, path);
 	}
 	g_memmap.cur_extern_ram = 0;
 }
