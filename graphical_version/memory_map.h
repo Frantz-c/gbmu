@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/23 11:44:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/25 11:50:25 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/27 14:36:12 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -21,61 +21,8 @@
 # include "ram_registers.h"
 # include "debug_tools.h"
 
-# define _REG_DUMP	false
-# define _CPU_LOG	false
-
-/*
-		memory_map_t	memmap;
-
-		uint8_t	*g_get_real_addr[16] = {
-			memmap.fixed_rom,				//0x0
-			memmap.fixed_rom + 0x1000,		//0x1
-			memmap.fixed_rom + 0x2000,		//0x2
-			memmap.fixed_rom + 0x3000,		//0x3
-			memmap.switch_rom,				//0x4
-			memmap.switch_rom + 0x1000,		//0x5
-			memmap.switch_rom + 0x2000,		//0x6
-			memmap.switch_rom + 0x3000,		//0x7
-			memmap.vram,					//0x8
-			memmap.vram + 0x1000,			//0x9
-			memmap.extern_ram,				//0xa
-			memmap.extern_ram + 0x1000,		//0xb
-			memmap.fixed_ram,				//0xc
-			memmap.switch_ram,				//0xd
-			NULL,
-			NULL
-		};
-
-		uint8_t	*g_get_real_write_addr[16] = {
-			NULL,							//0x0
-			NULL,							//0x1
-			NULL,							//0x2
-			NULL,							//0x3
-			NULL,							//0x4
-			NULL,							//0x5
-			NULL,							//0x6
-			NULL,							//0x7
-			memmap.vram,					//0x8
-			memmap.vram + 0x1000,			//0x9
-			memmap.extern_ram,				//0xa
-			memmap.extern_ram + 0x1000,		//0xb
-			memmap.fixed_ram,				//0xc
-			memmap.switch_ram,				//0xd
-			NULL,
-			NULL
-		};
-
-
-		exemple:
-```````````````````````````````````````````````````````````````````````````
-			// acces a l'adresse 0x7e04 -> (memmap.switch_rom)
-
-			uint8_t		*virtual_addr = 0x7e04;
-			uint8_t		*real_addr;
-
-			real_addr = GET_REAL_READ_ADDR(virtual_addr);
-````````````````````````````````````````````````````````````````````````````
-*/
+bool	_REG_DUMP	= false
+bool	_CPU_LOG	= false
 
 enum	e_cartridge_types
 {
@@ -206,17 +153,17 @@ typedef struct	memory_map_s
 
 	uint8_t		cart_reg[8];	// cartridge registers
 	char		*save_name;		// saved game file name
-	uint32_t	mbc;			// mbc number (0 == ROM_ONLY)
 	uint32_t	save_size;		// size of ram
 	unsigned long	cpu_speed;
 }
 memory_map_t;
 
 
-uint8_t			*g_get_real_addr[16];
+uint8_t					*g_get_real_addr[16];
 //uint8_t			*g_get_real_write_addr[16] = {NULL};
-memory_map_t	g_memmap;
-uint32_t		GAMEBOY;
+memory_map_t			g_memmap;
+uint32_t				GAMEBOY;
+extern cartridge_t		g_cart;
 
 # define GET_REAL_ADDR(virtual_addr)	\
 		 (\
@@ -230,9 +177,9 @@ uint32_t		GAMEBOY;
 			{\
 				cycles = (_cycles);\
 				value = (_value); \
-				goto *jump_to_mbcx[g_memmap.mbc][(virtual_addr) >> 12];\
+				goto *jump_to_mbcx[g_cart.mbc][(virtual_addr) >> 12];\
 			}\
-			else if (g_memmap.cart_reg[0] != 0x0a && (virtual_addr) >= 0xa000 && (virtual_addr) < 0xc000)\
+			else if (g_memmap.cart_reg[0] == 0 && (virtual_addr) >= 0xa000 && (virtual_addr) < 0xc000)\
 			{\
 				return (_cycles);\
 			}\

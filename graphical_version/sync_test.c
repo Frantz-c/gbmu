@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/30 09:02:45 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/25 11:31:59 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/27 14:37:00 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -98,7 +98,8 @@ static void		close_log_file(void)
 
 extern void		plog(const char *s)
 {
-	write(log_file, s, strlen(s));
+	if (_CPU_LOG == true)
+		write(log_file, s, strlen(s));
 }
 
 void			load_oam(oam_t *oam)
@@ -936,7 +937,8 @@ static void		start_game(void)
 
 static void		close_log_file_and_exit(int sig)
 {
-	close(log_file);
+	close_log_file();
+	save_external_ram();
 	if (sig == SIGSEGV)
 		puts("SEGFAULT... log_gbmul saved");
 	else if (sig == SIGFPE)
@@ -948,8 +950,177 @@ static void		close_log_file_and_exit(int sig)
 	exit(1);
 }
 
+static int		term_noecho_mode(int stat)
+{
+	static int				mode = -1;
+	static struct termios	default_mode;
+	static struct termios	noecho_mode;
+
+	if (mode == -1)
+	{
+		if (tcgetattr(0, &default_mode) == -1)
+			return (-1);
+		noecho_mode = default_mode;
+		noecho_mode.c_lflag &= ~(ECHO | ICANON);
+		noecho_mode.c_cc[VMIN] = 1;
+		noecho_mode.c_cc[VTIME] = 5;
+		mode = 0;
+	}
+	if (mode == stat)
+		return (0);
+	if (stat == 1)
+		return (tcsetattr(0, TCSANOW, &noecho_mode));
+	if (stat == 0)
+		return (tcsetattr(0, TCSANOW, &default_mode));
+	return (-1);
+}
+
+static inline char		*left_trim(char *s)
+{
+	while (*s == ' ' || *s == '\t')
+		s++;
+	if (*s == '0' && s[1] == 'x')
+	{
+		s += 2;
+		while (*s == '0')
+			s++;
+		return (s);
+	}
+	return (NULL);
+}
+
+static unsigned int				get_base_value(char c)
+{
+	if (c >= 'a' && c <= 'f')
+		return (c - ('a' - 10));
+	if (c >= 'A' && c <= 'F')
+		return (c - ('a' - 10));
+	return (c - '0');
+}
+
+static inline unsigned int		ft_strtoi(char **s)
+{
+	unsigned int	n;
+
+	n = 0;
+	while (1)
+	{
+		if (**s > 'f' || (**s > 'F' && **s < 'a')
+				|| (**s > '9' && **s < 'A') || **s < '0')
+			break ;
+		n *= 16;
+		n += get_base_value(*((*s)++));
+	}
+	return (n);
+}
+
+static inline unsigned int		atoi_hexa(char **s)
+{
+	if ((*s = left_trim(*s)) == NULL)
+		return (0);
+	return (ft_strtoi(s));
+}
+
+/*
+ *	commandes : 
+ *		get 0xaddr\n
+ *		set 0xaddr=0xvalue\n
+ *		dump 0xstart-0xend
+ *
+*/
+void	*cheat_input(void *unused)
+{
+	char			buf[512];
+	char			buf2[32];
+	char			*p;
+	unsigned int	i = 0;
+	char			chr;
+	unsigned short	addr;
+	unsigned short	addr2;
+	unsigned char	value;
+
+	(void)unused;
+	term_noecho_mode(1);
+	for (;;)
+	{
+__read:
+		read(0, &chr, 1);
+		if (chr == 127) {
+			buf[i--] = 0;
+			goto __read;
+		}
+		write(1, &chr, 1);
+		if (chr == '\n')
+		{
+			buf[i] = '\0';
+			i = 0;
+			if (strcmp(buf, "exit") == 0)
+			{
+				term_noecho_mode(0);
+				close_log_file_and_exit(0);
+			}
+			if (strncmp(buf, "set ", 4) == 0)
+			{
+				p = buf + 4;
+				addr = (unsigned short)atoi_hexa(&p);
+				while (*p == ' ') p++;
+				if (*p != '=')
+					puts("\n\e[0;31msyntax error\e[0m");
+				else
+				{
+					p++;
+					while (*p == ' ') p++;
+					value = atoi_hexa(&p);
+				}
+				*(GET_REAL_ADDR(addr)) = value;
+			}
+			else if (strncmp(buf, "get ", 4) == 0)
+			{
+				p = buf + 4;
+				addr = (unsigned short)atoi_hexa(&p);
+				while (*p == ' ') p++;
+				if (*p != '\0')
+					puts("\n\e[0;31msyntax error\e[0m");
+				else
+				{
+					printf("--> %hhu (%hhi:0x%hhx)\n", *(GET_REAL_ADDR(addr)), *(GET_REAL_ADDR(addr)), *(GET_REAL_ADDR(addr)));
+				}
+			}
+			else if (strncmp(buf, "dump ", 5) == 0)
+			{
+				p = buf + 5;
+				addr = (unsigned short)atoi_hexa(&p);
+				while (*p == ' ') p++;
+				if (*p != '-')
+					puts("\n\e[0;31msyntax error\e[0m");
+				else
+				{
+					p++;
+					while (*p == ' ') p++;
+					addr2 = (unsigned short)atoi_hexa(&p);
+					for (; addr < addr2; addr++)
+					{
+						if ((addr & 0xf) == 0)
+							write(1, "\n", 1);
+						sprintf(buf2, "%#5hhx ", *(GET_REAL_ADDR(addr)));
+						write(1, buf2, strlen(buf2));
+					}
+					write(1, "\n", 1);
+				}
+			}
+		}
+		else
+		{
+			buf[i++] = chr;
+		}
+	}
+	term_noecho_mode(0);
+}
+
 int		main(int argc, char *argv[])
 {
+	pthread_t	cheat;
+
 	if (argc != 2)
 	{
 		fprintf(stderr, "%s \"cartridge path\"\n", argv[0]);
@@ -966,6 +1137,7 @@ int		main(int argc, char *argv[])
 	open_log_file();
 
 	open_cartridge(argv[1]);
+	pthread_create(&cheat, NULL, cheat_input, NULL);
 	start_game();
 
 	return (0);
