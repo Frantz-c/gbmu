@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/30 09:02:45 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/27 22:29:17 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/06/29 00:30:08 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -954,6 +954,7 @@ static void		close_log_file_and_exit(int sig)
 {
 	close_log_file();
 	save_external_ram();
+	write(1, "\e[?25h", 6);
 	if (sig == SIGSEGV)
 		puts("SEGFAULT... log_gbmul saved");
 	else if (sig == SIGFPE)
@@ -990,18 +991,33 @@ static int		term_noecho_mode(int stat)
 	return (-1);
 }
 
-static inline char		*left_trim(char *s)
+static inline char		*left_trim(char *s, int *type)
 {
 	while (*s == ' ' || *s == '\t')
 		s++;
-	if (*s == '0' && s[1] == 'x')
+	if (*s == '0')
 	{
-		s += 2;
+		if (s[1] == 'x')
+		{
+			*type = 2;
+			s += 2;
+			while (*s == '0')
+				s++;
+			return (s);
+		}
+		*type = 1;
+		s++;
 		while (*s == '0')
 			s++;
 		return (s);
 	}
-	return (NULL);
+	else
+	{
+		*type = 0;
+	}
+	if (*s < '0' || *s > '9')
+		return (NULL);
+	return (s);
 }
 
 static unsigned int				get_base_value(char c)
@@ -1013,27 +1029,61 @@ static unsigned int				get_base_value(char c)
 	return (c - '0');
 }
 
-static inline unsigned int		ft_strtoi(char **s)
+static inline unsigned int		ft_strtoi(char **s, int type)
 {
 	unsigned int	n;
 
 	n = 0;
-	while (1)
+	if (type == 0)
 	{
-		if (**s > 'f' || (**s > 'F' && **s < 'a')
-				|| (**s > '9' && **s < 'A') || **s < '0')
-			break ;
-		n *= 16;
-		n += get_base_value(*((*s)++));
+		while (1)
+		{
+			if (**s < '0' || **s > '9')
+				break ;
+			n *= 10;
+			n += **s - '0';
+			(*s)++;
+		}
+	}
+	else if (type == 1)
+	{
+		while (1)
+		{
+			if (**s < '0' || **s > '6')
+				break ;
+			n *= 8;
+			n += **s - '0';
+			(*s)++;
+		}
+	}
+	else
+	{
+		while (1)
+		{
+			if (**s > 'f' || (**s > 'F' && **s < 'a')
+					|| (**s > '9' && **s < 'A') || **s < '0')
+				break ;
+			n *= 16;
+			n += get_base_value(**s);
+			(*s)++;
+		}
 	}
 	return (n);
 }
 
-static inline unsigned int		atoi_hexa(char **s)
+static inline unsigned int		atoi_hexa(char **s, int *err)
 {
-	if ((*s = left_trim(*s)) == NULL)
+	int	type; // 0 = base 10, 1 = octal, 2 = hexa
+
+	if ((*s = left_trim(*s, &type)) == NULL)
+	{
+		if (err)
+			*err = 1;
 		return (0);
-	return (ft_strtoi(s));
+	}
+	if (err)
+		*err = 0;
+	return (ft_strtoi(s, type));
 }
 
 static void		write_dump_switchable_mem_fd(int fd, void *start, unsigned int length, char *buf, const char *title)
@@ -1078,16 +1128,189 @@ static void		write_dump_fd(int fd, void *start, unsigned int length, char *buf, 
 		write(fd, buf, j);
 }
 
+int		parse_n_u32_u32_u32_u32(char *p, uint32_t *z, uint32_t *a, uint32_t *b, uint32_t *c, uint32_t *d)
+{
+	int	err;
+
+	if (*p != '(')
+	{
+		write(1, "syntax error\n", 13);
+		return (-1);
+	}
+	p++;
+
+	*z = atoi_hexa(&p, &err);
+	if (err) return (-1);
+
+	while (*p == ' ') p++;
+	if (*p != ',')
+	{
+		write(1, "syntax error\n", 13);
+		return (-1);
+	}
+	p++;
+	while (*p == ' ') p++;
+
+	*a = atoi_hexa(&p, &err);
+	if (err) return (-1);
+
+	while (*p == ' ') p++;
+	if (*p != ',')
+	{
+		write(1, "syntax error\n", 13);
+		return (-1);
+	}
+	p++;
+	while (*p == ' ') p++;
+
+	*b = atoi_hexa(&p, &err);
+	if (err) return (-1);
+
+	while (*p == ' ') p++;
+	if (*p != ',')
+	{
+		write(1, "syntax error\n", 13);
+		return (-1);
+	}
+	p++;
+
+	*c = atoi_hexa(&p, &err);
+	if (err) return (-1);
+
+	while (*p == ' ') p++;
+	if (*p != ',')
+	{
+		write(1, "syntax error\n", 13);
+		return (-1);
+	}
+	p++;
+	while (*p == ' ') p++;
+
+	*d = atoi_hexa(&p, &err);
+	if (err) return (-1);
+
+	return (0);
+}
+
+int		parse_u32_u32(char *p, uint32_t *a, uint32_t *b)
+{
+	int	err;
+
+	if (*p != '(')
+	{
+		write(1, "syntax error\n", 13);
+		return (-1);
+	}
+	p++;
+
+	*a = atoi_hexa(&p, &err);
+	if (err) return (-1);
+
+	while (*p == ' ') p++;
+	if (*p != ',')
+	{
+		write(1, "syntax error\n", 13);
+		return (-1);
+	}
+	p++;
+	while (*p == ' ') p++;
+
+	*b = atoi_hexa(&p, &err);
+	if (err) return (-1);
+
+	return (0);
+}
+
+int		parse_n_u32_u32(char *p, unsigned int *a, unsigned int *b, unsigned int *c)
+{
+	int	err;
+
+	if (*p != '(')
+	{
+		write(1, "syntax error\n", 13);
+		return (-1);
+	}
+	p++;
+
+	*a = atoi_hexa(&p, &err);
+	if (err) return (-1);
+
+	while (*p == ' ') p++;
+	if (*p != ',')
+	{
+		write(1, "syntax error\n", 13);
+		return (-1);
+	}
+	p++;
+	while (*p == ' ') p++;
+
+	*b = atoi_hexa(&p, &err);
+	if (err) return (-1);
+
+	while (*p == ' ') p++;
+	if (*p != ',')
+	{
+		write(1, "syntax error\n", 13);
+		return (-1);
+	}
+	p++;
+	while (*p == ' ') p++;
+
+	*c = atoi_hexa(&p, &err);
+	if (err) return (-1);
+
+	return (0);
+}
+
+int		parse_n_u32(char *p, unsigned int *a, unsigned int *b)
+{
+	int	err;
+
+	if (*p != '(')
+	{
+		write(1, "syntax error\n", 13);
+		return (-1);
+	}
+	p++;
+
+	*a = atoi_hexa(&p, &err);
+	if (err) return (-1);
+
+	if (*p != ',')
+	{
+		write(1, "syntax error\n", 13);
+		return (-1);
+	}
+	p++;
+	while (*p == ' ') p++;
+
+	*b = atoi_hexa(&p, &err);
+	if (err) return (-1);
+
+	return (0);
+}
+
+enum pkmn_offset_e
+{
+	HEAD,NO,CHP,ATT1,ATT2,ATT3,ATT4,ID,XP,PP1,
+	PP2,PP3,PP4,LVL,HP,ATT,DEF,VIT,SPE,NAME,
+	OBJ,OBJ_PC,CASH
+};
+
+#define PKMN_RB		0x1
+#define PKMN_GRE	0x2
+
+# define K_UP			0x415b1b
+# define K_DOWN			0x425b1b
+# define K_LEFT			0x445b1b
+# define K_RIGHT		0x435b1b
+
 /*
  *	commandes : 
  *		get 0xaddr\n
  *		set 0xaddr=0xvalue\n
  *		dump 0xstart-0xend
-<<<<<<< HEAD
-=======
  *		fdump filename
->>>>>>> ce65a35440f43c7cc688cb3ec9ab12c621defe9e
- *
 */
 void	*cheat_input(void *unused)
 {
@@ -1096,39 +1319,163 @@ void	*cheat_input(void *unused)
 	char			buf2[32] = {0};
 	char			*p;
 	unsigned int	i = 0;
-	char			chr;
+	unsigned int	j = 0;
+	unsigned long	chr;
 	unsigned short	addr;
 	unsigned short	addr2;
 	unsigned char	value;
 	unsigned int	tmp;
+	unsigned char	*ptr;
+	unsigned int	pkmn;
+	int				err;
+	uint16_t		pkmn_addr[23] = {0};
+
+	write(2, "\e[?25l", 6);
+
+	if (strncmp(g_cart.game_title, "POKEMON RED", 11) == 0
+			|| strncmp(g_cart.game_title, "POKEMON BLU", 11) == 0)
+	{
+		pkmn = PKMN_RB;
+		pkmn_addr[HEAD] = 0xd168U;
+		pkmn_addr[NO] = 0xd170U;
+		pkmn_addr[CHP] = 0xd171U;
+		pkmn_addr[ATT1] = 0xd178U;
+		pkmn_addr[ATT2] = 0xd179U;
+		pkmn_addr[ATT3] = 0xd17aU;
+		pkmn_addr[ATT4] = 0xd17bU;
+		pkmn_addr[ID] = 0xd17cU;
+		pkmn_addr[XP] = 0xd184U;
+		pkmn_addr[PP1] = 0xd18dU;
+		pkmn_addr[PP2] = 0xd18eU;
+		pkmn_addr[PP3] = 0xd18fU;
+		pkmn_addr[PP4] = 0xd190U;
+		pkmn_addr[LVL] = 0xd191U;
+		pkmn_addr[HP] = 0xd192U;
+		pkmn_addr[ATT] = 0xd194U;
+		pkmn_addr[DEF] = 0xd196U;
+		pkmn_addr[VIT] = 0xd198U;
+		pkmn_addr[SPE] = 0xd19aU;
+		pkmn_addr[NAME] = 0xd2baU;
+		pkmn_addr[OBJ] = 0xd322U;
+		pkmn_addr[OBJ_PC] = 0xd53fU;
+		pkmn_addr[CASH] = 0xd34dU;
+
+	}
+	else if (strncmp(g_cart.game_title, "POKEMON GRE", 11) == 0)
+	{
+		pkmn = PKMN_GRE;
+		pkmn_addr[HEAD] = 0xd123U;
+		pkmn_addr[NO] = 0xd12bU;
+		pkmn_addr[CHP] = 0xd12cU;
+		pkmn_addr[ATT1] = 0xd133U;
+		pkmn_addr[ATT2] = 0xd134U;
+		pkmn_addr[ATT3] = 0xd135U;
+		pkmn_addr[ATT4] = 0xd136U;
+		pkmn_addr[ID] = 0xd137U;
+		pkmn_addr[XP] = 0xd140U;
+		pkmn_addr[PP1] = 0xd148U;
+		pkmn_addr[PP2] = 0xd149U;
+		pkmn_addr[PP3] = 0xd14aU;
+		pkmn_addr[PP4] = 0xd14bU;
+		pkmn_addr[LVL] = 0xd14cU;
+		pkmn_addr[HP] = 0xd14dU;
+		pkmn_addr[ATT] = 0xd14fU;
+		pkmn_addr[DEF] = 0xd151U;
+		pkmn_addr[VIT] = 0xd153U;
+		pkmn_addr[SPE] = 0xd155U;
+		pkmn_addr[NAME] = 0xd200U; //?????
+		pkmn_addr[OBJ] = 0xd2a1U;
+		pkmn_addr[OBJ_PC] = 0xd4b9U;
+		pkmn_addr[CASH] = 0xd2cbU;
+
+	}
+	else
+		pkmn = 0;
 
 	(void)unused;
 	term_noecho_mode(1);
+	write(1, "\e[0;41m \e[0m", 12);
 	for (;;)
 	{
 __read:
-		read(0, &chr, 1);
+		chr = 0x0UL;
+		read(0, &chr, sizeof(unsigned long));
 
 		if (*buf)
-			write(1, "\e[512D\e[2K", 10);
+			write(2, "\e[512D\e[2K", 10);
 
-		if (chr == 127) {
+		if (chr == 127)
+		{
+			if (i > 0)
+			{
+				if (i == j) {
+					i--;
+					buf[i] = 0;
+				}
+				else
+				{
+					i--;
+					memmove(buf + i, buf + i + 1, (j - i) + 0);
+				}
+				j--;
+			}
+			else
+				goto __read;
+		}
+		else if (chr == K_LEFT)
+		{
 			if (i > 0) {
 				i--;
-				buf[i] = 0;
 			}
 		}
-		else {
-			buf[i++] = chr;
-			buf[i] = 0;
+		else if (chr == K_RIGHT)
+		{
+			if (i < j) {
+				i++;
+			}
 		}
+		else
+		{
+			if (i == j)
+			{
+				buf[i++] = (uint8_t)chr;
+				buf[i] = 0;
+				j++;
+			}
+			else
+			{
+				memmove(buf + i + 1, buf + i, (j - i) + 1);
+				j++;
+				buf[i++] = (uint8_t)chr;
+			}
+		}
+__print:
 		if (*buf)
-			write(1, buf, strlen(buf));
-		if (chr == 127)
+		{
+			write(1, "\e[0m", 4);
+			write(1, buf, i);
+			write(1, "\e[0;41m", 7);
+
+			if (buf[i] == 0)
+				write(1, " ", 1);
+			else
+				write(1, buf + i, 1);
+
+			write(1, "\e[0m", 4);
+			if (j > i)
+				write(1, buf + i + 1, j - i);
+		}
+		else
+		{
+			write(1, "\e[0;41m \e[0m", 12);
+		}
+
+		if (chr == 127 || chr == K_LEFT || chr == K_RIGHT)
 			goto __read;
+
 		else if (chr == '\n')
 		{
-			buf[i - 1] = '\0';
+			buf[j - 1] = '\0';
 			if (strcmp(buf, "exit") == 0)
 			{
 				term_noecho_mode(0);
@@ -1137,7 +1484,11 @@ __read:
 			if (strncmp(buf, "rset ", 5) == 0)
 			{
 				p = buf + 5;
-				addr = (unsigned short)atoi_hexa(&p);
+				addr = (unsigned short)atoi_hexa(&p, &err);
+				if (err) {
+					puts("\n\e[0;31msyntax error\e[0m");
+					goto __forest_end;
+				}
 				while (*p == ' ') p++;
 				if (*p != '=')
 					puts("\n\e[0;31msyntax error\e[0m");
@@ -1146,7 +1497,11 @@ __read:
 				__next_set:
 					p++;
 					while (*p == ' ') p++;
-					value = atoi_hexa(&p);
+					value = atoi_hexa(&p, &err);
+					if (err) {
+						puts("\n\e[0;31msyntax error\e[0m");
+						goto __forest_end;
+					}
 
 					*(GET_REAL_ADDR(addr)) = value;
 					addr++;
@@ -1159,7 +1514,11 @@ __read:
 			else if (strncmp(buf, "set ", 4) == 0)
 			{
 				p = buf + 4;
-				addr = (unsigned short)atoi_hexa(&p);
+				addr = (unsigned short)atoi_hexa(&p, &err);
+				if (err) {
+					puts("\n\e[0;31msyntax error\e[0m");
+					goto __forest_end;
+				}
 				while (*p == ' ') p++;
 				if (*p != '=')
 					puts("\n\e[0;31msyntax error\e[0m");
@@ -1167,14 +1526,22 @@ __read:
 				{
 					p++;
 					while (*p == ' ') p++;
-					value = atoi_hexa(&p);
+					value = atoi_hexa(&p, &err);
+					if (err) {
+						puts("\n\e[0;31msyntax error\e[0m");
+						goto __forest_end;
+					}
 					*(GET_REAL_ADDR(addr)) = value;
 				}
 			}
 			else if (strncmp(buf, "get ", 4) == 0)
 			{
 				p = buf + 4;
-				addr = (unsigned short)atoi_hexa(&p);
+				addr = (unsigned short)atoi_hexa(&p, &err);
+				if (err) {
+					puts("\n\e[0;31msyntax error\e[0m");
+					goto __forest_end;
+				}
 				while (*p == ' ') p++;
 				if (*p != '\0')
 					puts("\n\e[0;31msyntax error\e[0m");
@@ -1186,7 +1553,11 @@ __read:
 			else if (strncmp(buf, "dump ", 5) == 0)
 			{
 				p = buf + 5;
-				addr = (unsigned short)atoi_hexa(&p);
+				addr = (unsigned short)atoi_hexa(&p, &err);
+				if (err) {
+					puts("\n\e[0;31msyntax error\e[0m");
+					goto __forest_end;
+				}
 				while (*p == ' ') p++;
 				if (*p != '-')
 					puts("\n\e[0;31msyntax error\e[0m");
@@ -1194,7 +1565,11 @@ __read:
 				{
 					p++;
 					while (*p == ' ') p++;
-					addr2 = (unsigned short)atoi_hexa(&p);
+					addr2 = (unsigned short)atoi_hexa(&p, &err);
+					if (err) {
+						puts("\n\e[0;31msyntax error\e[0m");
+						goto __forest_end;
+					}
 					for (; addr < addr2; addr++)
 					{
 						if ((addr & 0xf) == 0) {
@@ -1234,19 +1609,421 @@ __read:
 			{
 				strcpy(buf, hist);
 				i = strlen(buf);
+				j = i;
 				write(1, "\e[300D\e[2K", 10);
-				write(1, buf, i);
-				goto __read;
+				chr = 127UL;
+				goto __print;
+			}
+			else if (strcmp(buf, "help") == 0)
+			{
+				#define HELP	"memory functions:\n"\
+								"    set	0xaddr=0xvalue\n"\
+								"    get	0xaddr\n"\
+								"    rset	0xaddr=0xvalue,...\n"\
+								"    dump	0xstart-0xend\n"\
+								"    fdump	filename\n\n"\
+								"pokemon functions:\n"\
+								"    num(n, numero);\n"\
+								"    pv(n, max, cur);\n"\
+								"    att1(n, numero, pp);\n"\
+								"    att2(n, numero, pp);\n"\
+								"    att3(n, numero, pp);\n"\
+								"    att4(n, numero, pp);\n"\
+								"    id(n, 2bytes id);\n"\
+								"    xp(n, 3bytes xp);\n"\
+								"    lvl(n, lvl);\n"\
+								"    att(n, 2bytes for);\n"\
+								"    def(n, 2bytes def);\n"\
+								"    vit(n, 2bytes vit);\n"\
+								"    spe(n, 2bytes spe);\n"\
+								"    name(n, string name);\n"\
+								"    update();\n"\
+								"    del(n);\n"\
+								"    push(object, quantity);\n"\
+								"    pop();\n"\
+								"    stat(for, def, vit, spe);\n"\
+								"    cash(2bytes cash); [red/blue]\n"\
+								"    cash(3bytes cash); [green]\n\n"
+
+				write(1, HELP, strlen(HELP));
+			}
+/*
+ *	POKEMON ROUGE, BLEU, VERT
+ */
+			else if (pkmn)
+			{
+				p = buf;
+
+				if (strncmp(p, "num", 3) == 0)
+				{
+					unsigned int	val;
+					unsigned int	offset;
+
+					if (parse_n_u32(p + 3, &offset, &val) == -1)
+						goto __forest_end;
+
+					offset = (offset - 1) * 44;
+					*GET_REAL_ADDR(pkmn_addr[NO] + offset) = (uint8_t)(val & 0xffu);
+				}
+				else if (strncmp(p, "pv", 2) == 0)
+				{
+					unsigned int	val1;
+					unsigned int	val2;
+					unsigned int	offset;
+
+					if (parse_n_u32_u32(p + 2, &offset, &val1, &val2) == -1)
+						goto __forest_end;
+
+					offset = (offset - 1) * 44;
+
+					*GET_REAL_ADDR(pkmn_addr[HP] + offset) = (uint8_t)((val1 & 0xff00) >> 8);
+					*GET_REAL_ADDR(pkmn_addr[HP] + 1 + offset) = (uint8_t)(val1 & 0xff);
+
+					*GET_REAL_ADDR(pkmn_addr[CHP] + offset) = (uint8_t)((val2 & 0xff00) >> 8);
+					*GET_REAL_ADDR(pkmn_addr[CHP] + 1 + offset) = (uint8_t)(val2 & 0xff);
+				}
+				else if (strncmp(p, "att1", 4) == 0)
+				{
+					unsigned int	val1;
+					unsigned int	val2;
+					unsigned int	offset;
+
+					if (parse_n_u32_u32(p + 4, &offset, &val1, &val2) == -1)
+						goto __forest_end;
+
+					offset = (offset - 1) * 44;
+					*GET_REAL_ADDR(pkmn_addr[ATT1] + offset) = (uint8_t)(val1 & 0xff);
+					*GET_REAL_ADDR(pkmn_addr[PP1]  + offset) = (uint8_t)(val2 & 0xff);
+				}
+				else if (strncmp(p, "att2", 4) == 0)
+				{
+					unsigned int	val1;
+					unsigned int	val2;
+					unsigned int	offset;
+
+					if (parse_n_u32_u32(p + 4, &offset, &val1, &val2) == -1)
+						goto __forest_end;
+
+					offset = (offset - 1) * 44;
+					*GET_REAL_ADDR(pkmn_addr[ATT2] + offset) = (uint8_t)(val1);
+					*GET_REAL_ADDR(pkmn_addr[PP2]  + offset) = (uint8_t)(val2);
+				}
+				else if (strncmp(p, "att3", 4) == 0)
+				{
+					unsigned int	val1;
+					unsigned int	val2;
+					unsigned int	offset;
+
+					if (parse_n_u32_u32(p + 4, &offset, &val1, &val2) == -1)
+						goto __forest_end;
+
+					offset = (offset - 1) * 44;
+					*GET_REAL_ADDR(pkmn_addr[ATT3] + offset) = (uint8_t)(val1);
+					*GET_REAL_ADDR(pkmn_addr[PP3]  + offset) = (uint8_t)(val2);
+				}
+				else if (strncmp(p, "att4", 4) == 0)
+				{
+					unsigned int	val1;
+					unsigned int	val2;
+					unsigned int	offset;
+
+					if (parse_n_u32_u32(p + 4, &offset, &val1, &val2) == -1)
+						goto __forest_end;
+
+					offset = (offset - 1) * 44;
+					*GET_REAL_ADDR(pkmn_addr[ATT4] + offset) = (uint8_t)(val1);
+					*GET_REAL_ADDR(pkmn_addr[PP4] + offset) = (uint8_t)(val2);
+				}
+				else if (strncmp(p, "id", 2) == 0)
+				{
+					unsigned int	offset;
+					unsigned int	val;
+
+					if (parse_n_u32(p + 2, &offset, &val) == -1)
+						goto __forest_end;
+
+					offset = (offset - 1) * 44;
+					*GET_REAL_ADDR(pkmn_addr[ID] + offset) = (uint8_t)((val & 0xff00) >> 8);
+					*GET_REAL_ADDR(pkmn_addr[ID] + 1 + offset) = (uint8_t)(val & 0xff);
+				}
+				else if (strncmp(p, "xp", 2) == 0)
+				{
+					unsigned int	offset;
+					unsigned int	val;
+
+					if (parse_n_u32(p + 2, &offset, &val) == -1)
+						goto __forest_end;
+
+					offset = (offset - 1) * 44;
+					*GET_REAL_ADDR(pkmn_addr[XP] + offset) = (uint8_t)((val & 0xff0000) >> 16);
+					*GET_REAL_ADDR(pkmn_addr[XP] + 1 + offset) = (uint8_t)((val & 0xff00) >> 8);
+					*GET_REAL_ADDR(pkmn_addr[XP] + 2 + offset) = (uint8_t)(val & 0xff);
+				}
+				else if (strncmp(p, "lvl", 3) == 0)
+				{
+					unsigned int	offset;
+					unsigned int	val;
+
+					if (parse_n_u32(p + 3, &offset, &val) == -1)
+						goto __forest_end;
+
+					offset = (offset - 1) * 44;
+					*GET_REAL_ADDR(pkmn_addr[LVL] + offset) = (uint8_t)(val);
+				}
+				else if (strncmp(p, "att", 3) == 0)
+				{
+					unsigned int	offset;
+					unsigned int	val;
+
+					if (parse_n_u32(p + 3, &offset, &val) == -1)
+						goto __forest_end;
+
+					offset = (offset - 1) * 44;
+					*GET_REAL_ADDR(pkmn_addr[ATT] + offset) = ((val & 0xff00u) >> 8);
+					*GET_REAL_ADDR(pkmn_addr[ATT] + 1 + offset) = (val & 0xff);
+				}
+				else if (strncmp(p, "def", 3) == 0)
+				{
+					unsigned int	offset;
+					unsigned int	val;
+
+					if (parse_n_u32(p + 3, &offset, &val) == -1)
+						goto __forest_end;
+
+					offset = (offset - 1) * 44;
+					*GET_REAL_ADDR(pkmn_addr[DEF] + offset) = (uint8_t)((val & 0xff00) >> 8);
+					*GET_REAL_ADDR(pkmn_addr[DEF] + 1 + offset) = (uint8_t)(val & 0xff);
+				}
+				else if (strncmp(p, "vit", 3) == 0)
+				{
+					unsigned int	offset;
+					unsigned int	val;
+
+					if (parse_n_u32(p + 3, &offset, &val) == -1)
+						goto __forest_end;
+
+					offset = (offset - 1) * 44;
+					*GET_REAL_ADDR(pkmn_addr[VIT] + offset) = (uint8_t)((val & 0xff00) >> 8);
+					*GET_REAL_ADDR(pkmn_addr[VIT] + 1 + offset) = (uint8_t)(val & 0xff);
+				}
+				else if (strncmp(p, "spe", 3) == 0)
+				{
+					unsigned int	offset;
+					unsigned int	val;
+
+					if (parse_n_u32(p + 3, &offset, &val) == -1)
+						goto __forest_end;
+
+					offset = (offset - 1) * 44;
+					*GET_REAL_ADDR(pkmn_addr[SPE] + offset) = (uint8_t)((val & 0xff00) >> 8);
+					*GET_REAL_ADDR(pkmn_addr[SPE] + 1 + offset) = (uint8_t)(val & 0xff);
+				}
+				else if (strncmp(p, "name", 4) == 0)
+				{
+					int count = 0;
+					p += 4;
+
+					if (*p != '(')
+					{
+						write(1, "syntax error\n", 13);
+						goto __forest_end;
+					}
+					p++;
+
+					int offset = (*(p++) - '1') * 11;
+
+					while (*p == ' ') p++;
+					if (*p != ',')
+					{
+						write(1, "syntax error\n", 13);
+						goto __forest_end;
+					}
+					p++;
+					while (*p == ' ') p++;
+
+					ptr = (uint8_t*)GET_REAL_ADDR(pkmn_addr[NAME] + offset);
+					while (*p != ')')
+					{
+						if (count == 11 || *p > 'z' || *p < 'a')
+							break ;
+						*(ptr++) = (uint8_t)((*p - 'a') + 0x80);
+						p++;
+						count++;
+					}
+					while (count != 11)
+					{
+						*(ptr++) = 0x50;
+						count++;
+					}
+				}
+				else if (strncmp(p, "del", 3) == 0)
+				{
+					uint8_t	*end;
+
+					p += 3;
+					if (*p != '(')
+					{
+						write(1, "syntax error\n", 13);
+						goto __forest_end;
+					}
+					p++;
+
+					int num		= *(p++) - '1';
+					int offset	= num * 44;
+					int offset2 = num * 11;
+
+					ptr = (uint8_t*)GET_REAL_ADDR(pkmn_addr[NO] + offset);
+					end = ptr + 44;
+
+					while (ptr != end)
+						*(ptr++) = 0;
+
+					ptr = (uint8_t*)GET_REAL_ADDR(pkmn_addr[NAME] + offset2);
+					end = ptr + 11;
+
+					while (ptr != end)
+						*(ptr++) = 0;
+
+					ptr = (uint8_t*)GET_REAL_ADDR(pkmn_addr[HEAD]);
+					value = *ptr;
+					*ptr = value - 1;
+					ptr += 1 + num;
+					memmove(ptr, ptr + 1, 7 - num);
+				}
+				else if (strncmp(p, "update", 6) == 0)
+				{
+					int			loop = 6;
+					int			count = 0;
+					uint8_t		*ptr2;
+
+					p += 6;
+					if (*p != '(' || p[1] != ')')
+					{
+						write(1, "syntax error\n", 13);
+						goto __forest_end;
+					}
+
+					ptr2 = (uint8_t*)GET_REAL_ADDR(pkmn_addr[HEAD] + 1);
+					ptr = (uint8_t*)GET_REAL_ADDR(pkmn_addr[NO]);
+					for (; loop; loop--, ptr += 44, ptr2++)
+					{
+						if (*ptr)
+						{
+							*ptr2 = *ptr;
+							count++;
+						}
+						else
+							break;
+					}
+					*ptr2 = 0xffu;
+					*GET_REAL_ADDR(pkmn_addr[HEAD]) = (uint8_t)count;
+				}
+				else if (strncmp(p, "pop", 3) == 0)
+				{
+					p += 3;
+					uint8_t		*ptr;
+
+					if (*p != '(')
+					{
+						write(1, "syntax error\n", 13);
+						goto __forest_end;
+					}
+					p++;
+
+					ptr = GET_REAL_ADDR(pkmn_addr[OBJ]);
+					unsigned int offset = *ptr;
+					if (offset == 0)
+						goto __forest_end;
+					offset--;
+					*ptr = offset;
+					ptr += 3 + offset * 2;
+					*(--ptr) = 0x0;
+					*(--ptr) = 0xffu;
+				}
+				else if (strncmp(p, "push", 4) == 0)
+				{
+					unsigned int	offset;
+					unsigned int	object = 0;
+					unsigned int	quantity = 1;
+					uint8_t			*ptr;
+
+					parse_u32_u32(p + 4, &object, &quantity);
+
+					ptr = GET_REAL_ADDR(pkmn_addr[OBJ]);
+					offset = *ptr;
+					offset++;
+					*ptr = offset;
+					ptr += 1 + ((offset * 2) - 2);
+
+					*(ptr++) = (uint8_t)object;
+					*(ptr++) = (uint8_t)quantity;
+					*ptr = 0xffu;
+				}
+				else if (strncmp(p, "stat", 4) == 0)
+				{
+					unsigned int	att;
+					unsigned int	def;
+					unsigned int	vit;
+					unsigned int	spe;
+					unsigned int	offset;
+
+					if (parse_n_u32_u32_u32_u32(p + 4, &offset, &att, &def, &vit, &spe) == -1)
+						goto __forest_end;
+
+					offset = ((offset - 1) * 44);
+					*GET_REAL_ADDR(pkmn_addr[ATT] + offset) = (uint8_t)((att & 0xff00) >> 8);
+					*GET_REAL_ADDR(pkmn_addr[ATT] + 1 + offset) = (uint8_t)(att & 0xff);
+					*GET_REAL_ADDR(pkmn_addr[DEF] + offset) = (uint8_t)((def & 0xff00) >> 8);
+					*GET_REAL_ADDR(pkmn_addr[DEF] + 1 + offset) = (uint8_t)(def & 0xff);
+					*GET_REAL_ADDR(pkmn_addr[VIT] + offset) = (uint8_t)((vit & 0xff00) >> 8);
+					*GET_REAL_ADDR(pkmn_addr[VIT] + 1 + offset) = (uint8_t)(vit & 0xff);
+					*GET_REAL_ADDR(pkmn_addr[SPE] + offset) = (uint8_t)((spe & 0xff00) >> 8);
+					*GET_REAL_ADDR(pkmn_addr[SPE] + 1 + offset) = (uint8_t)(spe & 0xff);
+				}
+				else if (strncmp(p, "cash", 4) == 0)
+				{
+					p += 4;
+					unsigned int cash = 0;
+
+					if (*p != '(')
+					{
+						write(1, "syntax error\n", 13);
+						goto __forest_end;
+					}
+					p++;
+
+					cash = atoi_hexa(&p, &err);
+					if (err)
+					{
+						write(1, "syntax error\n", 13);
+						goto __forest_end;
+					}
+
+					if (pkmn == PKMN_GRE)
+					{
+						*GET_REAL_ADDR(pkmn_addr[CASH]) = (uint8_t)((cash & 0xffff00) >> 16);
+						*GET_REAL_ADDR(pkmn_addr[CASH] + 1) = (uint8_t)((cash & 0xff00) >> 8);
+						*GET_REAL_ADDR(pkmn_addr[CASH] + 2) = (uint8_t)(cash & 0xff);
+					}
+					else
+					{
+						*GET_REAL_ADDR(pkmn_addr[CASH]) = (uint8_t)((cash & 0xff00) >> 8);
+						*GET_REAL_ADDR(pkmn_addr[CASH] + 1) = (uint8_t)(cash & 0xff);
+					}
+				}
+				else
+					write(1, "syntax error\n", 13);
 			}
 			else
-			{
 				write(1, "syntax error\n", 13);
-			}
+__forest_end:
 			strcpy(hist, buf);
-			buf[i = 0] = '\0';
+			buf[j = 0] = '\0';
+			i = 0;
 		}
 	}
 	term_noecho_mode(0);
+	write(2, "\e[?25h", 6);
 }
 
 

@@ -170,14 +170,14 @@ pokemon rouge:
 		0xd171 -> pv restants (2 octets)
 		0xd178 -> attaque 1
 		0xd179 -> attaque 2
-		0xd18a -> attaque 3
-		0xd18b -> attaque 4
-		0xd17b -> id (3 octets)
-		0xd17e -> total xp (3 octets)
+		0xd17a -> attaque 3
+		0xd17b -> attaque 4
+		0xd17c -> id (3 octets)
+		0xd184 -> total xp (3 octets)
 		0xd18d -> pp attaque 1 (courant + suppl)
-		0xd187 -> pp attaque 2 (courant + suppl)
-		0xd188 -> pp attaque 3 (courant + suppl)
-		0xd189 -> pp attaque 4 (courant + suppl)
+		0xd18e -> pp attaque 2 (courant + suppl)
+		0xd18f -> pp attaque 3 (courant + suppl)
+		0xd190 -> pp attaque 4 (courant + suppl)
 		0xd191 -> niveau
 		0xd193 -> pv (2 octets)
 		0xd194 -> attack (2 octets)
@@ -185,17 +185,298 @@ pokemon rouge:
 		0xd198 -> vitesse (2 octets)
 		0xd19a -> special (2 octets)
 
-		0xd2ba -> nom du pokemon (11 octets ?)
+		0xd2ba -> nom du pokemon (11 octets)
+
+	> pokemon 2
+		0xd19c -> numero du pokemon
+		0xd19d -> pv restants (2 octets)
+		0xd1a4 -> attaque 1
+		0xd1a5 -> attaque 2
+		0xd1a6 -> attaque 3
+		0xd1a7 -> attaque 4
+		0xd1a8 -> id (3 octets)
+		0xd1ab -> total xp (3 octets)
+		0xd1b9 -> pp attaque 1 (courant + suppl)
+		0xd1ba -> pp attaque 2 (courant + suppl)
+		0xd1bb -> pp attaque 3 (courant + suppl)
+		0xd1bc -> pp attaque 4 (courant + suppl)
+		0xd1bd -> niveau
+		0xd1be -> pv (2 octets)
+		0xd1be -> attack (2 octets)
+		0xd1c0 -> defense (2 octets)
+		0xd1c2 -> vitesse (2 octets)
+		0xd1c4 -> special (2 octets)
+
+		0xd2c5 -> nom du pokemon (11 octets)
+
+	> pokemon 3
+		0xd1c6 -> numero du pokemon
+		0xd1c7 -> pv restants (2 octets)
+		0xd1ce -> attaque 1
+		0xd1cf -> attaque 2
+		0xd1d0 -> attaque 3
+		0xd1d1 -> attaque 4
+		0xd1d2 -> id (3 octets)
+		0xd1d5 -> total xp (3 octets)
+		0xd1e3 -> pp attaque 1 (courant + suppl)
+		0xd1e4 -> pp attaque 2 (courant + suppl)
+		0xd1e5 -> pp attaque 3 (courant + suppl)
+		0xd1e6 -> pp attaque 4 (courant + suppl)
+		0xd1e7 -> niveau
+		0xd1e8 -> pv (2 octets)
+		0xd1ea -> attack (2 octets)
+		0xd1ec -> defense (2 octets)
+		0xd1ee -> vitesse (2 octets)
+		0xd1f0 -> special (2 octets)
+
+		0xd2d0 -> nom du pokemon (11 octets)
+
+
+
+
+		lettres:
+			0x50 = ' '
+			0x80 = a
+			0x81 = b
+			0x82 = c
+			0x83 = d
+			0x84 = e
+			0x85 = f
+			0x86 = g
+			0x87 = h
+			0x88 = i
+			0x89 = j
+			0x8a = k
+			0x8b = l
+			0x8c = m
+			0x8d = n
+			0x8e = o
+			0x8f = p
+			0x90 = q
+			0x91 = r
+			0x92 = s
+			0x93 = t
+			0x94 = u
+			0x95 = v
+			0x96 = w
+			0x97 = x
+			0x98 = y
+			0x99 = z
 
 
 
 liste des pokemons:
 
-	0xb0 -> salameche
-	0x30 -> soporifique
-	0xb2 -> reptincel
+	0x00
+	0xd1 ->  LA FLEMME !!!!!
+	0xd0 -> *^%&^#%@@ (type #$$, #$@@)
+	0xcf -> @$%^^%#!! (type insecte, poison)
+	0xce -> !@#$@%$%# (type poison)
+	0xcd -> #$%^&(*&$ (type eau, psy)
+	0xcc -> !@#@#@!&^ (type awawawawa, normal)
+	0xcb -> !@#@!@!!@ (type normal, vol)
+	0xca -> @$#$$@$#$ (type normal, normal)
+	0xc9 -> @#@#$#$## (type roche, sol)
+	0xc8 -> !@#!@#@#! (type #!@, @#$#)
+	0xc7 -> $#$#$@@#$ (type normal, normal)
+	0xc6 -> @#!#@!@@! (type eau, combat)
+	0xc5 -> !@#$*@)## (type #$, @!#)
+	0xc4 -> /#a (type normal, normal)
+	0xc3 -> hu (type spectre, poison) // tres joli !
+	0xc2 -> !@#!@#!@# (type #@, #!@#!)
+	0xc1 -> #$@#@!!@# (type normal, normal)
+	0xc0 -> $(*#($*#* (type eau)
+	0xbf -> #($&#(@$& (type !@#!@, @#@#!@)
+	0xbe -> empiflor
+	0xbd -> boustiflor
+	0xbc -> chetiflor
+	0xbb -> rafflesia
+	0xba -> ortide
+	0xb9 -> mystherbe
+	0xb8 -> missingno
+	0xb7 -> missingno
+	0xb6 -> missingno
+	0xb5 -> missingno
 	0xb4 -> dracaufeu
+	0xb3 -> carabaffe
+	0xb2 -> reptincel
+	0xb1 -> carapuce
+	0xb0 -> salameche
+	0xaf -> missingno
+	0xae -> missingno
+	0xad -> magneti
+	0xac -> missingno
+	0xab -> ptera
+	0xaa -> porygon
+	0xa9 -> racaillou
+	0xa8 -> nidorina
+	0xa7 -> nidorino
+	0xa6 -> rattatac
+	0xa5 -> rattata
+	0xa4 -> galopa
+	0xa3 -> ponyta
+	0xa2 -> missingno
+	0xa1 -> missingno
+	0xa0 -> missingno
+	0x9f -> missingno
+	0x9e -> poissoroy
+	0x9d -> poissirene
+	0x9c -> missingno
+	0x9b -> tentacruel
+	0x9a -> florizarre
+	0x99 -> bulbizarre
+	0x98 -> staross
+	0x97 -> roucarnage
+	0x96 -> roucoups
+	0x95 -> alakazam
+	0x94 -> abra
+	0x93 -> spectrum
+	0x92 -> missingno
+	0x91 -> ossatueur
+	0x90 -> persian
+	0x8f -> smogogo
+	0x8e -> melodelfe
+	0x8d -> electrode
+	0x8c -> missingno
+	0x8b -> crustabri
+	0x8a -> krabboss
+	0x89 -> missingno
+	0x88 -> grotadmorv
+	0x87 -> missingno
+	0x86 -> missingno
+	0x85 -> magicarpe
+	0x84 -> ronflex
+	0x83 -> mewtwo
+	0x82 -> nosferalto
+	0x81 -> hypnomade
+	0x80 -> akwakwak
+	0x7f -> missingno
+	0x7e -> macogneur
+	0x7d -> papilusion
+	0x7c -> chrysacier
+	0x7b -> chenipan
+	0x7a -> missingno
+	0x79 -> missingno
+	0x78 -> lamantine
+	0x77 -> aeromite
+	0x76 -> triopikeur
+	0x75 -> colossinge
+	0x74 -> dodrio
+	0x73 -> missingno
+	0x72 -> dardargnan
+	0x71 -> coconfort
+	0x70 -> aspicot
+	0x6f -> tartard
+	0x6e -> tetarte
+	0x6d -> paras
+	0x6c -> abo
+	0x6b -> nosferapti
+	0x6a -> machoc
+	0x69 -> aquali
+	0x68 -> voltali
+	0x67 -> pyroli
+	0x66 -> evoli
+	0x65 -> grodoudou
+	0x64 -> rondoudou
+	0x63 -> amonistar
+	0x62 -> amonita
+	0x61 -> sablaireau
+	0x60 -> sabelette
+	0x5f -> missingno
+	0x5e -> missingno
+	0x5d -> hypocean
+	0x5c -> hypotrempe
+	0x5b -> kabutops
+	0x5a -> kabuto
+	0x59 -> draco
+	0x58 -> minidraco
+	0x57 -> missingno
+	0x56 -> missingno
 	0x55 -> raichuu
+	0x54 -> pikachuu
+	0x53 -> feunard
+	0x52 -> goupix
+	0x51 -> missingno
+	0x50 -> missingno
+	0x4f -> missingno
+	0x4e -> krabby
+	0x4d -> miaouss
+	0x4c -> metamorph
+	0x4b -> electhor
+	0x4a -> artikodin
+	0x49 -> sulfura
+	0x48 -> lippoutou
+	0x47 -> ptitard
+	0x46 -> doduo
+	0x45 -> missingno
+	0x44 -> missingno
+	0x43 -> missingno
+	0x42 -> dracolosse
+	0x41 -> mimitoss
+	0x40 -> canarticho
+	0x3f -> missingno
+	0x3e -> missingno
+	0x3d -> missingno
+	0x3c -> tauros
+	0x3b -> taupiqueur
+	0x3a -> otaria
+	0x39 -> ferosinge
+	0x38 -> missingno
+	0x37 -> smogo
+	0x36 -> magneton
+	0x35 -> elektek
+	0x34 -> missingno
+	0x33 -> magmar
+	0x32 -> missingno
+	0x31 -> grolem
+	0x30 -> soporifik
+	0x2f -> psykokwak
+	0x2e -> parasect
+	0x2d -> arbok
+	0x2c -> tygnon
+	0x2b -> kicklee
+	0x2a -> m.mime
+	0x29 -> machopeur
+	0x28 -> leveinard
+	0x27 -> gravalanch
+	0x26 -> kadabra
+	0x25 -> ramoloss
+	0x24 -> roucool
+	0x23 -> rapasdepic
+	0x22 -> onix
+	0x21 -> caninos
+	0x20 -> missingno
+	0x1f -> missingno
+	0x1e -> saquedeneu
+	0x1d -> scarabrute
+	0x1c -> tortank
+	0x1b -> stari
+	0x1a -> insecateur
+	0x19 -> fantominus
+	0x18 -> tentacool
+	0x17 -> kokiyas
+	0x16 -> leviator
+	0x15 -> mew
+	0x14 -> arcanin
+	0x13 -> lokhlass
+	0x12 -> rhinocorne
+	0x11 -> osselait
+	0x10 -> nidoqueen
+	0x0f -> nidoran femelle
+	0x0e -> ectoplasma
+	0x0d -> tadmorv
+	0x0c -> noeunoeuf
+	0x0b -> excelangue
+	0x0a -> noadkoko
+	0x09 -> herbizarre
+	0x08 -> flagadoss
+	0x07 -> nidoking
+	0x06 -> voltorbe
+	0x05 -> piafabec
+	0x04 -> melofee
+	0x03 -> nidoran male
+	0x02 -> kangourex
+	0x01 -> rhinoferos
 
 liste des attaques:
 	
