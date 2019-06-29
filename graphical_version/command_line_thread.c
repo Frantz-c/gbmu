@@ -553,10 +553,11 @@ extern void		*command_line_thread(void *unused)
 
 	(void)unused;
 	term_noecho_mode(1);
-	write(1, "\e[0;41m \e[0m", 12);
 	for (;;)
 	{
 __read:
+		if (*buf == 0)
+			write(1, "\e[0;41m \e[0m", 12);
 		chr = 0x0UL;
 		read(0, &chr, sizeof(unsigned long));
 
@@ -626,17 +627,20 @@ __read:
 		}
 		else
 		{
-			if (i == j)
+			if (chr != '\n')
 			{
-				buf[i++] = (uint8_t)chr;
-				buf[i] = 0;
-				j++;
-			}
-			else
-			{
-				memmove(buf + i + 1, buf + i, (j - i) + 1);
-				j++;
-				buf[i++] = (uint8_t)chr;
+				if (i == j)
+				{
+					buf[i++] = (uint8_t)chr;
+					buf[i] = 0;
+					j++;
+				}
+				else
+				{
+					memmove(buf + i + 1, buf + i, (j - i) + 1);
+					j++;
+					buf[i++] = (uint8_t)chr;
+				}
 			}
 		}
 __print:
@@ -655,17 +659,19 @@ __print:
 			if (j > i)
 				write(1, buf + i + 1, j - i);
 		}
-		else
-		{
-			write(1, "\e[0;41m \e[0m", 12);
-		}
+//		else
+//		{
+//			write(1, "\e[0;41m \e[0m", 12);
+//		}
 
-		if (chr == 127 || chr == K_LEFT || chr == K_RIGHT)
+		if (chr == 127 || chr == K_LEFT || chr == K_RIGHT || chr == K_UP || chr == K_DOWN)
 			goto __read;
 
 		else if (chr == '\n')
 		{
-			buf[j - 1] = '\0';
+			buf[j] = '\0';
+			write(1, "\e[512C\n", 7);
+
 			if (strcmp(buf, "exit") == 0)
 			{
 				term_noecho_mode(0);
