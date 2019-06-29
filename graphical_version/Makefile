@@ -13,7 +13,7 @@
 
 NAME	:= gbmu_x
 
-OBJECTS	:= execute.o load_cartridge.o sync_test.o debug_tools.o
+OBJECTS	:= execute.o load_cartridge.o sync_test.o debug_tools.o command_line_thread.o
 
 DEPENDS	:= $(patsubst %.o,%.d,$(OBJECTS))
 
