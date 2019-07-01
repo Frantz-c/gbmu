@@ -499,6 +499,7 @@ cycle_count_t	execute(registers_t *regs)
 			(IE_REGISTER & BIT_0) ? 'V' : '.',
 			g_memmap.ime ? "enabled" : "disabled");
 */
+/*
 		dprintf(log_file,
 			"\nPC = 0x%x, ADDR = 0x%lx\n"
 			"A = %3u(%2X), B = %3u(%2X)\nC = %3u(%2X), D = %3u(%2X)\n"
@@ -523,7 +524,7 @@ cycle_count_t	execute(registers_t *regs)
 			get_bin(IF_REGISTER), get_bin(IE_REGISTER), IME_REGISTER,
 			get_bin(SVBK_REGISTER), get_bin(VBK_REGISTER), DMA_REGISTER
 		);
-
+*/
 		if (opcode == 0xcb)
 			plog(cb_opcodes[address[1]].inst);
 		else

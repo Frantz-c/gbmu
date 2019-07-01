@@ -162,6 +162,10 @@ extern uint8_t			*g_get_real_addr[16];
 extern memory_map_t		g_memmap;
 extern uint32_t			GAMEBOY;
 extern cartridge_t		g_cart;
+extern int				g_stop_execution;
+extern bool				_LOG_ENABLE;
+extern bool				_WAIT_JOYPAD;
+extern uint64_t			_N_INST_LOG;
 
 # define GET_REAL_ADDR(virtual_addr)	\
 		 (\

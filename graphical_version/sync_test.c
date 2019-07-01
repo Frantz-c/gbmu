@@ -32,10 +32,15 @@
 #include "command_line_thread.h"
 
 bool			_CPU_LOG = false;
+bool			_LOG_ENABLE = false;
+bool			_WAIT_JOYPAD = false;
+uint64_t		_N_INST_LOG = 0;
 uint8_t			*g_get_real_addr[16] = {NULL};
 memory_map_t	g_memmap;
 uint32_t		GAMEBOY = NORMAL_MODE;
 cartridge_t		g_cart;
+int				log_file;
+int				g_stop_execution = 0;
 
 int pitch;
 
@@ -50,7 +55,6 @@ int pitch;
 #define OAM_VRAM_READ	1
 #define HZ_BLANK		2
 
-int				log_file;
 
 #define OAM_READ_CYCLES			80
 #define OAM_VRAM_READ_CYCLES	192
@@ -705,19 +709,43 @@ void			check_if_events(cycle_count_t cycles)
 		{
 			if (ev.type == SDL_QUIT || (ev.type == SDL_KEYDOWN && ev.key.keysym.sym == SDLK_ESCAPE))
 				quit_program();
-			if (ev.type == SDL_KEYDOWN && ev.key.keysym.sym == SDLK_l)
+			if (ev.type == SDL_KEYDOWN)
 			{
-				if (_CPU_LOG == true)
+				if (ev.key.keysym.sym == SDLK_l)
 				{
-					write (1, "CPU_LOG_DISABLE\n", 16);
-					_CPU_LOG = false;
+					if (_LOG_ENABLE == true)
+					{
+						write (1, "CPU_LOG_DISABLE\n", 16);
+						_LOG_ENABLE = false;
+						_CPU_LOG = false;
+					}
+					else
+					{
+						write (1, "CPU_LOG_ENABLE\n", 15);
+						_LOG_ENABLE = true;
+						_CPU_LOG = true;
+					}
 				}
-				else
+				else if (ev.key.keysym.sym == SDLK_k)
 				{
-					write (1, "CPU_LOG_ENABLE\n", 15);
-					_CPU_LOG = true;
+					if (_LOG_ENABLE == true)
+					{
+						write (1, "CPU_LOG_STOP\n", 13);
+						_LOG_ENABLE = false;
+						_WAIT_JOYPAD = false;
+						_CPU_LOG = false;
+					}
+					else
+					{
+						write (1, "CPU_LOG_JOYPAD_EV_START\n", 24);
+						_LOG_ENABLE = true;
+						_WAIT_JOYPAD = true;
+						_CPU_LOG = false;
+					}
 				}
 			}
+			
+
 			if (ev.type == SDL_WINDOWEVENT
 				&& ev.window.event == SDL_WINDOWEVENT_RESIZED)
 			{
@@ -799,6 +827,7 @@ static void		start_cpu_lcd_events(void)
 	cycle_count_t	tinsns = 0;
 	cycle_count_t	cycles;
 	registers_t		registers;
+	int				start_log = 0;
 
 	registers.reg_sp = 0xFFFEu;
 	registers.reg_pc = 0x100u;
@@ -819,11 +848,47 @@ static void		start_cpu_lcd_events(void)
 
 	while (1)
 	{
+		if (g_stop_execution == 1)
+		{
+			g_stop_execution++;
+			while (g_stop_execution != 0)
+				usleep(1000);
+		}
+
 		if (GAMEBOY == NORMAL_MODE)
 		{
 
-			if (_CPU_LOG == true)
-				dprintf(log_file, "\n\n\nInstruction nº %lu", tinsns);
+			if (_LOG_ENABLE == true)
+			{
+				//dprintf(log_file, "\n\n\nInstruction nº %lu", tinsns);
+				if (_WAIT_JOYPAD == true)
+				{
+					if (start_log)
+					{
+						if ((~P1_REGISTER & 0x30) == 0x20) {
+							start_log = 0;
+							puts("AUTO_LOG_STOP\nCPU_LOG_DISABLE");
+							_CPU_LOG = false;
+							_LOG_ENABLE = false;
+							_WAIT_JOYPAD = false;
+						}
+					}
+					else if ((~P1_REGISTER & 0x30) == 0x20) {
+						start_log = (~P1_REGISTER & 0xf);
+						if (start_log)
+							puts("AUTO_LOG_START");
+						_CPU_LOG = true;
+					}
+				}
+				else if (_N_INST_LOG)
+				{
+					if (--_N_INST_LOG == 0) {
+						_CPU_LOG = false;
+						_LOG_ENABLE = false;
+						puts("LOG_STOPED");
+					}
+				}
+			}
 
 			cycles = execute(&registers);
 		}

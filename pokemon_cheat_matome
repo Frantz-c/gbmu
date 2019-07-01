@@ -1,0 +1,212 @@
+Numeros des attaques:            liste des objets:                                liste des pokemons:                                         
+                                                                                  
+	0x5a:	Abime                	0x00:	rien                                  	0xfe:	...
+	0x97:	Acid'armure          	0x01:	masterball                            	0xd1:	 LA FLEMME !!!!!
+	0x33:	Acide                	0x02:	hyperball                             	0xd0:	*^%&^#%@@ (type #$$, #$@@)
+	0xa0:	Adaptation           	0x03:	superball                             	0xcf:	@$%^^%#!! (type insecte, poison)
+	0x9f:	Affutage             	0x04:	pokeball                              	0xce:	!@#$@%$%# (type poison)
+	0x85:	Amnesie              	0x05:	carte de la region                    	0xcd:	#$%^&(*&$ (type eau, psy)
+	0x6a:	Armure               	0x06:	velo                                  	0xcc:	!@#@#@!&^ (type awawawawa, normal)
+	0x43:	Balayage             	0x08:	safariball                            	0xcb:	!@#@!@!!@ (type normal, vol)
+	0x41:	Bec vrille           	0x09:	pokedex                               	0xca:	@$#$$@$#$ (type normal, normal)
+	0x24:	Belier               	0x0a:	pierre lune                           	0xc9:	@#@#$#$## (type roche, sol)
+	0x2f:	Berceuse             	0x0b:	antidote                              	0xc8:	!@#!@#@#! (type #!@, @#$#)
+	0x3b:	Blizzard             	0x0c:	anti-brulure                          	0xc7:	$#$#$@@#$ (type normal, normal)
+	0x79:	Bomb'oeuf            	0x0d:	anti-gele                             	0xc6:	@#!#@!@@! (type eau, combat)
+	0x70:	Bouclier             	0x0e:	reveil                                	0xc5:	!@#$*@)## (type #$, @!#)
+	0x6f:	Boul'armure          	0x0f:	anti-paralysie                        	0xc4:	/#a (type normal, normal)
+	0x6c:	Brouillard           	0x10:	guerison ?                            	0xc3:	hu (type spectre, poison) // tres joli !
+	0x36:	Brume                	0x11:	mantan ? super guerison ?             	0xc2:	!@#!@#!@# (type #@, #!@#!)
+	0x72:	Buee noire           	0x12:	mega-potion                           	0xc1:	#$@#@!!@# (type normal, normal)
+	0x3d:	Bulles d'O           	0x13:	super-potion                          	0xc0:	$(*#($*#* (type eau)
+	0x56:	Cage-eclair          	0x14:	potion                                	0xbf:	#($&#(@$& (type !@#!@, @#@#!@)
+	0x7f:	Cascade              	0x15:	badge gris                            	0xbe:	empiflor
+	0x21:	Charge               	0x16:	badge bleu                            	0xbd:	boustiflor
+	0x5d:	Choc mental          	0x17:	badge orange                          	0xbc:	chetiflor
+	0x80:	Claquoir             	0x18:	badge arc-en-ciel                     	0xbb:	rafflesia
+	0xa4:	Clonage              	0x19:	badge rose                            	0xba:	ortide
+	0x9a:	Combo-griffe         	0x1a:	badge or                              	0xb9:	mystherbe
+	0x84:	Constriction         	0x1b:	badge cramoisi                        	0xb8:	missingno
+	0x66:	Copie                	0x1c:	badge vert                            	0xb7:	missingno
+	0x82:	Coud'krane           	0x1d:	corde sortie                          	0xb6:	missingno
+	0x1d:	Coup d'boule         	0x1e:	repousse                              	0xb5:	missingno
+	0x0f:	Coupe                	0x1f:	ambre secrete ?                       	0xb4:	dracaufeu
+	0x0d:	Coupe-vent           	0x20:	pierre feu                            	0xb3:	carabaffe
+	0x4a:	Croissance           	0x21:	pierre foudre                         	0xb2:	reptincel
+	0x9e:	Croc de mort         	0x22:	pierre eau                            	0xb1:	carapuce
+	0xa2:	Croc fatal           	0x23:	max up ?                              	0xb0:	salameche
+	0x11:	Cru-aile             	0x24:	taurine ?                             	0xaf:	missingno
+	0x12:	Cyclone              	0x25:	bromhexine ?                          	0xae:	missingno
+	0x26:	Damocles             	0x26:	indometacine ?                        	0xad:	magneti
+	0x50:	Danse-fleur          	0x27:	lysotium ?                            	0xac:	missingno
+	0x0e:	Danse-lames          	0x28:	super bonbon                          	0xab:	ptera
+	0x53:	Danseflamme          	0x29:	fossile terre                         	0xaa:	porygon
+	0x2a:	Dard-nuee            	0x2a:	fossile eau                           	0xa9:	racaillou
+	0x28:	Dard-venin           	0x2b:	cle secrete                           	0xa8:	nidorina
+	0x7e:	Deflagration         	0x2d:	billet a echanger (velo?)             	0xa7:	nidorino
+	0x78:	Destruction          	0x2e:	precision+ (en combat)                	0xa6:	rattatac
+	0x7c:	Detritus             	0x2f:	pierre feuille                        	0xa5:	rattata
+	0x8a:	Devoreve             	0x30:	carte badge ?                         	0xa4:	galopa
+	0x29:	Double-dard          	0x31:	boule en or                           	0xa3:	ponyta
+	0x18:	Double pied          	0x32:	point up                              	0xa2:	missingno
+	0x52:	Draco-rage           	0x33:	poupee pippi                          	0xa1:	missingno
+	0x87:	E-coque              	0x34:	gueri tout                            	0xa0:	missingno
+	0x9d:	Eboulement           	0x35:	ressucite et restaure 50% pv          	0x9f:	missingno
+	0x54:	Eclair               	0x36:	ressucite et restaure 100% pv         	0x9e:	poissoroy
+	0x01:	Ecras'face           	0x37:	effect garde ?                        	0x9d:	poissirene
+	0x17:	Ecrasement           	0x38:	super repousse                        	0x9c:	missingno
+	0x91:	Ecume                	0x39:	mega repousse                         	0x9b:	tentacruel
+	0x20:	Empal'korne          	0x3a:	coup critique+ (en combat)            	0x9a:	florizarre
+	0x32:	Entrave              	0x3b:	jeton                                 	0x99:	bulbizarre
+	0x14:	Etreinte             	0x3c:	eau                                   	0x98:	staross
+	0x99:	Explosion            	0x3d:	soda                                  	0x97:	roucarnage
+	0x57:	Fatal-foudre         	0x3e:	jus d'orange ?                        	0x96:	roucoups
+	0x34:	Flammeche            	0x3f:	ticket bateau                         	0x95:	alakazam
+	0x94:	Flash                	0x40:	dent en or                            	0x94:	abra
+	0x45:	Frappe atlas         	0x41:	attaque+ (en combat)                  	0x93:	spectrum
+	0x46:	Force                	0x42:	defense+ (en combat)                  	0x92:	missingno
+	0x0b:	Force poigne         	0x43:	vitesse+ (en combat)                  	0x91:	ossatueur
+	0x16:	Fouet lianes         	0x44:	special+ (en combat)                  	0x90:	persian
+	0x63:	Frenesie             	0x45:	boite jeton                           	0x8f:	smogogo
+	0x1f:	Furie                	0x46:	colis (pour le prof chen/ookido)      	0x8e:	melodelfe
+	0x8b:	Gaz toxik            	0x47:	cherche objet                         	0x8d:	electrode
+	0x0a:	Griffe               	0x48:	silth scope                           	0x8c:	missingno
+	0x67:	Grincement           	0x49:	pokeflute                             	0x8b:	crustabri
+	0x8e:	Grobisou             	0x4a:	cle de l'elevateur                    	0x8a:	krabboss
+	0x2b:	Groz'yeux            	0x4b:	multiexp                              	0x89:	missingno
+	0x0c:	Guillotine           	0x4c:	canne                                 	0x88:	grotadmorv
+	0x61:	Hate                 	0x4d:	super canne                           	0x87:	missingno
+	0x2e:	Hurlement            	0x4e:	mega canne                            	0x86:	missingno
+	0x38:	Hydrocanon           	0x4f:	pp+                                   	0x85:	magicarpe
+	0x5f:	Hypnose              	0x50:	pp recover (10)                       	0x84:	ronflex
+	0x89:	Intimidation         	0x51:	pp recover (max)                      	0x83:	mewtwo
+	0x06:	Jackpot              	0x52:	pp recover (10 toutes les attaques)   	0x82:	nosferalto
+	0x1c:	Jet de sable         	0x53:	pp recover (max toutes les attaques)  	0x81:	hypnomade
+	0x58:	Jet-pierres          	0x62:	badge foudre                          	0x80:	akwakwak
+	0x1e:	Koud'korne           	0x63:	badge coquillage                      	0x7f:	missingno
+	0x35:	Lance-flamme         	0x64 - 0x6a: badges...                        	0x7e:	macogneur
+	0x4c:	Lance-soleil         	0x6b:	oeufs (wtf)                           	0x7d:	papilusion
+	0x3a:	Laser Glace          	0x6c:	poussin (WTF)                         	0x7c:	chrysacier
+	0x7a:	Lechouille           	0xc9:	CT01                                  	0x7b:	chenipan
+	0x23:	Ligotage             	0xca:	CT02                                  	0x7a:	missingno
+	0x6b:	Lilliput             	...                                           	0x79:	missingno
+	0xa5:	Lutte                	0xfe:	CT54                                  	0x78:	lamantine
+	0x25:	Mania                                                                 	0x77:	aeromite
+	0x1b:	Mawashigeri                                                           	0x76:	triopikeur
+	0x7d:	Massd'os                                                              	0x75:	colossinge
+	0x48:	Mega-sangsue                                                          	0x74:	dodrio
+	0x81:	Meteores                                                              	0x73:	missingno
+	0x76:	Metronome                                                             	0x72:	dardargnan
+	0x27:	Mimi-queue                                                            	0x71:	coconfort
+	0x77:	Mimique                                                               	0x70:	aspicot
+	0x90:	Morphing                                                              	0x6f:	tartard
+	0x2c:	Morsure                                                               	0x6e:	tetarte
+	0x71:	Mur lumiere                                                           	0x6d:	paras
+	0x3e:	Onde boreale                                                          	0x6c:	abo
+	0x6d:	Onde folie                                                            	0x6b:	nosferapti
+	0x9b:	Osmerang                                                              	0x6a:	machoc
+	0x75:	Patience                                                              	0x69:	aquali
+	0x4e:	Para-spore                                                            	0x68:	voltali
+	0x83:	Picanon                                                               	0x67:	pyroli
+	0x40:	Picpic                                                                	0x66:	evoli
+	0x1a:	Pied saute                                                            	0x65:	grodoudou
+	0x88:	Pied voltige                                                          	0x64:	rondoudou
+	0x8c:	Pilonnage                                                             	0x63:	amonistar
+	0x98:	Pince-masse                                                           	0x62:	amonita
+	0x8f:	Pique                                                                 	0x61:	sablaireau
+	0x37:	Pistolet a O                                                          	0x60:	sabelette
+	0x22:	Plaquage                                                              	0x5f:	missingno
+	0x04:	Poing comete                                                          	0x5e:	missingno
+	0x07:	Poing de feu                                                          	0x5d:	hypocean
+	0x09:	Poing-eclair                                                          	0x5c:	hypotrempe
+	0x02:	Poing-karate                                                          	0x5b:	kabutops
+	0x08:	Poinglace                                                             	0x5a:	kabuto
+	0x4f:	Poudre dodo                                                           	0x59:	draco
+	0x4d:	Poudre toxik                                                          	0x58:	minidraco
+	0x73:	Protection                                                            	0x57:	missingno
+	0x5e:	Psyko                                                                 	0x56:	missingno
+	0x74:	Puissance                                                             	0x55:	raichuu
+	0x7b:	Puredpois                                                             	0x54:	pikachuu
+	0x3c:	Rafale psy                                                            	0x53:	feunard
+	0x68:	Reflet                                                                	0x52:	goupix
+	0x6e:	Repli                                                                 	0x51:	missingno
+	0x9c:	Repos                                                                 	0x50:	missingno
+	0x44:	Riposte                                                               	0x4f:	missingno
+	0x2d:	Rugissement                                                           	0x4e:	krabby
+	0x42:	Sacrifice                                                             	0x4d:	miaouss
+	0x51:	Secretion                                                             	0x4c:	metamorph
+	0x59:	Seisme                                                                	0x4b:	electhor
+	0x69:	Soin                                                                  	0x4a:	artikodin
+	0x31:	Sonicboom                                                             	0x49:	sulfura
+	0x15:	Souplesse                                                             	0x48:	lippoutou
+	0x93:	Spore                                                                 	0x47:	ptitard
+	0x39:	Surf                                                                  	0x46:	doduo
+	0x86:	Telekinesie                                                           	0x45:	missingno
+	0x64:	Teleport                                                              	0x44:	missingno
+	0x65:	Tenebres                                                              	0x43:	missingno
+	0x55:	Tonnerre                                                              	0x42:	dracolosse
+	0x03:	Torgnoles                                                             	0x41:	mimitoss
+	0x10:	Tornade                                                               	0x40:	canarticho
+	0x5c:	Toxik                                                                 	0x3f:	missingno
+	0x4b:	Tranch'herbe                                                          	0x3e:	missingno
+	0xa3:	Tranche                                                               	0x3d:	missingno
+	0x96:	Trempette                                                             	0x3c:	tauros
+	0xa1:	Triplattaque                                                          	0x3b:	taupiqueur
+	0x5b:	Tunnel                                                                	0x3a:	otaria
+	0x05:	Ultimapoing                                                           	0x39:	ferosinge
+	0x19:	Ultimawashi                                                           	0x38:	missingno
+	0x3f:	Ultralaser                                                            	0x37:	smogo
+	0x30:	Ultrason                                                              	0x36:	magneton
+	0x92:	Uppercut                                                              	0x35:	elektek
+	0x95:	Vague psy                                                             	0x34:	missingno
+	0x49:	Vampigraine                                                           	0x33:	magmar
+	0x8d:	Vampirisme                                                            	0x32:	missingno
+	0x62:	Vive-attaque                                                          	0x31:	grolem
+	0x13:	Vol                                                                   	0x30:	soporifik
+	0x47:	Vol-vie                                                               	0x2f:	psykokwak
+	0x60:	Yoga                                                                  	0x2e:	parasect
+                                                                                  	0x2d:	arbok
+                                                                                  	0x2c:	tygnon
+                                                                                  	0x2b:	kicklee
+                                                                                  	0x2a:	m.mime
+                                                                                  	0x29:	machopeur
+                                                                                  	0x28:	leveinard
+                                                                                  	0x27:	gravalanch
+                                                                                  	0x26:	kadabra
+                                                                                  	0x25:	ramoloss
+                                                                                  	0x24:	roucool
+                                                                                  	0x23:	rapasdepic
+                                                                                  	0x22:	onix
+                                                                                  	0x21:	caninos
+                                                                                  	0x20:	missingno
+                                                                                  	0x1f:	missingno
+                                                                                  	0x1e:	saquedeneu
+                                                                                  	0x1d:	scarabrute
+                                                                                  	0x1c:	tortank
+                                                                                  	0x1b:	stari
+                                                                                  	0x1a:	insecateur
+                                                                                  	0x19:	fantominus
+                                                                                  	0x18:	tentacool
+                                                                                  	0x17:	kokiyas
+                                                                                  	0x16:	leviator
+                                                                                  	0x15:	mew
+                                                                                  	0x14:	arcanin
+                                                                                  	0x13:	lokhlass
+                                                                                  	0x12:	rhinocorne
+                                                                                  	0x11:	osselait
+                                                                                  	0x10:	nidoqueen
+                                                                                  	0x0f:	nidoran femelle
+                                                                                  	0x0e:	ectoplasma
+                                                                                  	0x0d:	tadmorv
+                                                                                  	0x0c:	noeunoeuf
+                                                                                  	0x0b:	excelangue
+                                                                                  	0x0a:	noadkoko
+                                                                                  	0x09:	herbizarre
+                                                                                  	0x08:	flagadoss
+                                                                                  	0x07:	nidoking
+                                                                                  	0x06:	voltorbe
+                                                                                  	0x05:	piafabec
+                                                                                  	0x04:	melofee
+                                                                                  	0x03:	nidoran male
+                                                                                  	0x02:	kangourex
+                                                                                  	0x01:	rhinoferos

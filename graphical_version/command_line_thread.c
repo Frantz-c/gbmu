@@ -12,13 +12,24 @@
 #include <pthread.h>
 #include <signal.h>
 #include <termios.h>
+#include <stdarg.h>
 #include "memory_map.h"
+#include "test_hash.c"
 /*
 #include "SDL.h"
 #include "test.h"
 #include "registers.h"
 #include "execute.h"
 */
+
+/*
+	prochainement :
+
+	addr pokemon 1 proprietaire = 0xd233
+	0xcf45 -> nom ?
+*/
+
+extern int		log_file;
 
 extern void		close_log_file_and_exit(int sig);
 
@@ -189,201 +200,68 @@ static void		write_dump_fd(int fd, void *start, unsigned int length, char *buf, 
 		write(fd, buf, j);
 }
 
-static int		parse_n_u32_u32_u32_u32(char *p, uint32_t *z, uint32_t *a, uint32_t *b, uint32_t *c, uint32_t *d)
+// 0 < min_arg <= max_arg
+static char		*va_parse_u32(char *p, int min_arg, int max_arg, ...)
 {
-	int	err;
+	uint32_t	*tmp;
+	int			cur = 0;
+	int			err;
+	va_list	ap;
+
+	va_start(ap, max_arg);
 
 	while (*p == ' ') p++;
 	if (*p != '(' && p[-1] != ' ')
-	{
-		write(1, "syntax error\n", 13);
-		return (-1);
-	}
+		goto __error;
 	if (*p == '(') {
 		p++;
 		while (*p == ' ') p++;
 	}
+	cur++;
 
-	*z = atoi_hexa(&p, &err);
-	if (err) return (-1);
+	tmp = va_arg(ap, uint32_t*);
+	*tmp = atoi_hexa(&p, &err);
+	if (err) goto __error;
 
-	while (*p == ' ') p++;
-	if (*p != ',' && p[-1] != ' ')
+	while (cur < max_arg)
 	{
-		write(1, "syntax error\n", 13);
-		return (-1);
-	}
-	if (*p == ',') {
-		p++;
 		while (*p == ' ') p++;
+		if (*p != ',' && p[-1] != ' ')
+		{
+			if (min_arg <= cur && non_alnum(*p))
+			{
+				while (cur < max_arg)
+				{
+					tmp = va_arg(ap, uint32_t*);
+					*tmp = 0xffffffffU;
+					cur++;
+				}
+				while (*p == ' ') p++;
+				return (p);
+			}
+			goto __error;
+		}
+		if (*p == ',') {
+			p++;
+			while (*p == ' ') p++;
+		}
+		cur++;
+
+		tmp = va_arg(ap, uint32_t*);
+		*tmp = atoi_hexa(&p, &err);
+		if (err) goto __error;
 	}
-
-	*a = atoi_hexa(&p, &err);
-	if (err) return (-1);
-
+	va_end(ap);
 	while (*p == ' ') p++;
-	if (*p != ',' && p[-1] != ' ')
-	{
-		write(1, "syntax error\n", 13);
-		return (-1);
-	}
-	if (*p == ',') {
-		p++;
-		while (*p == ' ') p++;
-	}
+	return (p);
 
-	*b = atoi_hexa(&p, &err);
-	if (err) return (-1);
-
-	while (*p == ' ') p++;
-	if (*p != ',' && p[-1] != ' ')
-	{
-		write(1, "syntax error\n", 13);
-		return (-1);
-	}
-	if (*p == ',') {
-		p++;
-		while (*p == ' ') p++;
-	}
-
-	*c = atoi_hexa(&p, &err);
-	if (err) return (-1);
-
-	while (*p == ' ') p++;
-	if (*p != ',' && p[-1] != ' ')
-	{
-		write(1, "syntax error\n", 13);
-		return (-1);
-	}
-	if (*p == ',') {
-		p++;
-		while (*p == ' ') p++;
-	}
-
-	*d = atoi_hexa(&p, &err);
-	if (err) return (-1);
-
-	return (0);
+__error:
+	va_end(ap);
+	write(1, "syntax error\n", 13);
+	return (NULL);
 }
 
-static int		parse_u32_u32(char *p, uint32_t *a, uint32_t *b)
-{
-	int	err;
 
-	while (*p == ' ') p++;
-	if (*p != '(' && p[-1] != ' ')
-	{
-		write(1, "syntax error\n", 13);
-		return (-1);
-	}
-	if (*p == '(') {
-		p++;
-		while (*p == ' ') p++;
-	}
-
-	*a = atoi_hexa(&p, &err);
-	if (err) return (-1);
-
-	while (*p == ' ') p++;
-	if (*p != ',' && p[-1] != ' ')
-	{
-		write(1, "syntax error\n", 13);
-		return (-1);
-	}
-	if (*p == ',') {
-		p++;
-		while (*p == ' ') p++;
-	}
-
-	*b = atoi_hexa(&p, &err);
-	if (err) return (-1);
-
-	return (0);
-}
-
-static int		parse_n_u32_u32(char *p, unsigned int *a, unsigned int *b, unsigned int *c)
-{
-	int	err;
-
-	while (*p == ' ') p++;
-	if (*p != '(' && p[-1] != ' ')
-	{
-		write(1, "syntax error\n", 13);
-		return (-1);
-	}
-	if (*p == '(') {
-		p++;
-		while (*p == ' ') p++;
-	}
-
-	*a = atoi_hexa(&p, &err);
-	if (err) return (-1);
-
-	while (*p == ' ') p++;
-	if (*p != ',' && p[-1] != ' ')
-	{
-		write(1, "syntax error\n", 13);
-		return (-1);
-	}
-	if (*p == ',') {
-		p++;
-		while (*p == ' ') p++;
-	}
-
-	*b = atoi_hexa(&p, &err);
-	if (err) return (-1);
-
-	while (*p == ' ') p++;
-	if (*p != ',' && p[-1] != ' ')
-	{
-		write(1, "syntax error\n", 13);
-		return (-1);
-	}
-	if (*p == ',') {
-		p++;
-		while (*p == ' ') p++;
-	}
-
-	*c = atoi_hexa(&p, &err);
-	if (err) return (-1);
-
-	return (0);
-}
-
-static int		parse_n_u32(char *p, unsigned int *a, unsigned int *b)
-{
-	int	err;
-
-	while (*p == ' ') p++;
-	if (*p != '(' && p[-1] != ' ')
-	{
-		write(1, "syntax error\n", 13);
-		return (-1);
-	}
-	if (*p == '(') {
-		p++;
-		while (*p == ' ') p++;
-	}
-
-	*a = atoi_hexa(&p, &err);
-	if (err) return (-1);
-
-	while (*p == ' ') p++;
-	if (*p != ',' && p[-1] != ' ')
-	{
-		write(1, "syntax error\n", 13);
-		return (-1);
-	}
-	if (*p == ',') {
-		p++;
-		while (*p == ' ') p++;
-	}
-
-	*b = atoi_hexa(&p, &err);
-	if (err) return (-1);
-
-	return (0);
-}
 
 enum pkmn_offset_e
 {
@@ -481,7 +359,7 @@ extern void		*command_line_thread(void *unused)
 	unsigned int	j = 0;
 	unsigned long	chr;
 	unsigned short	addr;
-	unsigned short	addr2;
+//	unsigned short	addr2;
 	unsigned char	value;
 	unsigned int	tmp;
 	unsigned char	*ptr;
@@ -531,7 +409,7 @@ extern void		*command_line_thread(void *unused)
 		pkmn_addr[ATT3] = 0xd135U;
 		pkmn_addr[ATT4] = 0xd136U;
 		pkmn_addr[ID] = 0xd137U;
-		pkmn_addr[XP] = 0xd140U;
+		pkmn_addr[XP] = 0xd139U;
 		pkmn_addr[PP1] = 0xd148U;
 		pkmn_addr[PP2] = 0xd149U;
 		pkmn_addr[PP3] = 0xd14aU;
@@ -542,7 +420,7 @@ extern void		*command_line_thread(void *unused)
 		pkmn_addr[DEF] = 0xd151U;
 		pkmn_addr[VIT] = 0xd153U;
 		pkmn_addr[SPE] = 0xd155U;
-		pkmn_addr[NAME] = 0xd200U; //?????
+		pkmn_addr[NAME] = 0xd257U;
 		pkmn_addr[OBJ] = 0xd2a1U;
 		pkmn_addr[OBJ_PC] = 0xd4b9U;
 		pkmn_addr[CASH] = 0xd2cbU;
@@ -664,6 +542,7 @@ __print:
 //			write(1, "\e[0;41m \e[0m", 12);
 //		}
 
+
 		if (chr == 127 || chr == K_LEFT || chr == K_RIGHT || chr == K_UP || chr == K_DOWN)
 			goto __read;
 
@@ -677,61 +556,10 @@ __print:
 				term_noecho_mode(0);
 				close_log_file_and_exit(0);
 			}
-			if (strncmp(buf, "rset", 4) == 0 && non_alnum(p[4]))
+			if (strncmp(buf, "rset", 4) == 0 && non_alnum(buf[4]))
 			{
 				p = buf + 4;
 				
-				while (*p == ' ') p++;
-				if (*p != '(' && p[-1] != ' ')
-				{
-					puts("\n\e[0;31msyntax error\n\e[0m");
-					goto __forest_end;
-				}
-				if (*p == '(') {
-					p++;
-					while (*p == ' ') p++;
-				}
-
-				addr = (unsigned short)atoi_hexa(&p, &err);
-				if (err) {
-					puts("\n\e[0;31msyntax error\n\e[0m");
-					goto __forest_end;
-				}
-
-				while (*p == ' ') p++;
-				if (*p != ',' && p[-1] != ' ')
-					puts("\n\e[0;31msyntax error\n\e[0m");
-				else
-				{
-					if (*p == '=') {
-						p++;
-						while (*p == ' ') p++;
-					}
-				__next_set:
-					if (*p == ',') {
-						p++;
-						while (*p == ' ') p++;
-					}
-					if (*p == '\0')
-						goto __forest_end;
-					value = atoi_hexa(&p, &err);
-					if (err) {
-						puts("\n\e[0;31msyntax error\n\e[0m");
-						goto __forest_end;
-					}
-
-					*(GET_REAL_ADDR(addr)) = value;
-					addr++;
-					
-					while (*p == ' ') p++;
-					if (*p == ',' || p[-1] == ' ')
-						goto __next_set;
-				}
-			}
-			else if (strncmp(buf, "set", 3) == 0 && non_alnum(p[3]))
-			{
-				p = buf + 3;
-
 				while (*p == ' ') p++;
 				if (*p != '(' && p[-1] != ' ')
 				{
@@ -754,88 +582,62 @@ __print:
 					puts("\n\e[0;31msyntax error\n\e[0m");
 					goto __forest_end;
 				}
+
+			__next_set:
 				if (*p == ',') {
 					p++;
 					while (*p == ' ') p++;
 				}
+				if (*p == '\0')
+					goto __forest_end;
 
 				value = atoi_hexa(&p, &err);
 				if (err) {
-					puts("\n\e[0;31msyntax error\n\e[0m");
+					puts("\n\e[0;31msyntax error\e[0m");
 					goto __forest_end;
 				}
-				*(GET_REAL_ADDR(addr)) = value;
+
+				*(GET_REAL_ADDR(addr)) = (uint8_t)value;
+				addr++;
+				
+				while (*p == ' ') p++;
+				if (*p == ',' || p[-1] == ' ')
+					goto __next_set;
 			}
-			else if (strncmp(buf, "get", 3) == 0 && non_alnum(p[3]))
+			else if (strncmp(buf, "set", 3) == 0 && non_alnum(buf[3]))
 			{
+				uint32_t	addr, val;
+				
+				if (va_parse_u32(buf + 3, 2, 2, &addr, &val) == NULL)
+					goto __forest_end;
+
+				*(GET_REAL_ADDR((uint16_t)addr)) = value;
+			}
+			else if (strncmp(buf, "get", 3) == 0 && non_alnum(buf[3]))
+			{
+				uint32_t	addr;
 				p = buf + 3;
 
-				while (*p == ' ') p++;
-				if (*p != '(' && p[-1] != ' ')
-				{
-					puts("\n\e[0;31msyntax error\n\e[0m");
+				if (va_parse_u32(buf + 3, 1, 1, &addr) == NULL)
 					goto __forest_end;
-				}
-				if (*p == '(') {
-					p++;
-					while (*p == ' ') p++;
-				}
-
-				addr = (unsigned short)atoi_hexa(&p, &err);
-
-				if (err) {
-					puts("\n\e[0;31msyntax error\n\e[0m");
-					goto __forest_end;
-				}
 
 				printf("--> %hhu (%hhi:0x%hhx)\n",
 						*(GET_REAL_ADDR(addr)), *(GET_REAL_ADDR(addr)), *(GET_REAL_ADDR(addr)));
 			}
 			else if (strncmp(buf, "dump", 4) == 0 && non_alnum(buf[4]))
 			{
-				p = buf + 4;
+				uint32_t	addr, addr2;
 
-				while (*p == ' ') p++;
-				if (*p != '(' && p[-1] != ' ')
-				{
-					puts("\n\e[0;31msyntax error\n\e[0m");
+				if (va_parse_u32(buf + 4, 2, 2, &addr, &addr2) == NULL)
 					goto __forest_end;
-				}
-				if (*p == '(') {
-					p++;
-					while (*p == ' ') p++;
-				}
-
-				addr = (unsigned short)atoi_hexa(&p, &err);
-				if (err) {
-					puts("\n\e[0;31msyntax error\n\e[0m");
-					goto __forest_end;
-				}
-
-				while (*p == ' ') p++;
-				if (*p != ',' && p[-1] != ' ')
-				{
-					puts("\n\e[0;31msyntax error\n\e[0m");
-					goto __forest_end;
-				}
-				if (*p == ',') {
-					p++;
-					while (*p == ' ') p++;
-				}
-
-				addr2 = (unsigned short)atoi_hexa(&p, &err);
-				if (err) {
-					puts("\n\e[0;31msyntax error\n\e[0m");
-					goto __forest_end;
-				}
 
 				for (; addr < addr2; addr++)
 				{
 					if ((addr & 0xf) == 0) {
-						tmp = sprintf(buf2, "\n%p:  ", (void*)((unsigned long)addr));
+						tmp = sprintf(buf2, "\n%p:  ", (void*)((uint64_t)addr));
 						write(1, buf2, tmp);
 					}
-					sprintf(buf2, "%#5hhx ", *(GET_REAL_ADDR(addr)));
+					sprintf(buf2, "%#5hhx ", *(GET_REAL_ADDR((uint16_t)addr)));
 					write(1, buf2, strlen(buf2));
 				}
 				write(1, "\n", 1);
@@ -867,6 +669,36 @@ __print:
 				{
 					puts("\nsyntax error");
 				}
+			}
+			else if (strncmp(buf, "bzero", 5) == 0 && non_alnum(buf[5]))
+			{
+				uint32_t	start, length, offset;
+				uint8_t		*_addr;
+
+				if (va_parse_u32(buf + 5, 2, 3, &start, &length, &offset) == NULL)
+					goto __forest_end;
+				_addr = GET_REAL_ADDR(start);
+				if (offset != 0xffffffffU)
+					_addr += offset;
+				g_stop_execution = 1;
+				while (g_stop_execution != 2) usleep(1000);
+				bzero(_addr, length);
+				g_stop_execution = 0;
+			}
+			else if (strncmp(buf, "logx", 4) == 0 && non_alnum(buf[4]))
+			{
+				uint32_t	n_inst;
+
+				if (va_parse_u32(buf + 4, 1, 1, &n_inst) == NULL)
+					goto __forest_end;
+				if (_LOG_ENABLE == false) {
+					_N_INST_LOG = (n_inst > 0) ? n_inst : 1;
+					printf("start log %lu cycles\n", _N_INST_LOG);
+					_LOG_ENABLE = true;
+					_CPU_LOG = true;
+				}
+				else
+					puts("log currently writed...");
 			}
 			else if (strcmp(buf, "help") == 0)
 			{
@@ -916,24 +748,24 @@ __print:
 			{
 				p = buf;
 
-				if (strncmp(p, "pok", 3) == 0)
+				if (strncmp(p, "pok", 3) == 0 && non_alnum(p[3]))
 				{
 					unsigned int	val;
 					unsigned int	offset;
 
-					if (parse_n_u32(p + 3, &offset, &val) == -1)
+					if (va_parse_u32(p + 3, 2, 2, &offset, &val) == NULL)
 						goto __forest_end;
 
 					offset = (offset - 1) * 44;
 					*GET_REAL_ADDR(pkmn_addr[NO] + offset) = (uint8_t)(val & 0xffu);
 				}
-				else if (strncmp(p, "pv", 2) == 0)
+				else if (strncmp(p, "pv", 2) == 0 && non_alnum(p[2]))
 				{
 					unsigned int	val1;
 					unsigned int	val2;
 					unsigned int	offset;
 
-					if (parse_n_u32_u32(p + 2, &offset, &val1, &val2) == -1)
+					if (va_parse_u32(p + 2, 3, 3, &offset, &val1, &val2) == NULL)
 						goto __forest_end;
 
 					offset = (offset - 1) * 44;
@@ -944,76 +776,76 @@ __print:
 					*GET_REAL_ADDR(pkmn_addr[CHP] + offset) = (uint8_t)((val2 & 0xff00) >> 8);
 					*GET_REAL_ADDR(pkmn_addr[CHP] + 1 + offset) = (uint8_t)(val2 & 0xff);
 				}
-				else if (strncmp(p, "att1", 4) == 0)
+				else if (strncmp(p, "att1", 4) == 0 && non_alnum(p[4]))
 				{
 					unsigned int	val1;
 					unsigned int	val2;
 					unsigned int	offset;
 
-					if (parse_n_u32_u32(p + 4, &offset, &val1, &val2) == -1)
+					if (va_parse_u32(p + 4, 3, 3, &offset, &val1, &val2) == NULL)
 						goto __forest_end;
 
 					offset = (offset - 1) * 44;
 					*GET_REAL_ADDR(pkmn_addr[ATT1] + offset) = (uint8_t)(val1 & 0xff);
 					*GET_REAL_ADDR(pkmn_addr[PP1]  + offset) = (uint8_t)(val2 & 0xff);
 				}
-				else if (strncmp(p, "att2", 4) == 0)
+				else if (strncmp(p, "att2", 4) == 0 && non_alnum(p[4]))
 				{
 					unsigned int	val1;
 					unsigned int	val2;
 					unsigned int	offset;
 
-					if (parse_n_u32_u32(p + 4, &offset, &val1, &val2) == -1)
+					if (va_parse_u32(p + 4, 3, 3, &offset, &val1, &val2) == NULL)
 						goto __forest_end;
 
 					offset = (offset - 1) * 44;
 					*GET_REAL_ADDR(pkmn_addr[ATT2] + offset) = (uint8_t)(val1);
 					*GET_REAL_ADDR(pkmn_addr[PP2]  + offset) = (uint8_t)(val2);
 				}
-				else if (strncmp(p, "att3", 4) == 0)
+				else if (strncmp(p, "att3", 4) == 0 && non_alnum(p[4]))
 				{
 					unsigned int	val1;
 					unsigned int	val2;
 					unsigned int	offset;
 
-					if (parse_n_u32_u32(p + 4, &offset, &val1, &val2) == -1)
+					if (va_parse_u32(p + 4, 3, 3, &offset, &val1, &val2) == NULL)
 						goto __forest_end;
 
 					offset = (offset - 1) * 44;
 					*GET_REAL_ADDR(pkmn_addr[ATT3] + offset) = (uint8_t)(val1);
 					*GET_REAL_ADDR(pkmn_addr[PP3]  + offset) = (uint8_t)(val2);
 				}
-				else if (strncmp(p, "att4", 4) == 0)
+				else if (strncmp(p, "att4", 4) == 0 && non_alnum(p[4]))
 				{
 					unsigned int	val1;
 					unsigned int	val2;
 					unsigned int	offset;
 
-					if (parse_n_u32_u32(p + 4, &offset, &val1, &val2) == -1)
+					if (va_parse_u32(p + 4, 3, 3, &offset, &val1, &val2) == NULL)
 						goto __forest_end;
 
 					offset = (offset - 1) * 44;
 					*GET_REAL_ADDR(pkmn_addr[ATT4] + offset) = (uint8_t)(val1);
 					*GET_REAL_ADDR(pkmn_addr[PP4] + offset) = (uint8_t)(val2);
 				}
-				else if (strncmp(p, "id", 2) == 0)
+				else if (strncmp(p, "id", 2) == 0 && non_alnum(p[2]))
 				{
 					unsigned int	offset;
 					unsigned int	val;
 
-					if (parse_n_u32(p + 2, &offset, &val) == -1)
+					if (va_parse_u32(p + 2, 2, 2, &offset, &val) == NULL)
 						goto __forest_end;
 
 					offset = (offset - 1) * 44;
 					*GET_REAL_ADDR(pkmn_addr[ID] + offset) = (uint8_t)((val & 0xff00) >> 8);
 					*GET_REAL_ADDR(pkmn_addr[ID] + 1 + offset) = (uint8_t)(val & 0xff);
 				}
-				else if (strncmp(p, "xp", 2) == 0)
+				else if (strncmp(p, "xp", 2) == 0 && non_alnum(p[2]))
 				{
 					unsigned int	offset;
 					unsigned int	val;
 
-					if (parse_n_u32(p + 2, &offset, &val) == -1)
+					if (va_parse_u32(p + 2, 2, 2, &offset, &val) == NULL)
 						goto __forest_end;
 
 					offset = (offset - 1) * 44;
@@ -1021,129 +853,293 @@ __print:
 					*GET_REAL_ADDR(pkmn_addr[XP] + 1 + offset) = (uint8_t)((val & 0xff00) >> 8);
 					*GET_REAL_ADDR(pkmn_addr[XP] + 2 + offset) = (uint8_t)(val & 0xff);
 				}
-				else if (strncmp(p, "niv", 3) == 0)
+				else if (strncmp(p, "niv", 3) == 0 && non_alnum(p[3]))
 				{
 					unsigned int	offset;
 					unsigned int	val;
 
-					if (parse_n_u32(p + 3, &offset, &val) == -1)
+					if (va_parse_u32(p + 3, 2, 2, &offset, &val) == NULL)
 						goto __forest_end;
 
 					offset = (offset - 1) * 44;
 					*GET_REAL_ADDR(pkmn_addr[LVL] + offset) = (uint8_t)(val);
 				}
-				else if (strncmp(p, "att", 3) == 0)
+				else if (strncmp(p, "for", 3) == 0)
 				{
 					unsigned int	offset;
 					unsigned int	val;
 
-					if (parse_n_u32(p + 3, &offset, &val) == -1)
+					if (va_parse_u32(p + 3, 2, 2, &offset, &val) == NULL)
 						goto __forest_end;
 
 					offset = (offset - 1) * 44;
 					*GET_REAL_ADDR(pkmn_addr[ATT] + offset) = ((val & 0xff00u) >> 8);
 					*GET_REAL_ADDR(pkmn_addr[ATT] + 1 + offset) = (val & 0xff);
 				}
-				else if (strncmp(p, "def", 3) == 0)
+				else if (strncmp(p, "def", 3) == 0 && non_alnum(p[3]))
 				{
 					unsigned int	offset;
 					unsigned int	val;
 
-					if (parse_n_u32(p + 3, &offset, &val) == -1)
+					if (va_parse_u32(p + 3, 2, 2, &offset, &val) == NULL)
 						goto __forest_end;
 
 					offset = (offset - 1) * 44;
 					*GET_REAL_ADDR(pkmn_addr[DEF] + offset) = (uint8_t)((val & 0xff00) >> 8);
 					*GET_REAL_ADDR(pkmn_addr[DEF] + 1 + offset) = (uint8_t)(val & 0xff);
 				}
-				else if (strncmp(p, "vit", 3) == 0)
+				else if (strncmp(p, "vit", 3) == 0 && non_alnum(p[3]))
 				{
 					unsigned int	offset;
 					unsigned int	val;
 
-					if (parse_n_u32(p + 3, &offset, &val) == -1)
+					if (va_parse_u32(p + 3, 2, 2, &offset, &val) == NULL)
 						goto __forest_end;
 
 					offset = (offset - 1) * 44;
 					*GET_REAL_ADDR(pkmn_addr[VIT] + offset) = (uint8_t)((val & 0xff00) >> 8);
 					*GET_REAL_ADDR(pkmn_addr[VIT] + 1 + offset) = (uint8_t)(val & 0xff);
 				}
-				else if (strncmp(p, "spe", 3) == 0)
+				else if (strncmp(p, "spe", 3) == 0 && non_alnum(p[3]))
 				{
 					unsigned int	offset;
 					unsigned int	val;
 
-					if (parse_n_u32(p + 3, &offset, &val) == -1)
+					if (va_parse_u32(p + 3, 2, 2, &offset, &val) == NULL)
 						goto __forest_end;
 
 					offset = (offset - 1) * 44;
 					*GET_REAL_ADDR(pkmn_addr[SPE] + offset) = (uint8_t)((val & 0xff00) >> 8);
 					*GET_REAL_ADDR(pkmn_addr[SPE] + 1 + offset) = (uint8_t)(val & 0xff);
 				}
-				else if (strncmp(p, "name", 4) == 0)
+				else if (strncmp(p, "name", 4) == 0 && non_alnum(p[4]))
 				{
-					//use parse n_u32()
 					int count = 0;
-					p += 4;
+					int	offset;
 
-					while (*p == ' ') p++;
-					if (*p != '(' && *p != ' ')
-					{
-						write(1, "syntax error\n", 13);
+					if ((p = va_parse_u32(buf + 4, 1, 1, &offset)) == NULL)
 						goto __forest_end;
-					}
-					if (*p == '(') {
-						p++;
-						while (*p == ' ') p++;
-					}
 
-					int offset = (*(p++) - '1') * 11;
-
-					while (*p == ' ') p++;
-					if (*p != ',' && p[-1] != ' ')
-					{
-						write(1, "syntax error\n", 13);
-						goto __forest_end;
-					}
-					if (*p == ',') {
-						p++;
-						while (*p == ' ') p++;
-					}
+					if (pkmn == PKMN_GRE)
+						offset = (offset - 1) * 6;
+					else
+						offset = (offset - 1) * 11;
 
 					ptr = (uint8_t*)GET_REAL_ADDR(pkmn_addr[NAME] + offset);
-					while (*p != ')')
+					if (pkmn == PKMN_GRE)
 					{
-						if (count == 11 || *p > 'z' || *p < 'a')
-							break ;
-						*(ptr++) = (uint8_t)((*p - 'a') + 0x80);
-						p++;
-						count++;
+						/*
+							0xd257
+
+							0 - 3 =  ' '
+							katakana
+							4 = 'O" '
+							5 = 'GA' 6 = 'GI' 7 = 'GU' 8 = 'GE' 9 = 'GO'
+							a = 'ZA' b = 'JI' c = 'ZU' d = 'ZE' e = 'ZO'
+							f = 'DA' 10 = 'DJI' 11 = 'DJU' 12 = 'DE' 13 = 'DO'
+							14 = 'NA"' 15 = 'NI"' 16 = 'NU"' 17 = 'NE"' 18 = 'NO"'
+							19 = 'BA' 1a = 'BI' 1b = 'BU' 1c = 'BO' 1d = 'MA"'
+							1e - 25 -> ...
+
+							hiragana
+							26 = 'GA' 27 = 'GI' 28 = 'GU' 29 = 'GE' 2a = 'GO'
+							2b = 'ZA' 2c = 'JI' 2d = 'ZU' 2e = 'ZE' 2f = 'ZO'
+							30 = 'DA' 31 = 'DJI' 32 = 'DZU' 33 = 'DE' 34 = 'DO'
+							35 - 39 = ...
+							3a = 'BA' 3b = 'BI' 3c = 'BU' 3d = 'BE' 3e = 'BO'
+							3f = ...
+
+							katakana
+							40 = 'PA' 41 = 'PI' 42 = 'PU' 43 = 'PO'
+							hiragana
+							44 = 'PA' 45 = 'PI' 46 = 'PU' 47 = 'PE' 48 = 'PO'
+
+							49 - 54 = bug
+
+					>> 115 -> ID
+					>> 116 -> NO
+					
+							katakana
+							80 = 'A' 81 = 'I' 82 = 'U' 83 = 'E' 84 = 'O'
+							85 = 'KA'
+							...
+							8a = 'SA'
+							...
+							8f = 'TA'
+							...
+							94 = 'NA'
+							...
+							99 = 'HA' 9a = 'HI' 9b = 'HU' 9c = 'HO'
+							...
+							9d = 'MA'
+							...
+							a2 = 'YA' a3 = 'YU' a4 = 'YO'
+							...
+							a5 = 'RA' a6 = 'RU' a7 = 'RE' a8 = 'RO'
+							...
+							a9 = 'WA' aa = 'WO'
+							ab = 'N'
+							...
+							ac = 'tsu'
+							ad = 'ya' ae = 'yu' af = 'yo'
+							b0 = 'i'
+							...
+							hiragana
+							b1 = 'A' I U E O
+							...
+							b6 = 'KA' KI KU KE KO
+							...
+							bb = 'SA' SHI SU SE SO
+							...
+							c0 = 'TA' CHI TSU TE TO
+							...
+							c5 = 'NA' NI NU NE NO
+							...
+							ca = 'HA' HI HU HE HO
+							...
+							cf = 'MA' MI MU ME MO
+							...
+							d4 = 'YA' YU YO
+							...
+							d7 = 'RA' RI RU RE RO
+							...
+							dc = 'WA' WO
+							...
+							de = 'N'
+							df = 'tsu' ya yu yo
+							...
+
+							e3 = '-'
+							e4 = 'º'
+							e5 = '-'
+							e6 = '?'
+							e7 = '!'
+							e8 = 'maru'
+							e9 = 'a' katakana
+							ea = 'u' katakana
+							eb = 'e' katakana
+							ec = 'fleche droite vide'
+							ed = 'fleche droite'
+							ee = 'fleche bas'
+							ef = 'male'
+							f0 = 'yen'
+							f1 = 'x'
+							f2 = '.'
+							f3 = '/'
+							f4 = 'o' katakana
+							f5 = 'femelle'
+							f6 -> ff = 0 1 2 3 4 5 6 7 8 9
+
+						*/
+static const unsigned char	boin[58] = {
+	1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0,
+	0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+	0,0,0,0,0,0,
+	1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0,
+	0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0
+};
+
+						for (; ; p++, count++)
+						{
+							if (count == 5 || *p == '\0' || *p > 'z' || (*p < '0' && *p != '-'))
+								break ;
+							if (*p >= '0' && *p <= '9') {
+								*(ptr++) = (*p - '0') + 0xf6;
+							}
+							else if (*p == '-') {
+								*(ptr++) = 0xe3; // -
+							}
+							else if (*p == ' ') {
+								*(ptr++) = 0x0; // ' '
+							}
+							else
+							{
+								if (*p >= 'a')
+								{
+									if (*p == 't' && (p[1] == 's' || p[1] == 'S')
+										&& (p[2] == 'u' || p[2] == 'U'))
+									{
+										p += 2;
+										*(ptr++) = 0xc2; // TSU
+									}
+									else if (*p == 'n' && (p[1] == '\'' || p[1] == '\0'
+										|| (!boin[p[1] - 'a'] && p[1] != 'y' && p[1] != 'Y')))
+									{
+										if (p[1] == '\'' || p[1] == 'y' || p[1] == 'Y')
+											p++;
+										*(ptr++) = 0xde; // N
+									}
+									else
+									{
+										if (get_hiragana(&p, &ptr, &count) == -1) {
+											puts("error");
+											break;
+										}
+									}
+								}
+								else if (*p >= 'A' && *p <= 'Z')
+								{
+									if (*p == 'T' && (p[1] == 's' || p[1] == 'S')
+										&& (p[2] == 'u' || p[2] == 'U'))
+									{
+										p += 2;
+										*(ptr++) = 0x91; // TSU
+									}
+									else if (*p == 'N' && (p[1] == '\'' || p[1] == '\0'
+										|| (!boin[p[1] - 'A'] && p[1] != 'y' && p[1] != 'Y')))
+									{
+										if (p[1] == '\'' || p[1] == 'y' || p[1] == 'Y')
+											p++;
+										*(ptr++) = 0xab; // N
+									}
+									else
+									{
+										if (get_katakana(&p, &ptr, &count) == -1) {
+											puts("error");
+											break;
+										}
+									}
+								}
+								else
+								{
+									puts("error");
+									break;
+								}
+							}
+						}
+						*(ptr) = 0x50;
 					}
-					while (count != 11)
+					else
 					{
-						*(ptr++) = 0x50;
-						count++;
+						while (1)
+						{
+							if (count == 11 || *p > 'z' || *p < 'a')
+								break ;
+							*(ptr++) = (uint8_t)((*p - 'a') + 0x80);
+							p++;
+							count++;
+						}
+						while (count != 11)
+						{
+							*(ptr++) = 0x50;
+							count++;
+						}
 					}
 				}
-				else if (strncmp(p, "del", 3) == 0)
+				else if (strncmp(p, "del", 3) == 0 && non_alnum(p[3]))
 				{
 					uint8_t	*end;
-
-					p += 3;
-					while (*p == ' ') p++;
-					if (*p != '(' && *p != ' ')
-					{
-						write(1, "syntax error\n", 13);
+					uint32_t	num, offset, offset2;
+	
+					if (va_parse_u32(buf + 3, 1, 1, &num) == NULL)
 						goto __forest_end;
-					}
-					if (*p == '(') {
-						p++;
-						while (*p == ' ') p++;
-					}
 
-					int num		= *(p++) - '1';
-					int offset	= num * 44;
-					int offset2 = num * 11;
+					num		-= 1;
+					offset	= num * 44;
+					if (pkmn == PKMN_GRE)
+						offset2 = num * 6;
+					else
+						offset2 = num * 11;
 
 					ptr = (uint8_t*)GET_REAL_ADDR(pkmn_addr[NO] + offset);
 					end = ptr + 44;
@@ -1152,7 +1148,10 @@ __print:
 						*(ptr++) = 0;
 
 					ptr = (uint8_t*)GET_REAL_ADDR(pkmn_addr[NAME] + offset2);
-					end = ptr + 11;
+					if (pkmn == PKMN_GRE)
+						end = ptr + 6;
+					else
+						end = ptr + 11;
 
 					while (ptr != end)
 						*(ptr++) = 0;
@@ -1163,23 +1162,11 @@ __print:
 					ptr += 1 + num;
 					memmove(ptr, ptr + 1, 7 - num);
 				}
-				else if (strncmp(p, "update", 6) == 0)
+				else if (strncmp(p, "update", 6) == 0 && non_alnum(p[6]))
 				{
 					int			loop = 6;
 					int			count = 0;
 					uint8_t		*ptr2;
-
-					p += 6;
-					while (*p == ' ') p++;
-					if (*p != '(' && p[-1] != ' ')
-					{
-						write(1, "syntax error\n", 13);
-						goto __forest_end;
-					}
-					if (*p == '(') {
-						p++;
-						while (*p == ' ') p++;
-					}
 
 					ptr2 = (uint8_t*)GET_REAL_ADDR(pkmn_addr[HEAD] + 1);
 					ptr = (uint8_t*)GET_REAL_ADDR(pkmn_addr[NO]);
@@ -1196,18 +1183,9 @@ __print:
 					*ptr2 = 0xffu;
 					*GET_REAL_ADDR(pkmn_addr[HEAD]) = (uint8_t)count;
 				}
-				else if (strncmp(p, "pop", 3) == 0)
+				else if (strncmp(p, "pop", 3) == 0 && non_alnum(p[3]))
 				{
-					p += 3;
 					uint8_t		*ptr;
-
-					while (*p == ' ') p++;
-					if (*p != '(' && *p != '\0')
-					{
-						write(1, "syntax error\n", 13);
-						goto __forest_end;
-					}
-					p++;
 
 					ptr = GET_REAL_ADDR(pkmn_addr[OBJ]);
 					unsigned int offset = *ptr;
@@ -1219,14 +1197,15 @@ __print:
 					*(--ptr) = 0x0;
 					*(--ptr) = 0xffu;
 				}
-				else if (strncmp(p, "push", 4) == 0)
+				else if (strncmp(p, "push", 4) == 0 && non_alnum(p[4]))
 				{
-					unsigned int	offset;
-					unsigned int	object = 0;
-					unsigned int	quantity = 1;
-					uint8_t			*ptr;
+					uint32_t	offset;
+					uint32_t	object = 0;
+					uint32_t	quantity = 1;
+					uint8_t		*ptr;
 
-					parse_u32_u32(p + 4, &object, &quantity);
+					if (va_parse_u32(p + 4, 2, 2, &object, &quantity) == NULL)
+						goto __forest_end;
 
 					ptr = GET_REAL_ADDR(pkmn_addr[OBJ]);
 					offset = *ptr;
@@ -1238,7 +1217,7 @@ __print:
 					*(ptr++) = (uint8_t)quantity;
 					*ptr = 0xffu;
 				}
-				else if (strncmp(p, "stat", 4) == 0)
+				else if (strncmp(p, "stat", 4) == 0 && non_alnum(p[4]))
 				{
 					unsigned int	att;
 					unsigned int	def;
@@ -1246,37 +1225,31 @@ __print:
 					unsigned int	spe;
 					unsigned int	offset;
 
-					if (parse_n_u32_u32_u32_u32(p + 4, &offset, &att, &def, &vit, &spe) == -1)
+					if (va_parse_u32(p + 4, 2, 5, &offset, &att, &def, &vit, &spe) == NULL)
 						goto __forest_end;
 
 					offset = ((offset - 1) * 44);
 					*GET_REAL_ADDR(pkmn_addr[ATT] + offset) = (uint8_t)((att & 0xff00) >> 8);
 					*GET_REAL_ADDR(pkmn_addr[ATT] + 1 + offset) = (uint8_t)(att & 0xff);
-					*GET_REAL_ADDR(pkmn_addr[DEF] + offset) = (uint8_t)((def & 0xff00) >> 8);
-					*GET_REAL_ADDR(pkmn_addr[DEF] + 1 + offset) = (uint8_t)(def & 0xff);
-					*GET_REAL_ADDR(pkmn_addr[VIT] + offset) = (uint8_t)((vit & 0xff00) >> 8);
-					*GET_REAL_ADDR(pkmn_addr[VIT] + 1 + offset) = (uint8_t)(vit & 0xff);
-					*GET_REAL_ADDR(pkmn_addr[SPE] + offset) = (uint8_t)((spe & 0xff00) >> 8);
-					*GET_REAL_ADDR(pkmn_addr[SPE] + 1 + offset) = (uint8_t)(spe & 0xff);
+					if (def != 0xffffffffU) {
+						*GET_REAL_ADDR(pkmn_addr[DEF] + offset) = (uint8_t)((def & 0xff00) >> 8);
+						*GET_REAL_ADDR(pkmn_addr[DEF] + 1 + offset) = (uint8_t)(def & 0xff);
+					}
+					if (vit != 0xffffffffU) {
+						*GET_REAL_ADDR(pkmn_addr[VIT] + offset) = (uint8_t)((vit & 0xff00) >> 8);
+						*GET_REAL_ADDR(pkmn_addr[VIT] + 1 + offset) = (uint8_t)(vit & 0xff);
+					}
+					if (spe != 0xffffffffU) {
+						*GET_REAL_ADDR(pkmn_addr[SPE] + offset) = (uint8_t)((spe & 0xff00) >> 8);
+						*GET_REAL_ADDR(pkmn_addr[SPE] + 1 + offset) = (uint8_t)(spe & 0xff);
+					}
 				}
-				else if (strncmp(p, "cash", 4) == 0)
+				else if (strncmp(p, "cash", 4) == 0 && non_alnum(p[4]))
 				{
-					p += 4;
 					unsigned int cash = 0;
 
-					if (*p != '(' && *p != ' ')
-					{
-						write(1, "syntax error\n", 13);
+					if (va_parse_u32(p + 4, 1, 1, &cash) == NULL)
 						goto __forest_end;
-					}
-					p++;
-
-					cash = atoi_hexa(&p, &err);
-					if (err)
-					{
-						write(1, "syntax error\n", 13);
-						goto __forest_end;
-					}
 
 					if (pkmn == PKMN_GRE)
 					{
@@ -1296,7 +1269,8 @@ __print:
 			else
 				write(1, "syntax error\n", 13);
 __forest_end:
-			add_hist(&hist, buf, j, &hsize);
+			if (j)
+				add_hist(&hist, buf, j, &hsize);
 			curh = NULL;
 			buf[j = 0] = '\0';
 			i = 0;
