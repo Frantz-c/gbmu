@@ -6,14 +6,14 @@
 #    By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+      #
 #                                                  #+#   #+    #+    #+#       #
 #    Created: 2019/06/19 08:20:37 by mhouppin     #+#   ##    ##    #+#        #
-#    Updated: 2019/06/25 14:37:26 by fcordon     ###    #+. /#+    ###.fr      #
+#    Updated: 2019/07/03 09:22:20 by fcordon     ###    #+. /#+    ###.fr      #
 #                                                          /                   #
 #                                                         /                    #
 # **************************************************************************** #
 
 NAME	:= gbmu_x
 
-OBJECTS	:= execute.o load_cartridge.o sync_test.o debug_tools.o command_line_thread.o
+OBJECTS	:= execute.o load_cartridge.o sync_test.o debug_tools.o command_line_thread.o pkmn_green_string.o
 
 DEPENDS	:= $(patsubst %.o,%.d,$(OBJECTS))
 

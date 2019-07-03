@@ -1,3 +1,16 @@
+/* ************************************************************************** */
+/*                                                          LE - /            */
+/*                                                              /             */
+/*   command_line_thread.c                            .::    .:/ .      .::   */
+/*                                                 +:+:+   +:    +:  +:+:+    */
+/*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
+/*                                                 #+#   #+    #+    #+#      */
+/*   Created: 2019/07/03 09:33:12 by fcordon      #+#   ##    ##    #+#       */
+/*   Updated: 2019/07/03 14:03:12 by fcordon     ###    #+. /#+    ###.fr     */
+/*                                                         /                  */
+/*                                                        /                   */
+/* ************************************************************************** */
+
 
 #include <stdint.h>
 #include <assert.h>
@@ -14,7 +27,7 @@
 #include <termios.h>
 #include <stdarg.h>
 #include "memory_map.h"
-#include "test_hash.c"
+#include "pkmn_green_string.h"
 /*
 #include "SDL.h"
 #include "test.h"
@@ -273,12 +286,12 @@ __error:
 
 enum pkmn_offset_e
 {
-	HEAD,NO,CHP,ATT1,ATT2,ATT3,ATT4,ID,XP,PP1,
-	PP2,PP3,PP4,LVL,HP,ATT,DEF,VIT,SPE,NAME,
-	OBJ,OBJ_PC,CASH,CBT_HP,ADV_HP,CBT_ATT,CBT_DEF,
-	CBT_VIT,CBT_SPE,CBT_CHP,CBT_ATT_2,CBT_DEF_2,
-	CBT_VIT_2,CBT_SPE_2,ROM_ATT
-
+	HEAD,NO,STATUS,CHP,ATT1,ATT2,ATT3,ATT4,ID,
+	XP,PP1,PP2,PP3,PP4,LVL,HP,ATT,DEF,VIT,
+	SPE,NAME,OBJ,OBJ_PC,CASH,CBT_HP,ADV_HP,
+	CBT_ATT,CBT_DEF,CBT_VIT,CBT_SPE,CBT_CHP,
+	CBT_ATT_2,CBT_DEF_2,CBT_VIT_2,CBT_SPE_2,
+	ROM_ATT,ROM_ATT_NAME,ROM_POK_NAME
 };
 
 #define PKMN_RB		0x1
@@ -376,7 +389,7 @@ extern void		*command_line_thread(void *unused)
 	unsigned char	*ptr;
 	unsigned int	pkmn;
 	int				err;
-	uint32_t		pkmn_addr[35] = {0};
+	uint32_t		pkmn_addr[38] = {0};
 
 	write(2, "\e[?25l", 6);
 
@@ -387,6 +400,7 @@ extern void		*command_line_thread(void *unused)
 		pkmn_addr[HEAD] = 0xd168U;
 		pkmn_addr[NO] = 0xd170U;
 		pkmn_addr[CHP] = 0xd171U;
+		pkmn_addr[STATUS] = 0xd174U;
 		pkmn_addr[ATT1] = 0xd178U;
 		pkmn_addr[ATT2] = 0xd179U;
 		pkmn_addr[ATT3] = 0xd17aU;
@@ -407,19 +421,20 @@ extern void		*command_line_thread(void *unused)
 		pkmn_addr[OBJ] = 0xd322U;
 		pkmn_addr[OBJ_PC] = 0xd53fU;
 		pkmn_addr[CASH] = 0xd34dU;
-		pkmn_addr[CBT_CHP] = 0xcffcU;
-		pkmn_addr[ADV_HP] = 0xcfcdU;
-		pkmn_addr[CBT_ATT] = 0xd00cU;
-		pkmn_addr[CBT_DEF] = 0xd00eU;
-		pkmn_addr[CBT_VIT] = 0xd010U;
-		pkmn_addr[CBT_SPE] = 0xd012U;
+		pkmn_addr[CBT_CHP] = 0xd01aU;
+		pkmn_addr[CBT_HP] = 0xd028U;
+		pkmn_addr[ADV_HP] = 0xcfebU;
+		pkmn_addr[CBT_ATT] = 0xd02aU;
+		pkmn_addr[CBT_DEF] = 0xd02cU;
+		pkmn_addr[CBT_VIT] = 0xd02eU;
+		pkmn_addr[CBT_SPE] = 0xd030U;
 		pkmn_addr[CBT_ATT_2] = 0xd00cU;
 		pkmn_addr[CBT_DEF_2] = 0xd00eU;
 		pkmn_addr[CBT_VIT_2] = 0xd010U;
 		pkmn_addr[CBT_SPE_2] = 0xd012U;
-		pkmn_addr[CBT_HP] = 0xcfa1U;
-		pkmn_addr[ROM_ATT] = 0x39658U;
-
+		pkmn_addr[ROM_ATT] = 0x38000U;
+		pkmn_addr[ROM_ATT_NAME] = 0xb0000U;
+		pkmn_addr[ROM_POK_NAME] = 0x1c21eU;
 	}
 	else if (strncmp(g_cart.game_title, "POKEMON GRE", 11) == 0)
 	{
@@ -427,6 +442,7 @@ extern void		*command_line_thread(void *unused)
 		pkmn_addr[HEAD] = 0xd123U;
 		pkmn_addr[NO] = 0xd12bU;
 		pkmn_addr[CHP] = 0xd12cU;
+		pkmn_addr[STATUS] = 0xd12fU;
 		pkmn_addr[ATT1] = 0xd133U;
 		pkmn_addr[ATT2] = 0xd134U;
 		pkmn_addr[ATT3] = 0xd135U;
@@ -450,6 +466,7 @@ extern void		*command_line_thread(void *unused)
 		pkmn_addr[CBT_CHP] = 0xcffcU;
 		//pkmn_addr[CBT_CHP] = 0xcf80U;
 		pkmn_addr[ADV_HP] = 0xcfcdU;
+		pkmn_addr[CBT_HP] = 0xcfa1U;
 		pkmn_addr[CBT_ATT] = 0xcfa3U;
 		pkmn_addr[CBT_DEF] = 0xcfa5U;
 		pkmn_addr[CBT_VIT] = 0xcfa7U;
@@ -458,8 +475,9 @@ extern void		*command_line_thread(void *unused)
 		pkmn_addr[CBT_DEF_2] = 0xd00eU;
 		pkmn_addr[CBT_VIT_2] = 0xd010U;
 		pkmn_addr[CBT_SPE_2] = 0xd012U;
-		pkmn_addr[CBT_HP] = 0xcfa1U;
 		pkmn_addr[ROM_ATT] = 0x39658U;
+		pkmn_addr[ROM_ATT_NAME] = 0x10000U;
+		pkmn_addr[ROM_POK_NAME] = 0x39067U;
 	}
 	else
 		pkmn = 0;
@@ -906,23 +924,44 @@ __print:
 							printf("pv = %u\n", (pv_addr[0] << 8) | pv_addr[1]);
 							for (i = 0; i < 4; i++)
 							{
-								if ((att_data_offset = *GET_REAL_ADDR(pkmn_addr[ATT1] + i)) == 0)
+								if ((att_data_offset = *GET_REAL_ADDR(pkmn_addr[ATT1] + i + offset)) == 0)
 									continue;
-								printf("attaque[%u] = %u\n", i, att_data_offset);
 								att_data_offset = ((att_data_offset - 1) * 6);
 								max_pp = *((uint8_t*)(g_memmap.fixed_rom
 														+ pkmn_addr[ROM_ATT]
 														+ att_data_offset + 5
 													));
-								printf("max_pp[%u] = %u\n", i, max_pp);
-								pp_plus = *GET_REAL_ADDR(pkmn_addr[PP1] + i) & 0xc0;
-								*GET_REAL_ADDR(pkmn_addr[PP1] + i) = (max_pp | pp_plus);
+								pp_plus = *GET_REAL_ADDR(pkmn_addr[PP1] + i + offset) & 0xc0;
+								*GET_REAL_ADDR(pkmn_addr[PP1] + i + offset) = (max_pp | pp_plus);
 							}
 							if (exit) break;
 						}
 					}
 					else
 						puts("syntax error");
+				}
+				else if (strncmp(p, "etat", 4) == 0 && non_alnum(p[4]))
+				{
+					unsigned int	offset;
+
+					if ((p = va_parse_u32(p + 4, 1, 1, &offset)) == NULL)
+						goto __forest_end;
+
+					offset = (offset - 1) * 44;
+					if (strncmp("psn", p, 3) == 0 || strncmp("PSN", p, 3) == 0)
+						*GET_REAL_ADDR(pkmn_addr[STATUS]) = 0x8;
+					else if (strncmp("par", p, 3) == 0 || strncmp("PAR", p, 3) == 0)
+						*GET_REAL_ADDR(pkmn_addr[STATUS]) = 0x40;
+					else if (strncmp("gel", p, 3) == 0 || strncmp("GEL", p, 3) == 0)
+						*GET_REAL_ADDR(pkmn_addr[STATUS]) = 0x20;
+					else if (strncmp("bru", p, 3) == 0 || strncmp("BRU", p, 3) == 0)
+						*GET_REAL_ADDR(pkmn_addr[STATUS]) = 0x10;
+					else if (strncmp("som", p, 3) == 0 || strncmp("SOM", p, 3) == 0)
+						*GET_REAL_ADDR(pkmn_addr[STATUS]) = 0x4;
+					else if (strncmp("ok", p, 3) == 0 || strncmp("OK", p, 3) == 0)
+						*GET_REAL_ADDR(pkmn_addr[STATUS]) = 0x0;
+					else
+						puts("unknown argument");
 				}
 				else if (strncmp(p, "adv_pv", 6) == 0 && non_alnum(p[6]))
 				{
@@ -940,7 +979,7 @@ __print:
 					uint32_t	for_value;
 					uint32_t	add_value;
 
-					if (va_parse_u32(p + 6, 0, 1, &add_value) == NULL)
+					if (va_parse_u32(p + 5, 0, 1, &add_value) == NULL)
 						goto __forest_end;
 					if (add_value == 0xffffffffU)
 						add_value = 8;
@@ -961,10 +1000,19 @@ __print:
 				{
 					uint8_t		*def_addr;
 					uint32_t	def_value;
+					uint32_t	add_value;
 
+					if (va_parse_u32(p + 5, 0, 1, &add_value) == NULL)
+						goto __forest_end;
+					if (add_value == 0xffffffffU)
+						add_value = 8;
+					
 					def_addr = GET_REAL_ADDR(pkmn_addr[CBT_DEF_2]);
 					def_value = (*def_addr << 8) | def_addr[1];
-					def_value += 8;
+					if (def_value + add_value > 999U)
+						def_value = 999;
+					else
+						def_value += add_value;
 					*def_addr = (uint8_t)((def_value & 0xff00) >> 8);
 					def_addr[1] = (uint8_t)(def_value & 0xff);
 					def_addr = GET_REAL_ADDR(pkmn_addr[CBT_DEF]);
@@ -975,10 +1023,19 @@ __print:
 				{
 					uint8_t		*vit_addr;
 					uint32_t	vit_value;
+					uint32_t	add_value;
 
+					if (va_parse_u32(p + 5, 0, 1, &add_value) == NULL)
+						goto __forest_end;
+					if (add_value == 0xffffffffU)
+						add_value = 8;
+					
 					vit_addr = GET_REAL_ADDR(pkmn_addr[CBT_VIT_2]);
 					vit_value = (*vit_addr << 8) | vit_addr[1];
-					vit_value += 8;
+					if (vit_value + add_value > 999U)
+						vit_value = 999;
+					else
+						vit_value += add_value;
 					*vit_addr = (uint8_t)((vit_value & 0xff00) >> 8);
 					vit_addr[1] = (uint8_t)(vit_value & 0xff);
 					vit_addr = GET_REAL_ADDR(pkmn_addr[CBT_VIT]);
@@ -989,10 +1046,19 @@ __print:
 				{
 					uint8_t		*spe_addr;
 					uint32_t	spe_value;
+					uint32_t	add_value;
 
+					if (va_parse_u32(p + 5, 0, 1, &add_value) == NULL)
+						goto __forest_end;
+					if (add_value == 0xffffffffU)
+						add_value = 8;
+					
 					spe_addr = GET_REAL_ADDR(pkmn_addr[CBT_SPE_2]);
 					spe_value = (*spe_addr << 8) | spe_addr[1];
-					spe_value += 8;
+					if (spe_value + add_value > 999U)
+						spe_value = 999;
+					else
+						spe_value += add_value;
 					*spe_addr = (uint8_t)((spe_value & 0xff00) >> 8);
 					spe_addr[1] = (uint8_t)(spe_value & 0xff);
 					spe_addr = GET_REAL_ADDR(pkmn_addr[CBT_SPE]);
@@ -1085,6 +1151,8 @@ __print:
 					unsigned int	offset;
 					unsigned int	val;
 
+					// POKEMON ROUGE : ca marche pas, addresse ?
+
 					if (va_parse_u32(p + 2, 2, 2, &offset, &val) == NULL)
 						goto __forest_end;
 
@@ -1168,116 +1236,13 @@ __print:
 					ptr = (uint8_t*)GET_REAL_ADDR(pkmn_addr[NAME] + offset);
 					if (pkmn == PKMN_GRE)
 					{
-						/*
-							0xd257
-
-							0 - 3 =  ' '
-							katakana
-							4 = 'O" '
-							5 = 'GA' 6 = 'GI' 7 = 'GU' 8 = 'GE' 9 = 'GO'
-							a = 'ZA' b = 'JI' c = 'ZU' d = 'ZE' e = 'ZO'
-							f = 'DA' 10 = 'DJI' 11 = 'DJU' 12 = 'DE' 13 = 'DO'
-							14 = 'NA"' 15 = 'NI"' 16 = 'NU"' 17 = 'NE"' 18 = 'NO"'
-							19 = 'BA' 1a = 'BI' 1b = 'BU' 1c = 'BO' 1d = 'MA"'
-							1e - 25 -> ...
-
-							hiragana
-							26 = 'GA' 27 = 'GI' 28 = 'GU' 29 = 'GE' 2a = 'GO'
-							2b = 'ZA' 2c = 'JI' 2d = 'ZU' 2e = 'ZE' 2f = 'ZO'
-							30 = 'DA' 31 = 'DJI' 32 = 'DZU' 33 = 'DE' 34 = 'DO'
-							35 - 39 = ...
-							3a = 'BA' 3b = 'BI' 3c = 'BU' 3d = 'BE' 3e = 'BO'
-							3f = ...
-
-							katakana
-							40 = 'PA' 41 = 'PI' 42 = 'PU' 43 = 'PO'
-							hiragana
-							44 = 'PA' 45 = 'PI' 46 = 'PU' 47 = 'PE' 48 = 'PO'
-
-							49 - 54 = bug
-
-					>> 115 -> ID
-					>> 116 -> NO
-					
-							katakana
-							80 = 'A' 81 = 'I' 82 = 'U' 83 = 'E' 84 = 'O'
-							85 = 'KA'
-							...
-							8a = 'SA'
-							...
-							8f = 'TA'
-							...
-							94 = 'NA'
-							...
-							99 = 'HA' 9a = 'HI' 9b = 'HU' 9c = 'HO'
-							...
-							9d = 'MA'
-							...
-							a2 = 'YA' a3 = 'YU' a4 = 'YO'
-							...
-							a5 = 'RA' a6 = 'RU' a7 = 'RE' a8 = 'RO'
-							...
-							a9 = 'WA' aa = 'WO'
-							ab = 'N'
-							...
-							ac = 'tsu'
-							ad = 'ya' ae = 'yu' af = 'yo'
-							b0 = 'i'
-							...
-							hiragana
-							b1 = 'A' I U E O
-							...
-							b6 = 'KA' KI KU KE KO
-							...
-							bb = 'SA' SHI SU SE SO
-							...
-							c0 = 'TA' CHI TSU TE TO
-							...
-							c5 = 'NA' NI NU NE NO
-							...
-							ca = 'HA' HI HU HE HO
-							...
-							cf = 'MA' MI MU ME MO
-							...
-							d4 = 'YA' YU YO
-							...
-							d7 = 'RA' RI RU RE RO
-							...
-							dc = 'WA' WO
-							...
-							de = 'N'
-							df = 'tsu' ya yu yo
-							...
-
-							e3 = '-'
-							e4 = 'º'
-							e5 = '-'
-							e6 = '?'
-							e7 = '!'
-							e8 = 'maru'
-							e9 = 'a' katakana
-							ea = 'u' katakana
-							eb = 'e' katakana
-							ec = 'fleche droite vide'
-							ed = 'fleche droite'
-							ee = 'fleche bas'
-							ef = 'male'
-							f0 = 'yen'
-							f1 = 'x'
-							f2 = '.'
-							f3 = '/'
-							f4 = 'o' katakana
-							f5 = 'femelle'
-							f6 -> ff = 0 1 2 3 4 5 6 7 8 9
-
-						*/
-static const unsigned char	boin[58] = {
-	1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0,
-	0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
-	0,0,0,0,0,0,
-	1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0,
-	0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0
-};
+						static const unsigned char	boin[58] = {
+							1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0,
+							0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+							0,0,0,0,0,0,
+							1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0,
+							0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0
+						};
 
 						for (; ; p++, count++)
 						{
@@ -1351,13 +1316,54 @@ static const unsigned char	boin[58] = {
 					}
 					else
 					{
-						while (1)
+						/*
+							154 155 156 157 158 159
+							 (   )   :   ;   [   ]
+							160 -> alpha min
+							186 187 188 189 190 191
+							 à   è   é   ù   ß   c,  
+							192 193 194 195 196 197
+							 Ä   Ö   Ü   ä   ö   ü
+							198 199 200 201 202 203
+							 ë   ï   â   ô   û   ê
+							204 205 206 207 208 209
+							 î   ' ' ...
+							212 213 214 215 216 217 218 219
+							 c'  d'  j'  l'  m'  n'  p'  s'
+							220 221 222 223 224 225 226 227
+							 's  t'  u'  y'  '   pk  mn  -  
+							228 229 230 231 232 233 234 235
+							 +   ' ' ?   !   .   ァ　ゥ　ェ
+							236 237 238 239
+							 >   >   v   
+							246
+							 0   ...
+						*/
+						for (count = 0; *p && *p != ' ' && count != 11; p++, count++)
 						{
-							if (count == 11 || *p > 'z' || *p < 'a')
-								break ;
-							*(ptr++) = (uint8_t)((*p - 'a') + 0x80);
-							p++;
-							count++;
+							if (*p >= 'a' && *p <= 'z')
+								*(ptr++) = (uint8_t)((*p - 'a') + 0xa0);
+							else if (*p >= 'A' && *p <= 'Z')
+								*(ptr++) = (uint8_t)((*p - 'A') + 0x80);
+							else if (*p >= '0' && *p <= '9')
+								*(ptr++) = (uint8_t)((*p - '0') + 0xf6);
+							else
+							{
+								switch (*p)
+								{
+									case ' ': *(ptr++) = 229U; break;
+									case '(': *(ptr++) = 154U; break;
+									case ')': *(ptr++) = 155U; break;
+									case ':': *(ptr++) = 156U; break;
+									case ';': *(ptr++) = 157U; break;
+									case '[': *(ptr++) = 158U; break;
+									case ']': *(ptr++) = 159U; break;
+									case '?': *(ptr++) = 230U; break;
+									case '!': *(ptr++) = 231U; break;
+									case '.': *(ptr++) = 232U; break;
+									default: puts("illegal char"); goto __forest_end;
+								}
+							}
 						}
 						while (count != 11)
 						{
@@ -1368,7 +1374,7 @@ static const unsigned char	boin[58] = {
 				}
 				else if (strncmp(p, "del", 3) == 0 && non_alnum(p[3]))
 				{
-					uint8_t	*end;
+					uint8_t		*end;
 					uint32_t	num, offset, offset2;
 	
 					if (va_parse_u32(buf + 3, 1, 1, &num) == NULL)

@@ -1,4 +1,4 @@
-00 nul   01 soh   02 stx   03 etx   04 eot   05 enq   06 ack   07 bel
+	 00 nul   01 soh   02 stx   03 etx   04 eot   05 enq   06 ack   07 bel
      08 bs    09 ht    0a nl    0b vt    0c np    0d cr    0e so    0f si
      10 dle   11 dc1   12 dc2   13 dc3   14 dc4   15 nak   16 syn   17 etb
      18 can   19 em    1a sub   1b esc   1c fs    1d gs    1e rs    1f us
