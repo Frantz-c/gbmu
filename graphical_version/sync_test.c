@@ -715,33 +715,39 @@ void			check_if_events(cycle_count_t cycles)
 				{
 					if (_LOG_ENABLE == true)
 					{
-						write (1, "CPU_LOG_DISABLE\n", 16);
+						write(1, "CPU_LOG_DISABLE\n", 16);
 						_LOG_ENABLE = false;
 						_CPU_LOG = false;
+						_WAIT_JOYPAD = false;
+						_N_INST_LOG = 0;
 					}
 					else
 					{
-						write (1, "CPU_LOG_ENABLE\n", 15);
+						write(1, "CPU_LOG_ENABLE\n", 15);
 						_LOG_ENABLE = true;
 						_CPU_LOG = true;
+						_WAIT_JOYPAD = false;
+						_N_INST_LOG = 0;
 					}
+					break;
 				}
-				else if (ev.key.keysym.sym == SDLK_k)
+				if (ev.key.keysym.sym == SDLK_k)
 				{
 					if (_LOG_ENABLE == true)
 					{
-						write (1, "CPU_LOG_STOP\n", 13);
+						write(1, "CPU_LOG_STOP\n", 13);
 						_LOG_ENABLE = false;
 						_WAIT_JOYPAD = false;
 						_CPU_LOG = false;
 					}
 					else
 					{
-						write (1, "CPU_LOG_JOYPAD_EV_START\n", 24);
+						write(1, "CPU_LOG_JOYPAD_EV_START\n", 24);
 						_LOG_ENABLE = true;
 						_WAIT_JOYPAD = true;
 						_CPU_LOG = false;
 					}
+					break;
 				}
 			}
 			
@@ -753,6 +759,7 @@ void			check_if_events(cycle_count_t cycles)
 				SDL_RenderCopy(render, texture, NULL, NULL);
 				SDL_RenderPresent(render);
 				SDL_LockTexture(texture, NULL, (void **)&pixels, &pitch);
+				break;
 			}
 		}
 	}

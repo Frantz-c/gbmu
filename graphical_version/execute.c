@@ -525,6 +525,16 @@ cycle_count_t	execute(registers_t *regs)
 			get_bin(SVBK_REGISTER), get_bin(VBK_REGISTER), DMA_REGISTER
 		);
 */
+		dprintf(log_file,
+			"\nPC = 0x%x\n"
+			"A = %3u(%2X)  B = %2X     C = %2X     D = %2X\n"
+			"E =  %2X      H = %2X     L = %2X     F = %.4s(ZNHC)\n"
+			"AF = %4X    BC = %4X  DE = %4X  HL = %4X\n",
+			regs->reg_pc,
+			regs->reg_a, regs->reg_a, regs->reg_b, regs->reg_c, regs->reg_d,
+			regs->reg_e, regs->reg_h, regs->reg_l, get_bin(regs->reg_f), 
+			regs->reg_af, regs->reg_bc, regs->reg_de, regs->reg_hl
+		);
 		if (opcode == 0xcb)
 			plog(cb_opcodes[address[1]].inst);
 		else

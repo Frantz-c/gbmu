@@ -26,7 +26,9 @@
 	prochainement :
 
 	addr pokemon 1 proprietaire = 0xd233
-	0xcf45 -> nom ?
+
+	pp : 0x3f & value = pp;
+	pp suppl : value >> 6;
 */
 
 extern int		log_file;
@@ -155,7 +157,7 @@ static unsigned int		atoi_hexa(char **s, int *err)
 
 static int		non_alnum(char c)
 {
-	return (c < '0' || (c > '9' && c < 'A') || (c > 'Z' && c < 'a') || c > 'Z');
+	return (c < '0' || (c > '9' && c < 'A') || (c > 'Z' && c < 'a') || c > 'z');
 }
 
 static void		write_dump_switchable_mem_fd(int fd, void *start, unsigned int length, char *buf, const char *title)
@@ -211,6 +213,12 @@ static char		*va_parse_u32(char *p, int min_arg, int max_arg, ...)
 	va_start(ap, max_arg);
 
 	while (*p == ' ') p++;
+	if (*p == '\0' && min_arg == 0)
+	{
+		tmp = va_arg(ap, uint32_t*);
+		*tmp = 0xffffffffU;
+		return (p);
+	}
 	if (*p != '(' && p[-1] != ' ')
 		goto __error;
 	if (*p == '(') {
@@ -267,7 +275,10 @@ enum pkmn_offset_e
 {
 	HEAD,NO,CHP,ATT1,ATT2,ATT3,ATT4,ID,XP,PP1,
 	PP2,PP3,PP4,LVL,HP,ATT,DEF,VIT,SPE,NAME,
-	OBJ,OBJ_PC,CASH
+	OBJ,OBJ_PC,CASH,CBT_HP,ADV_HP,CBT_ATT,CBT_DEF,
+	CBT_VIT,CBT_SPE,CBT_CHP,CBT_ATT_2,CBT_DEF_2,
+	CBT_VIT_2,CBT_SPE_2,ROM_ATT
+
 };
 
 #define PKMN_RB		0x1
@@ -365,7 +376,7 @@ extern void		*command_line_thread(void *unused)
 	unsigned char	*ptr;
 	unsigned int	pkmn;
 	int				err;
-	uint16_t		pkmn_addr[23] = {0};
+	uint32_t		pkmn_addr[35] = {0};
 
 	write(2, "\e[?25l", 6);
 
@@ -396,6 +407,18 @@ extern void		*command_line_thread(void *unused)
 		pkmn_addr[OBJ] = 0xd322U;
 		pkmn_addr[OBJ_PC] = 0xd53fU;
 		pkmn_addr[CASH] = 0xd34dU;
+		pkmn_addr[CBT_CHP] = 0xcffcU;
+		pkmn_addr[ADV_HP] = 0xcfcdU;
+		pkmn_addr[CBT_ATT] = 0xd00cU;
+		pkmn_addr[CBT_DEF] = 0xd00eU;
+		pkmn_addr[CBT_VIT] = 0xd010U;
+		pkmn_addr[CBT_SPE] = 0xd012U;
+		pkmn_addr[CBT_ATT_2] = 0xd00cU;
+		pkmn_addr[CBT_DEF_2] = 0xd00eU;
+		pkmn_addr[CBT_VIT_2] = 0xd010U;
+		pkmn_addr[CBT_SPE_2] = 0xd012U;
+		pkmn_addr[CBT_HP] = 0xcfa1U;
+		pkmn_addr[ROM_ATT] = 0x39658U;
 
 	}
 	else if (strncmp(g_cart.game_title, "POKEMON GRE", 11) == 0)
@@ -424,7 +447,19 @@ extern void		*command_line_thread(void *unused)
 		pkmn_addr[OBJ] = 0xd2a1U;
 		pkmn_addr[OBJ_PC] = 0xd4b9U;
 		pkmn_addr[CASH] = 0xd2cbU;
-
+		pkmn_addr[CBT_CHP] = 0xcffcU;
+		//pkmn_addr[CBT_CHP] = 0xcf80U;
+		pkmn_addr[ADV_HP] = 0xcfcdU;
+		pkmn_addr[CBT_ATT] = 0xcfa3U;
+		pkmn_addr[CBT_DEF] = 0xcfa5U;
+		pkmn_addr[CBT_VIT] = 0xcfa7U;
+		pkmn_addr[CBT_SPE] = 0xcfa9U;
+		pkmn_addr[CBT_ATT_2] = 0xd00cU;
+		pkmn_addr[CBT_DEF_2] = 0xd00eU;
+		pkmn_addr[CBT_VIT_2] = 0xd010U;
+		pkmn_addr[CBT_SPE_2] = 0xd012U;
+		pkmn_addr[CBT_HP] = 0xcfa1U;
+		pkmn_addr[ROM_ATT] = 0x39658U;
 	}
 	else
 		pkmn = 0;
@@ -670,6 +705,72 @@ __print:
 					puts("\nsyntax error");
 				}
 			}
+			else if (strncmp(buf, "fbdump", 6) == 0 && non_alnum(buf[6]))
+			{
+				int			fd;
+				char		*name;
+				char		*zone[5] = {NULL};
+
+				p = buf + 6;
+				while (*p == ' ') p++;
+				if (*p == '(')
+				{
+					p++;
+					while (*p == ' ') p++;
+				}
+				if (non_alnum(*p))
+				{
+					puts("(non1) syntax error");
+					goto __forest_end;
+				}
+
+				name = p;
+				while (*p && *p != ' ' && *p != ',') p++;
+				if (*p == '\0' || p[1] == '\0') {
+					puts("(nulbyte) syntax error");
+					goto __forest_end;
+				}
+				*(p++) = '\0';
+
+				for (unsigned int i = 0; i < 5; i++)
+				{
+					zone[i] = p;
+					while (*p && *p != ' ' && *p != ',') p++;
+					if (*p == '\0')
+					{
+						break;
+					}
+					*(p++) = '\0';
+					while (*p == ' ') p++;
+					if (*p == ',') {
+						p++;
+						while (*p == ' ') p++;
+					}
+				}
+
+				if ((fd = open(name, O_WRONLY | O_CREAT | O_TRUNC, 0666)) == -1)
+					goto __forest_end;
+
+				for (unsigned int i = 0; i < 5 && zone[i]; i++)
+				{
+					if (!strcmp("ERAM", zone[i]) || !strcmp("eram", zone[i]) || !strcmp("e", zone[i]))
+						write(fd, GET_REAL_ADDR(0xa000), g_memmap.save_size);
+					else if (!strcmp("URAM", zone[i]) || !strcmp("uram", zone[i]) || !strcmp("u", zone[i]))
+						write(fd, GET_REAL_ADDR(0xc000), 0x2000);
+					else if (!strcmp("WRAM", zone[i]) || !strcmp("wram", zone[i]) || !strcmp("w", zone[i]))
+						write(fd, GET_REAL_ADDR(0xff80), 0x7f);
+					else if (!strcmp("OAM", zone[i]) || !strcmp("oam", zone[i]) || !strcmp("o", zone[i]))
+						write(fd, GET_REAL_ADDR(0xfe00), 0xa0);
+					else if (!strcmp("VRAM", zone[i]) || !strcmp("vram", zone[i]) || !strcmp("v", zone[i]))
+						write(fd, GET_REAL_ADDR(0x8000), 0x2000);
+					else {
+						puts("unknown argument");
+						close(fd);
+						goto __forest_end;
+					}
+				}
+				close(fd);
+			}
 			else if (strncmp(buf, "bzero", 5) == 0 && non_alnum(buf[5]))
 			{
 				uint32_t	start, length, offset;
@@ -709,6 +810,12 @@ __print:
 								"    \e[0;33mdump  \e[0m(\e[1;34m2b\e[0m start, \e[1;34m2b\e[0m end)\n"\
 								"    \e[0;33mfdump \e[0m(\e[1;34mstring\e[0m filename)\n\n"\
 								"pokemon functions:\n"\
+								"    \e[0;33msoin  \e[0m(\e[0;34mvoid\e[0m);\n"\
+								"    \e[0;33madv_pv\e[0m(\e[1;34m2b\e[0m pv);\n"\
+								"    \e[0;33mfor++ \e[0m(\e[1;34m2b\e[0m add_value);\n"\
+								"    \e[0;33mdef++ \e[0m(\e[1;34m2b\e[0m add_value);\n"\
+								"    \e[0;33mvit++ \e[0m(\e[1;34m2b\e[0m add_value);\n"\
+								"    \e[0;33mspe++ \e[0m(\e[1;34m2b\e[0m add_value);\n"\
 								"    \e[0;33mpok   \e[0m(n, \e[1;34m1b\e[0m numero);\n"\
 								"    \e[0;33mpv    \e[0m(n, \e[1;34m2b\e[0m max, \e[1;34m2b\e[0m cur);\n"\
 								"    \e[0;33matt1  \e[0m(n, \e[1;34m1b\e[0m numero, \e[1;34m1b\e[0m pp);\n"\
@@ -758,6 +865,139 @@ __print:
 
 					offset = (offset - 1) * 44;
 					*GET_REAL_ADDR(pkmn_addr[NO] + offset) = (uint8_t)(val & 0xffu);
+				}
+				else if (strncmp(p, "soin", 4) == 0 && non_alnum(p[4]))
+				{
+					uint8_t			*pv_addr;
+					uint32_t		numero;
+
+					if (va_parse_u32(p + 4, 0, 1, &numero) == NULL)
+						goto __forest_end;
+
+					if (numero == 0xffffffffU) // soin du pokemon en combat
+					{
+						pv_addr = GET_REAL_ADDR(pkmn_addr[CBT_HP]);
+						*GET_REAL_ADDR(pkmn_addr[CBT_CHP]) = *pv_addr;
+						*GET_REAL_ADDR(pkmn_addr[CBT_CHP] + 1) = pv_addr[1];
+					}
+					else if (numero < 7)
+					{
+						uint8_t		pp_plus;
+						uint8_t		max_pp;
+						uint32_t	offset;
+						uint32_t	att_data_offset;
+						uint32_t	i;
+						uint32_t	exit;
+
+						if (numero == 0) {
+							exit = 0;
+							offset = 0;
+						}
+						else {
+							exit = 1;
+							offset = (numero - 1) * 44;
+						}
+
+						for (; offset < (uint32_t)(6 * 44); offset += 44U)
+						{
+							pv_addr = GET_REAL_ADDR(pkmn_addr[HP] + offset);
+							*GET_REAL_ADDR(pkmn_addr[CHP] + offset) = pv_addr[0];
+							*GET_REAL_ADDR(pkmn_addr[CHP] + 1 + offset) = pv_addr[1];
+							printf("pv = %u\n", (pv_addr[0] << 8) | pv_addr[1]);
+							for (i = 0; i < 4; i++)
+							{
+								if ((att_data_offset = *GET_REAL_ADDR(pkmn_addr[ATT1] + i)) == 0)
+									continue;
+								printf("attaque[%u] = %u\n", i, att_data_offset);
+								att_data_offset = ((att_data_offset - 1) * 6);
+								max_pp = *((uint8_t*)(g_memmap.fixed_rom
+														+ pkmn_addr[ROM_ATT]
+														+ att_data_offset + 5
+													));
+								printf("max_pp[%u] = %u\n", i, max_pp);
+								pp_plus = *GET_REAL_ADDR(pkmn_addr[PP1] + i) & 0xc0;
+								*GET_REAL_ADDR(pkmn_addr[PP1] + i) = (max_pp | pp_plus);
+							}
+							if (exit) break;
+						}
+					}
+					else
+						puts("syntax error");
+				}
+				else if (strncmp(p, "adv_pv", 6) == 0 && non_alnum(p[6]))
+				{
+					unsigned int	pv;
+
+					if (va_parse_u32(p + 6, 1, 1, &pv) == NULL)
+						goto __forest_end;
+
+					*GET_REAL_ADDR(pkmn_addr[ADV_HP]) = (uint8_t)((pv & 0xff00) >> 8);
+					*GET_REAL_ADDR(pkmn_addr[ADV_HP] + 1) = (uint8_t)(pv & 0xff);
+				}
+				else if (strncmp(p, "for++", 5) == 0 && non_alnum(p[5]))
+				{
+					uint8_t		*for_addr;
+					uint32_t	for_value;
+					uint32_t	add_value;
+
+					if (va_parse_u32(p + 6, 0, 1, &add_value) == NULL)
+						goto __forest_end;
+					if (add_value == 0xffffffffU)
+						add_value = 8;
+					
+					for_addr = GET_REAL_ADDR(pkmn_addr[CBT_ATT_2]);
+					for_value = (*for_addr << 8) | for_addr[1];
+					if (for_value + add_value > 999U)
+						for_value = 999;
+					else
+						for_value += add_value;
+					*for_addr = (uint8_t)((for_value & 0xff00) >> 8);
+					for_addr[1] = (uint8_t)(for_value & 0xff);
+					for_addr = GET_REAL_ADDR(pkmn_addr[CBT_ATT]);
+					*for_addr = (uint8_t)((for_value & 0xff00) >> 8);
+					for_addr[1] = (uint8_t)(for_value & 0xff);
+				}
+				else if (strncmp(p, "def++", 5) == 0 && non_alnum(p[5]))
+				{
+					uint8_t		*def_addr;
+					uint32_t	def_value;
+
+					def_addr = GET_REAL_ADDR(pkmn_addr[CBT_DEF_2]);
+					def_value = (*def_addr << 8) | def_addr[1];
+					def_value += 8;
+					*def_addr = (uint8_t)((def_value & 0xff00) >> 8);
+					def_addr[1] = (uint8_t)(def_value & 0xff);
+					def_addr = GET_REAL_ADDR(pkmn_addr[CBT_DEF]);
+					*def_addr = (uint8_t)((def_value & 0xff00) >> 8);
+					def_addr[1] = (uint8_t)(def_value & 0xff);
+				}
+				else if (strncmp(p, "vit++", 5) == 0 && non_alnum(p[5]))
+				{
+					uint8_t		*vit_addr;
+					uint32_t	vit_value;
+
+					vit_addr = GET_REAL_ADDR(pkmn_addr[CBT_VIT_2]);
+					vit_value = (*vit_addr << 8) | vit_addr[1];
+					vit_value += 8;
+					*vit_addr = (uint8_t)((vit_value & 0xff00) >> 8);
+					vit_addr[1] = (uint8_t)(vit_value & 0xff);
+					vit_addr = GET_REAL_ADDR(pkmn_addr[CBT_VIT]);
+					*vit_addr = (uint8_t)((vit_value & 0xff00) >> 8);
+					vit_addr[1] = (uint8_t)(vit_value & 0xff);
+				}
+				else if (strncmp(p, "spe++", 5) == 0 && non_alnum(p[5]))
+				{
+					uint8_t		*spe_addr;
+					uint32_t	spe_value;
+
+					spe_addr = GET_REAL_ADDR(pkmn_addr[CBT_SPE_2]);
+					spe_value = (*spe_addr << 8) | spe_addr[1];
+					spe_value += 8;
+					*spe_addr = (uint8_t)((spe_value & 0xff00) >> 8);
+					spe_addr[1] = (uint8_t)(spe_value & 0xff);
+					spe_addr = GET_REAL_ADDR(pkmn_addr[CBT_SPE]);
+					*spe_addr = (uint8_t)((spe_value & 0xff00) >> 8);
+					spe_addr[1] = (uint8_t)(spe_value & 0xff);
 				}
 				else if (strncmp(p, "pv", 2) == 0 && non_alnum(p[2]))
 				{
