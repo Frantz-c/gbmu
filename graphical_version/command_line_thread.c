@@ -26,6 +26,7 @@
 #include <signal.h>
 #include <termios.h>
 #include <stdarg.h>
+#include <time.h>
 #include "memory_map.h"
 #include "pkmn_green_string.h"
 /*
@@ -282,7 +283,33 @@ __error:
 	return (NULL);
 }
 
-
+int		is_missingno(uint32_t n)
+{
+	static const uint8_t	missingno[191] = {
+		1,0,0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,0,0,
+		0,1,1,0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,0,0,0,
+		1,0,1,0,0,0,1,0,0,0,
+		0,1,1,1,0,0,0,1,1,1,
+		0,0,0,0,0,0,0,0,0,1,
+		1,1,0,0,0,0,1,1,0,0,
+		0,0,0,0,1,1,0,0,0,0,
+		0,0,0,0,0,0,0,0,0,0,
+		0,0,0,0,0,1,0,0,0,0,
+		0,1,1,0,0,0,0,1,0,0,
+		0,0,0,0,1,1,0,1,0,0,
+		1,0,0,0,0,0,1,0,0,0,
+		0,0,0,0,0,0,1,0,0,1,
+		1,1,1,0,0,0,0,0,0,0,
+		0,0,1,0,1,1,0,0,0,0,
+		0,1,1,1,1,0,0,0,0,0,0
+	};
+	if (n > 190U)
+		return (1);
+	return (missingno[n]);
+}
 
 enum pkmn_offset_e
 {
@@ -291,7 +318,7 @@ enum pkmn_offset_e
 	SPE,NAME,OBJ,OBJ_PC,CASH,CBT_HP,ADV_HP,
 	CBT_ATT,CBT_DEF,CBT_VIT,CBT_SPE,CBT_CHP,
 	CBT_ATT_2,CBT_DEF_2,CBT_VIT_2,CBT_SPE_2,
-	ROM_ATT,ROM_ATT_NAME,ROM_POK_NAME
+	ROM_ATT,ROM_ATT_NAME,ROM_POK_NAME,OWNER
 };
 
 #define PKMN_RB		0x1
@@ -364,13 +391,6 @@ static void	add_hist(t_hist **hist, char *str, unsigned int len, unsigned int *h
 	tmp->prev = new;
 }
 
-/*
- *	commandes : 
- *		get 0xaddr\n
- *		set 0xaddr=0xvalue\n
- *		dump 0xstart-0xend
- *		fdump filename
-*/
 extern void		*command_line_thread(void *unused)
 {
 	char			buf[512] = {0};
@@ -382,15 +402,13 @@ extern void		*command_line_thread(void *unused)
 	unsigned int	i = 0;
 	unsigned int	j = 0;
 	unsigned long	chr;
-	unsigned short	addr;
-//	unsigned short	addr2;
-	unsigned char	value;
 	unsigned int	tmp;
 	unsigned char	*ptr;
 	unsigned int	pkmn;
 	int				err;
-	uint32_t		pkmn_addr[38] = {0};
+	uint32_t		pkmn_addr[39] = {0};
 
+	srand(time(NULL));
 	write(2, "\e[?25l", 6);
 
 	if (strncmp(g_cart.game_title, "POKEMON RED", 11) == 0
@@ -417,6 +435,7 @@ extern void		*command_line_thread(void *unused)
 		pkmn_addr[DEF] = 0xd196U;
 		pkmn_addr[VIT] = 0xd198U;
 		pkmn_addr[SPE] = 0xd19aU;
+		pkmn_addr[OWNER] = 0xd233U;
 		pkmn_addr[NAME] = 0xd2baU;
 		pkmn_addr[OBJ] = 0xd322U;
 		pkmn_addr[OBJ_PC] = 0xd53fU;
@@ -459,6 +478,7 @@ extern void		*command_line_thread(void *unused)
 		pkmn_addr[DEF] = 0xd151U;
 		pkmn_addr[VIT] = 0xd153U;
 		pkmn_addr[SPE] = 0xd155U;
+		pkmn_addr[OWNER] = 0xd233U;
 		pkmn_addr[NAME] = 0xd257U;
 		pkmn_addr[OBJ] = 0xd2a1U;
 		pkmn_addr[OBJ_PC] = 0xd4b9U;
@@ -477,11 +497,10 @@ extern void		*command_line_thread(void *unused)
 		pkmn_addr[CBT_SPE_2] = 0xd012U;
 		pkmn_addr[ROM_ATT] = 0x39658U;
 		pkmn_addr[ROM_ATT_NAME] = 0x10000U;
-		pkmn_addr[ROM_POK_NAME] = 0x39067U;
+		pkmn_addr[ROM_POK_NAME] = 0x39068U;
 	}
 	else
 		pkmn = 0;
-
 	(void)unused;
 	term_noecho_mode(1);
 	for (;;)
@@ -590,10 +609,6 @@ __print:
 			if (j > i)
 				write(1, buf + i + 1, j - i);
 		}
-//		else
-//		{
-//			write(1, "\e[0;41m \e[0m", 12);
-//		}
 
 
 		if (chr == 127 || chr == K_LEFT || chr == K_RIGHT || chr == K_UP || chr == K_DOWN)
@@ -602,7 +617,10 @@ __print:
 		else if (chr == '\n')
 		{
 			buf[j] = '\0';
-			write(1, "\e[512C\n", 7);
+			write(1, "\e[512D\e[2K", 10);
+			write(1, buf, j);
+			write(1, "\n", 1);
+			//write(1, "\e[512C\n", 7);
 
 			if (strcmp(buf, "exit") == 0)
 			{
@@ -611,6 +629,9 @@ __print:
 			}
 			if (strncmp(buf, "rset", 4) == 0 && non_alnum(buf[4]))
 			{
+				uint32_t	addr;
+				uint32_t	val;
+
 				p = buf + 4;
 				
 				while (*p == ' ') p++;
@@ -644,13 +665,13 @@ __print:
 				if (*p == '\0')
 					goto __forest_end;
 
-				value = atoi_hexa(&p, &err);
+				val = atoi_hexa(&p, &err);
 				if (err) {
 					puts("\n\e[0;31msyntax error\e[0m");
 					goto __forest_end;
 				}
 
-				*(GET_REAL_ADDR(addr)) = (uint8_t)value;
+				*(GET_REAL_ADDR(addr)) = (uint8_t)val;
 				addr++;
 				
 				while (*p == ' ') p++;
@@ -664,7 +685,7 @@ __print:
 				if (va_parse_u32(buf + 3, 2, 2, &addr, &val) == NULL)
 					goto __forest_end;
 
-				*(GET_REAL_ADDR((uint16_t)addr)) = value;
+				*(GET_REAL_ADDR((uint16_t)addr)) = val;
 			}
 			else if (strncmp(buf, "get", 3) == 0 && non_alnum(buf[3]))
 			{
@@ -819,43 +840,47 @@ __print:
 				else
 					puts("log currently writed...");
 			}
-			else if (strcmp(buf, "help") == 0)
+			else if (strncmp(buf, "help", 4) == 0 && non_alnum(buf[4]))
 			{
-				#define HELP	"memory functions:\n"\
+				p = buf + 4;
+				if (*p == 0)
+				{
+					#define HELP	"memory functions:\n"\
 								"    \e[0;33mset   \e[0m(\e[1;34m2b\e[0m addr, \e[1;34m1b\e[0m value)\n"\
 								"    \e[0;33mget   \e[0m(\e[1;34m2b\e[0m addr)\n"\
 								"    \e[0;33mrset  \e[0m(\e[1;34m2b\e[0m addr, \e[1;34m1b\e[0m value, ...)\n"\
 								"    \e[0;33mdump  \e[0m(\e[1;34m2b\e[0m start, \e[1;34m2b\e[0m end)\n"\
 								"    \e[0;33mfdump \e[0m(\e[1;34mstring\e[0m filename)\n\n"\
-								"pokemon functions:\n"\
-								"    \e[0;33msoin  \e[0m(\e[0;34mvoid\e[0m);\n"\
-								"    \e[0;33madv_pv\e[0m(\e[1;34m2b\e[0m pv);\n"\
-								"    \e[0;33mfor++ \e[0m(\e[1;34m2b\e[0m add_value);\n"\
-								"    \e[0;33mdef++ \e[0m(\e[1;34m2b\e[0m add_value);\n"\
-								"    \e[0;33mvit++ \e[0m(\e[1;34m2b\e[0m add_value);\n"\
-								"    \e[0;33mspe++ \e[0m(\e[1;34m2b\e[0m add_value);\n"\
-								"    \e[0;33mpok   \e[0m(n, \e[1;34m1b\e[0m numero);\n"\
-								"    \e[0;33mpv    \e[0m(n, \e[1;34m2b\e[0m max, \e[1;34m2b\e[0m cur);\n"\
-								"    \e[0;33matt1  \e[0m(n, \e[1;34m1b\e[0m numero, \e[1;34m1b\e[0m pp);\n"\
-								"    \e[0;33matt2  \e[0m(n, \e[1;34m1b\e[0m numero, \e[1;34m1b\e[0m pp);\n"\
-								"    \e[0;33matt3  \e[0m(n, \e[1;34m1b\e[0m numero, \e[1;34m1b\e[0m pp);\n"\
-								"    \e[0;33matt4  \e[0m(n, \e[1;34m1b\e[0m numero, \e[1;34m1b\e[0m pp);\n"\
-								"    \e[0;33mid    \e[0m(n, \e[1;34m2b\e[0m id);\n"\
-								"    \e[0;33mxp    \e[0m(n, \e[1;34m3b\e[0m xp);\n"\
-								"    \e[0;33mniv   \e[0m(n, \e[1;34m1b\e[0m niveau);\n"\
-								"    \e[0;33mfor   \e[0m(n, \e[1;34m2b\e[0m for);\n"\
-								"    \e[0;33mdef   \e[0m(n, \e[1;34m2b\e[0m def);\n"\
-								"    \e[0;33mvit   \e[0m(n, \e[1;34m2b\e[0m vit);\n"\
-								"    \e[0;33mspe   \e[0m(n, \e[1;34m2b\e[0m spe);\n"\
-								"    \e[0;33mname  \e[0m(n, \e[1;34mstring\e[0m name);\n"\
-								"    \e[0;33mupdate\e[0m(\e[0;34mvoid\e[0m);\n"\
-								"    \e[0;33mdel   \e[0m(n);\n"\
-								"    \e[0;33mpush  \e[0m(\e[1;34m1b\e[0m object, \e[1;34m1b\e[0m quantity);\n"\
-								"    \e[0;33mpop   \e[0m(\e[0;34mvoid\e[0m);\n"\
-								"    \e[0;33mstat  \e[0m(\e[1;34m2b\e[0m for, \e[1;34m2b\e[0m def, "\
-									"\e[1;34m2b    \e[0m vit, \e[1;34m2b\e[0m spe);\n"\
-								"    \e[0;33mcash  \e[0m(\e[1;34m2b\e[0m cash); [red/blue]\n"\
-								"    \e[0;33mcash  \e[0m(\e[1;34m3b\e[0m cash); [green]\n"\
+								"pokemon green/red/blue functions:\n"\
+								"    \e[0;33msoin     \e[0m(n\e[1;31m?\e[0m);\n"\
+								"    \e[0;33madv_pv   \e[0m(\e[1;34m2b\e[0m pv);\n"\
+								"    \e[0;33mfor++    \e[0m(\e[1;34m2b\e[0m add_value\e[1;31m?\e[0m);\n"\
+								"    \e[0;33mdef++    \e[0m(\e[1;34m2b\e[0m add_value\e[1;31m?\e[0m);\n"\
+								"    \e[0;33mvit++    \e[0m(\e[1;34m2b\e[0m add_value\e[1;31m?\e[0m);\n"\
+								"    \e[0;33mspe++    \e[0m(\e[1;34m2b\e[0m add_value\e[1;31m?\e[0m);\n"\
+								"    \e[0;33mpkmn_num \e[0m(n, \e[1;34m1b\e[0m numero);\n"\
+								"    \e[0;33mpkmn_push\e[0m(n, \e[1;34m1b\e[0m numero);\n"\
+								"    \e[0;33mpv       \e[0m(n, \e[1;34m2b\e[0m max, \e[1;34m2b\e[0m cur\e[1;31m?\e[0m);\n"\
+								"    \e[0;33matt1     \e[0m(n, \e[1;34m1b\e[0m numero, \e[1;34m1b\e[0m pp\e[1;31m?\e[0m);\n"\
+								"    \e[0;33matt2     \e[0m(n, \e[1;34m1b\e[0m numero, \e[1;34m1b\e[0m pp\e[1;31m?\e[0m);\n"\
+								"    \e[0;33matt3     \e[0m(n, \e[1;34m1b\e[0m numero, \e[1;34m1b\e[0m pp\e[1;31m?\e[0m);\n"\
+								"    \e[0;33matt4     \e[0m(n, \e[1;34m1b\e[0m numero, \e[1;34m1b\e[0m pp\e[1;31m?\e[0m);\n"\
+								"    \e[0;33mid       \e[0m(n, \e[1;34m2b\e[0m id);\n"\
+								"    \e[0;33mxp       \e[0m(n, \e[1;34m3b\e[0m xp);\n"\
+								"    \e[0;33mniv      \e[0m(n, \e[1;34m1b\e[0m niveau);\n"\
+								"    \e[0;33mfor      \e[0m(n, \e[1;34m2b\e[0m for);\n"\
+								"    \e[0;33mdef      \e[0m(n, \e[1;34m2b\e[0m def);\n"\
+								"    \e[0;33mvit      \e[0m(n, \e[1;34m2b\e[0m vit);\n"\
+								"    \e[0;33mspe      \e[0m(n, \e[1;34m2b\e[0m spe);\n"\
+								"    \e[0;33mnom      \e[0m(n, \e[1;34mstring\e[0m name);\n"\
+								"    \e[0;33maj       \e[0m(\e[0;34mvoid\e[0m);\n"\
+								"    \e[0;33msup      \e[0m(n);\n"\
+								"    \e[0;33mobj_push \e[0m(\e[1;34m1b\e[0m object, \e[1;34m1b\e[0m quantity);\n"\
+								"    \e[0;33mobj_pop  \e[0m(\e[0;34mvoid\e[0m);\n"\
+								"    \e[0;33mstat     \e[0m(\e[1;34m2b\e[0m for, \e[1;34m2b\e[0m def, "\
+									"\e[1;34m2b       \e[0m vit, \e[1;34m2b\e[0m spe);\n"\
+								"    \e[0;33margent   \e[0m(\e[1;34m2b\e[0m cash); [red/blue]\n"\
+								"    \e[0;33margent   \e[0m(\e[1;34m3b\e[0m cash); [green]\n"\
 								"  n = [1-6]\n"\
 								"  1b = 1 byte, 2b = 2 bytes, 3b = 3 bytes\n\n"\
 								"syntax:\n"\
@@ -864,7 +889,80 @@ __print:
 								"    mnemonic a, b, ...\n"\
 								"    mnemonic(a b ...)\n\n"\
 
-				write(1, HELP, strlen(HELP));
+					write(1, HELP, strlen(HELP));
+					goto __forest_end;
+				}
+				while (*p == ' ') p++;
+				if (pkmn && strcmp(p, "soin") == 0)
+					puts("soin(void) : soigne le pokemon courant (en combat).\n"
+						"soin(0)    : soigne tous les pokemons et restaure leurs pp (hors combat)\n"
+						"soin(n)    : soigne le pokemon n et restaure ses pp (hors combat)\n");
+				else if (pkmn && strcmp(p, "adv_pv") == 0)
+					puts("adv_pv : choisir le nombre de pv du pokemon ennemi (en combat)\n");
+				else if (pkmn && strcmp(p, "for++") == 0)
+					puts("for++(void) : augmente la force du pokemon courant de 8 (en combat)\n"
+						"for++(x)    : augmente la force du pokemon courant de x (en combat)\n");
+				else if (pkmn && strcmp(p, "def++") == 0)
+					puts("def++(void) : augmente la defense du pokemon courant de 8 (en combat)\n"
+						"def++(x)    : augmente la defense du pokemon courant de x (en combat)\n");
+				else if (pkmn && strcmp(p, "vit++") == 0)
+					puts("vit++(void) : augmente la vitesse du pokemon courant de 8 (en combat)\n"
+						"vit++(x)    : augmente la vitesse du pokemon courant de x (en combat)\n");
+				else if (pkmn && strcmp(p, "spe++") == 0)
+					puts("spe++(void) : augmente le special du pokemon courant de 8 (en combat)\n"
+						"spe++(x)    : augmente le special du pokemon courant de x (en combat)\n");
+				else if (pkmn && strcmp(p, "pkmn_num") == 0)
+					puts("pkmn_num(n, x) : modifier le numero du pokemon x (hors combat)\n");
+				else if (pkmn && strcmp(p, "pkmn_push") == 0)
+					puts("pkmn_push(n)    : ajouter un pokemon choisi aleatoirement a la suite\n"
+						 "pkmn_push(n, x) : ajouter le pokemon numero x a la suite\n");
+				else if (pkmn && strcmp(p, "pv") == 0)
+					puts("pv(n, x)    : change le nombre de points de vie max et courant (x) du pokemon n\n"
+						 "pv(n, x, y) : change le nombre de points de vie max (x) et courant (y) du pokemon n\n");
+				else if (pkmn && strcmp(p, "att1") == 0)
+					puts("att1(n)    : ajoute une attaque aleatoire a l'emplacement 1\n"
+						 "att1(n, x) : ajoute l'attaque numero x a l'emplacement 1\n");
+				else if (pkmn && strcmp(p, "att2") == 0)
+					puts("att2(n)    : ajoute une attaque aleatoire a l'emplacement 2\n"
+						 "att2(n, x) : ajoute l'attaque numero x a l'emplacement 2\n");
+				else if (pkmn && strcmp(p, "att3") == 0)
+					puts("att3(n)    : ajoute une attaque aleatoire a l'emplacement 3\n"
+						 "att3(n, x) : ajoute l'attaque numero x a l'emplacement 3\n");
+				else if (pkmn && strcmp(p, "att4") == 0)
+					puts("att4(n)    : ajoute une attaque aleatoire a l'emplacement 4\n"
+						 "att4(n, x) : ajoute l'attaque numero x a l'emplacement 4\n");
+				else if (pkmn && strcmp(p, "id") == 0)
+					puts("id(n, x) : modifie l'id (x) du pokemon n\n");
+				else if (pkmn && strcmp(p, "xp") == 0)
+					puts("xp(n, x) : modifie l'xp (x) du pokemon n\n");
+				else if (pkmn && strcmp(p, "niv") == 0)
+					puts("niv(n, x) : reinitialise le niveau du pokemon n avec la valeur x\n");
+				else if (pkmn && strcmp(p, "for") == 0)
+					puts("for(n, x) : reinitialise la force du pokemon n avec la valeur x\n");
+				else if (pkmn && strcmp(p, "def") == 0)
+					puts("def(n, x) : reinitialise la defense du pokemon n avec la valeur x\n");
+				else if (pkmn && strcmp(p, "vit") == 0)
+					puts("vit(n, x) : reinitialise la vitesse du pokemon n avec la valeur x\n");
+				else if (pkmn && strcmp(p, "spe") == 0)
+					puts("spe(n, x) : reinitialise le special du pokemon n avec la valeur x\n");
+				else if (pkmn && strcmp(p, "nom") == 0)
+					puts("nom(n, x) : change le nom du pokemon n avec x\n");
+				else if (pkmn && strcmp(p, "maj") == 0)
+					puts("maj(void) : met a jour le header des pokemons\n");
+				else if (pkmn && strcmp(p, "sup") == 0)
+					puts("sup(n) : supprime le pokemon n (decale les suivants si necessaire)\n");
+				else if (pkmn && strcmp(p, "obj_push") == 0)
+					puts("obj_push(n, x)    : ajoute l'objet x a l'inventaire (quantite par defaut : 99)\n"
+						 "obj_push(n, x, y) : ajoute l'objet x a l'inventaire en y exemplaires\n");
+				else if (pkmn && strcmp(p, "obj_pop") == 0)
+					puts("obj_pop(void) : supprime le dernier objet de l'inventaire\n");
+				else if (pkmn && strcmp(p, "stat") == 0)
+					puts("stat(n, for, def?, vit?, spe?) : modifie les caracteristiques du pokemon n\n");
+				else if (pkmn && strcmp(p, "argent") == 0)
+					puts("argent(x) : modifie l'argent que possede le joueur\n");
+				else
+					puts("commande inconnue\n");
+				//...
 			}
 /*
  *	POKEMON ROUGE, BLEU, VERT
@@ -873,16 +971,93 @@ __print:
 			{
 				p = buf;
 
-				if (strncmp(p, "pok", 3) == 0 && non_alnum(p[3]))
+				// auto update header ?
+				if (strncmp(p, "pkmn_num", 8) == 0 && non_alnum(p[8]))
 				{
-					unsigned int	val;
-					unsigned int	offset;
+					uint32_t	val;
+					uint32_t	offset;
+					uint32_t	count;
+					uint8_t		*addr;
 
-					if (va_parse_u32(p + 3, 2, 2, &offset, &val) == NULL)
+					if (va_parse_u32(p + 8, 2, 2, &offset, &val) == NULL)
 						goto __forest_end;
 
-					offset = (offset - 1) * 44;
-					*GET_REAL_ADDR(pkmn_addr[NO] + offset) = (uint8_t)(val & 0xffu);
+					offset -= 1;
+					*GET_REAL_ADDR(pkmn_addr[NO] + (offset * 44)) = (uint8_t)val;
+					addr = GET_REAL_ADDR(pkmn_addr[HEAD]) + 1;
+					addr[offset] = val;
+					for (count = 0; (addr[count] != 0xffU && addr[count] != 0U) || count == 6; count++);
+					addr[count] = 0xffU;
+					addr[-1] = (uint8_t)count;
+				}
+				else if (strncmp(p, "pkmn_push", 9) == 0 && non_alnum(p[9]))
+				{
+					uint32_t		val;
+					uint32_t		a, b, c;
+					uint32_t		count;
+					uint8_t			*addr;
+					uint8_t			*pname;
+					const uint32_t	max = (pkmn == PKMN_GRE) ? 5 : 10;
+					const uint8_t	*default_stats = (uint8_t*)"\x0\x17\x0\x0\x14\x14\x2a\x21\x2b\x0\x0\x12\x34"
+													"\x0\x0\xef\x0\x0\x0\x0\x0\x0\x0\x0\x0\x0\x0\x0\x23"
+													"\x28\x0\x0\x5\x0\x17\x0\xd\x0\xd\x0\xd\x0\xd";
+
+					if (va_parse_u32(p + 9, 0, 1, &val) == NULL)
+						goto __forest_end;
+
+					if (val == 0xffffffffU)
+					{
+						do
+						{
+							val = (rand() % 0xbe) + 1;
+						}
+						while (is_missingno(val));
+					}
+
+					// pkmn Nº & header
+					addr = GET_REAL_ADDR(pkmn_addr[HEAD]) + 1;
+					for (count = 0; (addr[count] != 0xffU && addr[count] != 0U) || count == 6; count++);
+					if (count == 6) {
+						puts("equipe complete, bientot : ajout dans l'ordinateur.");
+						goto __forest_end;
+					}
+					addr[count] = val;
+					addr[count + 1] = 0xffU;
+					addr[-1] = count + 1;
+					addr = GET_REAL_ADDR(pkmn_addr[NO] + (count * 44));
+					*addr = val;
+
+					// default stats
+					memcpy(addr + 1, default_stats, 44);
+
+					// set name
+					addr = GET_REAL_ADDR(pkmn_addr[NAME] + (count * (max + 1)));
+					pname = g_memmap.fixed_rom + pkmn_addr[ROM_POK_NAME];
+					for (a = b = 0; a < (val - 1); a++)
+					{
+						for (c = 0; c < max; c++, b++)
+						{
+							if (pname[b] == 0x50)
+							{
+								b++;
+								while (pname[b] == 0x50) b++;
+								break;
+							}
+						}
+					}
+
+					for (c = 0; pname[b] != 0x50 && c < max; c++, b++)
+						addr[c] = pname[b];
+
+					if (pkmn == PKMN_GRE)
+						addr[c] = 0x50;
+					else
+					{
+						for (; c < max; c++)
+							addr[c] = 0x50;
+					}
+
+					// set owner
 				}
 				else if (strncmp(p, "soin", 4) == 0 && non_alnum(p[4]))
 				{
@@ -1067,32 +1242,39 @@ __print:
 				}
 				else if (strncmp(p, "pv", 2) == 0 && non_alnum(p[2]))
 				{
-					unsigned int	val1;
-					unsigned int	val2;
-					unsigned int	offset;
+					uint32_t	val1;
+					uint32_t	val2;
+					uint32_t	offset;
 
-					if (va_parse_u32(p + 2, 3, 3, &offset, &val1, &val2) == NULL)
+					if (va_parse_u32(p + 2, 2, 3, &offset, &val1, &val2) == NULL)
 						goto __forest_end;
 
 					offset = (offset - 1) * 44;
 
 					*GET_REAL_ADDR(pkmn_addr[HP] + offset) = (uint8_t)((val1 & 0xff00) >> 8);
 					*GET_REAL_ADDR(pkmn_addr[HP] + 1 + offset) = (uint8_t)(val1 & 0xff);
-
+					if (val2 == 0xffffffffU)
+						val2 = val1;
 					*GET_REAL_ADDR(pkmn_addr[CHP] + offset) = (uint8_t)((val2 & 0xff00) >> 8);
 					*GET_REAL_ADDR(pkmn_addr[CHP] + 1 + offset) = (uint8_t)(val2 & 0xff);
 				}
 				else if (strncmp(p, "att1", 4) == 0 && non_alnum(p[4]))
 				{
-					unsigned int	val1;
-					unsigned int	val2;
-					unsigned int	offset;
+					uint32_t	val1;
+					uint32_t	val2;
+					uint32_t	offset;
 
-					if (va_parse_u32(p + 4, 3, 3, &offset, &val1, &val2) == NULL)
+/*
+	if val1 == 0xffffffffU
+		random attack
+*/
+					if (va_parse_u32(p + 4, 2, 3, &offset, &val1, &val2) == NULL)
 						goto __forest_end;
 
 					offset = (offset - 1) * 44;
 					*GET_REAL_ADDR(pkmn_addr[ATT1] + offset) = (uint8_t)(val1 & 0xff);
+					if (val2 == 0xffffffffU)
+						val2 = *(g_memmap.fixed_rom + pkmn_addr[ROM_ATT] + 5 + (6 * (val1 - 1)));
 					*GET_REAL_ADDR(pkmn_addr[PP1]  + offset) = (uint8_t)(val2 & 0xff);
 				}
 				else if (strncmp(p, "att2", 4) == 0 && non_alnum(p[4]))
@@ -1101,11 +1283,13 @@ __print:
 					unsigned int	val2;
 					unsigned int	offset;
 
-					if (va_parse_u32(p + 4, 3, 3, &offset, &val1, &val2) == NULL)
+					if (va_parse_u32(p + 4, 2, 3, &offset, &val1, &val2) == NULL)
 						goto __forest_end;
 
 					offset = (offset - 1) * 44;
 					*GET_REAL_ADDR(pkmn_addr[ATT2] + offset) = (uint8_t)(val1);
+					if (val2 == 0xffffffffU)
+						val2 = *(g_memmap.fixed_rom + pkmn_addr[ROM_ATT] + 5 + (6 * (val1 - 1)));
 					*GET_REAL_ADDR(pkmn_addr[PP2]  + offset) = (uint8_t)(val2);
 				}
 				else if (strncmp(p, "att3", 4) == 0 && non_alnum(p[4]))
@@ -1114,11 +1298,13 @@ __print:
 					unsigned int	val2;
 					unsigned int	offset;
 
-					if (va_parse_u32(p + 4, 3, 3, &offset, &val1, &val2) == NULL)
+					if (va_parse_u32(p + 4, 2, 3, &offset, &val1, &val2) == NULL)
 						goto __forest_end;
 
 					offset = (offset - 1) * 44;
 					*GET_REAL_ADDR(pkmn_addr[ATT3] + offset) = (uint8_t)(val1);
+					if (val2 == 0xffffffffU)
+						val2 = *(g_memmap.fixed_rom + pkmn_addr[ROM_ATT] + 5 + (6 * (val1 - 1)));
 					*GET_REAL_ADDR(pkmn_addr[PP3]  + offset) = (uint8_t)(val2);
 				}
 				else if (strncmp(p, "att4", 4) == 0 && non_alnum(p[4]))
@@ -1127,11 +1313,13 @@ __print:
 					unsigned int	val2;
 					unsigned int	offset;
 
-					if (va_parse_u32(p + 4, 3, 3, &offset, &val1, &val2) == NULL)
+					if (va_parse_u32(p + 4, 2, 3, &offset, &val1, &val2) == NULL)
 						goto __forest_end;
 
 					offset = (offset - 1) * 44;
 					*GET_REAL_ADDR(pkmn_addr[ATT4] + offset) = (uint8_t)(val1);
+					if (val2 == 0xffffffffU)
+						val2 = *(g_memmap.fixed_rom + pkmn_addr[ROM_ATT] + 5 + (6 * (val1 - 1)));
 					*GET_REAL_ADDR(pkmn_addr[PP4] + offset) = (uint8_t)(val2);
 				}
 				else if (strncmp(p, "id", 2) == 0 && non_alnum(p[2]))
@@ -1220,12 +1408,12 @@ __print:
 					*GET_REAL_ADDR(pkmn_addr[SPE] + offset) = (uint8_t)((val & 0xff00) >> 8);
 					*GET_REAL_ADDR(pkmn_addr[SPE] + 1 + offset) = (uint8_t)(val & 0xff);
 				}
-				else if (strncmp(p, "name", 4) == 0 && non_alnum(p[4]))
+				else if (strncmp(p, "nom", 3) == 0 && non_alnum(p[3]))
 				{
 					int count = 0;
 					int	offset;
 
-					if ((p = va_parse_u32(buf + 4, 1, 1, &offset)) == NULL)
+					if ((p = va_parse_u32(buf + 3, 1, 1, &offset)) == NULL)
 						goto __forest_end;
 
 					if (pkmn == PKMN_GRE)
@@ -1316,29 +1504,6 @@ __print:
 					}
 					else
 					{
-						/*
-							154 155 156 157 158 159
-							 (   )   :   ;   [   ]
-							160 -> alpha min
-							186 187 188 189 190 191
-							 à   è   é   ù   ß   c,  
-							192 193 194 195 196 197
-							 Ä   Ö   Ü   ä   ö   ü
-							198 199 200 201 202 203
-							 ë   ï   â   ô   û   ê
-							204 205 206 207 208 209
-							 î   ' ' ...
-							212 213 214 215 216 217 218 219
-							 c'  d'  j'  l'  m'  n'  p'  s'
-							220 221 222 223 224 225 226 227
-							 's  t'  u'  y'  '   pk  mn  -  
-							228 229 230 231 232 233 234 235
-							 +   ' ' ?   !   .   ァ　ゥ　ェ
-							236 237 238 239
-							 >   >   v   
-							246
-							 0   ...
-						*/
 						for (count = 0; *p && *p != ' ' && count != 11; p++, count++)
 						{
 							if (*p >= 'a' && *p <= 'z')
@@ -1372,9 +1537,11 @@ __print:
 						}
 					}
 				}
-				else if (strncmp(p, "del", 3) == 0 && non_alnum(p[3]))
+				else if (strncmp(p, "sup", 3) == 0 && non_alnum(p[3]))
 				{
 					uint8_t		*end;
+					uint8_t		*ptr;
+					uint32_t	val;
 					uint32_t	num, offset, offset2;
 	
 					if (va_parse_u32(buf + 3, 1, 1, &num) == NULL)
@@ -1403,12 +1570,12 @@ __print:
 						*(ptr++) = 0;
 
 					ptr = (uint8_t*)GET_REAL_ADDR(pkmn_addr[HEAD]);
-					value = *ptr;
-					*ptr = value - 1;
+					val = *ptr;
+					*ptr = val - 1;
 					ptr += 1 + num;
 					memmove(ptr, ptr + 1, 7 - num);
 				}
-				else if (strncmp(p, "update", 6) == 0 && non_alnum(p[6]))
+				else if (strncmp(p, "maj", 3) == 0 && non_alnum(p[3]))
 				{
 					int			loop = 6;
 					int			count = 0;
@@ -1429,7 +1596,7 @@ __print:
 					*ptr2 = 0xffu;
 					*GET_REAL_ADDR(pkmn_addr[HEAD]) = (uint8_t)count;
 				}
-				else if (strncmp(p, "pop", 3) == 0 && non_alnum(p[3]))
+				else if (strncmp(p, "obj_pop", 7) == 0 && non_alnum(p[7]))
 				{
 					uint8_t		*ptr;
 
@@ -1443,14 +1610,14 @@ __print:
 					*(--ptr) = 0x0;
 					*(--ptr) = 0xffu;
 				}
-				else if (strncmp(p, "push", 4) == 0 && non_alnum(p[4]))
+				else if (strncmp(p, "obj_push", 8) == 0 && non_alnum(p[8]))
 				{
 					uint32_t	offset;
 					uint32_t	object = 0;
 					uint32_t	quantity = 1;
 					uint8_t		*ptr;
 
-					if (va_parse_u32(p + 4, 2, 2, &object, &quantity) == NULL)
+					if (va_parse_u32(p + 8, 2, 2, &object, &quantity) == NULL)
 						goto __forest_end;
 
 					ptr = GET_REAL_ADDR(pkmn_addr[OBJ]);
@@ -1480,17 +1647,17 @@ __print:
 					if (def != 0xffffffffU) {
 						*GET_REAL_ADDR(pkmn_addr[DEF] + offset) = (uint8_t)((def & 0xff00) >> 8);
 						*GET_REAL_ADDR(pkmn_addr[DEF] + 1 + offset) = (uint8_t)(def & 0xff);
-					}
-					if (vit != 0xffffffffU) {
-						*GET_REAL_ADDR(pkmn_addr[VIT] + offset) = (uint8_t)((vit & 0xff00) >> 8);
-						*GET_REAL_ADDR(pkmn_addr[VIT] + 1 + offset) = (uint8_t)(vit & 0xff);
-					}
-					if (spe != 0xffffffffU) {
-						*GET_REAL_ADDR(pkmn_addr[SPE] + offset) = (uint8_t)((spe & 0xff00) >> 8);
-						*GET_REAL_ADDR(pkmn_addr[SPE] + 1 + offset) = (uint8_t)(spe & 0xff);
+						if (vit != 0xffffffffU) {
+							*GET_REAL_ADDR(pkmn_addr[VIT] + offset) = (uint8_t)((vit & 0xff00) >> 8);
+							*GET_REAL_ADDR(pkmn_addr[VIT] + 1 + offset) = (uint8_t)(vit & 0xff);
+							if (spe != 0xffffffffU) {
+								*GET_REAL_ADDR(pkmn_addr[SPE] + offset) = (uint8_t)((spe & 0xff00) >> 8);
+								*GET_REAL_ADDR(pkmn_addr[SPE] + 1 + offset) = (uint8_t)(spe & 0xff);
+							}
+						}
 					}
 				}
-				else if (strncmp(p, "cash", 4) == 0 && non_alnum(p[4]))
+				else if (strncmp(p, "argent", 4) == 0 && non_alnum(p[6]))
 				{
 					unsigned int cash = 0;
 
