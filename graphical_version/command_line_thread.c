@@ -1537,23 +1537,56 @@ __print:
 						}
 					}
 				}
-				else if (strncmp(p, "sup", 3) == 0 && non_alnum(p[3]))
+				else if (strncmp(p, "pkmn_sup", 8) == 0 && non_alnum(p[8]))
 				{
 					uint8_t		*end;
 					uint8_t		*ptr;
+					uint8_t		*ptr2;
+					uint8_t		*end2;
+					uint8_t		exit;
 					uint32_t	val;
-					uint32_t	num, offset, offset2;
+					uint32_t	num, offset, offset2, of2val;
 	
-					if (va_parse_u32(buf + 3, 1, 1, &num) == NULL)
+					if (va_parse_u32(buf + 8, 0, 1, &num) == NULL)
 						goto __forest_end;
-
+/*					
 					num		-= 1;
 					offset	= num * 44;
 					if (pkmn == PKMN_GRE)
 						offset2 = num * 6;
 					else
 						offset2 = num * 11;
-
+*/					
+					of2val = (pkmn == PKMN_GRE) ? 6 : 11;
+					if (num == 0 || num == 0xffffffffU)
+					{
+						num = 0;
+						exit = 0;
+						offset = 0;
+						offset2 = 0;
+					}
+					else if (num > 6)
+					{
+						puts("error: argument > 6");
+						goto __forest_end;
+					}
+					else
+					{
+						num--;
+						offset = num * 44;
+						offset2 = num * of2val;
+					}
+					ptr = GET_REAL_ADDR(pkmn_addr[NO] + offset);
+					end = ptr + 44;
+					ptr2 = GET_REAL_ADDR(pkmn_addr[NAME] + offset2);
+					end2 = ptr + of2val;
+					for (; ; num++, ptr = end, end += 44, ptr2 = end2, end2 += of2val)
+					{
+						while (ptr != end)		*ptr = 0;
+						while (ptr2 != end2)	*ptr2 = 0;
+						if (exit || num == 5)	break;
+					}
+/*
 					ptr = (uint8_t*)GET_REAL_ADDR(pkmn_addr[NO] + offset);
 					end = ptr + 44;
 
@@ -1574,6 +1607,7 @@ __print:
 					*ptr = val - 1;
 					ptr += 1 + num;
 					memmove(ptr, ptr + 1, 7 - num);
+*/
 				}
 				else if (strncmp(p, "maj", 3) == 0 && non_alnum(p[3]))
 				{
