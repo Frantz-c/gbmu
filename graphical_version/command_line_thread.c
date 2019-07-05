@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/03 09:33:12 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/03 14:03:12 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/05 17:02:09 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -318,7 +318,7 @@ enum pkmn_offset_e
 	SPE,NAME,OBJ,OBJ_PC,CASH,CBT_HP,ADV_HP,
 	CBT_ATT,CBT_DEF,CBT_VIT,CBT_SPE,CBT_CHP,
 	CBT_ATT_2,CBT_DEF_2,CBT_VIT_2,CBT_SPE_2,
-	ROM_ATT,ROM_ATT_NAME,ROM_POK_NAME,OWNER
+	ROM_ATT,ROM_ATT_NAME,ROM_POK_NAME,OWNER,BADGES
 };
 
 #define PKMN_RB		0x1
@@ -406,7 +406,7 @@ extern void		*command_line_thread(void *unused)
 	unsigned char	*ptr;
 	unsigned int	pkmn;
 	int				err;
-	uint32_t		pkmn_addr[39] = {0};
+	uint32_t		pkmn_addr[40] = {0};
 
 	srand(time(NULL));
 	write(2, "\e[?25l", 6);
@@ -454,6 +454,9 @@ extern void		*command_line_thread(void *unused)
 		pkmn_addr[ROM_ATT] = 0x38000U;
 		pkmn_addr[ROM_ATT_NAME] = 0xb0000U;
 		pkmn_addr[ROM_POK_NAME] = 0x1c21eU;
+		pkmn_addr[BADGES] = 0xd35bU;
+		pkmn_addr[MY_NAME] = 0xd15dU;
+		pkmn_addr[RIVAL_NAME] = 0xd34fU;
 	}
 	else if (strncmp(g_cart.game_title, "POKEMON GRE", 11) == 0)
 	{
@@ -949,8 +952,8 @@ __print:
 					puts("nom(n, x) : change le nom du pokemon n avec x\n");
 				else if (pkmn && strcmp(p, "maj") == 0)
 					puts("maj(void) : met a jour le header des pokemons\n");
-				else if (pkmn && strcmp(p, "sup") == 0)
-					puts("sup(n) : supprime le pokemon n (decale les suivants si necessaire)\n");
+				else if (pkmn && strcmp(p, "pkmn_sup") == 0)
+					puts("pkmn_sup(n) : supprime le pokemon n (decale les suivants si necessaire)\n");
 				else if (pkmn && strcmp(p, "obj_push") == 0)
 					puts("obj_push(n, x)    : ajoute l'objet x a l'inventaire (quantite par defaut : 99)\n"
 						 "obj_push(n, x, y) : ajoute l'objet x a l'inventaire en y exemplaires\n");
@@ -1133,10 +1136,36 @@ __print:
 						*GET_REAL_ADDR(pkmn_addr[STATUS]) = 0x10;
 					else if (strncmp("som", p, 3) == 0 || strncmp("SOM", p, 3) == 0)
 						*GET_REAL_ADDR(pkmn_addr[STATUS]) = 0x4;
-					else if (strncmp("ok", p, 3) == 0 || strncmp("OK", p, 3) == 0)
+					else if (strncmp("ok", p, 2) == 0 || strncmp("OK", p, 2) == 0)
 						*GET_REAL_ADDR(pkmn_addr[STATUS]) = 0x0;
 					else
 						puts("unknown argument");
+				}
+				else if (strncmp(p, "badge", 5) == 0 && non_alnum(p[5]))
+				{
+					uint8_t	badges = 0;
+
+					p += 5;
+					while (*p == ' ') p++;
+					if (*p == '(') {
+						p++;
+						while (*p == ' ') p++;
+					}
+
+					while (*p)
+					{
+						if (*p > '8' || *p < '0')
+						{
+							puts("invalid argument");
+							goto __forest_end;
+						}
+
+						if (*p != '0')
+							badges |= (1 << (*p - '1'));
+						p++;
+						while(*p == ' ') p++;
+					}
+					*GET_REAL_ADDR(pkmn_addr[BADGES]) = badges;
 				}
 				else if (strncmp(p, "adv_pv", 6) == 0 && non_alnum(p[6]))
 				{
@@ -1159,7 +1188,7 @@ __print:
 					if (add_value == 0xffffffffU)
 						add_value = 8;
 					
-					for_addr = GET_REAL_ADDR(pkmn_addr[CBT_ATT_2]);
+					for_addr = GET_REAL_ADDR(pkmn_addr[CBT_ATT]);
 					for_value = (*for_addr << 8) | for_addr[1];
 					if (for_value + add_value > 999U)
 						for_value = 999;
@@ -1167,9 +1196,11 @@ __print:
 						for_value += add_value;
 					*for_addr = (uint8_t)((for_value & 0xff00) >> 8);
 					for_addr[1] = (uint8_t)(for_value & 0xff);
+					/*
 					for_addr = GET_REAL_ADDR(pkmn_addr[CBT_ATT]);
 					*for_addr = (uint8_t)((for_value & 0xff00) >> 8);
 					for_addr[1] = (uint8_t)(for_value & 0xff);
+					*/
 				}
 				else if (strncmp(p, "def++", 5) == 0 && non_alnum(p[5]))
 				{
@@ -1182,7 +1213,7 @@ __print:
 					if (add_value == 0xffffffffU)
 						add_value = 8;
 					
-					def_addr = GET_REAL_ADDR(pkmn_addr[CBT_DEF_2]);
+					def_addr = GET_REAL_ADDR(pkmn_addr[CBT_DEF]);
 					def_value = (*def_addr << 8) | def_addr[1];
 					if (def_value + add_value > 999U)
 						def_value = 999;
@@ -1190,9 +1221,11 @@ __print:
 						def_value += add_value;
 					*def_addr = (uint8_t)((def_value & 0xff00) >> 8);
 					def_addr[1] = (uint8_t)(def_value & 0xff);
+					/*
 					def_addr = GET_REAL_ADDR(pkmn_addr[CBT_DEF]);
 					*def_addr = (uint8_t)((def_value & 0xff00) >> 8);
 					def_addr[1] = (uint8_t)(def_value & 0xff);
+					*/
 				}
 				else if (strncmp(p, "vit++", 5) == 0 && non_alnum(p[5]))
 				{
@@ -1205,7 +1238,7 @@ __print:
 					if (add_value == 0xffffffffU)
 						add_value = 8;
 					
-					vit_addr = GET_REAL_ADDR(pkmn_addr[CBT_VIT_2]);
+					vit_addr = GET_REAL_ADDR(pkmn_addr[CBT_VIT]);
 					vit_value = (*vit_addr << 8) | vit_addr[1];
 					if (vit_value + add_value > 999U)
 						vit_value = 999;
@@ -1213,9 +1246,11 @@ __print:
 						vit_value += add_value;
 					*vit_addr = (uint8_t)((vit_value & 0xff00) >> 8);
 					vit_addr[1] = (uint8_t)(vit_value & 0xff);
+					/*
 					vit_addr = GET_REAL_ADDR(pkmn_addr[CBT_VIT]);
 					*vit_addr = (uint8_t)((vit_value & 0xff00) >> 8);
 					vit_addr[1] = (uint8_t)(vit_value & 0xff);
+					*/
 				}
 				else if (strncmp(p, "spe++", 5) == 0 && non_alnum(p[5]))
 				{
@@ -1228,7 +1263,7 @@ __print:
 					if (add_value == 0xffffffffU)
 						add_value = 8;
 					
-					spe_addr = GET_REAL_ADDR(pkmn_addr[CBT_SPE_2]);
+					spe_addr = GET_REAL_ADDR(pkmn_addr[CBT_SPE]);
 					spe_value = (*spe_addr << 8) | spe_addr[1];
 					if (spe_value + add_value > 999U)
 						spe_value = 999;
@@ -1236,9 +1271,11 @@ __print:
 						spe_value += add_value;
 					*spe_addr = (uint8_t)((spe_value & 0xff00) >> 8);
 					spe_addr[1] = (uint8_t)(spe_value & 0xff);
+					/*
 					spe_addr = GET_REAL_ADDR(pkmn_addr[CBT_SPE]);
 					*spe_addr = (uint8_t)((spe_value & 0xff00) >> 8);
 					spe_addr[1] = (uint8_t)(spe_value & 0xff);
+					*/
 				}
 				else if (strncmp(p, "pv", 2) == 0 && non_alnum(p[2]))
 				{
@@ -1575,16 +1612,35 @@ __print:
 						num--;
 						offset = num * 44;
 						offset2 = num * of2val;
+						exit = 1;
 					}
 					ptr = GET_REAL_ADDR(pkmn_addr[NO] + offset);
 					end = ptr + 44;
 					ptr2 = GET_REAL_ADDR(pkmn_addr[NAME] + offset2);
-					end2 = ptr + of2val;
-					for (; ; num++, ptr = end, end += 44, ptr2 = end2, end2 += of2val)
+					end2 = ptr2 + of2val;
+					for (; ; num++, end += 44, end2 += of2val)
 					{
-						while (ptr != end)		*ptr = 0;
-						while (ptr2 != end2)	*ptr2 = 0;
-						if (exit || num == 5)	break;
+						for (; ptr != end; ptr++)		*ptr = 0;
+						for (; ptr2 != end2; ptr2++)	*ptr2 = 0;
+						if (num == 5)					break;
+						else if (exit == 1)
+						{
+							ptr = GET_REAL_ADDR(pkmn_addr[HEAD]);
+							val = *ptr;
+							*ptr = val - 1;
+							ptr += 1 + num;
+							//ptr = GET_REAL_ADDR(pkmn_addr[NAME]);
+							memmove(ptr2 - of2val, ptr2, of2val);
+							memset(ptr2, 0, of2val);
+							memmove(ptr, ptr + 1, 7 - num);
+							break;
+						}
+					}
+					if (exit == 0)
+					{
+						ptr = (uint8_t*)GET_REAL_ADDR(pkmn_addr[HEAD]);
+						*ptr = 0;
+						ptr[1] = 0xffU;
 					}
 /*
 					ptr = (uint8_t*)GET_REAL_ADDR(pkmn_addr[NO] + offset);

@@ -107,6 +107,7 @@ struct	zones_s
 {
 	unsigned int		addr;
 	struct mnemonics_s	*data;
+	struct mnemonics_s	*cur;
 	struct zones_s		*next;
 };
 
@@ -193,14 +194,25 @@ int		compile_file(char *filename)
 
 int		main(int argc, char *argv[])
 {
+	char	*file[3];
 	t_cli_arg	*arg;
 
-	arg = get_arguments(argc, argv);
+//	arg = get_arguments(argc, argv);
 
-	for (char **p = arg[INPUT].val.sa; *p; p++)
+	file[0] = "";
+	file[1] = "";
+	file[2] = NULL;
+
+	for (char **p = file; *p; p++)
 	{
 		if (compile_file(*p) == -1)
 			return (1);
 	}
 	return (0);
 }
+
+/*
+ *	./prog -c file.gs -o file.go
+ *	./prog -o bin.gb file.go
+ *	./prog -o bin.gb file.gs   // supprimer les .o
+ */
