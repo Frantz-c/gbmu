@@ -1,3 +1,16 @@
+/* ************************************************************************** */
+/*                                                          LE - /            */
+/*                                                              /             */
+/*   cartridge.h                                      .::    .:/ .      .::   */
+/*                                                 +:+:+   +:    +:  +:+:+    */
+/*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
+/*                                                 #+#   #+    #+    #+#      */
+/*   Created: 2019/07/05 02:06:02 by mhouppin     #+#   ##    ##    #+#       */
+/*   Updated: 2019/07/05 02:06:03 by mhouppin    ###    #+. /#+    ###.fr     */
+/*                                                         /                  */
+/*                                                        /                   */
+/* ************************************************************************** */
+
 #ifndef CARTRIDGE_H
 # define CARTRIDGE_H
 
@@ -14,7 +27,7 @@ typedef struct	cartridge_s
 	int32_t		jump_addr;
 	char		game_title[16];
 	char		game_code[8];
-	_Bool		cgb_mode;
+	bool		cgb_mode;
 	char		maker_code[8];
 	uint8_t		sgb_support_code;
 	int32_t		type;

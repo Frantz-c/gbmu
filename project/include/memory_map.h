@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/23 11:44:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/27 15:04:20 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/05 03:20:26 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -68,7 +68,7 @@ typedef struct	memory_map_s
 	uint8_t		*stack_ram;
 	uint8_t		*int_flags;
 	_Bool		ime;
-	uint32_t	cur_extern_ram;
+//	uint32_t	cur_extern_ram;
 	uint8_t		cart_reg[8];
 	char		*save_name;
 	uint32_t	save_size;

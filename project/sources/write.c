@@ -1,3 +1,17 @@
+/* ************************************************************************** */
+/*                                                          LE - /            */
+/*                                                              /             */
+/*   write.c                                          .::    .:/ .      .::   */
+/*                                                 +:+:+   +:    +:  +:+:+    */
+/*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
+/*                                                 #+#   #+    #+    #+#      */
+/*   Created: 2019/07/05 01:48:05 by mhouppin     #+#   ##    ##    #+#       */
+/*   Updated: 2019/07/05 04:57:49 by mhouppin    ###    #+. /#+    ###.fr     */
+/*                                                         /                  */
+/*                                                        /                   */
+/* ************************************************************************** */
+
+#include "mbc_swap.h"
 #include "registers.h"
 #include "memory_map.h"
 
@@ -52,11 +66,10 @@ void	write_maybe(uint16_t address, uint8_t value)
 		write_end((uint8_t)address, value);
 	else if (address < 0x8000u)
 		mbc_swap((uint8_t)(address >> 8), value);
-	else
-	{
-		uint8_t	*where = GET_REAL_ADDR(address);
-		*where = value;
-	}
+	else if (g_memmap.cart_reg[0] == 0 && address >= 0xA000u && address <= 0xBFFFu)
+		return ;
+	uint8_t	*where = GET_REAL_ADDR(address);
+	*where = value;
 }
 
 void	write_bytes(registers_t *regs)

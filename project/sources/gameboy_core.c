@@ -1,4 +1,22 @@
+/* ************************************************************************** */
+/*                                                          LE - /            */
+/*                                                              /             */
+/*   gameboy_core.c                                   .::    .:/ .      .::   */
+/*                                                 +:+:+   +:    +:  +:+:+    */
+/*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
+/*                                                 #+#   #+    #+    #+#      */
+/*   Created: 2019/07/05 01:48:34 by mhouppin     #+#   ##    ##    #+#       */
+/*   Updated: 2019/07/05 05:29:02 by mhouppin    ###    #+. /#+    ###.fr     */
+/*                                                         /                  */
+/*                                                        /                   */
+/* ************************************************************************** */
+
+#include "cpu_specs.h"
+#include "lcd_driver.h"
+#include "write.h"
+#include "bitmask.h"
 #include "registers.h"
+#include "processor.h"
 #include "memory_map.h"
 #include "cartridge.h"
 
@@ -8,7 +26,7 @@ cycle_count_t	execute_once(registers_t *regs)
 	cycle_count_t	rcycles;
 
 	regs->wbytes = 0;
-	if (GAMEBOY == NORMAL_MODE)
+	if (GAMEBOY_STATUS == NORMAL_MODE)
 		cycles = execute(regs);
 	else
 		cycles = 4;
@@ -21,8 +39,8 @@ cycle_count_t	execute_once(registers_t *regs)
 		write_bytes(regs);
 
 	update_lcd(rcycles);
-	if (GAMEBOY != STOP_MODE)
+	if (GAMEBOY_STATUS != STOP_MODE)
 		update_timer_values(cycles);
-	check_interrupts(&regs);
+	check_interrupts(regs);
 	return (rcycles);
 }

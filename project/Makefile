@@ -13,7 +13,7 @@ objects:
 	mkdir -p $@
 
 objects/%.o: sources/%.c
-	$(CC) -O3 -march=native -c -MMD -Wall -Wextra -I include $(shell sdl2-config --cflags) -o $@ $<
+	$(CC) -O3 -march=native -c -MMD -Wall -Wextra -Werror -I include $(shell sdl2-config --cflags) -o $@ $<
 
 -include $(DEPENDS)
 

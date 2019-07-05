@@ -1,33 +1,32 @@
 /* ************************************************************************** */
 /*                                                          LE - /            */
 /*                                                              /             */
-/*   main.c                                           .::    .:/ .      .::   */
+/*   timing.h                                         .::    .:/ .      .::   */
 /*                                                 +:+:+   +:    +:  +:+:+    */
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
-/*   Created: 2019/07/05 01:48:55 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/05 01:48:56 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Created: 2019/07/05 05:04:07 by mhouppin     #+#   ##    ##    #+#       */
+/*   Updated: 2019/07/05 05:24:37 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
-#include "cartridge.h"
-#include "graphics.h"
-#include "launcher.h"
-#include <stdio.h>
+#ifndef TIMING_H
+# define TIMING_H
 
-int		main(int argc, char **argv)
+# include "processor.h"
+# include "lcd_driver.h"
+
+typedef struct	timings_s
 {
-	if (argc != 2)
-	{
-		fprintf(stderr, "%s cartridge_file\n", *argv);
-		return (1);
-	}
+	oam_t			oam;
+	cycle_count_t	lcd_cycles;
+	int				line_render;
+	int				render_status;
+	cycle_count_t	timer_cycles;
+	cycle_count_t	div_cycles;
+}				timings_t;
 
-	open_cartridge(argv[1]);
+extern timings_t	g_timing;
 
-	gr_init_window();
-
-	start_game();
-	return (0);
-}
+#endif

@@ -1,3 +1,16 @@
+/* ************************************************************************** */
+/*                                                          LE - /            */
+/*                                                              /             */
+/*   cartridge_loader.c                               .::    .:/ .      .::   */
+/*                                                 +:+:+   +:    +:  +:+:+    */
+/*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
+/*                                                 #+#   #+    #+    #+#      */
+/*   Created: 2019/07/05 01:48:16 by mhouppin     #+#   ##    ##    #+#       */
+/*   Updated: 2019/07/05 04:48:45 by mhouppin    ###    #+. /#+    ###.fr     */
+/*                                                         /                  */
+/*                                                        /                   */
+/* ************************************************************************** */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -69,8 +82,6 @@ static void	load_cartridge(uint8_t *mem, const char *path)
 		case 0x1e:
 			load_saved_external_ram(path);
 	}
-
-	g_memmap.cur_extern_ram = 0;
 }
 
 void		open_cartridge(const char *filename)
