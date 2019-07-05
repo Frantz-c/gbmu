@@ -17,6 +17,24 @@
 # include "processor.h"
 # include <stdbool.h>
 
+# define OAM_READ					0
+# define OAM_VRAM_READ				1
+# define HZ_BLANK					2
+
+# define OAM_READ_CYCLES			80
+# define OAM_VRAM_READ_CYCLES		192
+# define HZ_BLANK_CYCLES			204
+# define VT_BLANK_WAITING_CYCLES	2879
+
+#define BG_TILE			1
+#define WINDOW_TILE		2
+#define OBJ_TILE		3
+
+#define BG_BG_PRIOR		49152u
+#define OBJ_OBJ_PRIOR	32768u
+#define BG_OBJ_PRIOR	16384u
+#define OBJ_BG_PRIOR	0u
+
 typedef struct	object_s
 {
 	uint8_t		lcd_y;

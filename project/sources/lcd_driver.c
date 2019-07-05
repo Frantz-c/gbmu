@@ -46,7 +46,7 @@ void	update_lcd(cycle_count_t cycles)
 			g_timing.line_render++;
 			STAT_REGISTER &= ~(BIT_0);
 			STAT_REGISTER |= (BIT_1);
-			render_status = OAM_READ;
+			g_timing.render_status = OAM_READ;
 			lcd_function(g_timing.line_render, OAM_READ);
 			g_timing.lcd_cycles -= HZ_BLANK_CYCLES;
 			if (g_timing.line_render == 144)

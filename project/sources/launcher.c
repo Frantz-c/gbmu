@@ -14,6 +14,10 @@
 #include "memory_map.h"
 #include "cartridge.h"
 #include "registers.h"
+#include "processor.h"
+#include "settings.h"
+
+cycle_count_t	execute_once(registers_t *regs);
 
 void	init_hardware_registers(void)
 {
@@ -63,4 +67,8 @@ void	start_game(void)
 
 	init_hardware_registers();
 	init_cpu_registers(&regs);
+	g_settings.debug_mode = false;
+	g_settings.uspeed_mode = false;
+	while (1)
+		execute_once(&regs);
 }

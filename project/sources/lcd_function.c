@@ -58,5 +58,5 @@ void	lcd_function(int line, int type)
 			STAT_REGISTER &= ~(BIT_2);
 	}
 	else
-		draw_line(&(timing.oam, line));
+		draw_line(&(g_timing.oam), line);
 }

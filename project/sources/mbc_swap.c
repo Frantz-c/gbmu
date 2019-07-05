@@ -133,11 +133,14 @@ void	mbc_swap(uint8_t address, uint8_t value)
 		case MBC1:
 		case MBC2:
 			MBC1_swap(address, value);
+			break ;
 
 		case MBC3:
 			MBC3_swap(address, value);
+			break ;
 
 		case MBC5:
 			MBC5_swap(address, value);
+			break ;
 	}
 }
