@@ -29,6 +29,7 @@
 #include <time.h>
 #include "memory_map.h"
 #include "pkmn_green_string.h"
+#include "cheat.h"
 /*
 #include "SDL.h"
 #include "test.h"
@@ -41,355 +42,7 @@
 
 	addr pokemon 1 proprietaire = 0xd233
 
-	pp : 0x3f & value = pp;
-	pp suppl : value >> 6;
 */
-
-extern int		log_file;
-
-extern void		close_log_file_and_exit(int sig);
-
-static int		term_noecho_mode(int stat)
-{
-	static int				mode = -1;
-	static struct termios	default_mode;
-	static struct termios	noecho_mode;
-
-	if (mode == -1)
-	{
-		if (tcgetattr(0, &default_mode) == -1)
-			return (-1);
-		noecho_mode = default_mode;
-		noecho_mode.c_lflag &= ~(ECHO | ICANON);
-		noecho_mode.c_cc[VMIN] = 1;
-		noecho_mode.c_cc[VTIME] = 5;
-		mode = 0;
-	}
-	if (mode == stat)
-		return (0);
-	if (stat == 1)
-		return (tcsetattr(0, TCSANOW, &noecho_mode));
-	if (stat == 0)
-		return (tcsetattr(0, TCSANOW, &default_mode));
-	return (-1);
-}
-
-static inline char		*left_trim(char *s, int *type)
-{
-	while (*s == ' ' || *s == '\t')
-		s++;
-	if (*s == '0')
-	{
-		if (s[1] == 'x')
-		{
-			*type = 2;
-			s += 2;
-			while (*s == '0')
-				s++;
-			return (s);
-		}
-		*type = 1;
-		s++;
-		while (*s == '0')
-			s++;
-		return (s);
-	}
-	else
-	{
-		*type = 0;
-	}
-	if (*s < '0' || *s > '9')
-		return (NULL);
-	return (s);
-}
-
-static unsigned int				get_base_value(char c)
-{
-	if (c >= 'a' && c <= 'f')
-		return (c - ('a' - 10));
-	if (c >= 'A' && c <= 'F')
-		return (c - ('a' - 10));
-	return (c - '0');
-}
-
-static inline unsigned int		ft_strtoi(char **s, int type)
-{
-	unsigned int	n;
-
-	n = 0;
-	if (type == 0)
-	{
-		while (1)
-		{
-			if (**s < '0' || **s > '9')
-				break ;
-			n *= 10;
-			n += **s - '0';
-			(*s)++;
-		}
-	}
-	else if (type == 1)
-	{
-		while (1)
-		{
-			if (**s < '0' || **s > '6')
-				break ;
-			n *= 8;
-			n += **s - '0';
-			(*s)++;
-		}
-	}
-	else
-	{
-		while (1)
-		{
-			if (**s > 'f' || (**s > 'F' && **s < 'a')
-					|| (**s > '9' && **s < 'A') || **s < '0')
-				break ;
-			n *= 16;
-			n += get_base_value(**s);
-			(*s)++;
-		}
-	}
-	return (n);
-}
-
-static unsigned int		atoi_hexa(char **s, int *err)
-{
-	int	type; // 0 = base 10, 1 = octal, 2 = hexa
-
-	if ((*s = left_trim(*s, &type)) == NULL)
-	{
-		if (err)
-			*err = 1;
-		return (0);
-	}
-	if (err)
-		*err = 0;
-	return (ft_strtoi(s, type));
-}
-
-static int		non_alnum(char c)
-{
-	return (c < '0' || (c > '9' && c < 'A') || (c > 'Z' && c < 'a') || c > 'z');
-}
-
-static void		write_dump_switchable_mem_fd(int fd, void *start, unsigned int length, char *buf, const char *title)
-{
-	unsigned int	j;
-	uint8_t			*ptr;
-
-	ptr = GET_REAL_ADDR((uint16_t)start);
-	memcpy(buf, title, (j = strlen(title)));
-	for (uint8_t *ptr_end = ptr + length; ptr != ptr_end; start++, ptr++)
-	{
-		if (((uint16_t)start & 0xf) == 0)
-			j += sprintf(buf + j, "\n%p:  ", start);
-		j += sprintf(buf + j, "%4hhx ", *ptr);
-		if (j >= 0xfff0)
-		{
-			write(fd, buf, j);
-			j = 0;
-		}
-	}
-	if (j)
-		write(fd, buf, j);
-}
-
-static void		write_dump_fd(int fd, void *start, unsigned int length, char *buf, const char *title)
-{
-	unsigned int	j;
-
-	memcpy(buf, title, (j = strlen(title)));
-	for (void *end = start + length; start != end; start++)
-	{
-		if (((uint16_t)start & 0xf) == 0)
-			j += sprintf(buf + j, "\n%p:  ", start);
-		j += sprintf(buf + j, "%4hhx ", *GET_REAL_ADDR((uint16_t)start));
-		if (j >= 0xfff0)
-		{
-			write(fd, buf, j);
-			j = 0;
-		}
-	}
-	if (j)
-		write(fd, buf, j);
-}
-
-// 0 < min_arg <= max_arg
-static char		*va_parse_u32(char *p, int min_arg, int max_arg, ...)
-{
-	uint32_t	*tmp;
-	int			cur = 0;
-	int			err;
-	va_list	ap;
-
-	va_start(ap, max_arg);
-
-	while (*p == ' ') p++;
-	if (*p == '\0' && min_arg == 0)
-	{
-		tmp = va_arg(ap, uint32_t*);
-		*tmp = 0xffffffffU;
-		return (p);
-	}
-	if (*p != '(' && p[-1] != ' ')
-		goto __error;
-	if (*p == '(') {
-		p++;
-		while (*p == ' ') p++;
-	}
-	cur++;
-
-	tmp = va_arg(ap, uint32_t*);
-	*tmp = atoi_hexa(&p, &err);
-	if (err) goto __error;
-
-	while (cur < max_arg)
-	{
-		while (*p == ' ') p++;
-		if (*p != ',' && p[-1] != ' ')
-		{
-			if (min_arg <= cur && non_alnum(*p))
-			{
-				while (cur < max_arg)
-				{
-					tmp = va_arg(ap, uint32_t*);
-					*tmp = 0xffffffffU;
-					cur++;
-				}
-				while (*p == ' ') p++;
-				return (p);
-			}
-			goto __error;
-		}
-		if (*p == ',') {
-			p++;
-			while (*p == ' ') p++;
-		}
-		cur++;
-
-		tmp = va_arg(ap, uint32_t*);
-		*tmp = atoi_hexa(&p, &err);
-		if (err) goto __error;
-	}
-	va_end(ap);
-	while (*p == ' ') p++;
-	return (p);
-
-__error:
-	va_end(ap);
-	write(1, "syntax error\n", 13);
-	return (NULL);
-}
-
-int		is_missingno(uint32_t n)
-{
-	static const uint8_t	missingno[191] = {
-		1,0,0,0,0,0,0,0,0,0,
-		0,0,0,0,0,0,0,0,0,0,
-		0,0,0,0,0,0,0,0,0,0,
-		0,1,1,0,0,0,0,0,0,0,
-		0,0,0,0,0,0,0,0,0,0,
-		1,0,1,0,0,0,1,0,0,0,
-		0,1,1,1,0,0,0,1,1,1,
-		0,0,0,0,0,0,0,0,0,1,
-		1,1,0,0,0,0,1,1,0,0,
-		0,0,0,0,1,1,0,0,0,0,
-		0,0,0,0,0,0,0,0,0,0,
-		0,0,0,0,0,1,0,0,0,0,
-		0,1,1,0,0,0,0,1,0,0,
-		0,0,0,0,1,1,0,1,0,0,
-		1,0,0,0,0,0,1,0,0,0,
-		0,0,0,0,0,0,1,0,0,1,
-		1,1,1,0,0,0,0,0,0,0,
-		0,0,1,0,1,1,0,0,0,0,
-		0,1,1,1,1,0,0,0,0,0,0
-	};
-	if (n > 190U)
-		return (1);
-	return (missingno[n]);
-}
-
-enum pkmn_offset_e
-{
-	HEAD,NO,STATUS,CHP,ATT1,ATT2,ATT3,ATT4,ID,
-	XP,PP1,PP2,PP3,PP4,LVL,HP,ATT,DEF,VIT,
-	SPE,NAME,OBJ,OBJ_PC,CASH,CBT_HP,ADV_HP,
-	CBT_ATT,CBT_DEF,CBT_VIT,CBT_SPE,CBT_CHP,
-	CBT_ATT_2,CBT_DEF_2,CBT_VIT_2,CBT_SPE_2,
-	ROM_ATT,ROM_ATT_NAME,ROM_POK_NAME,OWNER,BADGES
-};
-
-#define PKMN_RB		0x1
-#define PKMN_GRE	0x2
-
-# define K_UP			0x415b1b
-# define K_DOWN			0x425b1b
-# define K_LEFT			0x445b1b
-# define K_RIGHT		0x435b1b
-
-#define MAX_HISTORY		30
-
-typedef struct	s_hist
-{
-	char			*s;
-	unsigned int	l;
-	struct s_hist	*next;
-	struct s_hist	*prev;
-}
-t_hist;
-
-static void	free_hist(t_hist *hist)
-{
-	free(hist->s);
-	free(hist);
-}
-
-static void	load_hist(char *s, t_hist *h)
-{
-	memcpy(s, h->s, h->l + 1);
-}
-
-static t_hist	*new_hist(char *s, unsigned int l)
-{
-	t_hist *new;
-
-	new = malloc(sizeof(t_hist));
-	new->s = malloc(l + 1);
-	memcpy(new->s, s, l + 1);
-	new->l = l;
-	new->prev = NULL;
-	new->next = NULL;
-	return (new);
-}
-
-static void	add_hist(t_hist **hist, char *str, unsigned int len, unsigned int *hsize)
-{
-	t_hist	*tmp;
-	t_hist	*new;
-
-	new = new_hist(str, len);
-
-	if (*hist == NULL)
-	{
-		*hist = new;
-		*hsize += 1;
-		return;
-	}
-	if (*hsize > MAX_HISTORY)
-	{
-		for (tmp = *hist; tmp->next->next; tmp = tmp->next);
-		free_hist(tmp->next);
-		tmp->next = NULL;
-	}
-	else
-		*hsize += 1;
-	tmp = *hist;
-	*hist = new;
-	new->next = tmp;
-	tmp->prev = new;
-}
 
 extern void		*command_line_thread(void *unused)
 {
@@ -406,7 +59,7 @@ extern void		*command_line_thread(void *unused)
 	unsigned char	*ptr;
 	unsigned int	pkmn;
 	int				err;
-	uint32_t		pkmn_addr[40] = {0};
+	uint32_t		pkmn_addr[43] = {0};
 
 	srand(time(NULL));
 	write(2, "\e[?25l", 6);
@@ -435,7 +88,7 @@ extern void		*command_line_thread(void *unused)
 		pkmn_addr[DEF] = 0xd196U;
 		pkmn_addr[VIT] = 0xd198U;
 		pkmn_addr[SPE] = 0xd19aU;
-		pkmn_addr[OWNER] = 0xd233U;
+		pkmn_addr[OWNER] = 0xd26dU;
 		pkmn_addr[NAME] = 0xd2baU;
 		pkmn_addr[OBJ] = 0xd322U;
 		pkmn_addr[OBJ_PC] = 0xd53fU;
@@ -455,8 +108,9 @@ extern void		*command_line_thread(void *unused)
 		pkmn_addr[ROM_ATT_NAME] = 0xb0000U;
 		pkmn_addr[ROM_POK_NAME] = 0x1c21eU;
 		pkmn_addr[BADGES] = 0xd35bU;
-		pkmn_addr[MY_NAME] = 0xd15dU;
+		pkmn_addr[USER_NAME] = 0xd15dU;
 		pkmn_addr[RIVAL_NAME] = 0xd34fU;
+		pkmn_addr[CSTAT] = 0xd01dU;
 	}
 	else if (strncmp(g_cart.game_title, "POKEMON GRE", 11) == 0)
 	{
@@ -487,7 +141,6 @@ extern void		*command_line_thread(void *unused)
 		pkmn_addr[OBJ_PC] = 0xd4b9U;
 		pkmn_addr[CASH] = 0xd2cbU;
 		pkmn_addr[CBT_CHP] = 0xcffcU;
-		//pkmn_addr[CBT_CHP] = 0xcf80U;
 		pkmn_addr[ADV_HP] = 0xcfcdU;
 		pkmn_addr[CBT_HP] = 0xcfa1U;
 		pkmn_addr[CBT_ATT] = 0xcfa3U;
@@ -681,6 +334,7 @@ __print:
 				if (*p == ',' || p[-1] == ' ')
 					goto __next_set;
 			}
+			/*
 			else if (strncmp(buf, "set", 3) == 0 && non_alnum(buf[3]))
 			{
 				uint32_t	addr, val;
@@ -689,6 +343,19 @@ __print:
 					goto __forest_end;
 
 				*(GET_REAL_ADDR((uint16_t)addr)) = val;
+			}
+			*/
+			else if (strncmp(buf, "set", 3) == 0 && non_alnum(buf[3]))
+			{
+				uint32_t	addr, val1, val2;
+				
+				if (va_parse_u32(buf + 3, 2, 3, &addr, &val2, &val1) == NULL)
+					goto __forest_end;
+				if (val1 == 0xffffffffU) {
+					val1 = val2;
+					val2 = 0;
+				}
+				*(GET_REAL_ADDR((uint16_t)addr) + val2) = val1;
 			}
 			else if (strncmp(buf, "get", 3) == 0 && non_alnum(buf[3]))
 			{
@@ -998,7 +665,7 @@ __print:
 					uint32_t		val;
 					uint32_t		a, b, c;
 					uint32_t		count;
-					uint8_t			*addr;
+					uint8_t			*addr, *dest;
 					uint8_t			*pname;
 					const uint32_t	max = (pkmn == PKMN_GRE) ? 5 : 10;
 					const uint8_t	*default_stats = (uint8_t*)"\x0\x17\x0\x0\x14\x14\x2a\x21\x2b\x0\x0\x12\x34"
@@ -1018,12 +685,13 @@ __print:
 					}
 
 					// pkmn Nº & header
-					addr = GET_REAL_ADDR(pkmn_addr[HEAD]) + 1;
-					for (count = 0; (addr[count] != 0xffU && addr[count] != 0U) || count == 6; count++);
+					addr = GET_REAL_ADDR(pkmn_addr[HEAD]);
+					count = addr[0];
 					if (count == 6) {
 						puts("equipe complete, bientot : ajout dans l'ordinateur.");
 						goto __forest_end;
 					}
+					addr++;
 					addr[count] = val;
 					addr[count + 1] = 0xffU;
 					addr[-1] = count + 1;
@@ -1031,7 +699,7 @@ __print:
 					*addr = val;
 
 					// default stats
-					memcpy(addr + 1, default_stats, 44);
+					memcpy(addr + 1, default_stats, 43);
 
 					// set name
 					addr = GET_REAL_ADDR(pkmn_addr[NAME] + (count * (max + 1)));
@@ -1061,6 +729,9 @@ __print:
 					}
 
 					// set owner
+					addr = GET_REAL_ADDR(pkmn_addr[USER_NAME]);
+					dest = GET_REAL_ADDR(pkmn_addr[OWNER] + (count * 11));
+					for (; (*dest = *addr) != 0x50; addr++, dest++);
 				}
 				else if (strncmp(p, "soin", 4) == 0 && non_alnum(p[4]))
 				{
@@ -1127,17 +798,17 @@ __print:
 
 					offset = (offset - 1) * 44;
 					if (strncmp("psn", p, 3) == 0 || strncmp("PSN", p, 3) == 0)
-						*GET_REAL_ADDR(pkmn_addr[STATUS]) = 0x8;
+						*GET_REAL_ADDR(pkmn_addr[STATUS] + offset) = 0x8;
 					else if (strncmp("par", p, 3) == 0 || strncmp("PAR", p, 3) == 0)
-						*GET_REAL_ADDR(pkmn_addr[STATUS]) = 0x40;
+						*GET_REAL_ADDR(pkmn_addr[STATUS] + offset) = 0x40;
 					else if (strncmp("gel", p, 3) == 0 || strncmp("GEL", p, 3) == 0)
-						*GET_REAL_ADDR(pkmn_addr[STATUS]) = 0x20;
+						*GET_REAL_ADDR(pkmn_addr[STATUS] + offset) = 0x20;
 					else if (strncmp("bru", p, 3) == 0 || strncmp("BRU", p, 3) == 0)
-						*GET_REAL_ADDR(pkmn_addr[STATUS]) = 0x10;
+						*GET_REAL_ADDR(pkmn_addr[STATUS] + offset) = 0x10;
 					else if (strncmp("som", p, 3) == 0 || strncmp("SOM", p, 3) == 0)
-						*GET_REAL_ADDR(pkmn_addr[STATUS]) = 0x4;
+						*GET_REAL_ADDR(pkmn_addr[STATUS] + offset) = 0x4;
 					else if (strncmp("ok", p, 2) == 0 || strncmp("OK", p, 2) == 0)
-						*GET_REAL_ADDR(pkmn_addr[STATUS]) = 0x0;
+						*GET_REAL_ADDR(pkmn_addr[STATUS] + offset) = 0x0;
 					else
 						puts("unknown argument");
 				}
@@ -1445,10 +1116,76 @@ __print:
 					*GET_REAL_ADDR(pkmn_addr[SPE] + offset) = (uint8_t)((val & 0xff00) >> 8);
 					*GET_REAL_ADDR(pkmn_addr[SPE] + 1 + offset) = (uint8_t)(val & 0xff);
 				}
+				else if (strncmp(p, "do", 2) == 0 && non_alnum(p[2]))
+				{
+					uint32_t	n;
+
+					if ((p = va_parse_u32(p + 2, 1, 1, &n)) == NULL)
+						goto __forest_end;
+
+					while (*p == ' ') p++;
+					if (*p == '(') {
+						p++;
+						while (*p == ' ') p++;
+					}
+					
+					if (pkmn == PKMN_GRE)
+						set_string_green(p, 5, GET_REAL_ADDR(pkmn_addr[OWNER] + (n * 6)));
+					else
+						set_string_red(p, 10, 1, GET_REAL_ADDR(pkmn_addr[OWNER] + (n * 11)));
+				}
+				else if (strncmp(p, "m_nom", 5) == 0 && non_alnum(p[5]))
+				{
+					p += 5;
+					while (*p == ' ') p++;
+					if (*p == '(') {
+						p++;
+						while (*p == ' ') p++;
+					}
+
+					if (pkmn == PKMN_GRE)
+						set_string_green(p, 5, GET_REAL_ADDR(pkmn_addr[USER_NAME]));
+					else
+						set_string_red(p, 10, 0, GET_REAL_ADDR(pkmn_addr[USER_NAME]));
+				}
+				else if (strncmp(p, "r_nom", 5) == 0 && non_alnum(p[5]))
+				{
+					p += 5;
+					while (*p == ' ') p++;
+					if (*p == '(') {
+						p++;
+						while (*p == ' ') p++;
+					}
+
+					if (pkmn == PKMN_GRE)
+						set_string_green(p, 5, GET_REAL_ADDR(pkmn_addr[RIVAL_NAME]));
+					else
+						set_string_red(p, 10, 0, GET_REAL_ADDR(pkmn_addr[RIVAL_NAME]));
+				}
+				else if (strncmp(p, "string", 6) == 0 && non_alnum(p[6]))
+				{
+					uint32_t	addr;
+					uint8_t		*mem;
+
+					if ((p = va_parse_u32(p + 6, 1, 1, &addr)) == NULL)
+						goto __forest_end;
+
+					while (*p == ' ') p++;
+					if (*p == ',') {
+						p++;
+						while (*p == ' ') p++;
+					}
+
+					mem = GET_REAL_ADDR((unsigned short)(addr & 0xffffU));
+					if (pkmn == PKMN_GRE)
+						set_string_green(p, 39, mem);
+					else
+						set_string_red(p, 39, 0, mem);
+				}
 				else if (strncmp(p, "nom", 3) == 0 && non_alnum(p[3]))
 				{
-					int count = 0;
-					int	offset;
+					uint8_t		count = 0;
+					uint32_t	offset;
 
 					if ((p = va_parse_u32(buf + 3, 1, 1, &offset)) == NULL)
 						goto __forest_end;

@@ -2,7 +2,7 @@
 #include <time.h>
 #include <stdlib.h>
 
-static int	hash_phonem(char **s, unsigned char **mem, int *cnt, unsigned char doubl)
+static int	hash_phonem(char **s, uint8_t **mem, uint8_t *cnt, uint8_t doubl)
 {
 	static const int	boin[] = {
 		1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0,
@@ -59,7 +59,7 @@ static int	hash_phonem(char **s, unsigned char **mem, int *cnt, unsigned char do
 	return (hash);
 }
 
-static int		set_katakana(int hash, unsigned char **mem, int *count)
+static int		set_katakana(int hash, uint8_t **mem, uint8_t *count)
 {
 	static const unsigned char	kana_code2[105] = {
 		0xad,	0x0,	0xae,	0x0,	0xaf,	// ja,  ji,  ju,    , jo
@@ -142,7 +142,7 @@ static int		set_katakana(int hash, unsigned char **mem, int *count)
 }
 
 
-static int		set_hiragana(int hash, unsigned char **mem, int *count)
+static int		set_hiragana(int hash, uint8_t **mem, uint8_t *count)
 {
 	static const unsigned char	kana_code2[105] = {
 		0xe0,	0x0,	0xe1,	0x0,	0xe2,	// ja,  ji,  ju,    , jo
@@ -224,7 +224,7 @@ static int		set_hiragana(int hash, unsigned char **mem, int *count)
 	return (0);
 }
 
-extern int		get_hiragana(char **s, unsigned char **mem, int *count)
+extern int		get_hiragana(char **s, uint8_t **mem, uint8_t *count)
 {
 	int	hash;
 
@@ -238,7 +238,7 @@ extern int		get_hiragana(char **s, unsigned char **mem, int *count)
 	return (0);
 }
 
-extern int		get_katakana(char **s, unsigned char **mem, int *count)
+extern int		get_katakana(char **s, uint8_t **mem, uint8_t *count)
 {
 	int	hash;
 

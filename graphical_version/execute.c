@@ -19,6 +19,8 @@
 #include <unistd.h>
 #include "../disassembler/disassemble_table.c"
 
+extern unsigned int		atoi_hexa(const char *s);
+
 #define ADD_PC(offset)	regs->reg_pc += (offset)
 #define SET_PC(value)	regs->reg_pc = value
 
@@ -212,52 +214,6 @@ static char	__attribute__((unused)) *get_bin(unsigned char n)
 	}
 	buf[cur++][i] = 0;
 	return (buf[cur - 1]);
-}
-
-static inline const char		*left_trim(const char *s)
-{
-	while (*s == ' ' || *s == '\t')
-		s++;
-	if (*s == '0' && s[1] == 'x')
-	{
-		s += 2;
-		while (*s == '0')
-			s++;
-		return (s);
-	}
-	return (NULL);
-}
-
-static unsigned int				get_base_value(char c)
-{
-	if (c >= 'a' && c <= 'f')
-		return (c - ('a' - 10));
-	if (c >= 'A' && c <= 'F')
-		return (c - ('a' - 10));
-	return (c - '0');
-}
-
-static inline unsigned int		ft_strtoi(const char *s)
-{
-	unsigned int	n;
-
-	n = 0;
-	while (1)
-	{
-		if (*s > 'f' || (*s > 'F' && *s < 'a')
-				|| (*s > '9' && *s < 'A') || *s < '0')
-			break ;
-		n *= 16;
-		n += get_base_value(*(s++));
-	}
-	return (n);
-}
-
-extern inline unsigned int		atoi_hexa(const char *s)
-{
-	if ((s = left_trim(s)) == NULL)
-		return (0);
-	return (ft_strtoi(s));
 }
 
 

@@ -14,7 +14,9 @@
 #ifndef PKMN_GREEN_STRING_H
 # define PKMN_GREEN_STRING_H
 
-extern int		get_hiragana(char **s, unsigned char **mem, int *count);
-extern int		get_katakana(char **s, unsigned char **mem, int *count);
+# include <stdint.h>
+
+extern int		get_hiragana(char **s, uint8_t **mem, uint8_t *count);
+extern int		get_katakana(char **s, uint8_t **mem, uint8_t *count);
 
 #endif

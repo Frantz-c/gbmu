@@ -1,88 +1,7 @@
-1) verification caracteres interdits, decoupage dans une liste chainee,
-	remplacement des defines
-	exemple:
-/*
-````````````````````````````````````````````````````````````````````
-	.bank	1, 0
-
-	ld	A, 0x12
-	ld	(0x2000), A
-	call	0x5000
-	jr		-0x06
-
-	%define	LD_CART_REG_1(reg)	ld (0x2000), reg
-
-label:
-	LD_CART_REG_1(A)
-	ret
-	.byte	0 3 67
-
-	.bank	2, 0x100
-
-	call	0x00 ; mais ou va-t-on ?
-
-````````````````````````````````````````````````````````````````````
-traduction en strucure
-````````````````````````````````````````````````````````````````````
-
-	addr = 0x0000
-	{
-		"ld"				-> "A"			-> "0x12"	-> NULL
-		|
-		v
-		"ld"				-> "(0x2000)"	-> "A"		-> NULL
-		|
-		v
-		"call"				-> "0x5000"		-> NULL
-		|
-		v
-		"jr"				-> "-0x06"		-> NULL
-		|
-		v
-		"label:"			-> NULL
-		|
-		v
-		"ld (0x2000), A"	-> NULL
-		|
-		v
-		"ret"				-> NULL
-		|
-		v
-		"&"					-> "0"			-> "3"		-> "67"		-> NULL
-		NULL
-	}
-
-	|
-	v
-
-	addr = 0x8100
-	{
-		"call"				-> "0x0"		-> NULL
-	}
-
-	|
-	v
-
-	NULL
-``````````````````````````````````````````````````````````````````
-
-fichiers objets:
-``````````````````````````````````````````````````````````````````
-en-tete:
-
-	extern_label_header_addr(unsigned int)
-
-	addr_header_length(unsigned short) --> (1 = sizeof(unsigned int) * 2)
-	gb_addr(unsigned int), obj_addr(unsigned int),
-	...
-
-	extern_label_header_length(unsigned short)
-
-	label_name(null terminated string), sizeof_operand(unsigned char) = 1 or 2, operand_addr(unsigned int)
-	...
-
-	code binaire.
-*/
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 struct	defines_s
 {
@@ -133,12 +52,6 @@ typedef struct defines_s	defines_t;
 typedef struct zones_s		zones_t;
 typedef struct error_s		error_t;
 
-#define	INPUT	0
-#define OUTPUT	1
-#define CGB		2
-#define DEFINE	3
-#define	SKIP_SPACES(ptr)		do { while (*ptr == ' ' || *ptr == '\t') ptr++; } while (0);
-#define	SKIP_CHARACTERS(ptr)	do { while (is_authorized(*ptr)) ptr++; } while (0);
 
 void	push_macro(defines_t **def, char *name, char *content, uint32_t count)
 {
@@ -152,6 +65,7 @@ void	push_macro(defines_t **def, char *name, char *content, uint32_t count)
 	new->count = count;
 	new->length = len;
 	new->next = NULL;
+	printf("name = \"%s\", content = \"%s\", count = %u\n", name, content, count);
 
 	if (!*def)
 	{
@@ -242,24 +156,24 @@ uint32_t	get_content_length(char *s)
 	return (count);
 }
 
-/* verifier qu'il n'y a pas de caracteres alpha-numeriques autour de la chaine a remplacer*/
 int		string_replace(char *content, char *replace, char number)
 {
 	char			*chr = content;
 	const uint32_t	replace_length = strlen(replace);
 	int				count = 0;
 
-	while ((chr = strchr(content, *replace)) != NULL)
+	chr = content;
+	while ((chr = strchr(chr, *replace)) != NULL)
 	{
 		if (strncmp(chr, replace, replace_length) == 0)
 		{
+			if (replace_length > 2)
+				memmove(chr + 2, chr + replace_length, strlen(chr + replace_length) + 1);
+			else if (replace_length == 1)
+				memmove(chr + 1, chr, strlen(chr) + 1);
 			chr[0] = '#';
-			if (replace_length < 2)
-				memmove(chr, chr + 1, strlen(chr) + 1);
 			chr[1] = number;
 			chr += 2;
-			if (replace_length > 2)
-				memmove(chr, chr + replace_length - 2, strlen(chr) + 1);
 			count++;
 		}
 		else
@@ -283,8 +197,10 @@ char	*add_macro_with_param(char *name, defines_t **def, char *s, error_t *err)
 	uint32_t	cur = 0;
 	char		*pos[11] = {NULL};
 	char		*content;
+	char		*name2;
 	uint32_t	length;
 
+	name2 = name;
 	while (*name != '(') name++;
 	do
 	{
@@ -304,6 +220,7 @@ char	*add_macro_with_param(char *name, defines_t **def, char *s, error_t *err)
 			char	*newline = s;
 
 			// error is like this -> fprintf(stderr, "line x: syntax argument x\n> $line", lineno, err.info);
+			fprintf(stderr, "empty argument\n");
 			err->error++;
 			err->type[err->total] = 1; //ERR_ARGUMENT;
 			err->info[err->total] = count;
@@ -320,10 +237,10 @@ char	*add_macro_with_param(char *name, defines_t **def, char *s, error_t *err)
 			free(to_free);
 			return (newline - 1);
 		}
-		while (*name != ')' && *name != ',') name++;
+		while (*name != '\0' && *name != ',') name++;
 		count++;
 	}
-	while (*name != ')');
+	while (*name != '\0');
 
 	while (*s == ' ' || *s == '\t') s++;
 	length = get_content_length(s);
@@ -331,21 +248,26 @@ char	*add_macro_with_param(char *name, defines_t **def, char *s, error_t *err)
 	content = malloc(length);
 	copy_content(content, s);
 
-	while (cur)
+	char *tmp;
+	while (cur--)
 	{
+		tmp = pos[cur];
+
+		while (*tmp != ' ' && *tmp != '\t' && *tmp != ',' && *tmp != ')' && *tmp != '\0') tmp++;
+		*tmp = '\0';
 		if (string_replace(content, pos[cur], cur + '0') == 0)
 		{
 			//WARNING unused argument pos[cur]
 			fprintf(stderr, "WARNING: unused argument %s\n", pos[cur]);
 		}
-		cur--;
+		//cur--;
 	}
 
-	push_macro(def, name, content, count);
+	push_macro(def, name2, content, count);
 	return (s);
 }
 
-char	*add_macro(defines_t *def[], char	*s, error_t *err)
+char	*add_macro(defines_t *def[], char *s, error_t *err)
 {
 	char	*name;
 	char	*name_copy;
@@ -361,20 +283,28 @@ char	*add_macro(defines_t *def[], char	*s, error_t *err)
 	if (*s != '_' && (*s < 'A' || (*s > 'Z' && *s < 'a') || *s > 'z'))
 	{
 		// choisir l'erreur
-		fprintf(stderr, "invalid variable name\n");
+		fprintf(stderr, "(1)invalid variable name\n");
 		goto __end;
 	}
-	for (name = s; *s && *s != ' ' && *s != '\t' && *s != '\n'; s++)
+	for (name = s; *s; s++)
 	{
-		if ((with_param == 0 && *s == '(') || (with_param == 1 && *s == ')'))
+		if (with_param == 0 && *s == '(')
 			with_param++;
-		else if (with_param == 2
-				|| (*s != '_' && (*s < '0' || (*s > '9' && *s < 'A') || (*s > 'Z' && *s < 'a') || *s > 'z' || (with_param != 1 && *s == ','))))
+		else if (with_param == 1 && *s == ')') {
+			with_param++;
+			s++;
+			break;
+		}
+		else if (*s != '_' && *s != ' ' && *s != '\t' && (with_param != 1 || *s != ',')
+				&& (*s < '0' || (*s > '9' && *s < 'A') || (*s > 'Z' && *s < 'a')
+				|| *s > 'z' || (with_param != 1 && *s == ',')))
 		{
 			// choisir l'erreur
-			fprintf(stderr, "invalid variable name\n");
+			fprintf(stderr, "(2)invalid variable name (%c)\n", *s);
 			goto __end;
 		}
+		else if (*s == ' ' && *s == '\t' && *s == '\n')
+			break;
 	}
 	if (with_param == 1)
 	{
@@ -384,23 +314,24 @@ char	*add_macro(defines_t *def[], char	*s, error_t *err)
 	}
 
 	name_copy = strndup(name, s - name);
+	while (*s == ' ' || *s == '\t') s++;
 	if (*name >= 'a' && *name <= 'z')
 	{
-		if (with_param)
+		if (with_param == 0)
 			s = add_macro_without_param(name_copy, def + (*name - ('a' + 26)), s, err);
 		else
 			s = add_macro_with_param(name_copy, def + (*name - ('a' + 26)), s, err);
 	}
 	else if (*name >= 'A' && *name <= 'Z')
 	{
-		if (with_param)
+		if (with_param == 0)
 			s = add_macro_without_param(name_copy, def + (*name - 'A'), s, err);
 		else
 			s = add_macro_with_param(name_copy, def + (*name - 'A'), s, err);
 	}
 	else
 	{
-		if (with_param)
+		if (with_param == 0)
 			s = add_macro_without_param(name_copy, def + 52, s, err);
 		else
 			s = add_macro_with_param(name_copy, def + 52, s, err);
@@ -410,108 +341,30 @@ char	*add_macro(defines_t *def[], char	*s, error_t *err)
 	return (s);
 }
 
-
-int		compile_file(char *filename, zones_t **zon, defines_t *def[])
+int main(void)
 {
-	error_t			err = {0, 0, {0}, {0}};
-	char			*file;
-	char			*line;
-	unsigned int	lineno = 1;
-	int				ret_value = 0;
-	char			*include_file;
-
-	file = get_file_contents(filename);
-	if (file == NULL)
-	{
-		fprintf(stderr, "%s: file doesn't exist\n", filename);
-		exit(1);
-	}
-
-	line = file;
-	while (file)
-	{
-		SKIP_SPACES(file);
-
-		if (*file == '\n')
-		{
-			lineno++;
-			file++;
-			line = file;
-			continue;
-		}
-		if (*file == '%')
-		{
-			// define, undef, include  directives
-			if (strncmp(file + 1, "define", 6) == 0 && (file[7] == ' ' || file[7] == '\t'))
-				file = add_macro(&def, file + 8, &err);
-			else if (strncmp(file + 1, "undef", 5) == 0 && (file[6] == ' ' || file[6] == '\t'))
-				file = del_macro(&def, file + 7, &err);
-			else if (strncmp(file + 1, "include", 7) == 0 && (file[8] == ' ' || file[8] == '\t'))
-			{
-				include_file = get_include_file(file + 9, &err);
-				compile_file(include_file, zon, def);
-				free(include_file);
-			}
-			else
-			{
-				//error
-			}
-		}
-		else if (*file == '.')
-		{
-			// .bank		bank, offset
-			// .data		byte, ...
-			if (strncmp(file + 1, "bank", 4) == 0 && (file[5] == ' ' || file[5] == '\t'))
-				switch_bank(zon, file + 6, &err); //supprimer les zones vides au retour de la fonction (et de ses recursives)
-			else if (strncmp(file + 1, "byte", 4) == 0 && (file[5] == ' ' || file[5] == '\t'))
-				add_bytes(zon, file + 6, &err);
-			else
-				//error
-		}
-		else
-			file = add_instruction(zon, def, file, &err);
-
-		if (err.error == true)
-		{
-			ret_value = 1;
-			display_error(&err, lineno, line);
-			err.error = false;
-			err.total = 0;
-		}
-	}
-	return (ret_value);
-}
-
-// --cartridge_spec		mbc, n_ram_banks, n_rom_banks
-// --cartridge_name		name
-// --japanese_version
-// --gameboy_type		{dmg, cdg, both}
-int		main(int argc, char *argv[])
-{
-	char	*file[3];
-//	t_cli_arg	*arg;
 	defines_t	*def[53] = {NULL};
-	zones_t		*zon;
+	error_t		err = {0, 0, {0}, {0}};
+	
+	add_macro(def, "titi(arg1,arg2)  ld arg1, arg2\n", &err);
+	add_macro(def, "push_x(  azerty, qwerty , )		push azerty\npush qwerty\n", &err);
+	add_macro(def, "pop_x(	a    ,     b   )		pop a\npop b\n", &err);
 
-//	arg = get_arguments(argc, argv);
-
-	file[0] = "";
-	file[1] = "";
-	file[2] = NULL;
-
-	for (char **p = file; *p; p++)
+	defines_t **p = def;
+	defines_t **end = def + 53;
+	while (p != end)
 	{
-		zon = NULL;
-		set_builtin_macro(def);
-		if (compile_file(*p, &zon, def) == -1)
-			return (1);
-		save_file_object(zon, *p);
+		if (*p)
+		{
+			defines_t *p2 = *p;
+			do
+			{
+				printf("name = \"%s\" -> content = \"%s\"\n\n", p2->name, p2->content);
+				p2 = p2->next;
+			}
+			while (p2);
+		}
+		p++;
 	}
 	return (0);
 }
-
-/*
- *	./prog -c file.gs -o file.go
- *	./prog -o bin.gb file.go
- *	./prog -o bin.gb file.gs   // supprimer les .o
- */
