@@ -278,7 +278,7 @@ char	*add_macro_with_param(char *name, defines_t **def, char *s, error_t *err)
 	{
 		fprintf(stderr, "macro %s is already defined\n", to_free);
 		free(to_free);
-		//skip_macro
+		skip_macro(&s);
 		return (s);
 	}
 	do
@@ -305,6 +305,7 @@ char	*add_macro_with_param(char *name, defines_t **def, char *s, error_t *err)
 			err->info[err->total] = count;
 			err->total++;
 
+			skip_macro(&s);
 
 			free(to_free);
 			return (s);
