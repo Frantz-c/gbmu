@@ -2,7 +2,9 @@
 #include "graphics.h"
 #include "settings.h"
 
-void	update_lcd(cycle_count_t cycles)
+cycle_count_t	g_ticks;
+
+void	update_display(void)
 {
 	SDL_UnlockTexture(g_texture);
 	SDL_RenderClear(g_render);
@@ -13,8 +15,8 @@ void	update_lcd(cycle_count_t cycles)
 	if (!g_settings.debug_mode && !g_settings.uspeed_mode)
 	{
 		uint32_t cur_ticks = SDL_GetTicks();
-		if (cur_ticks - ticks < 17)
-			SDL_Delay(17 - (cur_ticks - ticks));
-		ticks = SDL_GetTicks();
+		if (cur_ticks - g_ticks < 17)
+			SDL_Delay(17 - (cur_ticks - g_ticks));
+		g_ticks = SDL_GetTicks();
 	}
 }

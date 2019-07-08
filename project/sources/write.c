@@ -6,14 +6,29 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/05 01:48:05 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/05 04:57:49 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/08 09:58:55 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
+#include "check_events.h"
 #include "mbc_swap.h"
+#include "cartridge.h"
 #include "registers.h"
 #include "memory_map.h"
+
+void	launch_dma(uint8_t value)
+{
+	if (!g_cart.cgb_mode && value < 0x80u)
+		return ;
+	if (value >= 0xE0u)
+		return ;
+
+	uint8_t *address = GET_REAL_ADDR((uint16_t)value << 8);
+	address = __builtin_assume_aligned(address, 32);
+	g_memmap.complete_block = __builtin_assume_aligned(g_memmap.complete_block, 32);
+	__builtin_memcpy(g_memmap.complete_block + 0xFE00u, address, 160);
+}
 
 void	write_end(uint8_t addr, uint8_t value)
 {
@@ -35,6 +50,7 @@ void	write_end(uint8_t addr, uint8_t value)
 
 		case 0x00u: // P1 register
 			g_memmap.complete_block[0xFF00u + addr] = value | 0xC0u;
+			check_gb_events();
 			break ;
 
 		case 0x0Fu: // IF register
@@ -52,6 +68,10 @@ void	write_end(uint8_t addr, uint8_t value)
 
 		case 0x04u: // DIV register
 			g_memmap.complete_block[0xFF00u + addr] = 0;
+			break ;
+
+		case 0x46u: // DMA register
+			launch_dma(value);
 			break ;
 
 		default: // Stack and unmasked registers

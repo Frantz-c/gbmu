@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/05 01:48:23 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/05 01:48:24 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/08 09:22:29 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -26,10 +26,7 @@ void	*get_file_contents(const char *path, uint32_t *length)
 
 	f = fopen(path, "r");
 	if (f == NULL)
-	{
-		perror("Cartridge opening failed");
 		return (NULL);
-	}
 	fseek(f, 0, SEEK_END);
 	*length = (uint32_t)ftell(f);
 	rewind(f);

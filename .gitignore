@@ -5,3 +5,4 @@ log_gbmul
 *.sav
 *.d
 .*.d
+project/gbmu_project

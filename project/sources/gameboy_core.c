@@ -6,11 +6,12 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/05 01:48:34 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/05 05:29:02 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/08 09:58:22 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
+#include "check_events.h"
 #include "cpu_specs.h"
 #include "lcd_driver.h"
 #include "write.h"
@@ -41,6 +42,7 @@ cycle_count_t	execute_once(registers_t *regs)
 	update_lcd(rcycles);
 	if (GAMEBOY_STATUS != STOP_MODE)
 		update_timer_values(cycles);
+	check_cntrl_events(cycles);
 	check_interrupts(regs);
 	return (rcycles);
 }

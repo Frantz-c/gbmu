@@ -6,13 +6,15 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/05 01:48:43 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/05 01:48:44 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/08 10:03:09 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
 #include "graphics.h"
 #include "cartridge.h"
+
+extern unsigned long	g_ticks;
 
 SDL_Window		*g_window;
 SDL_Renderer	*g_render;
@@ -22,7 +24,7 @@ int				g_pitch;
 
 void	gr_init_window(void)
 {
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) != 0)
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_EVENTS) != 0)
 	{
 		fprintf(stderr, "SDL_Init() failed: %s", SDL_GetError());
 		exit(EXIT_FAILURE);
@@ -53,4 +55,6 @@ void	gr_init_window(void)
 	}
 
 	SDL_LockTexture(g_texture, NULL, (void **)&g_pixels, &g_pitch);
+
+	g_ticks = SDL_GetTicks();
 }
