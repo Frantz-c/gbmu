@@ -6,7 +6,11 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/05 01:48:50 by mhouppin     #+#   ##    ##    #+#       */
+<<<<<<< HEAD
 /*   Updated: 2019/07/05 01:48:51 by mhouppin    ###    #+. /#+    ###.fr     */
+=======
+/*   Updated: 2019/07/08 09:18:03 by mhouppin    ###    #+. /#+    ###.fr     */
+>>>>>>> 50f53cc5233d8cc41ae3c497a2d8122c3842a590
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -16,6 +20,10 @@
 #include "registers.h"
 #include "processor.h"
 #include "settings.h"
+<<<<<<< HEAD
+=======
+#include "timing.h"
+>>>>>>> 50f53cc5233d8cc41ae3c497a2d8122c3842a590
 
 cycle_count_t	execute_once(registers_t *regs);
 
@@ -69,6 +77,14 @@ void	start_game(void)
 	init_cpu_registers(&regs);
 	g_settings.debug_mode = false;
 	g_settings.uspeed_mode = false;
+<<<<<<< HEAD
+=======
+	g_timing.lcd_cycles = 0;
+	g_timing.line_render = 0;
+	g_timing.render_status = OAM_READ;
+	g_timing.timer_cycles = 0;
+	g_timing.div_cycles = 0;
+>>>>>>> 50f53cc5233d8cc41ae3c497a2d8122c3842a590
 	while (1)
 		execute_once(&regs);
 }

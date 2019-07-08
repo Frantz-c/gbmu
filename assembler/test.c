@@ -52,11 +52,11 @@ typedef struct defines_s	defines_t;
 typedef struct zones_s		zones_t;
 typedef struct error_s		error_t;
 
-
 void	push_macro(defines_t **def, char *name, char *content, uint32_t count)
 {
 	defines_t	*new;
 	defines_t	*p;
+	defines_t	*prev;
 	uint32_t	len = strlen(name);
 
 	new = malloc(sizeof(defines_t));
@@ -65,57 +65,80 @@ void	push_macro(defines_t **def, char *name, char *content, uint32_t count)
 	new->count = count;
 	new->length = len;
 	new->next = NULL;
-	printf("name = \"%s\", content = \"%s\", count = %u\n", name, content, count);
+	printf("push(\"%s\")\n", name);
 
 	if (!*def)
 	{
 		*def = new;
 		return;
 	}
+
 	p = *def;
-	
-	uint32_t	i = 1;
-	int32_t		diff;
-	defines_t	*prev = NULL;
-	while (1)
+	prev = NULL;
+	if (p)
 	{
-		if (p->name[i] == name[i])
-			i++;
-		else if (p->name[i] < name[i])
+		while (p->length < len)
 		{
-			if (p->next)
+			prev = p;
+			p = p->next;
+			if (!p)
+				goto __add_macro;
+		}
+		while (p->length == len)
+		{
+			printf("cmp \"%s\", \"%s\"\n", p->name, name);
+			if (strncmp(p->name, name, len) > 0)
 			{
-				do {
-					prev = p;
-					p = p->next;
-					for (uint32_t j = 0; j < i; j++)
-						diff += p->name[j] - name[j];
-					if (diff)
-						break;
-				}
-				while (p->name[i] < name[i] && p->next);
+				break;
 			}
-			else
+			prev = p;
+			p = p->next;
+			if (!p)
 				break;
 		}
-		else
-		{
-			p = prev;
-			break;
-		}
 	}
-	if (p == NULL)
+
+	__add_macro:
+	if (p == *def)
 	{
-		p = *def;
 		*def = new;
 		new->next = p;
 	}
 	else
 	{
-		prev = p->next;
-		p->next = new;
-		new->next = prev;
+		new->next = prev->next;
+		prev->next = new;
 	}
+}
+
+int		macro_exists(defines_t *p, char *name)
+{
+	const uint32_t	len = strlen(name);
+	int				diff;
+
+	printf("p = %p\n\n", (void*)p);
+	if (p)
+	{
+		printf("p->len = %u && len = %u\n", p->length, len);
+		while (p->length < len)
+		{
+			p = p->next;
+			if (!p)
+				return (0);
+		}
+		while (p->length == len)
+		{
+			printf("cmp(\"%s\", \"%s\")\n", p->name, name);
+			if ((diff = strncmp(p->name, name, len)) == 0)
+				return (1);
+			else if (diff > 0)
+				break;
+			p = p->next;
+			if (!p)
+				break;
+		}
+	}
+	return (0);
 }
 
 char	*add_macro_without_param(char *name, defines_t **def, char *s, error_t *err)
@@ -127,31 +150,55 @@ char	*add_macro_without_param(char *name, defines_t **def, char *s, error_t *err
 
 void		copy_content(char *dest, char *s)
 {
-	char		*newline = s;
+	int			exit = 0;
 
 	do
 	{
-		for (s = newline; (*dest = *s) != '\n'; s++, dest++);
-		newline = s + 1;
-		for (s--; *s == ' ' || *s == '\t'; s--);
+		for (; ; s++, dest++)
+		{
+			if (*s == '\n') {
+				*(dest++) = *s;
+				exit = 1;
+				break;
+			}
+			else if (*s == '\\') {
+				*(dest++) = '\n';
+				s++;
+				break;
+			}
+			else
+				*dest = *s;
+		}
+		for (; *s != '\n'; s++);
+		s++;
 	}
-	while (*s == '\\');
+	while (!exit);
+	*dest = '\0';
 }
 
 uint32_t	get_content_length(char *s)
 {
-	char		*newline = s;
-	uint32_t	count = 2;
+	uint32_t	count = 1;
+	int			exit = 0;
 
 	do
 	{
-		count--;
-		for (s = newline; *s != '\n'; s++, count++);
-		newline = s + 1;
-		count++;
-		for (s--; *s == ' ' || *s == '\t'; s--);
+		for (; ; s++, count++)
+		{
+			if (*s == '\n') {
+				exit = 1;
+				count++;
+				break;
+			}
+			else if (*s == '\\') {
+				s++;
+				break;
+			}
+		}
+		for (; *s != '\n'; s++);
+		s++;
 	}
-	while (*s == '\\');
+	while (!exit);
 
 	return (count);
 }
@@ -182,6 +229,30 @@ int		string_replace(char *content, char *replace, char number)
 	return (count);
 }
 
+void	skip_macro(char **s)
+{
+	int	exit = 0;
+
+	do
+	{
+		for (; ; (*s)++)
+		{
+			if (**s == '\n') {
+				exit = 1;
+				break;
+			}
+			else if (**s == '\\') {
+				(*s)++;
+				break;
+			}
+		}
+		for (; **s != '\n'; (*s)++);
+		(*s)++;
+	}
+	while (!exit);
+	(*s)--;
+}
+
 /*
 	remplacer les parametres :
 	macro(toto,__titi__)  ld toto, __titi__          ->  (int param = 2)  macro, ld #0, #1
@@ -202,6 +273,14 @@ char	*add_macro_with_param(char *name, defines_t **def, char *s, error_t *err)
 
 	name2 = name;
 	while (*name != '(') name++;
+	*name = '\0';
+	if (macro_exists(*def, to_free))
+	{
+		fprintf(stderr, "macro %s is already defined\n", to_free);
+		free(to_free);
+		//skip_macro
+		return (s);
+	}
 	do
 	{
 		if (cur == 10)
@@ -225,17 +304,10 @@ char	*add_macro_with_param(char *name, defines_t **def, char *s, error_t *err)
 			err->type[err->total] = 1; //ERR_ARGUMENT;
 			err->info[err->total] = count;
 			err->total++;
-			do
-			{
-				s = newline;
-				while (*s != '\n') s++;
-				newline = s + 1;
-				s--;
-				while (*s == ' ' || *s == '\t') s--;
-			}
-			while (*s == '\\');
+
+
 			free(to_free);
-			return (newline - 1);
+			return (s);
 		}
 		while (*name != '\0' && *name != ',') name++;
 		count++;
@@ -318,9 +390,9 @@ char	*add_macro(defines_t *def[], char *s, error_t *err)
 	if (*name >= 'a' && *name <= 'z')
 	{
 		if (with_param == 0)
-			s = add_macro_without_param(name_copy, def + (*name - ('a' + 26)), s, err);
+			s = add_macro_without_param(name_copy, def + (*name - 'a') + 26, s, err);
 		else
-			s = add_macro_with_param(name_copy, def + (*name - ('a' + 26)), s, err);
+			s = add_macro_with_param(name_copy, def + (*name - 'a') + 26, s, err);
 	}
 	else if (*name >= 'A' && *name <= 'Z')
 	{
@@ -345,10 +417,12 @@ int main(void)
 {
 	defines_t	*def[53] = {NULL};
 	error_t		err = {0, 0, {0}, {0}};
-	
-	add_macro(def, "titi(arg1,arg2)  ld arg1, arg2\n", &err);
-	add_macro(def, "push_x(  azerty, qwerty , )		push azerty\npush qwerty\n", &err);
-	add_macro(def, "pop_x(	a    ,     b   )		pop a\npop b\n", &err);
+
+	add_macro(def, "prea(arg1,arg2)  ld arg1, arg2\n", &err);
+	err.total = 0;
+	add_macro(def, "prea(  azerty, qwerty )		push azerty\\\npush qwerty\n", &err);
+	err.total = 0;
+	add_macro(def, "prea(	a    ,     b   )		pop a\\\npop b\n", &err);
 
 	defines_t **p = def;
 	defines_t **end = def + 53;

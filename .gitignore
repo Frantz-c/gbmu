@@ -5,3 +5,7 @@ log_gbmul
 *.sav
 *.d
 .*.d
+<<<<<<< HEAD
+=======
+project/gbmu_project
+>>>>>>> 50f53cc5233d8cc41ae3c497a2d8122c3842a590
