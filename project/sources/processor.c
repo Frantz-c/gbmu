@@ -1,3 +1,16 @@
+/* ************************************************************************** */
+/*                                                          LE - /            */
+/*                                                              /             */
+/*   processor.c                                      .::    .:/ .      .::   */
+/*                                                 +:+:+   +:    +:  +:+:+    */
+/*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
+/*                                                 #+#   #+    #+    #+#      */
+/*   Created: 2019/07/08 11:02:11 by mhouppin     #+#   ##    ##    #+#       */
+/*   Updated: 2019/07/08 11:26:31 by mhouppin    ###    #+. /#+    ###.fr     */
+/*                                                         /                  */
+/*                                                        /                   */
+/* ************************************************************************** */
+
 #include "memory_map.h"
 #include "registers.h"
 #include "bitmask.h"
@@ -216,6 +229,8 @@
 	WRITE_16(regs->reg_sp, regs->reg_pc); \
 	SET_PC(value)
 
+void	dump(uint8_t *, uint8_t, registers_t *);
+
 cycle_count_t	execute(registers_t *regs)
 {
 	static const void *const	insn_jumps[256] =
@@ -298,6 +313,8 @@ cycle_count_t	execute(registers_t *regs)
 	address = GET_REAL_ADDR(regs->reg_pc + 2);
 
 	imm_16 |= ((uint16_t)*address) << 8;
+
+	dump(GET_REAL_ADDR(regs->reg_pc), opcode, regs);
 
 	goto *insn_jumps[opcode];
 
