@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/08 10:53:03 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/08 11:24:07 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/08 15:51:24 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -551,6 +551,41 @@ const t_strconv	cb_opcodes[] = {
 	{"set  7, A\n", NONE}
 };
 
+static char		*itoazx(int n, int size)
+{
+	static char	s[8];
+	int			i = 6;
+	int			negative = 0;
+
+	if (n < 0)
+	{
+		negative++;
+		n = 0 - n;
+	}
+
+	s[7] = '\0';
+	while (n)
+	{
+		s[i] = ((n % 16) + '0');
+		if (s[i] > '9')
+			s[i] += 39;
+		i--;
+		n /= 16;
+	}
+	while (i > 4 - size)
+	{
+		s[i--] = '0';
+	}
+	s[i + 2] = 'x';
+	if (negative)
+	{
+		s[i] = '-';
+		return (s + i);
+	}
+	return (s + i + 1);
+}
+
+
 int				get_int16_from_little_endian(void *memory)
 {
 #if __BYTE_ORDER == __ORDER_LITTLE_ENDIAN
@@ -573,8 +608,8 @@ char *fmt_strcpy(char *src, enum e_operand_type optype, void *bin)
 {
 	static char buf[512];
 	char		*dst = buf;
-	uint16_t	value;
-	char		numeric[8];
+	int			value;
+	char		*numeric;
 
 	while (*src != '*' && (*(dst++) = *(src)))
 		src++;
@@ -582,15 +617,20 @@ char *fmt_strcpy(char *src, enum e_operand_type optype, void *bin)
 		return (buf);
 	src++;
 
-	if (optype == IMM8 || optype == ADDR8)
+	if (optype == IMM8)
 	{
-		value = *((uint8_t*)bin);
-		sprintf(numeric, "0x%.2hhx", (uint8_t)value);
+		value = *((int8_t*)bin);
+		numeric = itoazx(value, 2);
+	}
+	else if (optype == ADDR8)
+	{
+		value = *((uint8_t *)bin);
+		numeric = itoazx(value, 2);
 	}
 	else
 	{
 		value = get_int16_from_little_endian(bin);
-		sprintf(numeric, "0x%.2hx", value);
+		numeric = itoazx(value, 4);
 	}
 	strcpy(dst, numeric);
 	dst += strlen(numeric);

@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/05 01:56:39 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/08 11:38:38 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/08 13:17:58 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -19,7 +19,6 @@ void	MBC1_swap(uint8_t address, uint8_t value)
 {
 	uint32_t	rom_bank_no;
 
-	dprintf(1, "MBC1 swap\n");
 	if (address < 0x20u)
 	{
 		if ((value & 0x0Fu) == 0x0Au)
@@ -52,7 +51,6 @@ switch_rom_ram:
 			else
 				g_memmap.extern_ram = g_memmap.extern_ram_banks[g_memmap.cart_reg[2]];
 			g_memmap.switch_rom = g_memmap.rom_banks[rom_bank_no & 0x1Fu];
-			dprintf(1, "\n Selected RAM bank 0x%hhx\n", g_memmap.cart_reg[2]);
 		}
 		else
 		{
@@ -61,7 +59,6 @@ switch_rom_ram:
 			else
 				g_memmap.extern_ram = g_memmap.extern_ram_banks[0];
 			g_memmap.switch_rom = g_memmap.rom_banks[rom_bank_no];
-			dprintf(1, "\n Selected ROM bank 0x%x\n", rom_bank_no);
 		}
 		g_get_real_addr[0xA] = g_memmap.extern_ram;
 		g_get_real_addr[0xB] = g_memmap.extern_ram + 0x1000u;
@@ -78,7 +75,6 @@ switch_rom_ram:
 
 void	MBC3_swap(uint8_t address, uint8_t value)
 {
-	dprintf(1, "MBC3 swap\n");
 	(void)address;
 	(void)value;
 }
@@ -87,7 +83,6 @@ void	MBC5_swap(uint8_t address, uint8_t value)
 {
 	uint32_t	rom_bank_no;
 
-	dprintf(1, "MBC5 swap\n");
 	if (address < 0x20u)
 	{
 		if ((value & 0x0Fu) == 0x0Au)
@@ -134,7 +129,6 @@ switch_ram:
 
 void	mbc_swap(uint8_t address, uint8_t value)
 {
-	dprintf(1, "MBC swap\n");
 	switch (g_cart.mbc)
 	{
 		case MBC1:
