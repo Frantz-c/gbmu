@@ -13,7 +13,7 @@ uint32_t	get_external_ram_size(void)
 {
 	switch (g_cart.extern_ram_size)
 	{
-		case 0x02: g_cart.n_ram_banks = 0; return (0x2000);
+		case 0x02: g_cart.n_ram_banks = 1; return (0x2000);
 		case 0x03: g_cart.n_ram_banks = 4; return (0x8000);
 		case 0x04: g_cart.n_ram_banks = 16; return (0x20000);
 		case 0x05: g_cart.n_ram_banks = 8; return (0x10000);
