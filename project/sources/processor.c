@@ -6,11 +6,12 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/08 11:02:11 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/08 16:04:14 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/09 15:22:46 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
+#include <unistd.h>
 #include "memory_map.h"
 #include "registers.h"
 #include "bitmask.h"
@@ -304,6 +305,12 @@ cycle_count_t	execute(registers_t *regs)
 	uint8_t		*address = GET_REAL_ADDR(regs->reg_pc);
 
 	uint8_t		opcode = *address;
+
+	// LOG
+		uint8_t		line[16] = {regs->reg_a, regs->reg_f, regs->reg_b, regs->reg_c, regs->reg_d, regs->reg_e, regs->reg_h, regs->reg_l,
+								(uint8_t)((regs->reg_pc & 0xff00) >> 8), (uint8_t)((regs->reg_pc & 0xff)), (uint8_t)((regs->reg_sp & 0xff00) >> 8), (uint8_t)((regs->reg_sp & 0xff)), opcode, address[1], address[2], '\n'};
+		write(1, line, 16);
+
 
 	address = GET_REAL_ADDR(regs->reg_pc + 1);
 

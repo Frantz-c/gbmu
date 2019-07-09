@@ -1,0 +1,10 @@
+%undef toto
+%undef totu
+%undef ptrunc
+
+
+%define toto						puts("toto")
+%define totu						return("totu\n")
+%define ptrunc(s, start, length)	printf("%.*s", length, s + start)
+
+%undef toto

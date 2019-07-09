@@ -27,7 +27,7 @@
 */
 
 
-#include "std_headers.h"
+#include "../includes/std_includes.h"
 #include "gbasm_struct.h"
 #include "gbasm_macro_func.h"
 
@@ -41,8 +41,17 @@ static int		string_replace(char *content, char *replace, char number)
 	while ((chr = strchr(chr, *replace)) != NULL)
 	{
 		if	(strncmp(chr, replace, replace_length) == 0
-				&& (chr == content || !isalpha(chr[-1]))
-				&& !isalpha(chr[replace_length])
+				&& (chr == content || chr[-1] == ' ' || chr[-1] == '\t' || chr[-1] == '\n'
+					|| chr[-1] == ',' || chr[-1] == '(' || chr[-1] == ')' || chr[-1] == '[' || chr[-1] == ']')
+				&&	(
+						chr[replace_length] == ' ' || chr[replace_length] == '\t'
+						|| chr[replace_length] == '\n' || chr[replace_length] == ','
+						|| chr[replace_length] == '(' || chr[replace_length] == ')'
+						|| chr[replace_length] == '[' || chr[replace_length] == ']'
+						||	(
+								chr[replace_length] == '\\' && !isalnum(chr[replace_length])
+							)
+					)
 			)
 		{
 			if (replace_length > 2)
@@ -112,6 +121,7 @@ extern char	*add_macro_with_param(char *name, defines_t **def, char *s, error_t 
 	length = get_macro_content_length(s);
 	content = malloc(length * 2);
 	copy_macro_content(content, s);
+	skip_macro(&s);
 
 /*
 	vérifier les doublons dans les parametres /!\

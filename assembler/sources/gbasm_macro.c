@@ -1,6 +1,9 @@
-#include "stdinc.h"
+#include "../includes/std_includes.h"
+#include "../includes/gbasm_struct.h"
+#include "../includes/gbasm_macro_func.h"
+#include "../includes/gbasm_macro.h"
 
-extern char	*add_macro(defines_t *def[], char *s, error_t *err)
+extern char	*define_macro(defines_t *def[], char *s, error_t *err)
 {
 	char	*name;
 	int		with_param = 0;
@@ -31,6 +34,8 @@ extern char	*add_macro(defines_t *def[], char *s, error_t *err)
 				&& (*s < '0' || (*s > '9' && *s < 'A') || (*s > 'Z' && *s < 'a')
 				|| *s > 'z'))
 		{
+			if (with_param == 0 && (*s == ' ' || *s == '\t'))
+				break;
 			// choisir l'erreur
 			fprintf(stderr, "(2)invalid variable name (%c)\n", *s);
 			skip_macro(&s);
@@ -71,5 +76,96 @@ extern char	*add_macro(defines_t *def[], char *s, error_t *err)
 	}
 
 	__end:
+	return (s);
+}
+
+static void	delete_macro_if_defined(defines_t **def, char *name)
+{
+	const uint32_t	len = strlen(name);
+	int				diff;
+	defines_t		*prev = *def;
+	defines_t		*p = *def;
+
+	if (p)
+	{
+		if (p->next == NULL)
+		{
+			if (p->length == len && strcmp(p->name, name) == 0)
+			{
+__del_first:
+				free(p->name);
+				prev = p->next;
+				free(p);
+				*def = prev;
+			}
+			return;
+		}
+		while (p->length < len)
+		{
+			prev = p;
+			p = p->next;
+			if (!p)
+				return;
+		}
+		while (p->length == len)
+		{
+			if ((diff = strncmp(p->name, name, len)) == 0)
+			{
+				if (prev == p)
+					goto __del_first;
+				free(p->name);
+				prev->next = p->next;
+				free(p);
+			}
+			else if (diff > 0)
+				break;
+			prev = p;
+			p = p->next;
+			if (!p)
+				break;
+		}
+	}
+	return;
+}
+
+extern char	*undef_macro(defines_t *def[], char *s, error_t *err)
+{
+	char	*name;
+
+	while (*s == ' ' || *s == '\t') s++;
+	name = s;
+
+	if ((*s >= 'A' && *s <= 'Z') || (*s >= 'a' && *s <= 'z') || *s == '_')
+	{
+		while
+		(
+			(*s >= '0' && *s <= '9') ||
+			(*s >= 'A' && *s <= 'Z') ||
+			(*s >= 'a' && *s <= 'z') ||
+			*s == '_'
+		) s++;
+	}
+
+	if (*s != ' ' && *s != '\t' && *s != '\n')
+	{
+		//error
+		fprintf(stderr, "error #1\n");
+		while (*s != '\n') s++;
+		return (s);
+	}
+	name = strndup(name, s - name);
+	if (*name >= 'a' && *name <= 'z')
+		delete_macro_if_defined(def + (*name - 'a') + 26, name);
+	else if (*name >= 'A' && *name <= 'Z')
+		delete_macro_if_defined(def + (*name - 'A'), name);
+	else // if (*name == '_')
+		delete_macro_if_defined(def + 53, name);
+	while (*s == ' ' && *s == '\t') s++;
+	if (*s != '\n')
+	{
+		//error;
+		fprintf(stderr, "error #2\n");
+		while (*s != '\n') s++;
+	}
 	return (s);
 }

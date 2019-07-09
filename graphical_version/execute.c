@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/06/12 18:09:06 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/27 15:11:36 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/09 15:15:57 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -419,9 +419,10 @@ cycle_count_t	execute(registers_t *regs)
 	uint8_t				opcode = address[0];
 	register uint8_t	imm_8 = address[1];
 	register uint16_t	imm_16 = (uint16_t)address[1] | ((uint16_t)address[2] << 8);
-
+/*
 	if (_CPU_LOG == true)
 	{
+	*/
 		/*
 		dprintf(log_file,
 			"\nA = %2hhx,    F = %2hhx(%c%c%c%c), B = %2hhx,    C = %2hhx\n"
@@ -481,6 +482,10 @@ cycle_count_t	execute(registers_t *regs)
 			get_bin(SVBK_REGISTER), get_bin(VBK_REGISTER), DMA_REGISTER
 		);
 */
+		uint8_t		line[16] = {regs->reg_a, regs->reg_f, regs->reg_b, regs->reg_c, regs->reg_d, regs->reg_e, regs->reg_h, regs->reg_l, regs->reg_ph, regs->reg_pl, regs->reg_sh, regs->reg_sl, opcode, address[1], address[2], '\n'};
+		write(log_file, line, 16);
+//	}
+	/*
 		dprintf(log_file,
 			"\nPC = 0x%x\n"
 			"A = %3u(%2X)  B = %2X     C = %2X     D = %2X\n"
@@ -496,6 +501,7 @@ cycle_count_t	execute(registers_t *regs)
 		else
 			plog(fmt_strcpy(opcodes[opcode].inst, opcodes[opcode].optype, address + 1));
 	}
+	*/
 
 	goto *instruction_jumps[opcode];
 

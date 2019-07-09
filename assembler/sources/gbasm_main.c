@@ -81,6 +81,7 @@ en-tete:
 	code binaire.
 */
 
+#include "../includes/std_includes.h"
 #include "../includes/gbasm_macro.h"
 //#include "../includes/gbasm_.h"
 //#include "../includes/gbasm_.h"
@@ -92,25 +93,88 @@ en-tete:
 #define	SKIP_SPACES(ptr)		do { while (*ptr == ' ' || *ptr == '\t') ptr++; } while (0);
 #define	SKIP_CHARACTERS(ptr)	do { while (is_authorized(*ptr)) ptr++; } while (0);
 
+
+#define FILE_MAX_LENGTH	0x800000u
+
+void	*get_file_contents(const char *path, uint32_t *length)
+{
+	void		*content;
+	FILE		*f;
+
+	f = fopen(path, "r");
+	if (f == NULL)
+		return (NULL);
+	fseek(f, 0, SEEK_END);
+	*length = (uint32_t)ftell(f);
+	rewind(f);
+	if (*length == 0)
+	{
+		fprintf(stderr, "Empty file\n");
+		return (NULL);
+	}
+	if (*length > FILE_MAX_LENGTH)
+	{
+		fprintf(stderr, "Too Heavy file\n");
+		return (NULL);
+	}
+	content = valloc(*length);
+	if (content == NULL)
+	{
+		perror("allocation failed");
+		return (NULL);
+	}
+	if (fread(content, 1, *length, f) != *length)
+	{
+		perror("read failed");
+		free(content);
+		return (NULL);
+	}
+	fclose(f);
+	return (content);
+}
+
+char	*get_include_filename(char **s, error_t *err)
+{
+	char	*name;
+
+	while (**s == ' ' || **s == '\t') (*s)++;
+	name = *s;
+	while (**s != ' ' && **s != '\t' && **s != '\n') (*s)++;
+	name = strndup(name, *s - name);
+	while (**s == ' ' || **s == '\t') (*s)++;
+	if (**s != '\n')
+	{
+		err->error++;
+		fprintf(stderr, "error #3\n");
+		while (**s != '\n') (*s)++;
+	}
+	return (name);
+}
+
 int		compile_file(char *filename, zones_t **zon, defines_t *def[])
 {
-	error_t			err = {0, 0, {0}, {0}};
-	char			*file;
-	char			*line;
-	unsigned int	lineno = 1;
-	int				ret_value = 0;
-	char			*include_file;
+	error_t		err = {0, 0, {0}, {0}};
+	char		*file;
+	char		*line;
+	uint32_t	lineno = 1;
+	uint32_t	length;
+	int			ret_value = 0;
+	char		*include_filename;
 
-	file = get_file_contents(filename);
+	file = get_file_contents(filename, &length);
 	if (file == NULL)
 	{
 		fprintf(stderr, "%s: file doesn't exist\n", filename);
 		exit(1);
 	}
+	file[length] = '\0';
 
 	line = file;
-	while (file)
+	while (*file)
 	{
+		if (lineno == 12) exit(1);
+		printf("file = \e[0;33m\"%s\"\e[0m\n\n", file);
+		usleep(230000);
 		SKIP_SPACES(file);
 
 		if (*file == '\n')
@@ -124,14 +188,15 @@ int		compile_file(char *filename, zones_t **zon, defines_t *def[])
 		{
 			// define, undef, include  directives
 			if (strncmp(file + 1, "define", 6) == 0 && (file[7] == ' ' || file[7] == '\t'))
-				file = add_macro(&def, file + 8, &err);
+				file = define_macro(def, file + 8, &err);
 			else if (strncmp(file + 1, "undef", 5) == 0 && (file[6] == ' ' || file[6] == '\t'))
-				file = del_macro(&def, file + 7, &err);
+				file = undef_macro(def, file + 7, &err);
 			else if (strncmp(file + 1, "include", 7) == 0 && (file[8] == ' ' || file[8] == '\t'))
 			{
-				include_file = get_include_file(file + 9, &err);
-				compile_file(include_file, zon, def);
-				free(include_file);
+				file += 9;
+				include_filename = get_include_filename(&file, &err);
+				compile_file(include_filename, zon, def);
+				free(include_filename);
 			}
 			else
 			{
@@ -142,25 +207,71 @@ int		compile_file(char *filename, zones_t **zon, defines_t *def[])
 		{
 			// .bank		bank, offset
 			// .data		byte, ...
+/*
 			if (strncmp(file + 1, "bank", 4) == 0 && (file[5] == ' ' || file[5] == '\t'))
 				switch_bank(zon, file + 6, &err); //supprimer les zones vides au retour de la fonction (et de ses recursives)
 			else if (strncmp(file + 1, "byte", 4) == 0 && (file[5] == ' ' || file[5] == '\t'))
 				add_bytes(zon, file + 6, &err);
 			else
 				//error
+*/
 		}
-		else
-			file = add_instruction(zon, def, file, &err);
+//		else
+//			file = add_instruction(zon, def, file, &err);
 
-		if (err.error == true)
+		if (err.error)
 		{
-			ret_value = 1;
-			display_error(&err, lineno, line);
-			err.error = false;
+			ret_value = -1;
+//			display_error(&err, lineno, line);
 			err.total = 0;
 		}
 	}
-	return (ret_value);
+	defines_t **p = def;
+	defines_t **end = def + 53;
+	while (p != end)
+	{
+		if (*p)
+		{
+			defines_t *p2 = *p;
+			do
+			{
+				printf("name = \"%s\" -> content = \"%s\"\n\n", p2->name, p2->content);
+				p2 = p2->next;
+			}
+			while (p2);
+		}
+		p++;
+	}
+
+	if (ret_value) {
+		fprintf(stderr, "%u errors\n", err.error);
+		return (-1);
+	}
+	return (0);
+}
+
+void	reset_macro(defines_t *macro[])
+{
+	defines_t	**end = macro + 53;
+	defines_t	*prev;
+
+	while (macro != end)
+	{
+		if (*macro)
+		{
+			defines_t *p2 = *macro;
+			do
+			{
+				prev = p2;
+				p2 = p2->next;
+				free(prev->name);
+				free(prev);
+			}
+			while (p2);
+			*macro = NULL;
+		}
+		macro++;
+	}
 }
 
 // --cartridge_spec		mbc, n_ram_banks, n_rom_banks
@@ -169,21 +280,23 @@ int		compile_file(char *filename, zones_t **zon, defines_t *def[])
 // --gameboy_type		{dmg, cdg, both}
 int		main(int argc, char *argv[])
 {
-	char	*file[3];
-	defines_t	*def[53] = {NULL};
-	zones_t		*zon;
+	char			*file[3];
+	defines_t		*def[53] = {NULL};
+	zones_t			*zon = NULL;
 
-	file[0] = "";
-	file[1] = "";
-	file[2] = NULL;
+	file[0]	=	"testfile1";
+	file[1]	=	"testfile2";
+	file[2]	=	NULL;
 
 	for (char **p = file; *p; p++)
 	{
-		zon = NULL;
-		set_builtin_macro(def);
-		if (compile_file(*p, &zon, def) == -1)
+//		set_builtin_macro();
+		if (compile_file(*p, &zon, def) == -1) {
 			return (1);
-		save_file_object(zon, *p);
+		}
+//		save_file_object(zon, *p);
+		reset_macro(def);
+//		reset_zon(&zon);
 	}
 	return (0);
 }

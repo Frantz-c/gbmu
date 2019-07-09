@@ -1,8 +1,10 @@
-#include "stdinc.h"
+#include "../includes/std_includes.h"
+#include "../includes/gbasm_struct.h"
 
 extern void		copy_macro_content(char *dest, char *s)
 {
-	int	exit = 0;
+	int		exit = 0;
+	char	*bs_pos;
 
 	do
 	{
@@ -14,9 +16,18 @@ extern void		copy_macro_content(char *dest, char *s)
 				break;
 			}
 			else if (*s == '\\') {
-				*(dest++) = '\n';
+				bs_pos = s;
 				s++;
-				break;
+				if (*s == ' ' || *s == '\t') (s)++;
+				if (*s == '\n')
+				{
+					*dest = '\n';
+					s++;
+					continue;
+				}
+				*dest = '\\';
+				s = bs_pos;
+				continue;
 			}
 			else
 				*dest = *s;
@@ -32,6 +43,7 @@ extern uint32_t	get_macro_content_length(char *s)
 {
 	uint32_t	count = 1;
 	int			exit = 0;
+	char		*bs_pos;
 
 	do
 	{
@@ -43,8 +55,16 @@ extern uint32_t	get_macro_content_length(char *s)
 				break;
 			}
 			else if (*s == '\\') {
+				bs_pos = s;
 				s++;
-				break;
+				if (*s == ' ' || *s == '\t') (s)++;
+				if (*s == '\n')
+				{
+					s++;
+					continue;
+				}
+				s = bs_pos;
+				continue;
 			}
 		}
 		for (; *s != '\n'; s++);
@@ -57,7 +77,8 @@ extern uint32_t	get_macro_content_length(char *s)
 
 extern void	skip_macro(char **s)
 {
-	int	exit = 0;
+	char	*bs_pos;
+	int		exit = 0;
 
 	do
 	{
@@ -69,7 +90,16 @@ extern void	skip_macro(char **s)
 			}
 			else if (**s == '\\') {
 				(*s)++;
-				break;
+				bs_pos = *s;
+				if (**s == ' ' || **s == '\t') (s)++;
+				if (**s == '\n')
+				{
+					s++;
+					continue;
+				}
+				*s = bs_pos;
+				(*s)++;
+				continue;
 			}
 		}
 		for (; **s != '\n'; (*s)++);

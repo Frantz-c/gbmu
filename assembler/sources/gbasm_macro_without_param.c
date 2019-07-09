@@ -27,7 +27,7 @@
 */
 
 
-#include "std_headers.h"
+#include "../includes/std_includes.h"
 #include "gbasm_struct.h"
 #include "gbasm_macro_func.h"
 
@@ -43,6 +43,7 @@ extern char	*add_macro_without_param(char *name, defines_t **def, char *s, error
 
 	content = malloc(get_macro_content_length(s) * 2);
 	copy_macro_content(content, s);
+	skip_macro(&s);
 	push_macro(def, name, content, 0);
 	return (s);
 }
