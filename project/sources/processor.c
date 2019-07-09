@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/08 11:02:11 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/08 16:04:14 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/09 10:12:07 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -314,8 +314,6 @@ cycle_count_t	execute(registers_t *regs)
 
 	imm_16 |= ((uint16_t)*address) << 8;
 
-//	dump(GET_REAL_ADDR(regs->reg_pc), opcode, regs);
-
 	goto *insn_jumps[opcode];
 
 nop:
@@ -476,6 +474,7 @@ inc_e:
 dec_e:
 	ADD_PC(1);
 	DEC_REG_8(regs->reg_e);
+	return (4);
 
 ld_e_imm8:
 	ADD_PC(2);
