@@ -6,14 +6,14 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/08 09:53:23 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/08 16:05:40 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/09 10:53:56 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
-#include "SDL_events.h"
 #include "check_events.h"
 #include "bitmask.h"
+#include "graphics.h"
 #include "memory_map.h"
 
 void	check_cntrl_events(cycle_count_t cycles)
@@ -25,15 +25,12 @@ void	check_cntrl_events(cycle_count_t cycles)
 	{
 		ev_cycles -= 10000;
 
-		const uint8_t	*k = SDL_GetKeyboardState(NULL);
-
-		if (k[SDL_SCANCODE_ESCAPE])
-			exit(EXIT_SUCCESS);
-
 		SDL_Event ev;
 
 		while (SDL_PollEvent(&ev))
-			if (ev.type == SDL_QUIT)
+			if (ev.type == SDL_WINDOWEVENT &&
+				ev.window.event == SDL_WINDOWEVENT_CLOSE &&
+				ev.window.windowID == SDL_GetWindowID(g_window))
 				exit(EXIT_SUCCESS);
 	}
 }

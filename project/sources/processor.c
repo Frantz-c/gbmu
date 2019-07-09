@@ -6,7 +6,11 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/08 11:02:11 by mhouppin     #+#   ##    ##    #+#       */
+<<<<<<< HEAD
 /*   Updated: 2019/07/09 15:22:46 by fcordon     ###    #+. /#+    ###.fr     */
+=======
+/*   Updated: 2019/07/09 13:43:55 by mhouppin    ###    #+. /#+    ###.fr     */
+>>>>>>> 3d2ec3e289f5daf4da7c600e2afa3116ad4597f0
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -321,8 +325,6 @@ cycle_count_t	execute(registers_t *regs)
 
 	imm_16 |= ((uint16_t)*address) << 8;
 
-//	dump(GET_REAL_ADDR(regs->reg_pc), opcode, regs);
-
 	goto *insn_jumps[opcode];
 
 nop:
@@ -483,6 +485,7 @@ inc_e:
 dec_e:
 	ADD_PC(1);
 	DEC_REG_8(regs->reg_e);
+	return (4);
 
 ld_e_imm8:
 	ADD_PC(2);
@@ -613,7 +616,7 @@ inc_l:
 
 dec_l:
 	ADD_PC(1);
-	DEC_REG_8(regs->reg_hl);
+	DEC_REG_8(regs->reg_l);
 	return (4);
 
 ld_l_imm8:
@@ -996,7 +999,7 @@ add_a_imm8:
 	if (imm_8 == 0)
 		regs->reg_f |= FLAG_Z;
 	regs->reg_a = imm_8;
-	return (4);
+	return (8);
 
 rst_00h:
 	ADD_PC(1);
@@ -1008,7 +1011,7 @@ retz:
 
 ret:
 	POP_REG_16(regs->reg_pc);
-	return (20);
+	return (16);
 
 jpz_imm16:
 	JP_IF((regs->reg_f & FLAG_Z) == FLAG_Z);
@@ -1036,7 +1039,7 @@ adc_a_imm8:
 	if (imm_8 == 0)
 		regs->reg_f |= FLAG_Z;
 	regs->reg_a = imm_8;
-	return (4);
+	return (8);
 
 
 rst_08h:
@@ -1074,7 +1077,7 @@ sub_a_imm8:
 	if (imm_8 == 0)
 		regs->reg_f |= FLAG_Z;
 	regs->reg_a = imm_8;
-	return (4);
+	return (8);
 
 rst_10h:
 	ADD_PC(1);
@@ -1110,7 +1113,7 @@ sbc_a_imm8:
 	if (imm_8 == 0)
 		regs->reg_f |= FLAG_Z;
 	regs->reg_a = imm_8;
-	return (4);
+	return (8);
 
 rst_18h:
 	ADD_PC(1);
@@ -1120,7 +1123,7 @@ rst_18h:
 ldff_imm8_a:
 	ADD_PC(2);
 	WRITE_8(0xFF00u + imm_8, regs->reg_a);
-	return (8);
+	return (12);
 
 pop_hl:
 	ADD_PC(1);
@@ -1195,7 +1198,7 @@ pop_af:
 	return (12);
 
 ldff_a_c:
-	ADD_PC(2);
+	ADD_PC(1);
 	address = GET_REAL_ADDR(0xFF00u + regs->reg_c);
 	regs->reg_a = *address;
 	return (8);

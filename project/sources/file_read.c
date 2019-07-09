@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/05 01:48:23 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/08 16:13:18 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/09 10:36:01 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -105,8 +105,13 @@ void	save_external_ram(void)
 
 	f = fopen(g_memmap.save_name, "w");
 
-	if (!f)
+	if (f == NULL)
 		return ;
-	fwrite(g_memmap.extern_ram_banks[0], 1, g_memmap.save_size, f);
+	if (fwrite(g_memmap.extern_ram_banks[0], 1, g_memmap.save_size, f) !=
+			(size_t)g_memmap.save_size)
+	{
+		perror("Save failure");
+		return ;
+	}
 	fclose(f);
 }

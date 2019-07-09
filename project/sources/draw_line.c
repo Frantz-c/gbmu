@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/05 07:56:44 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/05 07:57:43 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/09 10:14:35 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -243,4 +243,3 @@ void	draw_line(oam_t *oam, int line)
 	if (!g_cart.cgb_mode)
 		draw_dmg_line((object_t *)oam->obj, offset, (uint8_t)line);
 }
-

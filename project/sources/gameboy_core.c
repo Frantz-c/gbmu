@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/05 01:48:34 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/08 12:12:57 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/09 10:12:21 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -20,6 +20,7 @@
 #include "processor.h"
 #include "memory_map.h"
 #include "cartridge.h"
+#include <stdlib.h>
 
 cycle_count_t	execute_once(registers_t *regs)
 {
