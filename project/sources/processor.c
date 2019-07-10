@@ -6,11 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/08 11:02:11 by mhouppin     #+#   ##    ##    #+#       */
-<<<<<<< HEAD
-/*   Updated: 2019/07/09 15:22:46 by fcordon     ###    #+. /#+    ###.fr     */
-=======
-/*   Updated: 2019/07/09 13:43:55 by mhouppin    ###    #+. /#+    ###.fr     */
->>>>>>> 3d2ec3e289f5daf4da7c600e2afa3116ad4597f0
+/*   Updated: 2019/07/10 10:00:15 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -311,8 +307,11 @@ cycle_count_t	execute(registers_t *regs)
 	uint8_t		opcode = *address;
 
 	// LOG
-		uint8_t		line[16] = {regs->reg_a, regs->reg_f, regs->reg_b, regs->reg_c, regs->reg_d, regs->reg_e, regs->reg_h, regs->reg_l,
-								(uint8_t)((regs->reg_pc & 0xff00) >> 8), (uint8_t)((regs->reg_pc & 0xff)), (uint8_t)((regs->reg_sp & 0xff00) >> 8), (uint8_t)((regs->reg_sp & 0xff)), opcode, address[1], address[2], '\n'};
+		uint8_t		line[16] = {regs->reg_a, regs->reg_f, regs->reg_b, regs->reg_c,
+								regs->reg_d, regs->reg_e, regs->reg_h, regs->reg_l,
+								(uint8_t)((regs->reg_pc & 0xff00) >> 8), (uint8_t)((regs->reg_pc & 0xff)),
+								(uint8_t)((regs->reg_sp & 0xff00) >> 8),
+								(uint8_t)((regs->reg_sp & 0xff)), opcode, address[1], address[2], '\n'};
 		write(1, line, 16);
 
 
@@ -1101,7 +1100,7 @@ callc_imm16:
 
 sbc_a_imm8:
 	ADD_PC(2);
-	imm_8 -= regs->reg_a;
+	imm_8 = regs->reg_a - imm_8;
 	opcode = (regs->reg_f & FLAG_CY) == FLAG_CY;
 	regs->reg_f = FLAG_N;
 	imm_8 -= (opcode) ? 1 : 0;
