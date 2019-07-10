@@ -20,18 +20,17 @@ struct	operands_s
 	struct operands_s	*next;
 };
 
-struct	mnemonic_s
+struct	mnemonics_s
 {
 	char				*name;
-	unsigned int		n_operand;
-	char				*line;
+	uint32_t			n_operand;
 	struct mnemonics_s	*next;
 	struct operands_s	*operands;
 };
 
 struct	zones_s
 {
-	unsigned int		addr;
+	uint32_t			addr;
 	struct mnemonics_s	*data;
 	struct mnemonics_s	*cur;
 	struct zones_s		*next;
@@ -42,7 +41,7 @@ struct	error_s
 {
 	uint32_t	error;
 	uint32_t	total;
-	int			type[5];
+	int32_t		type[5];
 	uint32_t	info[5];
 };
 

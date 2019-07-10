@@ -81,10 +81,10 @@ en-tete:
 	code binaire.
 */
 
-#include "../includes/std_includes.h"
-#include "../includes/gbasm_macro.h"
-//#include "../includes/gbasm_.h"
-//#include "../includes/gbasm_.h"
+#include "std_includes.h"
+#include "gbasm_macro.h"
+#include "gbasm_keywords.h"
+#include "gbasm_add_instruction.h"
 
 #define	INPUT	0
 #define OUTPUT	1
@@ -151,7 +151,10 @@ char	*get_include_filename(char **s, error_t *err)
 	return (name);
 }
 
-int		compile_file(char *filename, zones_t **zon, defines_t *def[])
+/*
+	incrementer lineno dans les macros multilignes et le mot clé .byte
+*/
+int		compile_file(char *filename, zones_t **zon, zones_t **curzon, defines_t *def[])
 {
 	error_t		err = {0, 0, {0}, {0}};
 	char		*file;
@@ -172,9 +175,7 @@ int		compile_file(char *filename, zones_t **zon, defines_t *def[])
 	line = file;
 	while (*file)
 	{
-		if (lineno == 12) exit(1);
-		printf("file = \e[0;33m\"%s\"\e[0m\n\n", file);
-		usleep(230000);
+		//printf("file = \e[0;33m\"%s\"\e[0m\n\n", file);
 		SKIP_SPACES(file);
 
 		if (*file == '\n')
@@ -195,29 +196,37 @@ int		compile_file(char *filename, zones_t **zon, defines_t *def[])
 			{
 				file += 9;
 				include_filename = get_include_filename(&file, &err);
-				compile_file(include_filename, zon, def);
+				compile_file(include_filename, zon, curzon, def);
 				free(include_filename);
 			}
-			else
-			{
+//			else
+//			{
 				//error
-			}
+//			}
 		}
 		else if (*file == '.')
 		{
 			// .bank		bank, offset
 			// .data		byte, ...
-/*
+
 			if (strncmp(file + 1, "bank", 4) == 0 && (file[5] == ' ' || file[5] == '\t'))
-				switch_bank(zon, file + 6, &err); //supprimer les zones vides au retour de la fonction (et de ses recursives)
+				file = bank_switch(zon, curzon, file + 6, &err);
 			else if (strncmp(file + 1, "byte", 4) == 0 && (file[5] == ' ' || file[5] == '\t'))
-				add_bytes(zon, file + 6, &err);
-			else
+				file = add_bytes(*curzon, file + 6, &err);
+			else if (strncmp(file + 1, "memlock", 7) == 0 && (file[8] == ' ' || file[8] == '\t'))
+				file = set_data_block(data_block, file + 9, &err);
+				// .memlock 0xc000 end=0xca00
+				// .memlock 0xc000 len=1024
+//			else
 				//error
-*/
+
 		}
-//		else
-//			file = add_instruction(zon, def, file, &err);
+		else
+		{
+//			if (!*zon)
+//				create_default_bank(zon);
+			file = add_instruction_or_label(zon, curzon, def, file, &err);
+		}
 
 		if (err.error)
 		{
@@ -226,6 +235,8 @@ int		compile_file(char *filename, zones_t **zon, defines_t *def[])
 			err.total = 0;
 		}
 	}
+
+	// STRUCTURE DES DEFINES
 	defines_t **p = def;
 	defines_t **end = def + 53;
 	while (p != end)
@@ -242,6 +253,32 @@ int		compile_file(char *filename, zones_t **zon, defines_t *def[])
 		}
 		p++;
 	}
+
+	// STRUCTURE DES INSTRUCTIONS
+	zones_t *z = *zon;
+	while (z)
+	{
+		printf(">> zone start -> %x\n", z->addr);
+		mnemonics_t *m = z->data;
+		while (m)
+		{
+			printf("  \"%s\" -> ", m->name);
+			operands_t *o = m->operands;
+			int			byte_kw = (m->name[0] == '$') ? 1 : 0;
+			while (o)
+			{
+				if (byte_kw == 0)
+					printf("%s, ", o->name);
+				else
+					printf("%hhx, ", (uint8_t)o->name);
+				o = o->next;
+			}
+			printf("\n");
+			m = m->next;
+		}
+		z = z->next;
+	}
+
 
 	if (ret_value) {
 		fprintf(stderr, "%u errors\n", err.error);
@@ -282,7 +319,7 @@ int		main(int argc, char *argv[])
 {
 	char			*file[3];
 	defines_t		*def[53] = {NULL};
-	zones_t			*zon = NULL;
+	zones_t			*zon = NULL, *curzon = NULL;
 
 	file[0]	=	"testfile1";
 	file[1]	=	"testfile2";
@@ -291,7 +328,7 @@ int		main(int argc, char *argv[])
 	for (char **p = file; *p; p++)
 	{
 //		set_builtin_macro();
-		if (compile_file(*p, &zon, def) == -1) {
+		if (compile_file(*p, &zon, &curzon, def) == -1) {
 			return (1);
 		}
 //		save_file_object(zon, *p);

@@ -8,3 +8,11 @@
 %define ptrunc(s, start, length)	printf("%.*s", length, s + start)
 
 %undef toto
+
+.bank 0, 0
+.byte		0x12, 0x9a, 0xff\
+			0x34, 0xde, 0xb2
+
+ld	A, F
+
+%undef totu
