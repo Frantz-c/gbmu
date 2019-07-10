@@ -96,6 +96,17 @@ en-tete:
 
 #define FILE_MAX_LENGTH	0x800000u
 
+
+const char *const	inst[] = {
+	"adc", "add", "and", "bit", "call", "callc", "callnc", "callnz", "callz", "ccf", "cmp", "cp",
+	"cpl", "daa", "dec", "di", "ei", "halt", "inc", "jp", "jpc", "jpnc", "jpnz", "jpz", "jr", "jrc",
+	"jrnc", "jrnz", "jrz", "ld", "ldd", "ldhl", "ldi", "mov", "nop", "not", "or", "pop", "push",
+	"res", "reset", "ret", "retc", "reti", "retnc", "retnz", "retz", "rl", "rla", "rlc", "rlca",
+	"rr", "rra", "rrc", "rrca", "rst", "sar", "sbb", "sbc", "scf", "set", "shl", "shr", "sla",
+	"sra", "srl", "stop", "sub", "swap", "testb", "xor", NULL
+};
+
+
 void	*get_file_contents(const char *path, uint32_t *length)
 {
 	void		*content;
@@ -154,7 +165,8 @@ char	*get_include_filename(char **s, error_t *err)
 /*
 	incrementer lineno dans les macros multilignes et le mot clé .byte
 */
-int		compile_file(char *filename, zones_t **zon, zones_t **curzon, defines_t *def[])
+int		compile_file(char *filename, zones_t **zon, zones_t **curzon, defines_t *def[],
+					extlabs_t **extlab, memblocks_t **memblock)
 {
 	error_t		err = {0, 0, {0}, {0}};
 	char		*file;
@@ -189,14 +201,14 @@ int		compile_file(char *filename, zones_t **zon, zones_t **curzon, defines_t *de
 		{
 			// define, undef, include  directives
 			if (strncmp(file + 1, "define", 6) == 0 && (file[7] == ' ' || file[7] == '\t'))
-				file = define_macro(def, file + 8, &err);
+				file = define_macro(def, file + 8, &err, &lineno);
 			else if (strncmp(file + 1, "undef", 5) == 0 && (file[6] == ' ' || file[6] == '\t'))
-				file = undef_macro(def, file + 7, &err);
+				file = undef_macro(def, file + 7, &err, &lineno);
 			else if (strncmp(file + 1, "include", 7) == 0 && (file[8] == ' ' || file[8] == '\t'))
 			{
 				file += 9;
 				include_filename = get_include_filename(&file, &err);
-				compile_file(include_filename, zon, curzon, def);
+				compile_file(include_filename, zon, curzon, def, memblock);
 				free(include_filename);
 			}
 //			else
@@ -212,11 +224,15 @@ int		compile_file(char *filename, zones_t **zon, zones_t **curzon, defines_t *de
 			if (strncmp(file + 1, "bank", 4) == 0 && (file[5] == ' ' || file[5] == '\t'))
 				file = bank_switch(zon, curzon, file + 6, &err);
 			else if (strncmp(file + 1, "byte", 4) == 0 && (file[5] == ' ' || file[5] == '\t'))
-				file = add_bytes(*curzon, file + 6, &err);
+				file = add_bytes(*curzon, file + 6, &err, &lineno);
 			else if (strncmp(file + 1, "memlock", 7) == 0 && (file[8] == ' ' || file[8] == '\t'))
-				file = set_data_block(data_block, file + 9, &err);
-				// .memlock 0xc000 end=0xca00
-				// .memlock 0xc000 len=1024
+				file = set_memlock_area(memblock, file + 9, &err);
+				// .memlock uram_b0, 0xc000, end=0xca00
+				// .memlock uram_b0, 0xc000, len=1024
+			else if (strncmp(file + 1, "var", 3) == 0 && (file[4] >= '0' && file[4] <= '9'))
+				file = get_var_mem_space(*memblock, file + 4);
+			else if (strncmp(file + 1, "extern", 6) == 0 && (file[7] == ' ' || file[7] == '\t'))
+				file = set_external_label_or_memblock(extlab, file + 8, &err);
 //			else
 				//error
 
@@ -311,15 +327,30 @@ void	reset_macro(defines_t *macro[])
 	}
 }
 
+/*
+	1ere etape:
+
+	"$"					-> bytes
+	"[a-zA-Z0-9_]+"		-> instruction
+	"[a-zA-Z0-9_]+:"	-> label
+	
+*/
+
+
 // --cartridge_spec		mbc, n_ram_banks, n_rom_banks
 // --cartridge_name		name
 // --japanese_version
 // --gameboy_type		{dmg, cdg, both}
+// --show-memlock		-> affiche l'espace disponible dans chaque zone de variables
+// --show-remaind-mem	-> affiche l'espace disponible dans chaque banque de la ROM
 int		main(int argc, char *argv[])
 {
 	char			*file[3];
 	defines_t		*def[53] = {NULL};
 	zones_t			*zon = NULL, *curzon = NULL;
+	extlabs_t		*extlab = NULL;
+	variables_t		*var = NULL;
+	memblocks_t		*memblock = NULL;
 
 	file[0]	=	"testfile1";
 	file[1]	=	"testfile2";
@@ -328,7 +359,7 @@ int		main(int argc, char *argv[])
 	for (char **p = file; *p; p++)
 	{
 //		set_builtin_macro();
-		if (compile_file(*p, &zon, &curzon, def) == -1) {
+		if (compile_file(*p, &zon, &curzon, def, &extlab, &memblock) == -1) {
 			return (1);
 		}
 //		save_file_object(zon, *p);

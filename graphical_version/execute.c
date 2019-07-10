@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/06/12 18:09:06 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/09 15:15:57 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/10 15:27:51 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -419,89 +419,19 @@ cycle_count_t	execute(registers_t *regs)
 	uint8_t				opcode = address[0];
 	register uint8_t	imm_8 = address[1];
 	register uint16_t	imm_16 = (uint16_t)address[1] | ((uint16_t)address[2] << 8);
-/*
+
 	if (_CPU_LOG == true)
 	{
-	*/
-		/*
-		dprintf(log_file,
-			"\nA = %2hhx,    F = %2hhx(%c%c%c%c), B = %2hhx,    C = %2hhx\n"
-			"D = %2hhx,    E = %2hhx,       H = %2hhx,    L = %2hhx\n"
-			"AF = %4hx, BC = %4hx,    DE = %4hx, HL = %4hx\n"
-			"PC = %4hx, ADDR = %p,   SP = %4hx\n\n"
-			"LCDC = %c%c%c%c%c%c%c%c, STAT = %c%c%c%c%c%hhx\n\n"
-			"SCY = %2hhx, SCX = %2hhx, LY = %2hhx, LYC = %2hhx\n\n"
-			"DIV = %2hhx, TIMA = %3hhu, TMA = %3hhu, TAC = %2hhx\n\n"
-			"IF = %c%c%c%c%c, IE = %c%c%c%c%c, IME = %s\n",
-			regs->reg_a, regs->reg_f, (regs->reg_f & FLAG_Z) ? 'Z' : '.',
-			(regs->reg_f & FLAG_N) ? 'N' : '.', (regs->reg_f & FLAG_H) ? 'H' : '.',
-			(regs->reg_f & FLAG_CY) ? 'C' : '.', regs->reg_b, regs->reg_c,
-			regs->reg_d, regs->reg_e, regs->reg_h, regs->reg_l, regs->reg_af,
-			regs->reg_bc, regs->reg_de, regs->reg_hl, regs->reg_pc, address,
-			regs->reg_sp, 
-			(LCDC_REGISTER & BIT_7) ? 'L' : '.', (LCDC_REGISTER & BIT_6) ? '1' : '0',
-			(LCDC_REGISTER & BIT_5) ? 'W' : '.', (LCDC_REGISTER & BIT_4) ? '1' : '0',
-			(LCDC_REGISTER & BIT_3) ? '1' : '0', (LCDC_REGISTER & BIT_2) ? 'D' : 'S',
-			(LCDC_REGISTER & BIT_1) ? 'O' : '.', (LCDC_REGISTER & BIT_0) ? 'B' : '.',
-			(STAT_REGISTER & BIT_6) ? 'L' : '.', (STAT_REGISTER & BIT_5) ? 'O' : '.',
-			(STAT_REGISTER & BIT_4) ? 'V' : '.', (STAT_REGISTER & BIT_3) ? 'H' : '.',
-			(STAT_REGISTER & BIT_2) ? 'Y' : '.', (STAT_REGISTER & (BIT_0 | BIT_1)),
-			SCY_REGISTER, SCX_REGISTER, LY_REGISTER, LYC_REGISTER,
-			DIV_REGISTER, TIMA_REGISTER, TMA_REGISTER, TAC_REGISTER,
-			(IF_REGISTER & BIT_4) ? 'J' : '.', (IF_REGISTER & BIT_3) ? 'S' : '.',
-			(IF_REGISTER & BIT_2) ? 'T' : '.', (IF_REGISTER & BIT_1) ? 'L' : '.',
-			(IF_REGISTER & BIT_0) ? 'V' : '.',
-			(IE_REGISTER & BIT_4) ? 'J' : '.', (IE_REGISTER & BIT_3) ? 'S' : '.',
-			(IE_REGISTER & BIT_2) ? 'T' : '.', (IE_REGISTER & BIT_1) ? 'L' : '.',
-			(IE_REGISTER & BIT_0) ? 'V' : '.',
-			g_memmap.ime ? "enabled" : "disabled");
-*/
-/*
-		dprintf(log_file,
-			"\nPC = 0x%x, ADDR = 0x%lx\n"
-			"A = %3u(%2X), B = %3u(%2X)\nC = %3u(%2X), D = %3u(%2X)\n"
-			"E = %3u(%2X), H = %3u(%2X), L = %3u(%2X)\n"
-			"F = %.4s(ZNHC)\n"
-			"AF = %5u(%4X), BC = %5u(%4X), DE = %5u(%4X), HL = %5u(%4X)\n"
-			"SP = %4X,\n"
-			"P1 = %s, LCDC = %s, STAT = %s,\n"
-			"SCX = %hhu, SCY = %hhu, LY = %hhu, LYC = %hhu,\n"
-			"BGP = %s, OBP0 = %s, OBP1 = %s, WX = %hhu, WY = %hhu,\n"
-			"DIV = 0x%hhx, TIMA = 0x%hhx, TMA = 0x%hhx, TAC = %s,\n"
-			"IF = %s, IE = %s, IME = %u,\n"
-			"SVBK = %s, VBK = %s, DMA = 0x%hhx\n\n\t",
-			regs->reg_pc, (unsigned long)address,
-			regs->reg_a, regs->reg_a, regs->reg_b, regs->reg_b, regs->reg_c, regs->reg_c, regs->reg_d, regs->reg_d,
-			regs->reg_e, regs->reg_e, regs->reg_h, regs->reg_h, regs->reg_l, regs->reg_l, get_bin(regs->reg_f), 
-			regs->reg_af, regs->reg_af, regs->reg_bc, regs->reg_bc, regs->reg_de, regs->reg_de, regs->reg_hl, regs->reg_hl,
-			regs->reg_sp, get_bin(P1_REGISTER), get_bin(LCDC_REGISTER), get_bin(STAT_REGISTER),
-			SCX_REGISTER, SCY_REGISTER, LY_REGISTER, LYC_REGISTER,
-			get_bin(BGP_REGISTER), get_bin(OBP0_REGISTER), get_bin(OBP1_REGISTER), WX_REGISTER, WY_REGISTER,
-			DIV_REGISTER, TIMA_REGISTER, TMA_REGISTER, get_bin(TAC_REGISTER),
-			get_bin(IF_REGISTER), get_bin(IE_REGISTER), IME_REGISTER,
-			get_bin(SVBK_REGISTER), get_bin(VBK_REGISTER), DMA_REGISTER
-		);
-*/
+	
 		uint8_t		line[16] = {regs->reg_a, regs->reg_f, regs->reg_b, regs->reg_c, regs->reg_d, regs->reg_e, regs->reg_h, regs->reg_l, regs->reg_ph, regs->reg_pl, regs->reg_sh, regs->reg_sl, opcode, address[1], address[2], '\n'};
 		write(log_file, line, 16);
-//	}
 	/*
-		dprintf(log_file,
-			"\nPC = 0x%x\n"
-			"A = %3u(%2X)  B = %2X     C = %2X     D = %2X\n"
-			"E =  %2X      H = %2X     L = %2X     F = %.4s(ZNHC)\n"
-			"AF = %4X    BC = %4X  DE = %4X  HL = %4X\n",
-			regs->reg_pc,
-			regs->reg_a, regs->reg_a, regs->reg_b, regs->reg_c, regs->reg_d,
-			regs->reg_e, regs->reg_h, regs->reg_l, get_bin(regs->reg_f), 
-			regs->reg_af, regs->reg_bc, regs->reg_de, regs->reg_hl
-		);
 		if (opcode == 0xcb)
 			plog(cb_opcodes[address[1]].inst);
 		else
 			plog(fmt_strcpy(opcodes[opcode].inst, opcodes[opcode].optype, address + 1));
-	}
 	*/
+	}
 
 	goto *instruction_jumps[opcode];
 

@@ -37,6 +37,22 @@ struct	zones_s
 	struct zones_s		*prev;
 };
 
+struct	memblocks_s
+{
+	uint32_t			start;
+	uint32_t			end;
+	uint32_t			space;
+	char				*name;
+	struct memblocks_s	*next;
+};
+
+struct	variables_s
+{
+	char				*name;
+	uint32_t			addr;
+	struct variables_s	*next;
+};
+
 struct	error_s
 {
 	uint32_t	error;

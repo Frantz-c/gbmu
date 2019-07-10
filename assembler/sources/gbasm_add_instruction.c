@@ -12,191 +12,63 @@ static uint8_t	char_value[58] = {
      13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25
 };
 */
-static char	*instructions[] = {
-	"ld",
-	"ldd",
-	"ldi",
-	"ldhl",
-	"push",
-	"pop",
-	"add",
-	"adc",
-	"sub",
-	"sbc",
-	"and",
-	"or",
-	"xor",
-	"cp",
-	"inc",
-	"dec",
-	"swap",
-	"daa", //??? decimal adjust A
-	"cpl", //??? complement A register
-	"ccf",
-	"scf",
-	"nop",
-	"halt",
-	"stop",
-	"di",
-	"ei",
-	"rlca",
-	"rla",
-	"rrca",
-	"rra",
-	"rlc",
-	"rl",
-	"rrc",
-	"rr",
-	"sla",
-	"sra",
-	"srl",
-	"bit",
-	"set",
-	"res",
-	"jp",
-	"jr",
-	"call",
-	"rst",
-	"ret",
-	"reti",
-	// customs
-	"jpnz",
-	"jpz",
-	"jpnc",
-	"jpc",
-	"jrnz",
-	"jrz",
-	"jrnc",
-	"jrc",
-	"cmp",
-	"mov",
-	"callnz",
-	"callz",
-	"callnc",
-	"callc",
-	"retnz",
-	"retz",
-	"retc",
-	"retnc",
-	"testb",
-	NULL
+/*
+static uint8_t	lower[58] = {
+	 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,
+	32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,
+	64,'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
+	91,92,93,94,95,96,
+	'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
+	123,124,125,126,127
+};
+*/
+static int8_t	lower[58] = {
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	0,'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
+	0,0,0,0,0,0,
+	'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
+	0,0,0,0,0
 };
 
-int				hash(const char *s)
-{
-	int		hash = 0;
-	int		mask = 0x44;
-	int		n = 4;
 
-	while (*s)
-	{
-		hash += char_value[*s - 'A'];
-		hash *= n;
-		hash ^= mask;
-		s++;
-		if (n > 1)
-			n--;
-		mask <<= 1;
-	}
-	/*
-		if (*s)
-		{
-			hash += char_value[*s - 'A'];
-			hash /= 2;
-		}
-		else
-			break;
-		s++;
-	}*/
-	hash = hash % 133;
-	return (hash);
-}
-int			print_collisions(int tab[], int len)
-{
-	int i = 0;
-	int	col = 0;
-
-	while (i < len - 1)
-	{
-		int j = i + 1;
-		while (j < len)
-		{
-			if (tab[i] == tab[j])
-			{
-				col++;
-//				printf("col ==> %s, %s\n", instructions[i], instructions[j]);
-			}
-			j++;
-		}
-		i++;
-	}
-	return (col);
-}
-
-void	set_char_value(void)
-{
-	int i = 0;
-
-
-	char_value[i++] = (rand() % 51) / 2;
-	while (i < 26)
-	{
-	__rand:
-		char_value[i] = (rand() % 51) / 2;
-
-		int j = 0;
-		while (j < i)
-		{
-			if (char_value[i] == char_value[j])
-				goto __rand;
-			j++;
-		}
-		i++;
-	}
-	memcpy(char_value + 31, char_value, 26);
-}
-
-void		print_tab(void)
-{
-	int i = 0;
-	while (i < 26)
-	{
-		printf("[%c] %d, ", i + 'A', char_value[i]);
-		i++;
-	}
-	printf("\n");
-}
+#define	legal_char(a)	lower[a]
 
 extern char		*add_instruction_or_label(zones_t **zon, zones_t **curzon,
 								defines_t *def[], char *s, error_t *err)
 {
-	int		hash_tab[256];
-	int		i = 0, j = 0;
-	int		col = 11;
+	char	*name;
+	while (*s == ' ' || *s == '\t') s++;
+	
+	name = s;
+	while (legal_char(*s)) s++;
 
-	srand(time(NULL));
-
-	while (col != 0)
+	if (*s == ':')
 	{
-		i = 0;
-		j = 0;
-		set_char_value();
-		while (instructions[j])
+		s++;
+		if (*s != ' ' && *s != '\t' && *s != '\n')
 		{
-			hash_tab[i] = hash(instructions[j]);
-	//		printf("%s -> %d\n", instructions[j], hash_tab[i]);
-			i++;
-			j++;
+			//error
+			goto __error;
 		}
-
-		col = print_collisions(hash_tab, i);
-		if (col < 3)
-		{
-			printf("\n\e[0;36m%d collisions\e[0m\n", col);
-			print_tab();
-		}
+		name = strndup(name, s - name);
+		add_label(name, zon, curzon, err);
 	}
-	//print_tab();
-	while (*s && *s != '\n') s++;
+	else if (*s != ' ' && *s != '\t' && *s != '\n')
+	{
+		//error
+		goto __error;
+
+		name = strndup(name, s - name);
+		for (char *p = name; *p; p++)
+			*p = lower[*p];
+		add_instruction(name, zon, curzon, err);
+	}
 	return (s);
+
+__error:
+		fprintf(stderr, "bad token (%c)\n", *s);
+		while (*s != '\n') s++;
+		return (s);
 }
+#undef legal_char

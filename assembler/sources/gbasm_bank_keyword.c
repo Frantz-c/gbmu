@@ -17,6 +17,7 @@ static int	set_addr(char **s, uint32_t *addr, error_t *err)
 		//...
 		return (-1);
 	}
+	*addr *= 0x4000;
 	while (**s == ' ' && **s == '\t') (*s)++;
 	if (**s == '\n' || **s == '\0')
 		return (0);
