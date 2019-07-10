@@ -1,0 +1,85 @@
+#include "std_includes.h"
+#include "gbasm_struct.h"
+
+static uint8_t	char_value[58] = {
+	  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12,
+	 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+	255,255,255,255,255,255,
+	  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12,
+     13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25
+};
+
+char	*instructions[] = {
+	{"ld", "LD", ld_spec},
+	{"ldd", "LDD", ldd_spec},
+	{"ldi", "LDI", ldi_spec},
+	{"ldhl", "LDHL", ldhl_spec},
+	{"push", "PUSH", push_spec},
+	{"pop", "POP", pop_spec},
+	{"add", "ADD", add_spec},
+	{"adc", "ADC", adc_spec},
+	{"sub", "SUB", sub_spec},
+	{"sbc", "SBC", sbc_spec},
+	{"and", "AND", and_spec},
+	{"or", "OR", or_spec},
+	{"xor", "XOR", xor_spec},
+	{"cp", "CP", cp_spec},
+	{"inc", "INC", inc_spec},
+	{"dec", "DEC", dec_spec},
+	{"swap", "SWAP", swap_spec},
+	{"daa", "DAA", daa_spec}, //??? decimal adjust A
+	{"cpl", "CPL", cpl_spec}, //??? complement A register
+	{"ccf", "CCF", ccf_spec},
+	{"scf", "SCF", scf_spec},
+	{"nop", "NOP", nop_spec},
+	{"halt", "HALT", halt_spec},
+	{"stop", "STOP", stop_spec},
+	{"di", "DI", di_spec},
+	{"ei", "EI", ei_spec},
+	{"rlca", "RLCA", rlca_spec},
+	{"rla", "RLA", rla_spec},
+	{"rrca", "RRCA", rrca_spec},
+	{"rra", "RRA", rra_spec},
+	{"rlc", "RLC", rlc_spec},
+	{"rl", "RL", rl_spec},
+	{"rrc", "RRC", rrc_spec},
+	{"rr", "RR", rr_spec},
+	{"sla", "SLA", sla_spec},
+	{"sra", "SRA", sra_spec},
+	{"srl", "SRL", srl_spec},
+	{"bit", "BIT", bit_spec},
+	{"set", "SET", set_spec},
+	{"res", "RES", res_spec},
+	{"jp", "JP", jp_spec},
+	{"jr", "JR", jr_spec},
+	{"call", "CALL", call_spec},
+	{"rst", "RST", rst_spec},
+	{"ret", "RET", ret_spec},
+	{"reti", "RETI", reti_spec},
+	// customs
+	{"jpnz", "JPNZ", custom_jpnz_spec},
+	{"jpz", "JPZ", custom_jpz_spec},
+	{"jpnc", "JPNC", custom_jpnc_spec},
+	{"jpc", "JPC", custom_jpc_spec},
+	{"jrnz", "JRNZ", custom_jrnz_spec},
+	{"jrz", "JRZ", custom_jrz_spec},
+	{"jrnc", "JRNC", custom_jrnc_spec},
+	{"jrc", "JRC", custom_jrc_spec},
+	{"cmp", "CMP", cp_spec},
+	{"mov", "MOV", ld_spec},
+	{"callnz", "CALLNZ", custom_callnz_spec},
+	{"callz", "CALLZ", custom_callz_spec},
+	{"callnc", "CALLNC", custom_callnc_spec},
+	{"callc", "CALLC", custom_callc_spec},
+	{"retnz", "RETNZ", custom_ret_spec},
+	{"retz", "RETZ", custom__spec},
+	{"retc", "RETC", custom__spec},
+	{"retnc", "RETNC", custom__spec},
+	{NULL, NULL, NULL},
+};
+
+extern char		*add_instruction_or_label(zones_t **zon, zones_t **curzon,
+								defines_t *def[], char *s, error_t *err)
+{
+	
+}
