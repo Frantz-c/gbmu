@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 12:49:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/11 13:07:01 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/11 14:08:56 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -40,4 +40,152 @@ vector_t	*vector_init(size_t elemsize)
 	}
 	vector->lock = 0;
 	return (vector);
+}
+
+vector_t	*vector_clone(vector_t *other)
+{
+	vector_t	*vector;
+
+	vector = (vector_t *)malloc(sizeof(vector_t));
+	if (vector == NULL)
+		return (NULL);
+	vector->data = malloc(other->elemsize * other->nitems);
+	if (vector->data == NULL)
+	{
+		free(vector);
+		return (NULL);
+	}
+	vector->tmp_elem = malloc(other->elemsize);
+	if (vector->tmp_elem == NULL)
+	{
+		free(vector->data);
+		free(vector);
+		return (NULL);
+	}
+	memcpy(vector->data, other->data, other->elemsize * other->nitems);
+	vector->elemsize = data->elemsize;
+	vector->nitems = data->nitems;
+	vector->maxitems = data->nitems;
+	vector->compar = data->compar;
+	vector->shift = data->shift;
+	vector->lock = 0;
+	return (vector);
+}
+
+void		*vector_at(vector_t *vec, size_t index)
+{
+	if (vec->shift == NOT_POWER_OF_TWO)
+	{
+		return (_vector_at_mul(vec, index));
+	}
+	else
+	{
+		return (_vector_at_shl(vec, index));
+	}
+}
+
+int			vector_insert(vector_t *vec, const void *elem, size_t index)
+{
+	void	*tmp;
+
+	if (vec->nitems == vec->maxitems)
+	{
+		vec->maxitems = (vec->maxitems == 0) ? 16 : vec->maxitems * 2;
+		tmp = realloc(vec->data, vec->maxitems * vec->elemsize);
+		if (tmp == NULL)
+			return (-1);
+		vec->data = tmp;
+	}
+	if (vec->shift == NOT_POWER_OF_TWO)
+	{
+		memmove(_vector_at_mul(vec, index + 1), _vector_at_mul(vec, index),
+				(vec->nitems - index) * vec->elemsize);
+		memcpy(_vector_at_mul(vec, index), elem, vec->elemsize);
+	}
+	else
+	{
+		memmove(_vector_at_shl(vec, index + 1), _vector_at_shl(vec, index),
+				(vec->nitems - index) << vec->shift);
+		memcpy(_vector_at_shl(vec, index), elem, vec->elemsize);
+	}
+	vec->nitems++;
+	return (0);
+}
+
+void		vector_delete(vector_t *vec, size_t index)
+{
+	if (vec->shift == NOT_POWER_OF_TWO)
+	{
+		memcpy(_vector_at_mul(vec, index), _vector_at_mul(vec, index + 1),
+				(vec->nitems - index));
+	}
+	else
+	{
+		memcpy(_vector_at_shl(vec, index), _vector_at_shl(vec, index + 1),
+				(vec->nitems - index));
+	}
+	vec->nitems--;
+}
+
+void		vector_sort(vector_t *vec)
+{
+	qsort(vec->data, vec->nitems, vec->itemsize, vec->compar);
+}
+
+ssize_t		vector_search(vector_t *vec, const void *elem)
+{
+	size_t	left, right, middle;
+	int		side;
+
+	if (vec->nitems == 0)
+		return (-1);
+	left = 0;
+	right = vec->nitems - 1;
+	while (left < right)
+	{
+		middle = (left + right) / 2;
+		if (vec->shift == NOT_POWER_OF_TWO)
+			side = vec->compar(elem, _vector_at_mul(vec, middle));
+		else
+			side = vec->compar(elem, _vector_at_shl(vec, middle));
+		if (side < 0)
+			left = middle + 1;
+		else if (side > 0)
+			right = middle - 1;
+		else
+			return ((ssize_t)middle);
+	}
+	return (-1);
+}
+
+size_t		vector_index(vector_t *vec, const void *elem)
+{
+	size_t	left, right, middle;
+	int		side;
+
+	if (vec->nitems == 0)
+		return (0);
+	left = 0;
+	right = vec->nitems - 1;
+	while (left < right)
+	{
+		middle = (left + right) / 2;
+		if (vec->shift == NOT_POWER_OF_TWO)
+			side = vec->compar(elem, _vector_at_mul(vec, middle));
+		else
+			side = vec->compar(elem, _vector_at_shl(vec, middle));
+		if (side < 0)
+			left = middle + 1;
+		else
+			right = middle;
+	}
+	return (left);
+}
+
+void		vector_destroy(vector_t *vec)
+{
+	free(vec->tmp_elem);
+	if (vec->data != NULL)
+		free(vec->data);
+	free(vec);
 }
