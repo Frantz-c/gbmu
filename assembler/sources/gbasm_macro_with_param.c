@@ -69,7 +69,7 @@ static int		string_replace(char *content, char *replace, char number)
 	return (count);
 }
 
-extern char	*add_macro_with_param(char *name, defines_t **def, char *s, error_t *err)
+extern char	*add_macro_with_param(char *name, macro_t *macro, char *s, data_t *data)
 {
 	char		*name_start = name;
 	uint32_t	count = 0;
@@ -77,55 +77,38 @@ extern char	*add_macro_with_param(char *name, defines_t **def, char *s, error_t 
 	char		*pos[11] = {NULL};
 	char		*content;
 	uint32_t	length;
+	macro_t		elem = {name, NULL, 0, 1};
 
 	while (*name != '(') name++;
 	*name = '\0';
-	if (macro_exists(*def, name_start))
-	{
-		fprintf(stderr, "macro %s is already defined\n", name_start);
-		free(name_start);
-		skip_macro(&s);
-		return (s);
-	}
+	if (vector_search(macro, (void*)&elem) != -1)
+		goto __macro_already_defined;
+
 	do
 	{
 		if (cur == 10)
-		{
-			//error
-			return (s);
-		}
+			goto __too_many_parameters;
+
 		*name = '\0';
 		name++;
 		while (*name == ' ' || *name == '\t') name++;
-		pos[cur++] = name;
 
-		// check if empty argument
 		if (*name == ')' || *name == ',')
-		{
-			// error is like this -> fprintf(stderr, "line x: syntax argument x\n> $line", lineno, err.info);
-			fprintf(stderr, "empty argument\n");
-			err->error++;
-			err->type[err->total] = 1; //ERR_ARGUMENT;
-			err->info[err->total] = count;
-			err->total++;
-			free(name_start);
-			skip_macro(&s);
-			return (s);
-		}
+			goto __empty_argument_x;
+
+		pos[cur++] = name;
 		while (*name != '\0' && *name != ',') name++;
-		count++;
 	}
 	while (*name != '\0');
+
+	count = cur;
 
 	while (*s == ' ' || *s == '\t') s++;
 	length = get_macro_content_length(s);
 	content = malloc(length * 2);
-	copy_macro_content(content, s);
-	skip_macro(&s);
+	s = copy_macro_content(content, s);
 
-/*
-	vérifier les doublons dans les parametres /!\
-*/
+/*	/!\ vérifier les doublons dans les parametres /!\	*/
 	char *arg;
 	while (cur--)
 	{
@@ -135,46 +118,34 @@ extern char	*add_macro_with_param(char *name, defines_t **def, char *s, error_t 
 		*arg = '\0';
 		if (string_replace(content, pos[cur], cur + '0') == 0)
 		{
-			//WARNING unused argument pos[cur]
-			fprintf(stderr, "WARNING: unused argument %s\n", pos[cur]);
+			sprintf(data->buf, "unused argument %s", pos[cur]);
+			print_warning(data->filename, data->lineno, data->line, data->buf);
 		}
-		//cur--;
 	}
 
-	push_macro(def, name_start, content, count);
+	elem.content = content;
+	elem.argc = count;
+	size_t	index = vector_index(macro, (void*)&elem);
+	vector_insert(macro, (void*)&elem, index);
 	return (s);
-}
 
 /*
-int main(void)
-{
-	defines_t	*def[53] = {NULL};
-	error_t		err = {0, 0, {0}, {0}};
+ *	=========ERRORS=========
+ */
+__empty_argument_x:
+	sprintf(data->buf, "argument %u is empty\n", cur + 1);
+	goto __perror_and_exit;
 
-	add_macro(def, "ld_ab(arg1,arg2)  ld arg1, arg2\n", &err);
-	err.total = 0;
-	add_macro(def, "push_x(  azerty, qwerty )		push azerty\\\npush qwerty\n", &err);
-	err.total = 0;
-	add_macro(def, "pop_x(	a    ,a,     b   )		pop a\\\npop b\n", &err);
-	err.total = 0;
-	add_macro(def, "macro_test(	a    ,     b ,		 c,d)	add a\\\nbit b\\\ncp c\\\njmp d \n", &err);
+__too_many_parameters:
+	sprintf(data->buf, "too many parameters declared in macro `%s`", name_start);
+	goto __perror_and_exit;
 
-	defines_t **p = def;
-	defines_t **end = def + 53;
-	while (p != end)
-	{
-		if (*p)
-		{
-			defines_t *p2 = *p;
-			do
-			{
-				printf("name = \"%s\" -> content = \"%s\"\n\n", p2->name, p2->content);
-				p2 = p2->next;
-			}
-			while (p2);
-		}
-		p++;
-	}
-	return (0);
+__macro_already_defined:
+	sprintf(data->buf, "macro `%s` already defined", name_start);
+__perror_and_exit:
+	print_error(data->filename, data->lineno, data->line, data->buf);
+__free_and_exit:
+	free(name_start);
+	skip_macro(&s, &data->lineno);
+	return (s);
 }
-*/

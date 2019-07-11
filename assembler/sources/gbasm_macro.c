@@ -1,26 +1,35 @@
+/* ************************************************************************** */
+/*                                                          LE - /            */
+/*                                                              /             */
+/*   gbasm_macro.c                                    .::    .:/ .      .::   */
+/*                                                 +:+:+   +:    +:  +:+:+    */
+/*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
+/*                                                 #+#   #+    #+    #+#      */
+/*   Created: 2019/07/11 16:48:47 by fcordon      #+#   ##    ##    #+#       */
+/*   Updated: 2019/07/11 19:46:26 by fcordon     ###    #+. /#+    ###.fr     */
+/*                                                         /                  */
+/*                                                        /                   */
+/* ************************************************************************** */
+
 #include "../includes/std_includes.h"
 #include "../includes/gbasm_struct.h"
 #include "../includes/gbasm_macro_func.h"
 #include "../includes/gbasm_macro.h"
 
-extern char	*define_macro(defines_t *def[], char *s, error_t *err)
+extern char	*define_macro(vector_t *macro, char *s, data_t *data)
 {
 	char	*name;
 	int		with_param = 0;
 
 	while (*s == ' ' || *s == '\t') s++;
-	if (*s == '\n') {
-		// choisir l'erreur
-		fprintf(stderr, "pas de valeur\n");
-		return (s);
-	}
+	if (*s == '\n')
+		goto __arg_expected;
 
+	/*
+	 *	get %define's name
+	 */
 	if (*s != '_' && (*s < 'A' || (*s > 'Z' && *s < 'a') || *s > 'z'))
-	{
-		// choisir l'erreur
-		fprintf(stderr, "(1)invalid variable name\n");
-		goto __end;
-	}
+		goto __unexpected_char;
 	for (name = s; *s; s++)
 	{
 		if (with_param == 0 && *s == '(')
@@ -36,99 +45,41 @@ extern char	*define_macro(defines_t *def[], char *s, error_t *err)
 		{
 			if (with_param == 0 && (*s == ' ' || *s == '\t'))
 				break;
-			// choisir l'erreur
-			fprintf(stderr, "(2)invalid variable name (%c)\n", *s);
-			skip_macro(&s);
-			return (s);
+			goto __unexpected_char;
 		}
 		else if (*s == ' ' && *s == '\t' && *s == '\n')
 			break;
 	}
 	if (with_param == 1)
-	{
-		fprintf(stderr, "invalid syntax\n");
-		// choisir l'erreur
-		goto __end;
-	}
+		goto __unexpected_char;
 
+	/*
+	 *	get %define's content
+	 */
 	name = strndup(name, s - name);
 	while (*s == ' ' || *s == '\t') s++;
-	if (*name >= 'a' && *name <= 'z')
-	{
-		if (with_param == 0)
-			s = add_macro_without_param(name, def + (*name - 'a') + 26, s, err);
-		else
-			s = add_macro_with_param(name, def + (*name - 'a') + 26, s, err);
-	}
-	else if (*name >= 'A' && *name <= 'Z')
-	{
-		if (with_param == 0)
-			s = add_macro_without_param(name, def + (*name - 'A'), s, err);
-		else
-			s = add_macro_with_param(name, def + (*name - 'A'), s, err);
-	}
+	if (with_param == 0)
+		s = add_macro_without_param(name, macro, s, data);
 	else
-	{
-		if (with_param == 0)
-			s = add_macro_without_param(name, def + 52, s, err);
-		else
-			s = add_macro_with_param(name, def + 52, s, err);
-	}
+		s = add_macro_with_param(name, macro, s, data);
+	return (s);
 
-	__end:
+/*
+ *	=========ERRORS=========
+ */
+__arg_expected:
+	print_error(data->filename, data->lineno, data->line,
+				"argument expected after %define");
+	return (s);
+
+__unexpected_char:
+	sprintf(data->buf, "unexpected character `%c`", *s);
+	print_error(data->filename, data->lineno, data->line, data->buf);
+	skip_macro(&s, &data->lineno);
 	return (s);
 }
 
-static void	delete_macro_if_defined(defines_t **def, char *name)
-{
-	const uint32_t	len = strlen(name);
-	int				diff;
-	defines_t		*prev = *def;
-	defines_t		*p = *def;
-
-	if (p)
-	{
-		if (p->next == NULL)
-		{
-			if (p->length == len && strcmp(p->name, name) == 0)
-			{
-__del_first:
-				free(p->name);
-				prev = p->next;
-				free(p);
-				*def = prev;
-			}
-			return;
-		}
-		while (p->length < len)
-		{
-			prev = p;
-			p = p->next;
-			if (!p)
-				return;
-		}
-		while (p->length == len)
-		{
-			if ((diff = strncmp(p->name, name, len)) == 0)
-			{
-				if (prev == p)
-					goto __del_first;
-				free(p->name);
-				prev->next = p->next;
-				free(p);
-			}
-			else if (diff > 0)
-				break;
-			prev = p;
-			p = p->next;
-			if (!p)
-				break;
-		}
-	}
-	return;
-}
-
-extern char	*undef_macro(defines_t *def[], char *s, error_t *err)
+extern char	*undef_macro(vector_t *macro, char *s, data_t *data)
 {
 	char	*name;
 
@@ -147,25 +98,26 @@ extern char	*undef_macro(defines_t *def[], char *s, error_t *err)
 	}
 
 	if (*s != ' ' && *s != '\t' && *s != '\n')
-	{
-		//error
-		fprintf(stderr, "error #1\n");
-		while (*s != '\n') s++;
-		return (s);
-	}
+		goto __unexpected_char;
+
 	name = strndup(name, s - name);
-	if (*name >= 'a' && *name <= 'z')
-		delete_macro_if_defined(def + (*name - 'a') + 26, name);
-	else if (*name >= 'A' && *name <= 'Z')
-		delete_macro_if_defined(def + (*name - 'A'), name);
-	else // if (*name == '_')
-		delete_macro_if_defined(def + 53, name);
+	ssize_t index;
+	macro_t	elem = {name, NULL, 0, 1};
+
+	if ((index = vector_search(macro, (void*)&elem)) != -1)
+		vector_delete(macro, (size_t)index);
+
 	while (*s == ' ' && *s == '\t') s++;
 	if (*s != '\n')
-	{
-		//error;
-		fprintf(stderr, "error #2\n");
-		while (*s != '\n') s++;
-	}
+		goto __unexpected_char;
+	return (s);
+
+/*
+ *	=========ERRORS=========
+ */
+__unexpected_char:
+	sprintf(data->buf, "unexpected character `%c`", *s);
+	print_error(data->filename, data->lineno, data->line, data->buf);
+	for (; *s != 0 && *s != '\n'; s++);
 	return (s);
 }

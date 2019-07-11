@@ -1,112 +1,91 @@
 #include "../includes/std_includes.h"
 #include "../includes/gbasm_struct.h"
 
-extern void		copy_macro_content(char *dest, char *s)
+extern char		*copy_macro_content(char *dest, char *s)
 {
-	int		exit = 0;
 	char	*bs_pos;
 
-	do
+	for (; ; s++)
 	{
-		for (; ; s++, dest++)
-		{
-			if (*s == '\n') {
-				*(dest++) = *s;
-				exit = 1;
-				break;
-			}
-			else if (*s == '\\') {
-				bs_pos = s;
+		if (*s == '\n') {
+			break;
+		}
+		else if (*s == '\\') {
+			bs_pos = s;
+			s++;
+			if (*s == ' ' || *s == '\t') (s)++;
+			if (*s == '\n')
+			{
+				*(dest++) = '\n';
 				s++;
-				if (*s == ' ' || *s == '\t') (s)++;
-				if (*s == '\n')
-				{
-					*dest = '\n';
-					s++;
-					continue;
-				}
-				*dest = '\\';
-				s = bs_pos;
 				continue;
 			}
-			else
-				*dest = *s;
+			*(dest++) = '\\';
+			s = bs_pos;
+			continue;
 		}
-		for (; *s != '\n'; s++);
-		s++;
+		else
+			*(dest++) = *s;
 	}
-	while (!exit);
 	*dest = '\0';
+	return (s);
 }
 
 extern uint32_t	get_macro_content_length(char *s)
 {
 	uint32_t	count = 1;
-	int			exit = 0;
 	char		*bs_pos;
 
-	do
+	for (; ; s++, count++)
 	{
-		for (; ; s++, count++)
+		if (*s == '\n') {
+			break;
+		}
+		else if (*s == '\\')
 		{
-			if (*s == '\n') {
-				exit = 1;
-				count++;
-				break;
-			}
-			else if (*s == '\\') {
-				bs_pos = s;
+			bs_pos = s;
+			s++;
+			if (*s == ' ' || *s == '\t') (s)++;
+			if (*s == '\n')
+			{
 				s++;
-				if (*s == ' ' || *s == '\t') (s)++;
-				if (*s == '\n')
-				{
-					s++;
-					continue;
-				}
-				s = bs_pos;
+				count++;
 				continue;
 			}
+			s = bs_pos;
+			count++;
+			continue;
 		}
-		for (; *s != '\n'; s++);
-		s++;
 	}
-	while (!exit);
 
 	return (count);
 }
 
-extern void	skip_macro(char **s)
+extern void	skip_macro(char **s, uint32_t *lineno)
 {
 	char	*bs_pos;
-	int		exit = 0;
 
-	do
+	for (; ; (*s)++)
 	{
-		for (; ; (*s)++)
+		if (**s == '\n' || **s == '\0')
 		{
-			if (**s == '\n') {
-				exit = 1;
-				break;
-			}
-			else if (**s == '\\') {
-				(*s)++;
-				bs_pos = *s;
-				if (**s == ' ' || **s == '\t') (s)++;
-				if (**s == '\n')
-				{
-					s++;
-					continue;
-				}
-				*s = bs_pos;
-				(*s)++;
+			break;
+		}
+		else if (**s == '\\')
+		{
+			bs_pos = *s;
+			(*s)++;
+			if (**s == ' ' || **s == '\t') (s)++;
+			if (**s == '\n')
+			{
+				s++;
+				(*lineno)++
 				continue;
 			}
+			*s = bs_pos;
+			continue;
 		}
-		for (; **s != '\n'; (*s)++);
-		(*s)++;
 	}
-	while (!exit);
-	(*s)--;
 }
 
 extern void	push_macro(defines_t **def, char *name, char *content, uint32_t count)

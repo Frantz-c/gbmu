@@ -10,13 +10,8 @@ static int	set_addr(char **s, uint32_t *addr, error_t *err)
 	
 	*addr = atou_inc_all(s, &error);
 	if (error == 1)
-	{
-		fprintf(stderr, ".bank: error argument 1\n");
-		__error_argument:
-		err->error++;
-		//...
-		return (-1);
-	}
+		goto __unexpected_char;
+
 	*addr *= 0x4000;
 	while (**s == ' ' && **s == '\t') (*s)++;
 	if (**s == '\n' || **s == '\0')
@@ -24,21 +19,23 @@ static int	set_addr(char **s, uint32_t *addr, error_t *err)
 	if (**s == ',')
 		(*s)++;
 	else
-	{
-		fprintf(stderr, "error token \"%c\"\n", **s);
-		err->error++;
-		return (-1);
-	}
+		goto __unexpected_char;
+
 	*addr += atou_inc_all(s, &error);
 	if (error == 1)
-	{
-		fprintf(stderr, ".bank: error argument 2\n");
-		goto __error_argument;
-	}
+		goto __unexpected_char;
 	return (0);
+
+/*
+ *	=========ERRORS=========
+ */
+__unexpected_char:
+	sprintf(data->buf, "unexpected character `%c`", **s);
+	print_error(data->filename, data->lineno, data->line, data->buf);
+	return (-1);
 }
 
-extern char	*bank_switch(zones_t **zon, zones_t **curzon, char *s, error_t *err)
+extern char	*bank_switch(vector_t *area, char *s, data_t *data)
 {
 	zones_t		*new;
 	uint32_t	addr;
@@ -46,58 +43,34 @@ extern char	*bank_switch(zones_t **zon, zones_t **curzon, char *s, error_t *err)
 	if (set_addr(&s, &addr, err) == -1)
 		goto __ret_s;
 
-	new = malloc(sizeof(zones_t));
-	new->addr = addr;
-	new->data = NULL;
-	new->cur = NULL;
-	new->next = NULL;
-	new->prev = NULL;
-	*curzon = new;
-
-	if (*zon == NULL)
+	if	(addr == 0 &&
+			(
+				vector_size(area) == 1
+				|| ((code_area_t **)(area->data))[0]->data == NULL
+			)
+		)
 	{
-		*zon = new;
-		goto __ret_s;
-	}
-	zones_t		*p = *zon;
-	while (p->addr < addr) {
-		if (p->next)
-			p = p->next;
-		else
-		{
-			if (p->addr < addr)
-			{
-				p->next = new;
-				new->prev = p;
-				goto __ret_s;
-			}
-			break;
-		}
-	}
-	if (p->addr == addr)
-	{
-		err->error++;
-		fprintf(stderr, "duplicate address\n");
-		free(new);
-		goto __ret_s;
+		if (vector_size(area) != 1)
+			data->cur_area = 0;
+		goto _ret_s;
 	}
 
-	if (p == *zon)
-	{
-		new->next = p;
-		new->prev = NULL;
-		p->prev = new;
-		*zon = new;
-	}
-	else
-	{
-		new->next = p;
-		new->prev = p->prev;
-		p->prev->next = p;
-		p->prev = new;
-	}
+	code_area_t	new = {addr, NULL, NULL};
+	if (vector_search(area, (void*)&new) != -1)
+		goto __addr_already_used;
+
+	data->cur_area = vector_search(area, (void*)&new);
+	vector_insert(area, (void*)&new, (size_t)data->cur_area);
 
 	__ret_s:
 	while (*s && *s != '\n') s++;
 	return (s);
+
+/*
+ *	=========ERRORS=========
+ */
+__addr_already_used:
+	sprintf(data->buf, "address 0x%x already used", addr);
+	print_error(data->filename, data->lineno, data->line, data->buf);
+	goto __ret_s;
 }

@@ -3,13 +3,12 @@
 
 # include "std_includes.h"
 
-struct	defines_s
+struct	macro_s
 {
 	char		*name;
 	char		*content;
-	uint32_t	count;
-	uint32_t	length;
-	struct defines_s	*next;
+	uint32_t	argc;
+	uint32_t	allocated;
 };
 
 
@@ -28,13 +27,11 @@ struct	mnemonics_s
 	struct operands_s	*operands;
 };
 
-struct	zones_s
+struct	code_area_s
 {
 	uint32_t			addr;
 	struct mnemonics_s	*data;
 	struct mnemonics_s	*cur;
-	struct zones_s		*next;
-	struct zones_s		*prev;
 };
 
 struct	memblocks_s
@@ -43,16 +40,34 @@ struct	memblocks_s
 	uint32_t			end;
 	uint32_t			space;
 	char				*name;
-	struct memblocks_s	*next;
+	vector_t			*var;
 };
 
 struct	variables_s
 {
 	char				*name;
 	uint32_t			addr;
-	struct variables_s	*next;
+	uint32_t			size;
 };
 
+struct	label_s
+{
+	char		*name;
+	uint32_t	offset;	//code_area[offset] = label_position
+};
+
+struct	data_s
+{
+	char		*s;
+	char		*line;
+	char		*filename;
+	uint32_t	length;
+	uint32_t	lineno;
+	int32_t		cur_area;
+	char		buf[128];
+};
+
+/*
 struct	error_s
 {
 	uint32_t	error;
@@ -60,11 +75,12 @@ struct	error_s
 	int32_t		type[5];
 	uint32_t	info[5];
 };
-
+*/
 typedef struct operands_s	operands_t;
 typedef struct mnemonics_s	mnemonics_t;
-typedef struct defines_s	defines_t;
-typedef struct zones_s		zones_t;
-typedef struct error_s		error_t;
+typedef struct macro_s		macro_t;
+typedef struct code_area_s	code_area_t;
+typedef struct label_s		label_t;
+//typedef struct error_s		error_t;
 
 #endif

@@ -118,3 +118,41 @@ extern uint32_t		atou_inc_all(char **s, int32_t *err)
 	*s = ft_strtoi(*s, &result, type);
 	return (result);
 }
+
+extern void		*get_file_contents(const char *path, uint32_t *length)
+{
+	void		*content;
+	FILE		*f;
+
+	f = fopen(path, "r");
+	if (f == NULL)
+		return (NULL);
+	fseek(f, 0, SEEK_END);
+	*length = (uint32_t)ftell(f);
+	rewind(f);
+	if (*length == 0)
+	{
+		fprintf(stderr, "Empty file\n");
+		return (NULL);
+	}
+	if (*length > FILE_MAX_LENGTH)
+	{
+		fprintf(stderr, "Too Heavy file\n");
+		return (NULL);
+	}
+	content = valloc(*length);
+	if (content == NULL)
+	{
+		perror("allocation failed");
+		return (NULL);
+	}
+	if (fread(content, 1, *length, f) != *length)
+	{
+		perror("read failed");
+		free(content);
+		return (NULL);
+	}
+	fclose(f);
+	return (content);
+}
+

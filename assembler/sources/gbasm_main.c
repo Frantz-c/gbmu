@@ -1,87 +1,19 @@
-/*
-````````````````````````````````````````````````````````````````````
-	.bank	1, 0
+/* ************************************************************************** */
+/*                                                          LE - /            */
+/*                                                              /             */
+/*   gbasm_main.c                                     .::    .:/ .      .::   */
+/*                                                 +:+:+   +:    +:  +:+:+    */
+/*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
+/*                                                 #+#   #+    #+    #+#      */
+/*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
+/*   Updated: 2019/07/11 19:16:51 by fcordon     ###    #+. /#+    ###.fr     */
+/*                                                         /                  */
+/*                                                        /                   */
+/* ************************************************************************** */
 
-	ld	A, 0x12
-	ld	(0x2000), A
-	call	0x5000
-	jr		-0x06
-
-	%define	LD_CART_REG_1(reg)	ld (0x2000), reg
-
-label:
-	LD_CART_REG_1(A)
-	ret
-	.byte	0 3 67
-
-	.bank	2, 0x100
-
-	call	0x00 ; mais ou va-t-on ?
-
-````````````````````````````````````````````````````````````````````
-traduction en strucure
-````````````````````````````````````````````````````````````````````
-
-	addr = 0x0000
-	{
-		"ld"				-> "A"			-> "0x12"	-> NULL
-		|
-		v
-		"ld"				-> "(0x2000)"	-> "A"		-> NULL
-		|
-		v
-		"call"				-> "0x5000"		-> NULL
-		|
-		v
-		"jr"				-> "-0x06"		-> NULL
-		|
-		v
-		"label:"			-> NULL
-		|
-		v
-		"ld (0x2000), A"	-> NULL
-		|
-		v
-		"ret"				-> NULL
-		|
-		v
-		"&"					-> "0"			-> "3"		-> "67"		-> NULL
-		NULL
-	}
-
-	|
-	v
-
-	addr = 0x8100
-	{
-		"call"				-> "0x0"		-> NULL
-	}
-
-	|
-	v
-
-	NULL
-``````````````````````````````````````````````````````````````````
-
-fichiers objets:
-``````````````````````````````````````````````````````````````````
-en-tete:
-
-	extern_label_header_addr(unsigned int)
-
-	addr_header_length(unsigned short) --> (1 = sizeof(unsigned int) * 2)
-	gb_addr(unsigned int), obj_addr(unsigned int),
-	...
-
-	extern_label_header_length(unsigned short)
-
-	label_name(null terminated string), sizeof_operand(unsigned char) = 1 or 2, operand_addr(unsigned int)
-	...
-
-	code binaire.
-*/
 
 #include "std_includes.h"
+#include "gbasm_tools.h"
 #include "gbasm_macro.h"
 #include "gbasm_keywords.h"
 #include "gbasm_add_instruction.h"
@@ -91,7 +23,6 @@ en-tete:
 #define CGB		2
 #define DEFINE	3
 #define	SKIP_SPACES(ptr)		do { while (*ptr == ' ' || *ptr == '\t') ptr++; } while (0);
-#define	SKIP_CHARACTERS(ptr)	do { while (is_authorized(*ptr)) ptr++; } while (0);
 
 
 #define FILE_MAX_LENGTH	0x800000u
@@ -106,45 +37,11 @@ const char *const	inst[] = {
 	"sra", "srl", "stop", "sub", "swap", "testb", "xor", NULL
 };
 
+uint32_t		g_error = 0;
+t_memblocks		*g_memblock = NULL;
+t_vector		*g_defines = NULL;
 
-void	*get_file_contents(const char *path, uint32_t *length)
-{
-	void		*content;
-	FILE		*f;
-
-	f = fopen(path, "r");
-	if (f == NULL)
-		return (NULL);
-	fseek(f, 0, SEEK_END);
-	*length = (uint32_t)ftell(f);
-	rewind(f);
-	if (*length == 0)
-	{
-		fprintf(stderr, "Empty file\n");
-		return (NULL);
-	}
-	if (*length > FILE_MAX_LENGTH)
-	{
-		fprintf(stderr, "Too Heavy file\n");
-		return (NULL);
-	}
-	content = valloc(*length);
-	if (content == NULL)
-	{
-		perror("allocation failed");
-		return (NULL);
-	}
-	if (fread(content, 1, *length, f) != *length)
-	{
-		perror("read failed");
-		free(content);
-		return (NULL);
-	}
-	fclose(f);
-	return (content);
-}
-
-char	*get_include_filename(char **s, error_t *err)
+static char	*get_include_filename(char **s, error_t *err)
 {
 	char	*name;
 
@@ -162,77 +59,128 @@ char	*get_include_filename(char **s, error_t *err)
 	return (name);
 }
 
-/*
-	incrementer lineno dans les macros multilignes et le mot clé .byte
-*/
-int		compile_file(char *filename, zones_t **zon, zones_t **curzon, defines_t *def[],
-					extlabs_t **extlab, memblocks_t **memblock)
+void			print_warning(char *filename, uint32_t lineno, char *line, char *error)
 {
-	error_t		err = {0, 0, {0}, {0}};
-	char		*file;
-	char		*line;
-	uint32_t	lineno = 1;
-	uint32_t	length;
-	int			ret_value = 0;
+	char	*p = line;
+
+	g_error++;
+	while (*p && *p != '\n') p++;
+	if (p - line > 70)
+		p = line + 70;
+
+	fprintf
+	(
+		stderr,
+		"\e[1;33m[WARNING]\e[0m \e[1min file \e[0;33m\"%s\"\e[0m\e[1m:\t"
+		"line %u: \e[0;33m%s\e[0m\n\t"
+		"\e[1;35m> \e[0m%.*s",
+		filename,
+		lineno, error,
+		(int)(p - line), line
+	);
+}
+
+/*
+ *	format d'erreur:
+ *
+ *		in file "myfile.gs":	l-231: Bad token '$'
+ *			> %include "file$"
+ */
+void			print_error(char *filename, uint32_t lineno, char *line, char *error)
+{
+	char	*p = line;
+
+	g_error++;
+	while (*p && *p != '\n') p++;
+	if (p - line > 70)
+		p = line + 70;
+
+	fprintf
+	(
+		stderr,
+		"\e[1;31m[ERROR]\e[0m \e[1min file \e[0;33m\"%s\"\e[0m\e[1m:\t"
+		"line %u: \e[0;31m%s\e[0m\n\t"
+		"\e[1;31m> \e[0m%.*s",
+		filename,
+		lineno, error,
+		(int)(p - line), line
+	);
+}
+
+char	*get_keyword(char *s)
+{
+	char	*start = s;
+
+	while (*s != '\0' && *s != ' ' && *s != '\t' && *s != '\n')
+		s++;
+	return (strndup(start, s - start));
+}
+
+static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_t *ext_label, vector_t *memblock)
+{
+	data_t		data;
+	uint32_t	len;
+	char		*s;
 	char		*include_filename;
 
-	file = get_file_contents(filename, &length);
-	if (file == NULL)
+	if ((s = get_file_contents(filename, &len)) == NULL)
 	{
 		fprintf(stderr, "%s: file doesn't exist\n", filename);
 		exit(1);
 	}
-	file[length] = '\0';
+	s[data.len] = '\0';
 
-	line = file;
-	while (*file)
+	data.filename = filename;
+	data.line = s;
+	data.lineno = 1;
+	while (*s)
 	{
-		//printf("file = \e[0;33m\"%s\"\e[0m\n\n", file);
-		SKIP_SPACES(file);
+		SKIP_SPACES(s);
 
-		if (*file == '\n')
+		if (*s == '\n')
 		{
-			lineno++;
-			file++;
-			line = file;
+			data.lineno++;
+			line = ++s;
 			continue;
 		}
-		if (*file == '%')
+		if (*s == '%')
 		{
-			// define, undef, include  directives
-			if (strncmp(file + 1, "define", 6) == 0 && (file[7] == ' ' || file[7] == '\t'))
-				file = define_macro(def, file + 8, &err, &lineno);
-			else if (strncmp(file + 1, "undef", 5) == 0 && (file[6] == ' ' || file[6] == '\t'))
-				file = undef_macro(def, file + 7, &err, &lineno);
-			else if (strncmp(file + 1, "include", 7) == 0 && (file[8] == ' ' || file[8] == '\t'))
+			if (strncmp(s + 1, "define", 6) == 0 && (s[7] == ' ' || s[7] == '\t'))
+				s = define_macro(macro, s + 8, &data);
+			else if (strncmp(s + 1, "undef", 5) == 0 && (s[6] == ' ' || s[6] == '\t'))
+				s = undef_macro(macro, s + 7, &data);
+			else if (strncmp(s + 1, "include", 7) == 0 && (s[8] == ' ' || s[8] == '\t'))
 			{
-				file += 9;
-				include_filename = get_include_filename(&file, &err);
+				s += 9;
+				include_filename = get_include_filename(&s, &err);
 				compile_file(include_filename, zon, curzon, def, memblock);
 				free(include_filename);
 			}
-//			else
-//			{
-				//error
-//			}
+			else
+			{
+				keyword = get_keyword(data.line);
+				sprintf(data.buf, "Unknown directive `%s`", keyword);
+				free(keyword);
+				print_error(data->filename, data->lineno, data->line, data->buf);
+			}
 		}
-		else if (*file == '.')
+		else if (*s == '.')
 		{
 			// .bank		bank, offset
 			// .data		byte, ...
 
-			if (strncmp(file + 1, "bank", 4) == 0 && (file[5] == ' ' || file[5] == '\t'))
-				file = bank_switch(zon, curzon, file + 6, &err);
-			else if (strncmp(file + 1, "byte", 4) == 0 && (file[5] == ' ' || file[5] == '\t'))
-				file = add_bytes(*curzon, file + 6, &err, &lineno);
-			else if (strncmp(file + 1, "memlock", 7) == 0 && (file[8] == ' ' || file[8] == '\t'))
-				file = set_memlock_area(memblock, file + 9, &err);
+			if (strncmp(s + 1, "bank", 4) == 0 && (s[5] == ' ' || s[5] == '\t'))
+				s = bank_switch(area, s + 6, &data);
+			else if (strncmp(s + 1, "byte", 4) == 0 && (s[5] == ' ' || s[5] == '\t'))
+				s = add_bytes(area, s + 6, &data);
+			else if (strncmp(s + 1, "memlock", 7) == 0 && (s[8] == ' ' || s[8] == '\t'))
+				s = set_memlock_area(memblock, s + 9, &err);
 				// .memlock uram_b0, 0xc000, end=0xca00
 				// .memlock uram_b0, 0xc000, len=1024
-			else if (strncmp(file + 1, "var", 3) == 0 && (file[4] >= '0' && file[4] <= '9'))
-				file = get_var_mem_space(*memblock, file + 4);
-			else if (strncmp(file + 1, "extern", 6) == 0 && (file[7] == ' ' || file[7] == '\t'))
-				file = set_external_label_or_memblock(extlab, file + 8, &err);
+			else if (strncmp(s + 1, "var", 3) == 0 && (s[4] >= '0' && s[4] <= '9'))
+				s = get_var_mem_space(*memblock, s + 4);
+			else if (strncmp(s + 1, "extern", 6) == 0 && (s[7] == ' ' || s[7] == '\t'))
+				s = set_external_label_or_memblock(extlab, s + 8, &err);
 //			else
 				//error
 
@@ -241,13 +189,13 @@ int		compile_file(char *filename, zones_t **zon, zones_t **curzon, defines_t *de
 		{
 //			if (!*zon)
 //				create_default_bank(zon);
-			file = add_instruction_or_label(zon, curzon, def, file, &err);
+			s = add_instruction_or_label(zon, curzon, def, s, &err);
 		}
 
 		if (err.error)
 		{
 			ret_value = -1;
-//			display_error(&err, lineno, line);
+//			display_error(&err, data.lineno, line);
 			err.total = 0;
 		}
 	}
@@ -303,37 +251,11 @@ int		compile_file(char *filename, zones_t **zon, zones_t **curzon, defines_t *de
 	return (0);
 }
 
-void	reset_macro(defines_t *macro[])
-{
-	defines_t	**end = macro + 53;
-	defines_t	*prev;
-
-	while (macro != end)
-	{
-		if (*macro)
-		{
-			defines_t *p2 = *macro;
-			do
-			{
-				prev = p2;
-				p2 = p2->next;
-				free(prev->name);
-				free(prev);
-			}
-			while (p2);
-			*macro = NULL;
-		}
-		macro++;
-	}
-}
-
 /*
 	1ere etape:
 
 	"$"					-> bytes
 	"[a-zA-Z0-9_]+"		-> instruction
-	"[a-zA-Z0-9_]+:"	-> label
-	
 */
 
 
@@ -343,29 +265,170 @@ void	reset_macro(defines_t *macro[])
 // --gameboy_type		{dmg, cdg, both}
 // --show-memlock		-> affiche l'espace disponible dans chaque zone de variables
 // --show-remaind-mem	-> affiche l'espace disponible dans chaque banque de la ROM
+
+void	destroy_memblock(void *a)
+{
+	variables_t	*v;
+
+	free(((memblocks_t *)a)->name);
+	v = (((memblocks_t *)a)->var);
+
+	while (v)
+	{
+		variables_t	*tmp = v;
+		v = v->next;
+		free(tmp->name);
+		free(tmp);
+	}
+}
+
+void	destroy_label(void *a)
+{
+	free(((label_t *)a)->name);
+}
+
+void	destroy_macro(void *a)
+{
+	macro_t	*macro = (macro_t *)a;
+
+	if (a->allocated)
+	{
+		free(a->name);
+		free(a->content);
+	}
+}
+
+void	destroy_area(void *a)
+{
+	mnemonics_t	*m = ((code_area_t*)a)->data;
+
+	while (m)
+	{
+		operands_t	*o = m->operands;
+		while (o)
+		{
+			operands_t	*tmp = o;
+			o = o->next;
+			free(tmp->name);
+			free(tmp);
+		}
+		mnemonics_t *tmp = m;
+		m = m->next;
+		free(m->name);
+		free(m);
+	}
+}
+
+int		string_cmp(const void *a, const void *b)
+{
+	return (strcmp(*(char**)a, *(char**)b));
+}
+
+int		area_cmp(const void *a, const void *b)
+{
+	if (((code_area_t *)a)->start > ((code_area_t *)b)->star)
+		return (1);
+	else if (((code_area_t *)a)->start == ((code_area_t *)b)->star)
+		return (0);
+	return (-1);
+}
+
+int		macro_cmp(const void *a, const void *b)
+{
+	return (strcmp(((macro_t *)a)->name, ((macro_t *)b)->name));
+}
+
+#define	ADD_MACRO(name, content)	new->name = name;\
+									new->content = content;\
+									new->argc = 0;\
+									new->allocated = 0;\
+									vector_push(g_macro, &new);
+
+void	set_builtin_macro(void)
+{
+	macro_t		new;
+
+	g_macro = vector_init(sizeof(macro_t));
+	g_macro->compar = &macro_cmp;
+	ADD_MACRO("P1", "0x00");
+	ADD_MACRO("SB", "0x01");
+	ADD_MACRO("SC", "0x02");
+	ADD_MACRO("DIV", "0x04");
+	ADD_MACRO("TIMA", "0x05");
+	ADD_MACRO("TMA", "0x06");
+	ADD_MACRO("TAC", "0x07");
+	ADD_MACRO("LCDC", "0x40");
+	ADD_MACRO("STAT", "0x41");
+	ADD_MACRO("SCY", "0x42");
+	ADD_MACRO("SCX", "0x43");
+	ADD_MACRO("LY", "0x44");
+	ADD_MACRO("LYC", "0x45");
+	ADD_MACRO("DMA", "0x46");
+	ADD_MACRO("BGP", "0x47");
+	ADD_MACRO("OBP0", "0x48");
+	ADD_MACRO("OBP1", "0x49");
+	ADD_MACRO("WY", "0x4A");
+	ADD_MACRO("WX", "0x4B");
+	ADD_MACRO("KEY1", "0x4D");
+	ADD_MACRO("VBK", "0x4F");
+	ADD_MACRO("HDMA1", "0x51");
+	ADD_MACRO("HDMA2", "0x52");
+	ADD_MACRO("HDMA3", "0x53");
+	ADD_MACRO("HDMA4", "0x54");
+	ADD_MACRO("HDMA5", "0x55");
+	ADD_MACRO("RP", "0x56");
+	ADD_MACRO("BCPS", "0x68");
+	ADD_MACRO("BCPD", "0x69");
+	ADD_MACRO("OCPS", "0x6A");
+	ADD_MACRO("OCPD", "0x6B");
+	ADD_MACRO("SVBK", "0x70");
+	ADD_MACRO("IF", "0x0F");
+	ADD_MACRO("IE", "0xFF");
+	
+}
+
 int		main(int argc, char *argv[])
 {
 	char			*file[3];
-	defines_t		*def[53] = {NULL};
-	zones_t			*zon = NULL, *curzon = NULL;
-	extlabs_t		*extlab = NULL;
-	variables_t		*var = NULL;
-	memblocks_t		*memblock = NULL;
+	vector_t		*macro = NULL;
+	vector_t		*code_area = NULL;
+	vector_t		*ext_label = NULL;
+	vector_t		*memblock = NULL;
+	int32_t			cur_area;
 
 	file[0]	=	"testfile1";
 	file[1]	=	"testfile2";
 	file[2]	=	NULL;
 
+	set_builtin_macro(); //macro + cmp()
+	code_area = vector_init(sizeof(code_area_t));
+	code_area->compar = &area_cmp;
+	ext_label = vector_init(sizeof(char*));
+	ext_label->compar = &string_cmp;
+	g_memblock = vector_init(sizeof(memblocks_t));
+	memblock = vector_init(sizeof(memblocks_t));
+
 	for (char **p = file; *p; p++)
 	{
-//		set_builtin_macro();
-		if (compile_file(*p, &zon, &curzon, def, &extlab, &memblock) == -1) {
+		g_error = 0;
+		cur_area = 0;
+		macro = vector_clone(g_macro);
+
+		parse_file(*p, code_area, macro, ext_label, memblock, &cur_area);
+		if (g_error)
+		{
+			fprintf(stderr, "\e[1;31m%u errors\e[0m\n", g_error);
 			return (1);
 		}
-//		save_file_object(zon, *p);
-		reset_macro(def);
-//		reset_zon(&zon);
+
+//		save_file_object(code_area, ext_label, *p);
+		vector_reset_callback(code_area, &destroy_area);
+		vector_reset_callback(ext_label, &destroy_label);
+		vector_reset_callback(memblock, &destroy_memblock);
+		vector_destroy_callback(macro, &destroy_macro);
 	}
+	vector_destroy_callback(code_area, &destroy_area);
+	vector_destroy(g_macro);
 	return (0);
 }
 /*
