@@ -14,7 +14,7 @@
 #include "std_includes.h"
 
 #define	VEC_DATA_ELEM(_struct, _var, _index)	((_struct *)_var->data) + (_index * sizeof(_struct))
-#define	VEC_DATA_ELEM_LAST(_struct, _var)	((_struct *)_var->data) + ((_var->n_items - 1) * sizeof(_struct))
+#define	VEC_DATA_ELEM_LAST(_struct, _var)	((_struct *)_var->data) + ((_var->nitems - 1) * sizeof(_struct))
 
 char	*set_memlock_area(vector_t *memblock, char *s, data_t *data)
 {

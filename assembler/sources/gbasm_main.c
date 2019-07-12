@@ -87,16 +87,17 @@ void			memblock_print(const void *a)
 
 	printf("block %s, 0x%x - 0x%x\n", b->name, b->start, b->end);
 
-	for (uint32_t i = 0; i < v->n_items; i++)
+	for (uint32_t i = 0; i < v->nitems * sizeof(variables_t); i += sizeof(variables_t))
 	{
-		printf("\tvar %s, 0x%x, %u octet(s)\n", v[i].name, v[i].addr, v[i].size);
+		variables_t	*var = v->data + i;
+		printf("\tvar %s, 0x%x, %u octet(s)\n", var->name, var->addr, var->size);
 	}
 }
 
 
 void			vector_print(vector_t *vec, char *name, void (*print)(const void *))
 {
-	printf("==> %s:\n");
+	printf("==> %s:\n", name);
 	if (vec == NULL)
 	{
 		puts("NULL\n");
@@ -109,19 +110,18 @@ void			vector_print(vector_t *vec, char *name, void (*print)(const void *))
 	printf("\n");
 }
 
-static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_t *ext_label, vector_t *memblock)
+static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_t *ext_label, vector_t *memblock, int32_t *cur_area)
 {
 	data_t		data;
-	uint32_t	len;
 	char		*s;
 	char		*include_filename;
 
-	if ((s = get_file_contents(filename, &len)) == NULL)
+	if ((s = get_file_contents(filename, &data.length)) == NULL)
 	{
 		fprintf(stderr, "%s: file doesn't exist\n", filename);
 		exit(1);
 	}
-	s[data.len] = '\0';
+	s[data.length] = '\0';
 
 	data.filename = filename;
 	data.line = s;
@@ -133,7 +133,7 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 		if (*s == '\n')
 		{
 			data.lineno++;
-			line = ++s;
+			data.line = ++s;
 			continue;
 		}
 		if (*s == '%')
@@ -146,7 +146,7 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 			{
 				s += 9;
 				include_filename = get_include_filename(&s, &data);
-				compile_file(include_filename, zon, curzon, def, memblock);
+				parse_file(include_filename, zon, curzon, def, memblock, cur_area);
 				free(include_filename);
 			}
 			else

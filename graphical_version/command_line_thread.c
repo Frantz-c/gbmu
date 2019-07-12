@@ -77,7 +77,7 @@ extern void		*command_line_thread(void *unused)
 		pkmn_addr[ATT3] = 0xd17aU;
 		pkmn_addr[ATT4] = 0xd17bU;
 		pkmn_addr[ID] = 0xd17cU;
-		pkmn_addr[XP] = 0xd184U;
+		pkmn_addr[XP] = 0xd17eU;
 		pkmn_addr[PP1] = 0xd18dU;
 		pkmn_addr[PP2] = 0xd18eU;
 		pkmn_addr[PP3] = 0xd18fU;
