@@ -89,7 +89,7 @@ extern int		area_match(const void *a, const void *b)
 
 extern int		macro_match(const void *a, const void *b)
 {
-	return (strcmp(((macro_t *)a)->name, *(char**)b);
+	return (strcmp(((macro_t *)a)->name, *(char**)b));
 }
 
 extern void		label_destroy(const void *a)

@@ -16,9 +16,9 @@
 
 #include "gbasm_struct.h"
 
-extern char	*add_macro_without_param(char *name, defines_t **def, char *s, error_t *err);
-extern char	*add_macro_with_param(char *name, defines_t **def, char *s, error_t *err);
-extern char	*undef_macro(defines_t *def[], char *s, error_t *err);
-extern char	*define_macro(defines_t *def[], char *s, error_t *err);
+extern char	*add_macro_with_param(char *name, vector_t *macro, char *s, data_t *data);
+extern char	*add_macro_without_param(char *name, vector_t *macro, char *s, data_t *data);
+extern char	*undef_macro(vector_t *macro, char *s, data_t *data);
+extern char	*define_macro(vector_t *macro, char *s, data_t *data);
 
 #endif

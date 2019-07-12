@@ -16,9 +16,9 @@
 #include "gbasm_tools.h"
 #include "gbasm_macro.h"
 #include "gbasm_keywords.h"
-#include "gbasm_add_instruction.h"
 #include "gbasm_callback.h"
 #include "gbasm_error.h"
+#include "gbasm_struct.h"
 
 #define	INPUT	0
 #define OUTPUT	1
@@ -40,9 +40,9 @@ const char *const	inst[] = {
 };
 
 uint32_t		g_error = 0;
-t_memblocks		*g_memblock = NULL;
+memblocks_t		*g_memblock = NULL;
 
-static char	*get_include_filename(char **s, error_t *err)
+static char	*get_include_filename(char **s, data_t *data)
 {
 	char	*name;
 
@@ -52,12 +52,16 @@ static char	*get_include_filename(char **s, error_t *err)
 	name = strndup(name, *s - name);
 	while (**s == ' ' || **s == '\t') (*s)++;
 	if (**s != '\n')
-	{
-		err->error++;
-		fprintf(stderr, "error #3\n");
-		while (**s != '\n') (*s)++;
-	}
+		goto __unexpected_char;
+	
 	return (name);
+
+__unexpected_char:
+	sprintf(data->buf, "unexpected character `%c`", **s);
+	print_error(data->filename, data->lineno, data->line, data->buf);
+	fprintf(stderr, "\e[1;31m%u errors\e[0m\n", g_error);
+	exit(1);
+	return (NULL);
 }
 
 char	*get_keyword(char *s)
@@ -73,21 +77,19 @@ void			macro_print(const void *a)
 {
 	register macro_t	*p = (macro_t *)a;
 
-	printf("%define %s(%u) %s\n", p->name, p->argc, p->content);
+	printf("%%define %s(%u) %s\n", p->name, p->argc, p->content);
 }
 
 void			memblock_print(const void *a)
 {
 	memblocks_t *b = (memblocks_t *)a;
-	variables_t	*v = ((memblocks_t *)a)->var;
+	vector_t	*v = ((memblocks_t *)a)->var;
 
 	printf("block %s, 0x%x - 0x%x\n", b->name, b->start, b->end);
-	v = (((memblocks_t *)a)->var);
 
-	while (v)
+	for (uint32_t i = 0; i < v->n_items; i++)
 	{
-		printf("\tvar %s, 0x%x, %u octet(s)\n", v->name, v->addr, v->size);
-		v = v->next;
+		printf("\tvar %s, 0x%x, %u octet(s)\n", v[i].name, v[i].addr, v[i].size);
 	}
 }
 
@@ -143,14 +145,14 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 			else if (strncmp(s + 1, "include", 7) == 0 && (s[8] == ' ' || s[8] == '\t'))
 			{
 				s += 9;
-				include_filename = get_include_filename(&s, &err);
+				include_filename = get_include_filename(&s, &data);
 				compile_file(include_filename, zon, curzon, def, memblock);
 				free(include_filename);
 			}
 			else
 			{
 				keyword = get_keyword(data.line);
-				sprintf(data.buf, "unknown directive `%s`", keyword);
+				sprintf(data->buf, "unknown directive `%s`", keyword);
 				free(keyword);
 				print_error(data->filename, data->lineno, data->line, data->buf);
 			}

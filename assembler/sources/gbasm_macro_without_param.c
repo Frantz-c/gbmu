@@ -30,8 +30,9 @@
 #include "../includes/std_includes.h"
 #include "gbasm_struct.h"
 #include "gbasm_macro_func.h"
+#include "gbasm_error.h"
 
-extern char	*add_macro_without_param(char *name, macro_t *def, char *s, data_t *data)
+extern char	*add_macro_without_param(char *name, vector_t *macro, char *s, data_t *data)
 {
 	char	*content;
 
@@ -45,7 +46,7 @@ extern char	*add_macro_without_param(char *name, macro_t *def, char *s, data_t *
 		goto __unexpected_char;
 
 	size_t	index = vector_index(macro, name);
-	macro_t	new = {name, content, count, 1};
+	macro_t	new = {name, content, 0, 1};
 	vector_insert(macro, (void*)&new, index);
 	return (s);
 

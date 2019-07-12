@@ -79,7 +79,7 @@ extern void	skip_macro(char **s, uint32_t *lineno)
 			if (**s == '\n')
 			{
 				s++;
-				(*lineno)++
+				(*lineno)++;
 				continue;
 			}
 			*s = bs_pos;

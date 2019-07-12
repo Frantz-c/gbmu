@@ -1,7 +1,7 @@
 #ifndef GBASM_KEYWORDS_H
 # define GBASM_KEYWORDS_H
 
-extern char	*bank_switch(zones_t **zon, zones_t **curzon, char *s, error_t *err);
-extern char		*add_bytes(zones_t *curzon, char *s, error_t *err);
+char	*bank_switch(vector_t *area, char *s, data_t *data);
+char	*add_bytes(vector_t *area, char *s, data_t *data);
 
 #endif

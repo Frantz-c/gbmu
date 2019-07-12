@@ -18,7 +18,7 @@ SRC_DIR   = sources
 INC_DIR   = includes:vector
 SOURCES  := $(wildcard ${SRC_DIR}/*.c)
 OBJECTS  := $(patsubst ${SRC_DIR}/%.c,${OBJ_DIR}/%.o,${SOURCES})
-DEPENDS  := $(patsubst ${SRC_DIR}/%.c,${SRC_DIR}/.%.d,${SOURCES})
+DEPENDS  := $(patsubst ${SRC_DIR}/%.c,${OBJ_DIR}/%.d,${SOURCES})
 OBJECTS  += vector/vector.o
 CFLAGS   ?= -Wextra -Wall -g -O3
 CINC     := -I $(subst :, -I ,${INC_DIR})
@@ -29,7 +29,7 @@ CC       ?= gcc-9
 # Chemins par defaut des .h
 
 
-all: $(DEPENDS) $(OBJ_DIR) $(NAME)
+all: $(OBJ_DIR) $(NAME)
 
 
 # Creation du repertoire pour les .o
@@ -45,11 +45,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS) $(CINC) -c $< -o $@
 
 vector/%.o: vector/%.c
-	$(CC) $(CFLAGS) $(CINC) -c $< -o $@
-
-# creation des .d
-$(SRC_DIR)/.%.d: $(SRC_DIR)/%.c
-	@set -e; echo "$(OBJ_DIR)/`$(CC) $(CINC) -MM $<`" > $@
+	$(CC) $(CFLAGS) $(CINC) -c -MMD $< -o $@
 
 # inclusion des regles contenues dans les .d
 -include $(DEPENDS)

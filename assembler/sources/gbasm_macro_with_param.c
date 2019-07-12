@@ -30,6 +30,7 @@
 #include "../includes/std_includes.h"
 #include "gbasm_struct.h"
 #include "gbasm_macro_func.h"
+#include "gbasm_error.h"
 
 static int		string_replace(char *content, char *replace, char number)
 {
@@ -69,7 +70,7 @@ static int		string_replace(char *content, char *replace, char number)
 	return (count);
 }
 
-extern char	*add_macro_with_param(char *name, macro_t *macro, char *s, data_t *data)
+extern char	*add_macro_with_param(char *name, vector_t *macro, char *s, data_t *data)
 {
 	char		*name_start = name;
 	uint32_t	count = 0;
@@ -80,7 +81,7 @@ extern char	*add_macro_with_param(char *name, macro_t *macro, char *s, data_t *d
 
 	while (*name != '(') name++;
 	*name = '\0';
-	if (vector_search(macro, (void*)&elem) != -1)
+	if (vector_search(macro, name_start) != -1)
 		goto __macro_already_defined;
 
 	do
@@ -142,7 +143,6 @@ __macro_already_defined:
 	sprintf(data->buf, "macro `%s` already defined", name_start);
 __perror_and_exit:
 	print_error(data->filename, data->lineno, data->line, data->buf);
-__free_and_exit:
 	free(name_start);
 	skip_macro(&s, &data->lineno);
 	return (s);

@@ -15,6 +15,7 @@
 #include "gbasm_struct.h"
 #include "gbasm_macro_func.h"
 #include "gbasm_macro.h"
+#include "gbasm_error.h"
 
 extern char	*define_macro(vector_t *macro, char *s, data_t *data)
 {
