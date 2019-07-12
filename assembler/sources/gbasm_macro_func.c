@@ -87,7 +87,7 @@ extern void	skip_macro(char **s, uint32_t *lineno)
 		}
 	}
 }
-
+/*
 extern void	push_macro(defines_t **def, char *name, char *content, uint32_t count)
 {
 	defines_t	*new;
@@ -171,3 +171,4 @@ extern int		macro_exists(defines_t *p, char *name)
 	}
 	return (0);
 }
+*/

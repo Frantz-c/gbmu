@@ -6,15 +6,15 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 16:48:47 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/11 19:46:26 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/12 12:42:53 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
-#include "../includes/std_includes.h"
-#include "../includes/gbasm_struct.h"
-#include "../includes/gbasm_macro_func.h"
-#include "../includes/gbasm_macro.h"
+#include "std_includes.h"
+#include "gbasm_struct.h"
+#include "gbasm_macro_func.h"
+#include "gbasm_macro.h"
 
 extern char	*define_macro(vector_t *macro, char *s, data_t *data)
 {
@@ -102,9 +102,8 @@ extern char	*undef_macro(vector_t *macro, char *s, data_t *data)
 
 	name = strndup(name, s - name);
 	ssize_t index;
-	macro_t	elem = {name, NULL, 0, 1};
 
-	if ((index = vector_search(macro, (void*)&elem)) != -1)
+	if ((index = vector_search(macro, name)) != -1)
 		vector_delete(macro, (size_t)index);
 
 	while (*s == ' ' && *s == '\t') s++;

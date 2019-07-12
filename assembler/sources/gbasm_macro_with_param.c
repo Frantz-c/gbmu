@@ -77,7 +77,6 @@ extern char	*add_macro_with_param(char *name, macro_t *macro, char *s, data_t *d
 	char		*pos[11] = {NULL};
 	char		*content;
 	uint32_t	length;
-	macro_t		elem = {name, NULL, 0, 1};
 
 	while (*name != '(') name++;
 	*name = '\0';
@@ -123,10 +122,9 @@ extern char	*add_macro_with_param(char *name, macro_t *macro, char *s, data_t *d
 		}
 	}
 
-	elem.content = content;
-	elem.argc = count;
-	size_t	index = vector_index(macro, (void*)&elem);
-	vector_insert(macro, (void*)&elem, index);
+	size_t	index = vector_index(macro, name);
+	macro_t	new = {name, content, count, 1};
+	vector_insert(macro, (void*)&new, index);
 	return (s);
 
 /*

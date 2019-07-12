@@ -6,27 +6,29 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/10 19:00:27 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/10 20:21:51 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/12 16:04:47 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
+#include "std_includes.h"
 
-char	*set_memlock_area(memblocks_t **memblock, char *s, error_t *err)
+#define	VEC_DATA_ELEM(_struct, _var, _index)	((_struct *)_var->data) + (_index * sizeof(_struct))
+#define	VEC_DATA_ELEM_LAST(_struct, _var)	((_struct *)_var->data) + ((_var->n_items - 1) * sizeof(_struct))
+
+char	*set_memlock_area(vector_t *memblock, char *s, data_t *data)
 {
 	uint32_t	addr;
 	int			error;
 	uint32_t	end;
-	memblocks_t	*new, *p;
 	char		*name;
 
 //	ARGUMENT 1 -> (string) name
 	while (*s == ' ' || *s == '\n') s++;
 	name = s;
 	if (!is_alpha(*s) && *s != '_')
-	{
 		goto _error;
-	}
+
 	while (is_alnum(*s) || *s == '_') s++;
 	if (*s != ' ' && *s != '\t')
 		goto __error;
@@ -35,10 +37,8 @@ char	*set_memlock_area(memblocks_t **memblock, char *s, error_t *err)
 //	ARGUMENT 2 -> (uint32) start_addr
 	addr = atou_inc_all(&s, &error);
 	if (error)
-	{
-		//error
 		goto __error;
-	}
+
 	while (*s == ' ' || *s == '\n') s++;
 	if (*s == ',') {
 		s++;
@@ -51,52 +51,31 @@ char	*set_memlock_area(memblocks_t **memblock, char *s, error_t *err)
 	else if (strncmp(s, "len", 3) == 0)
 		end = addr;
 	else
-	{
-		//error
 		goto __error;
-	}
+
 	s += 3;
 	while (*s == ' ' || *s == '\t') s++;
 	if (*s != '=')
-	{
-		//error
 		goto __error;
-	}
+
 	s++;
 
 	end += atou_inc_all(&s, &error);
 	if (error)
-	{
 		goto __error;
-	}
 
 	while (*s == ' ' || *s == '\t') s++;
-	if (*s && *s != '\n')
-	{
+	if (*s != '\0' && *s != '\n')
 		goto __error;
-	}
 
-	new = malloc(sizeof(memblock_t));
-	new->start = addr;
-	new->end = end;
-	new->space = end - addr;
-	new->name = name;
-	new->next = NULL;
+	memblocks_t	new = {addr, end, end - addr, name, NULL};
+	vector_push(memblock, (void*)&new);
 
-	if (!*memblock)
-	{
-		*memblock = new;
-		return (s);
-	}
-	p = *memblock;
-
-	while (p->next)
-		p = p->next;
-	p->next = new;
 	return (s);
 
 __error:
-		fprintf(stderr, "bad token (%c)\n", *s);
-		while (*s && *s != '\n') s++;
-		return (s);
+	sprintf(data->buf, "unexpected character `%c`", *s);
+	print_error(data->filename, data->lineno, data->line, data->buf);
+	while (*s && *s != '\n') s++;
+	return (s);
 }

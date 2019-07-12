@@ -1,7 +1,7 @@
 #include "std_includes.h"
 #include "gbasm_struct.h"
 
-extern void	new_instruction(zones_t *z, char *instruction)
+extern void	new_instruction(code_area_t *area, char *instruction)
 {
 	mnemonics_t	*new;
 
@@ -11,17 +11,17 @@ extern void	new_instruction(zones_t *z, char *instruction)
 	new->next = NULL;
 	new->operands = NULL;
 
-	if (z->data == NULL)
+	if (area->data == NULL)
 	{
-		z->data = new;
-		z->cur = new;
+		area->data = new;
+		area->cur = new;
 		return;
 	}
-	z->cur->next = new;
-	z->cur = new;
+	area->cur->next = new;
+	area->cur = new;
 }
 
-extern void	push_operand(zones_t *z, char *name)
+extern void	push_operand(code_area_t *area, char *name)
 {
 	operands_t *new;
 
@@ -29,14 +29,14 @@ extern void	push_operand(zones_t *z, char *name)
 	new->name = name;
 	new->next = NULL;
 
-	z->cur->n_operand++;
-	if (z->cur->operands == NULL)
+	area->cur->n_operand++;
+	if (area->cur->operands == NULL)
 	{
-		z->cur->operands = new;
+		area->cur->operands = new;
 		return;
 	}
-	
 	operands_t	*p;
-	for (p = z->cur->operands; p->next; p = p->next);
+
+	for (p = area->cur->operands; p->next; p = p->next);
 	p->next = new;
 }

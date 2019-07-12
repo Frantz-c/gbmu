@@ -3,7 +3,7 @@
 
 # include "std_includes.h"
 
-void	new_instruction(zones_t *z, char *instruction);
-void	push_operand(zones_t *z, char *name);
+extern void	new_instruction(code_area_t *area, char *instruction);
+extern void	push_operand(code_area_t *area, char *name);
 
 #endif

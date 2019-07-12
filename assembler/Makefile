@@ -6,7 +6,7 @@
 #    By: mhouppin <marvin@le-101.fr>                +:+   +:    +:    +:+      #
 #                                                  #+#   #+    #+    #+#       #
 #    Created: 2019/02/25 16:43:57 by mhouppin     #+#   ##    ##    #+#        #
-#    Updated: 2019/03/20 11:02:55 by fcordon     ###    #+. /#+    ###.fr      #
+#    Updated: 2019/07/12 16:14:28 by fcordon     ###    #+. /#+    ###.fr      #
 #                                                          /                   #
 #                                                         /                    #
 # **************************************************************************** #
@@ -15,10 +15,11 @@ NAME      = gbasm
 SHELL     = bash
 OBJ_DIR   = objects
 SRC_DIR   = sources
-INC_DIR   = includes
+INC_DIR   = includes:vector
 SOURCES  := $(wildcard ${SRC_DIR}/*.c)
 OBJECTS  := $(patsubst ${SRC_DIR}/%.c,${OBJ_DIR}/%.o,${SOURCES})
 DEPENDS  := $(patsubst ${SRC_DIR}/%.c,${SRC_DIR}/.%.d,${SOURCES})
+OBJECTS  += vector/vector.o
 CFLAGS   ?= -Wextra -Wall -g -O3
 CINC     := -I $(subst :, -I ,${INC_DIR})
 CC       ?= gcc-9
@@ -41,6 +42,9 @@ $(NAME): $(OBJECTS)
 
 # Creation des .o
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	$(CC) $(CFLAGS) $(CINC) -c $< -o $@
+
+vector/%.o: vector/%.c
 	$(CC) $(CFLAGS) $(CINC) -c $< -o $@
 
 # creation des .d

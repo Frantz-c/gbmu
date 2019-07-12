@@ -81,6 +81,9 @@ typedef struct mnemonics_s	mnemonics_t;
 typedef struct macro_s		macro_t;
 typedef struct code_area_s	code_area_t;
 typedef struct label_s		label_t;
+typedef struct data_s		data_t;
+typedef struct variables_s	variables_t;
+typedef struct memblocks_s	memblocks_t;
 //typedef struct error_s		error_t;
 
 #endif

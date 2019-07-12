@@ -1,8 +1,22 @@
+/* ************************************************************************** */
+/*                                                          LE - /            */
+/*                                                              /             */
+/*   gbasm_bank_keyword.c                             .::    .:/ .      .::   */
+/*                                                 +:+:+   +:    +:  +:+:+    */
+/*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
+/*                                                 #+#   #+    #+    #+#      */
+/*   Created: 2019/07/12 16:22:40 by fcordon      #+#   ##    ##    #+#       */
+/*   Updated: 2019/07/12 16:24:14 by fcordon     ###    #+. /#+    ###.fr     */
+/*                                                         /                  */
+/*                                                        /                   */
+/* ************************************************************************** */
+
 #include "std_includes.h"
 #include "gbasm_struct.h"
 #include "gbasm_tools.h"
+#include "gbasm_error.h"
 
-static int	set_addr(char **s, uint32_t *addr, error_t *err)
+static int	set_addr(char **s, uint32_t *addr, data_t *data)
 {
 	int32_t		error;
 
@@ -37,10 +51,9 @@ __unexpected_char:
 
 extern char	*bank_switch(vector_t *area, char *s, data_t *data)
 {
-	zones_t		*new;
 	uint32_t	addr;
 
-	if (set_addr(&s, &addr, err) == -1)
+	if (set_addr(&s, &addr, data) == -1)
 		goto __ret_s;
 
 	if	(addr == 0 &&
@@ -52,14 +65,14 @@ extern char	*bank_switch(vector_t *area, char *s, data_t *data)
 	{
 		if (vector_size(area) != 1)
 			data->cur_area = 0;
-		goto _ret_s;
+		goto __ret_s;
 	}
 
-	code_area_t	new = {addr, NULL, NULL};
-	if (vector_search(area, (void*)&new) != -1)
+	if (vector_search(area, (void*)&addr) != -1)
 		goto __addr_already_used;
 
-	data->cur_area = vector_search(area, (void*)&new);
+	data->cur_area = vector_index(area, (void*)&addr);
+	code_area_t	new = {addr, NULL, NULL};
 	vector_insert(area, (void*)&new, (size_t)data->cur_area);
 
 	__ret_s:

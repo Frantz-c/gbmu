@@ -1,35 +1,42 @@
+/* ************************************************************************** */
+/*                                                          LE - /            */
+/*                                                              /             */
+/*   gbasm_byte_keyword.c                             .::    .:/ .      .::   */
+/*                                                 +:+:+   +:    +:  +:+:+    */
+/*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
+/*                                                 #+#   #+    #+    #+#      */
+/*   Created: 2019/07/12 16:22:55 by fcordon      #+#   ##    ##    #+#       */
+/*   Updated: 2019/07/12 16:41:57 by fcordon     ###    #+. /#+    ###.fr     */
+/*                                                         /                  */
+/*                                                        /                   */
+/* ************************************************************************** */
+
 #include "std_includes.h"
 #include "gbasm_struct.h"
 #include "gbasm_tools.h"
 #include "gbasm_struct_tools.h"
 #include "gbasm_macro_func.h"
+#include "gbasm_error.h"
 
 #define INT_TO_STRPTR(exp)	(char*)((long)(exp))
 
-extern char		*add_bytes(zones_t *curzon, char *s, error_t *err)
+extern char		*add_bytes(vector_t *area, char *s, data_t *data)
 {
 	uint32_t	byte;
 	int32_t		error;
 
 
-	new_instruction(curzon, strdup("$"));
+	new_instruction(area->data + (data->cur_area * sizeof(code_area_t)), strdup("$"));
 	do
 	{
 		while (*s == ' ' || *s == '\t') s++;
 		byte = atou_inc_all(&s, &error);
-		if (byte > 0xffu)
-		{
-			// error size;
-			fprintf(stderr, "size error: number truncated (%hhu)\n", (uint8_t)(byte));
-		}
 		if (error == 1)
-		{
-			fprintf(stderr, "syntax error\n");
-			skip_macro(&s);
-			return (s);
-		}
+			goto __unexpected_char;
+		if (byte > 0xffu)
+			print_warning(data->filename, data->lineno, data->line, "byte overflow: value truncated");
 
-		push_operand(curzon, INT_TO_STRPTR(byte & 0xffu));
+		push_operand(area->data + (data->cur_area * sizeof(code_area_t)), INT_TO_STRPTR(byte & 0xffu));
 
 		while (*s == ' ' || *s == '\t') s++;
 		if (*s == '\\')
@@ -42,7 +49,7 @@ extern char		*add_bytes(zones_t *curzon, char *s, error_t *err)
 					break;
 				}
 				else if (*s != ' ' && *s != '\t')
-					goto __error_token;
+					goto __unexpected_char;
 				s++;
 			}
 		}
@@ -51,19 +58,18 @@ extern char		*add_bytes(zones_t *curzon, char *s, error_t *err)
 		else if (*s != ' ' && *s != '\t')
 		{
 			if (*s != '\n' && *s != '\0')
-			{
-				//error
-			__error_token:
-				err->error++;
-				fprintf(stderr, "bad token '%c'\n", *s);
-				skip_macro(&s);
-				break;
-			}
+				goto __unexpected_char;
 			return (s);
 		}
 	}
 	while (1);
 
-	while (*s != '\n') s++;
 	return (s);
+
+__unexpected_char:
+	sprintf(data->buf, "unexpected char `%c`", *s);
+	print_error(data->filename, data->lineno, data->line, data->buf);
+	skip_macro(&s, &data->lineno);
+	return (s);
+	
 }

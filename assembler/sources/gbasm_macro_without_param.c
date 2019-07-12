@@ -31,19 +31,32 @@
 #include "gbasm_struct.h"
 #include "gbasm_macro_func.h"
 
-extern char	*add_macro_without_param(char *name, defines_t **def, char *s, error_t *err)
+extern char	*add_macro_without_param(char *name, macro_t *def, char *s, data_t *data)
 {
 	char	*content;
 
 	while (*s == ' ' || *s == '\t') s++;
 	if (*s == '\0' || *s == '\n')
-	{
-		//error
-	}
+		goto __no_param;
 
 	content = malloc(get_macro_content_length(s) * 2);
-	copy_macro_content(content, s);
-	skip_macro(&s);
-	push_macro(def, name, content, 0);
+	s = copy_macro_content(content, s);
+	if (*s != '\0' && *s != '\n')
+		goto __unexpected_char;
+
+	size_t	index = vector_index(macro, name);
+	macro_t	new = {name, content, count, 1};
+	vector_insert(macro, (void*)&new, index);
+	return (s);
+
+__unexpected_char:
+	sprintf(data->buf, "unexpected character `%c`", *s);
+	goto __perror;
+__no_param:
+	sprintf(data->buf, "missing value macro `%s`", name);
+__perror:
+	print_error(data->filename, data->lineno, data->line, data->buf);
+	skip_macro(&s, &data->lineno);
+	free(name);
 	return (s);
 }
