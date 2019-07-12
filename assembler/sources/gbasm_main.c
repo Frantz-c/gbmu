@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/12 16:18:29 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/12 23:19:38 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -27,9 +27,6 @@
 #define	SKIP_SPACES(ptr)		do { while (*ptr == ' ' || *ptr == '\t') ptr++; } while (0);
 
 
-#define FILE_MAX_LENGTH	0x800000u
-
-
 const char *const	inst[] = {
 	"adc", "add", "and", "bit", "call", "callc", "callnc", "callnz", "callz", "ccf", "cmp", "cp",
 	"cpl", "daa", "dec", "di", "ei", "halt", "inc", "jp", "jpc", "jpnc", "jpnz", "jpz", "jr", "jrc",
@@ -40,7 +37,7 @@ const char *const	inst[] = {
 };
 
 uint32_t		g_error = 0;
-memblocks_t		*g_memblock = NULL;
+vector_t		*g_memblock = NULL;
 
 static char	*get_include_filename(char **s, data_t *data)
 {
@@ -146,15 +143,15 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 			{
 				s += 9;
 				include_filename = get_include_filename(&s, &data);
-				parse_file(include_filename, zon, curzon, def, memblock, cur_area);
+				parse_file(include_filename, area, macro, ext_label, memblock, cur_area);
 				free(include_filename);
 			}
 			else
 			{
-				keyword = get_keyword(data.line);
-				sprintf(data->buf, "unknown directive `%s`", keyword);
+				char *keyword = get_keyword(data.line);
+				sprintf(data.buf, "unknown directive `%s`", keyword);
 				free(keyword);
-				print_error(data->filename, data->lineno, data->line, data->buf);
+				print_error(data.filename, data.lineno, data.line, data.buf);
 			}
 		}
 		else if (*s == '.')
@@ -164,7 +161,7 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 			else if (strncmp(s + 1, "byte", 4) == 0 && (s[5] == ' ' || s[5] == '\t'))
 				s = add_bytes(area, s + 6, &data);
 			else if (strncmp(s + 1, "memlock", 7) == 0 && (s[8] == ' ' || s[8] == '\t'))
-				s = set_memlock_area(memblock, s + 9, &err);
+				s = set_memlock_area(memblock, s + 9, &data);
 				// .memlock uram_b0, 0xc000, end=0xca00
 				// .memlock uram_b0, 0xc000, len=1024
 /*			else if (strncmp(s + 1, "var", 3) == 0 && (s[4] >= '0' && s[4] <= '9'))
@@ -183,14 +180,11 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 		}
 	}
 	
-	vector_print(g_macro, "global macro", &macro_print);
 	vector_print(macro, "macro", &macro_print);
 	//vector_print(area, "code area", &area_print);
 	//vector_print(ext_label, "label", &label_print);
 	vector_print(g_memblock, "global block", &memblock_print);
 	vector_print(memblock, "block", &memblock_print);
-
-	return (0);
 }
 
 /*
@@ -208,54 +202,54 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 // --show-memlock		-> affiche l'espace disponible dans chaque zone de variables
 // --show-remaind-mem	-> affiche l'espace disponible dans chaque banque de la ROM
 
-#define	ADD_MACRO(name, content)	new->name = name;\
-									new->content = content;\
-									new->argc = 0;\
-									new->allocated = 0;\
-									vector_push(g_macro, &new);
+#define	ADD_MACRO(_name, _content, _macro)		new.name = _name;\
+											new.content = _content;\
+											vector_push(_macro, &new);
 
-macro_t	*set_builtin_macro(void)
+vector_t	*set_builtin_macro(void)
 {
-	macro_t		macro;
+	vector_t		*macro;
+	macro_t			new = {NULL, NULL, 0, 0};
 
 	macro = vector_init(sizeof(macro_t));
 	macro->compar = &macro_cmp;
 	macro->search = &macro_match;
 	macro->destroy = &macro_destroy;
-	ADD_MACRO("P1", "0x00");
-	ADD_MACRO("SB", "0x01");
-	ADD_MACRO("SC", "0x02");
-	ADD_MACRO("DIV", "0x04");
-	ADD_MACRO("TIMA", "0x05");
-	ADD_MACRO("TMA", "0x06");
-	ADD_MACRO("TAC", "0x07");
-	ADD_MACRO("LCDC", "0x40");
-	ADD_MACRO("STAT", "0x41");
-	ADD_MACRO("SCY", "0x42");
-	ADD_MACRO("SCX", "0x43");
-	ADD_MACRO("LY", "0x44");
-	ADD_MACRO("LYC", "0x45");
-	ADD_MACRO("DMA", "0x46");
-	ADD_MACRO("BGP", "0x47");
-	ADD_MACRO("OBP0", "0x48");
-	ADD_MACRO("OBP1", "0x49");
-	ADD_MACRO("WY", "0x4A");
-	ADD_MACRO("WX", "0x4B");
-	ADD_MACRO("KEY1", "0x4D");
-	ADD_MACRO("VBK", "0x4F");
-	ADD_MACRO("HDMA1", "0x51");
-	ADD_MACRO("HDMA2", "0x52");
-	ADD_MACRO("HDMA3", "0x53");
-	ADD_MACRO("HDMA4", "0x54");
-	ADD_MACRO("HDMA5", "0x55");
-	ADD_MACRO("RP", "0x56");
-	ADD_MACRO("BCPS", "0x68");
-	ADD_MACRO("BCPD", "0x69");
-	ADD_MACRO("OCPS", "0x6A");
-	ADD_MACRO("OCPD", "0x6B");
-	ADD_MACRO("SVBK", "0x70");
-	ADD_MACRO("IF", "0x0F");
-	ADD_MACRO("IE", "0xFF");
+	ADD_MACRO("P1", "0x00", macro);
+	ADD_MACRO("SB", "0x01", macro);
+	ADD_MACRO("SC", "0x02", macro);
+	ADD_MACRO("DIV", "0x04", macro);
+	ADD_MACRO("TIMA", "0x05", macro);
+	ADD_MACRO("TMA", "0x06", macro);
+	ADD_MACRO("TAC", "0x07", macro);
+	ADD_MACRO("LCDC", "0x40", macro);
+	ADD_MACRO("STAT", "0x41", macro);
+	ADD_MACRO("SCY", "0x42", macro);
+	ADD_MACRO("SCX", "0x43", macro);
+	ADD_MACRO("LY", "0x44", macro);
+	ADD_MACRO("LYC", "0x45", macro);
+	ADD_MACRO("DMA", "0x46", macro);
+	ADD_MACRO("BGP", "0x47", macro);
+	ADD_MACRO("OBP0", "0x48", macro);
+	ADD_MACRO("OBP1", "0x49", macro);
+	ADD_MACRO("WY", "0x4A", macro);
+	ADD_MACRO("WX", "0x4B", macro);
+	ADD_MACRO("KEY1", "0x4D", macro);
+	ADD_MACRO("VBK", "0x4F", macro);
+	ADD_MACRO("HDMA1", "0x51", macro);
+	ADD_MACRO("HDMA2", "0x52", macro);
+	ADD_MACRO("HDMA3", "0x53", macro);
+	ADD_MACRO("HDMA4", "0x54", macro);
+	ADD_MACRO("HDMA5", "0x55", macro);
+	ADD_MACRO("RP", "0x56", macro);
+	ADD_MACRO("BCPS", "0x68", macro);
+	ADD_MACRO("BCPD", "0x69", macro);
+	ADD_MACRO("OCPS", "0x6A", macro);
+	ADD_MACRO("OCPD", "0x6B", macro);
+	ADD_MACRO("SVBK", "0x70", macro);
+	ADD_MACRO("IF", "0x0F", macro);
+	ADD_MACRO("IE", "0xFF", macro);
+	vector_sort(macro);
 
 	return (macro);
 }
@@ -268,7 +262,7 @@ int		main(int argc, char *argv[])
 	vector_t		*ext_label = NULL;
 	vector_t		*memblock = NULL;
 	int32_t			cur_area;
-	code_area_t		*area_elem = {0, NULL, NULL};
+	code_area_t		area_elem = {0, NULL, NULL};
 
 	file[0]	=	"testfile1";
 	file[1]	=	"testfile2";
@@ -281,7 +275,7 @@ int		main(int argc, char *argv[])
 	code_area->search = &area_match;
 	ext_label = vector_init(sizeof(label_t));
 	ext_label->compar = &label_cmp;
-	ext_label->search = &label_match_name;
+	ext_label->search = &label_match;
 	ext_label->destroy = &label_destroy;
 	g_memblock = vector_init(sizeof(memblocks_t));
 	g_memblock->destroy = &memblock_destroy;

@@ -6,12 +6,15 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/10 19:00:27 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/12 16:04:47 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/12 23:02:48 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
 #include "std_includes.h"
+#include "gbasm_struct.h"
+#include "gbasm_tools.h"
+#include "gbasm_error.h"
 
 #define	VEC_DATA_ELEM(_struct, _var, _index)	((_struct *)_var->data) + (_index * sizeof(_struct))
 #define	VEC_DATA_ELEM_LAST(_struct, _var)	((_struct *)_var->data) + ((_var->nitems - 1) * sizeof(_struct))
@@ -27,7 +30,7 @@ char	*set_memlock_area(vector_t *memblock, char *s, data_t *data)
 	while (*s == ' ' || *s == '\n') s++;
 	name = s;
 	if (!is_alpha(*s) && *s != '_')
-		goto _error;
+		goto __error;
 
 	while (is_alnum(*s) || *s == '_') s++;
 	if (*s != ' ' && *s != '\t')

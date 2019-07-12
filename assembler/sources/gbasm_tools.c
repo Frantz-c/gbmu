@@ -1,7 +1,20 @@
-#include "std_includes.h"
+/* ************************************************************************** */
+/*                                                          LE - /            */
+/*                                                              /             */
+/*   gbasm_tools.c                                    .::    .:/ .      .::   */
+/*                                                 +:+:+   +:    +:  +:+:+    */
+/*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
+/*                                                 #+#   #+    #+    #+#      */
+/*   Created: 2019/07/12 23:05:07 by fcordon      #+#   ##    ##    #+#       */
+/*   Updated: 2019/07/12 23:14:14 by fcordon     ###    #+. /#+    ###.fr     */
+/*                                                         /                  */
+/*                                                        /                   */
+/* ************************************************************************** */
 
-const unsigned int	ascii[256]
-{
+#include "std_includes.h"
+#include "gbasm_tools.h"
+
+const uint32_t	ascii[256] = {
 	0x40,0,0,0,0,0,0,0,0,0, //0
 	0x40,2,0,0,0,0,0,0,0,0, //10
 	0,0,0,0,0,0,0,0,0,0, //20
@@ -15,7 +28,7 @@ const unsigned int	ascii[256]
 	0x28,0x28,0x28,0x28,0x28,0x28,0x28,0x28,0x28,0x28, //100
 	0x28,0x28,0x28,0x28,0x28,0x28,0x28,0x28,0x28,0x28, //110
 	0x28,0x28,0x28,0,0,0,0,0,0,0 //120
-}
+};
  
  static char
  __attribute__((always_inline))
@@ -156,7 +169,7 @@ extern void		*get_file_contents(const char *path, uint32_t *length)
 		fprintf(stderr, "Too Heavy file\n");
 		return (NULL);
 	}
-	content = valloc(*length);
+	content = valloc(*length + 1);
 	if (content == NULL)
 	{
 		perror("allocation failed");

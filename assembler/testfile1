@@ -1,0 +1,4 @@
+%define toto	TUTU
+%define	push_2(a, b)	push	a\
+						push	b
+

@@ -81,7 +81,7 @@ extern char	*add_macro_with_param(char *name, vector_t *macro, char *s, data_t *
 
 	while (*name != '(') name++;
 	*name = '\0';
-	if (vector_search(macro, name_start) != -1)
+	if (vector_search(macro, (void*)&name_start) != -1)
 		goto __macro_already_defined;
 
 	do
@@ -123,7 +123,7 @@ extern char	*add_macro_with_param(char *name, vector_t *macro, char *s, data_t *
 		}
 	}
 
-	size_t	index = vector_index(macro, name);
+	size_t	index = vector_index(macro, &name);
 	macro_t	new = {name, content, count, 1};
 	vector_insert(macro, (void*)&new, index);
 	return (s);
