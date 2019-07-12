@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 11:54:57 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/11 17:37:06 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/12 10:58:36 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -14,7 +14,9 @@
 #ifndef VECTOR_H
 # define VECTOR_H
 
+# include <string.h>
 # include <stdlib.h>
+# include <unistd.h>
 
 # define NOT_POWER_OF_TWO	(8 * sizeof(size_t))
 
@@ -25,8 +27,8 @@ typedef struct	vector_s
 	size_t	nitems;
 	size_t	maxitems;
 	int		(*compar)(const void *, const void *);
+	int		(*search)(const void *, const void *);
 	void	(*destroy)(void *);
-	void	*tmp_elem;
 	size_t	shift;
 }				vector_t;
 
@@ -54,7 +56,6 @@ void		vector_destroy(vector_t *vec);
 void		vector_destroy_callback(vector_t *vec, void (*user_free)(void *));
 void		vector_reset_callback(vector_t *vec, void (*user_free)(void *));
 
-#define		vector_reset(vec)	((vec)->nitems = 0)
 #define		vector_size(vec)	((vec)->nitems)
 
 #endif

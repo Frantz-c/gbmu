@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 12:49:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/11 14:08:56 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/12 10:58:54 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -25,12 +25,8 @@ vector_t	*vector_init(size_t elemsize)
 	vector->nitems = 0;
 	vector->maxitems = 0;
 	vector->compar = NULL;
-	vector->tmp_elem = malloc(elemsize);
-	if (vector->tmp_elem == NULL)
-	{
-		free(vector);
-		return (NULL);
-	}
+	vector->search = NULL;
+	vector->destroy = NULL;
 	vector->shift = NOT_POWER_OF_TWO;
 	if (((elemsize - 1) & elemsize) == 0)
 	{
@@ -38,7 +34,6 @@ vector_t	*vector_init(size_t elemsize)
 		while ((elemsize >>= 1) != 0)
 			vector->shift++;
 	}
-	vector->lock = 0;
 	return (vector);
 }
 
@@ -55,20 +50,14 @@ vector_t	*vector_clone(vector_t *other)
 		free(vector);
 		return (NULL);
 	}
-	vector->tmp_elem = malloc(other->elemsize);
-	if (vector->tmp_elem == NULL)
-	{
-		free(vector->data);
-		free(vector);
-		return (NULL);
-	}
 	memcpy(vector->data, other->data, other->elemsize * other->nitems);
-	vector->elemsize = data->elemsize;
-	vector->nitems = data->nitems;
-	vector->maxitems = data->nitems;
-	vector->compar = data->compar;
-	vector->shift = data->shift;
-	vector->lock = 0;
+	vector->elemsize = other->elemsize;
+	vector->nitems = other->nitems;
+	vector->maxitems = other->nitems;
+	vector->compar = other->compar;
+	vector->shift = other->shift;
+	vector->search = other->search;
+	vector->destroy = other->destroy;
 	return (vector);
 }
 
@@ -116,11 +105,17 @@ void		vector_delete(vector_t *vec, size_t index)
 {
 	if (vec->shift == NOT_POWER_OF_TWO)
 	{
+		if (vec->destroy != NULL)
+			vec->destroy(_vector_at_mul(vec, index));
+
 		memcpy(_vector_at_mul(vec, index), _vector_at_mul(vec, index + 1),
 				(vec->nitems - index));
 	}
 	else
 	{
+		if (vec->destroy != NULL)
+			vec->destroy(_vector_at_shl(vec, index));
+
 		memcpy(_vector_at_shl(vec, index), _vector_at_shl(vec, index + 1),
 				(vec->nitems - index));
 	}
@@ -129,7 +124,7 @@ void		vector_delete(vector_t *vec, size_t index)
 
 void		vector_sort(vector_t *vec)
 {
-	qsort(vec->data, vec->nitems, vec->itemsize, vec->compar);
+	qsort(vec->data, vec->nitems, vec->elemsize, vec->compar);
 }
 
 ssize_t		vector_search(vector_t *vec, const void *elem)
@@ -145,9 +140,9 @@ ssize_t		vector_search(vector_t *vec, const void *elem)
 	{
 		middle = (left + right) / 2;
 		if (vec->shift == NOT_POWER_OF_TWO)
-			side = vec->compar(elem, _vector_at_mul(vec, middle));
+			side = vec->search(elem, _vector_at_mul(vec, middle));
 		else
-			side = vec->compar(elem, _vector_at_shl(vec, middle));
+			side = vec->search(elem, _vector_at_shl(vec, middle));
 		if (side < 0)
 			left = middle + 1;
 		else if (side > 0)
@@ -171,9 +166,9 @@ size_t		vector_index(vector_t *vec, const void *elem)
 	{
 		middle = (left + right) / 2;
 		if (vec->shift == NOT_POWER_OF_TWO)
-			side = vec->compar(elem, _vector_at_mul(vec, middle));
+			side = vec->search(elem, _vector_at_mul(vec, middle));
 		else
-			side = vec->compar(elem, _vector_at_shl(vec, middle));
+			side = vec->search(elem, _vector_at_shl(vec, middle));
 		if (side < 0)
 			left = middle + 1;
 		else
@@ -182,9 +177,23 @@ size_t		vector_index(vector_t *vec, const void *elem)
 	return (left);
 }
 
+void		vector_reset(vector_t *vec)
+{
+	if (vec->destroy != NULL)
+	{
+		if (vec->shift == NOT_POWER_OF_TWO)
+			for (size_t i = 0; i < vec->nitems; i++)
+				vec->destroy(_vector_at_mul(vec, i));
+		else
+			for (size_t i = 0; i < vec->nitems; i++)
+				vec->destroy(_vector_at_shl(vec, i));
+	}
+	vec->nitems = 0;
+}
+
 void		vector_destroy(vector_t *vec)
 {
-	free(vec->tmp_elem);
+	vector_reset(vec);
 	if (vec->data != NULL)
 		free(vec->data);
 	free(vec);
