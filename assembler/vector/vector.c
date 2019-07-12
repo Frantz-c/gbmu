@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 12:49:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/12 10:58:54 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/12 13:34:09 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -125,6 +125,24 @@ void		vector_delete(vector_t *vec, size_t index)
 void		vector_sort(vector_t *vec)
 {
 	qsort(vec->data, vec->nitems, vec->elemsize, vec->compar);
+}
+
+void		vector_filter(vector_t *vec, int (*filter)(void *))
+{
+	size_t	i;
+
+	i = 0;
+	while (i < vec->nitems)
+	{
+		if (filter(_vector_at_mul(vec, i)) == 1)
+		{
+			vector_delete(vec, i);
+		}
+		else
+		{
+			i++;
+		}
+	}
 }
 
 ssize_t		vector_search(vector_t *vec, const void *elem)
