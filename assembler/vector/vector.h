@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 11:54:57 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/12 13:30:59 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/12 16:10:03 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -48,6 +48,7 @@ inline void		*_vector_at_shl(vector_t *vec, size_t index)
 void		*vector_at(vector_t *vec, size_t index);
 
 int			vector_insert(vector_t *vec, const void *elem, size_t index);
+int			vector_push(vector_t *vec, const void *elem);
 void		vector_delete(vector_t *vec, size_t index);
 void		vector_sort(vector_t *vec);
 void		vector_filter(vector_t *vec, int (*filter)(void *));
