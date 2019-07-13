@@ -1,4 +1,22 @@
+%undef asdfghj
 %define toto	TUTU
 %define	push_2(a, b)	push	a\
 						push	b
 
+%define FILE_MAX_LENGTH	0x800000u
+
+%define is_digit(c)			(ascii[(uint8_t)c] & 0x01)
+%define is_alpha(c)			(ascii[(uint8_t)c] & 0x08)
+%define is_lower_alpha(c)	(ascii[(uint8_t)c] & 0x20)
+%define is_upper_alpha(c)	(ascii[(uint8_t)c] & 0x10)
+%define is_space(c)			(ascii[(uint8_t)c] & 0x02)
+%define is_alnum(c)			(ascii[(uint8_t)c] & 0x09)
+
+%undef is_digit
+
+.bank	0, 150
+.bank	1, 150
+
+.byte	0x12 0x14 0x16
+
+.bank	2, 150

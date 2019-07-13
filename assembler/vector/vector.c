@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 12:49:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/12 23:26:26 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/13 19:57:51 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -203,7 +203,7 @@ size_t		vector_index(vector_t *vec, const void *elem)
 	if (vec->nitems == 0)
 		return (0);
 	left = 0;
-	right = vec->nitems - 1;
+	right = vec->nitems; // - 1;
 	while (left < right)
 	{
 		middle = (left + right) / 2;

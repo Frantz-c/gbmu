@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/12 23:19:38 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/13 21:14:09 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -37,6 +37,7 @@ const char *const	inst[] = {
 };
 
 uint32_t		g_error = 0;
+uint32_t		g_warning = 0;
 vector_t		*g_memblock = NULL;
 
 static char	*get_include_filename(char **s, data_t *data)
@@ -59,6 +60,32 @@ __unexpected_char:
 	fprintf(stderr, "\e[1;31m%u errors\e[0m\n", g_error);
 	exit(1);
 	return (NULL);
+}
+
+void			area_print(const void *a)
+{
+	code_area_t	*area = (code_area_t *)a;
+
+	printf("addr = 0x%04x\n", area->addr);
+	if (area->data)
+	{
+		for (mnemonics_t *m = area->data; m; m = m->next)
+		{
+			printf("\t\"%s\": ", m->name);
+			for (operands_t *o = m->operands; o; o = o->next)
+			{
+				if (m->name[0] == '$')
+					printf("0x%x ", (uint32_t)o->name);
+				else
+					printf("%s ", o->name);
+			}
+			printf("\n");
+		}
+	}
+	else
+	{
+		printf("\tno data\n");
+	}
 }
 
 char	*get_keyword(char *s)
@@ -94,7 +121,7 @@ void			memblock_print(const void *a)
 
 void			vector_print(vector_t *vec, char *name, void (*print)(const void *))
 {
-	printf("==> %s:\n", name);
+	printf("\n==> %s:\n", name);
 	if (vec == NULL)
 	{
 		puts("NULL\n");
@@ -180,8 +207,9 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 		}
 	}
 	
+	puts("");
 	vector_print(macro, "macro", &macro_print);
-	//vector_print(area, "code area", &area_print);
+	vector_print(area, "code area", &area_print);
 	//vector_print(ext_label, "label", &label_print);
 	vector_print(g_memblock, "global block", &memblock_print);
 	vector_print(memblock, "block", &memblock_print);

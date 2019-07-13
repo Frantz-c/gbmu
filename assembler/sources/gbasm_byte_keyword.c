@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/12 16:22:55 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/12 16:41:57 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/13 21:40:58 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -55,12 +55,8 @@ extern char		*add_bytes(vector_t *area, char *s, data_t *data)
 		}
 		else if (*s == ',')
 			s++;
-		else if (*s != ' ' && *s != '\t')
-		{
-			if (*s != '\n' && *s != '\0')
-				goto __unexpected_char;
-			return (s);
-		}
+		else if (*s == '\n' || *s == '\0')
+			break;
 	}
 	while (1);
 

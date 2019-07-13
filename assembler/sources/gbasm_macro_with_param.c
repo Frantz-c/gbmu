@@ -31,6 +31,7 @@
 #include "gbasm_struct.h"
 #include "gbasm_macro_func.h"
 #include "gbasm_error.h"
+#include "gbasm_tools.h"
 
 static int		string_replace(char *content, char *replace, char number)
 {
@@ -42,17 +43,9 @@ static int		string_replace(char *content, char *replace, char number)
 	while ((chr = strchr(chr, *replace)) != NULL)
 	{
 		if	(strncmp(chr, replace, replace_length) == 0
-				&& (chr == content || chr[-1] == ' ' || chr[-1] == '\t' || chr[-1] == '\n'
-					|| chr[-1] == ',' || chr[-1] == '(' || chr[-1] == ')' || chr[-1] == '[' || chr[-1] == ']')
-				&&	(
-						chr[replace_length] == ' ' || chr[replace_length] == '\t'
-						|| chr[replace_length] == '\n' || chr[replace_length] == ','
-						|| chr[replace_length] == '(' || chr[replace_length] == ')'
-						|| chr[replace_length] == '[' || chr[replace_length] == ']'
-						||	(
-								chr[replace_length] == '\\' && !isalnum(chr[replace_length])
-							)
-					)
+				&& replace_length <= strlen(chr)
+				&& (chr == content || (!is_alnum(chr[-1]) && chr[-1] != '_'))
+				&&	(!is_alnum(chr[replace_length]) && chr[replace_length] != '_')
 			)
 		{
 			if (replace_length > 2)
@@ -123,8 +116,8 @@ extern char	*add_macro_with_param(char *name, vector_t *macro, char *s, data_t *
 		}
 	}
 
-	size_t	index = vector_index(macro, &name);
-	macro_t	new = {name, content, count, 1};
+	size_t	index = vector_index(macro, &name_start);
+	macro_t	new = {name_start, content, count, 1};
 	vector_insert(macro, (void*)&new, index);
 	return (s);
 

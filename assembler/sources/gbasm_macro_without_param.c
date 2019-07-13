@@ -45,7 +45,6 @@ extern char	*add_macro_without_param(char *name, vector_t *macro, char *s, data_
 	if (*s != '\0' && *s != '\n')
 		goto __unexpected_char;
 
-	printf("name = \"%s\" (%p)\n", name, (void*)name);
 	size_t	index = vector_index(macro, &name);
 	macro_t	new = {name, content, 0, 1};
 	vector_insert(macro, (void*)&new, index);

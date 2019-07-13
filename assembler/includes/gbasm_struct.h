@@ -11,8 +11,6 @@ struct	macro_s
 	uint32_t	allocated;
 };
 
-
-
 struct	operands_s
 {
 	char				*name;

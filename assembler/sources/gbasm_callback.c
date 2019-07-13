@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/12 10:39:48 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/12 23:28:18 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/13 19:52:42 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -100,10 +100,7 @@ extern int		area_match(const void *b, const void *a)
 
 extern int		macro_match(const void *b, const void *a)
 {
-	printf("a = \"%s\"\n", ((macro_t *)a)->name);
-	printf("%p\n", *(char**)b);
-	printf("b = \"%s\"\n", *(char**)b);
-	return (strcmp(((macro_t *)a)->name, *(char**)b));
+	return (strcmp( ((macro_t *)a)->name, *(char**)b) );
 }
 
 extern int		memblock_match(const void *b, const void *a)
