@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/12 23:05:07 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/13 21:19:34 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/13 22:27:17 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -135,11 +135,13 @@ extern uint32_t		atou_inc_all(char **s, int32_t *err)
 {
 	int32_t		type; // 0 = base 10, 1 = octal, 2 = hexa
 	uint32_t	result;
+	char		*backup = *s;
 
 	if ((*s = left_trim(*s, &type)) == NULL)
 	{
 		if (err)
 			*err = 1;
+		*s = backup;
 		return (0);
 	}
 	if (err)

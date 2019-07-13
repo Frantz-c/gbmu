@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/13 21:14:09 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/13 23:06:57 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -25,7 +25,8 @@
 #define CGB		2
 #define DEFINE	3
 #define	SKIP_SPACES(ptr)		do { while (*ptr == ' ' || *ptr == '\t') ptr++; } while (0);
-
+#define LOCAL_MEMBLOCK		0
+#define GLOBAL_MEMBLOCK		1
 
 const char *const	inst[] = {
 	"adc", "add", "and", "bit", "call", "callc", "callnc", "callnz", "callz", "ccf", "cmp", "cp",
@@ -111,10 +112,13 @@ void			memblock_print(const void *a)
 
 	printf("block %s, 0x%x - 0x%x\n", b->name, b->start, b->end);
 
-	for (uint32_t i = 0; i < v->nitems * sizeof(variables_t); i += sizeof(variables_t))
+	if (v)
 	{
-		variables_t	*var = v->data + i;
-		printf("\tvar %s, 0x%x, %u octet(s)\n", var->name, var->addr, var->size);
+		for (uint32_t i = 0; i < v->nitems * sizeof(variables_t); i += sizeof(variables_t))
+		{
+			variables_t	*var = v->data + i;
+			printf("\tvar %s, 0x%x, %u octet(s)\n", var->name, var->addr, var->size);
+		}
 	}
 }
 
@@ -189,16 +193,22 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 				s = add_bytes(area, s + 6, &data);
 			else if (strncmp(s + 1, "memlock", 7) == 0 && (s[8] == ' ' || s[8] == '\t'))
 				s = set_memlock_area(memblock, s + 9, &data);
+			else if (strncmp(s + 1, "global_memlock", 14) == 0 && (s[15] == ' ' || s[15] == '\t'))
+				s = set_memlock_area(g_memblock, s + 16, &data);
 				// .memlock uram_b0, 0xc000, end=0xca00
 				// .memlock uram_b0, 0xc000, len=1024
-/*			else if (strncmp(s + 1, "var", 3) == 0 && (s[4] >= '0' && s[4] <= '9'))
-				s = get_var_mem_space(*memblock, s + 4);
-			else if (strncmp(s + 1, "extern", 6) == 0 && (s[7] == ' ' || s[7] == '\t'))
+			else if (strncmp(s + 1, "var", 3) == 0 && (s[4] > '0' && s[4] <= '9'))
+				s = assign_var_to_memory(*memblock, s + 4);
+/*			else if (strncmp(s + 1, "extern", 6) == 0 && (s[7] == ' ' || s[7] == '\t'))
 				s = set_external_label_or_memblock(extlab, s + 8, &err);
 */
-//			else
-				//error
-
+			else
+			{
+				char *keyword = get_keyword(data.line);
+				sprintf(data.buf, "unknown keyword `%s`", keyword);
+				free(keyword);
+				print_error(data.filename, data.lineno, data.line, data.buf);
+			}
 		}
 		else
 		{
@@ -334,6 +344,7 @@ int		main(int argc, char *argv[])
 	vector_destroy(macro);
 	vector_destroy(ext_label);
 	vector_destroy(memblock);
+	vector_destroy(g_memblock);
 	return (0);
 }
 /*

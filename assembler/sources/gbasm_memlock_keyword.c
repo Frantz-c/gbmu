@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/10 19:00:27 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/12 23:02:48 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/13 23:18:21 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -15,37 +15,45 @@
 #include "gbasm_struct.h"
 #include "gbasm_tools.h"
 #include "gbasm_error.h"
+#include "gbasm_keywords.h"
 
 #define	VEC_DATA_ELEM(_struct, _var, _index)	((_struct *)_var->data) + (_index * sizeof(_struct))
 #define	VEC_DATA_ELEM_LAST(_struct, _var)	((_struct *)_var->data) + ((_var->nitems - 1) * sizeof(_struct))
 
-char	*set_memlock_area(vector_t *memblock, char *s, data_t *data)
+extern char	*set_memlock_area(vector_t *memblock, char *s, data_t *data)
 {
 	uint32_t	addr;
 	int			error;
 	uint32_t	end;
 	char		*name;
+	int			alloc = 0;
 
 //	ARGUMENT 1 -> (string) name
-	while (*s == ' ' || *s == '\n') s++;
+	while (*s == ' ' || *s == '\t') s++;
 	name = s;
 	if (!is_alpha(*s) && *s != '_')
 		goto __error;
 
 	while (is_alnum(*s) || *s == '_') s++;
-	if (*s != ' ' && *s != '\t')
+	if (*s != ' ' && *s != '\t' && *s != ',')
 		goto __error;
 	name = strndup(name, s - name);
+	alloc = 1;
+	while (*s == ' ' || *s == '\t') s++;
+	if (*s == ',') {
+		s++;
+		while (*s == ' ' || *s == '\t') s++;
+	}
 
 //	ARGUMENT 2 -> (uint32) start_addr
 	addr = atou_inc_all(&s, &error);
 	if (error)
 		goto __error;
 
-	while (*s == ' ' || *s == '\n') s++;
+	while (*s == ' ' || *s == '\t') s++;
 	if (*s == ',') {
 		s++;
-		while (*s == ' ' || *s == '\n') s++;
+		while (*s == ' ' || *s == '\t') s++;
 	}
 
 //	ARGUMENT 3 -> (uint32) end_addr OR length
@@ -80,5 +88,7 @@ __error:
 	sprintf(data->buf, "unexpected character `%c`", *s);
 	print_error(data->filename, data->lineno, data->line, data->buf);
 	while (*s && *s != '\n') s++;
+	if (alloc)
+		free(name);
 	return (s);
 }

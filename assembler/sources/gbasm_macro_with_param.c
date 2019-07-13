@@ -99,7 +99,7 @@ extern char	*add_macro_with_param(char *name, vector_t *macro, char *s, data_t *
 	while (*s == ' ' || *s == '\t') s++;
 	length = get_macro_content_length(s);
 	content = malloc(length * 2);
-	s = copy_macro_content(content, s);
+	s = copy_macro_content(content, s, &data->lineno);
 
 /*	/!\ vérifier les doublons dans les parametres /!\	*/
 	char *arg;

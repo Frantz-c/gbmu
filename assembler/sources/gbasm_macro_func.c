@@ -1,7 +1,7 @@
 #include "../includes/std_includes.h"
 #include "../includes/gbasm_struct.h"
 
-extern char		*copy_macro_content(char *dest, char *s)
+extern char		*copy_macro_content(char *dest, char *s, uint32_t *lineno)
 {
 	char	*bs_pos;
 
@@ -21,6 +21,7 @@ extern char		*copy_macro_content(char *dest, char *s)
 				{
 					while (s[1] == ' ' || s[1] == '\t') s++;
 				}
+				(*lineno)++;
 				continue;
 			}
 			*(dest++) = '\\';

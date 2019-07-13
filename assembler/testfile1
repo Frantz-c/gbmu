@@ -3,6 +3,10 @@
 %define	push_2(a, b)	push	a\
 						push	b
 
+.memlock			var_area, 0xc000, len=1024
+.memlock			other_area, 0xc900, end=0xd000
+.global_memlock		glob, 0xff80, end=0xff90
+
 %define FILE_MAX_LENGTH	0x800000u
 
 %define is_digit(c)			(ascii[(uint8_t)c] & 0x01)
@@ -14,9 +18,11 @@
 
 %undef is_digit
 
-.bank	0, 150
-.bank	1, 150
+.bank	0, 0x96
+.var12	variable, glob
+
+.bank	1, 0x96
 
 .byte	0x12 0x14 0x16
 
-.bank	2, 150
+.bank	2, 0x20

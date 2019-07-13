@@ -41,7 +41,7 @@ extern char	*add_macro_without_param(char *name, vector_t *macro, char *s, data_
 		goto __no_param;
 
 	content = malloc(get_macro_content_length(s) * 2);
-	s = copy_macro_content(content, s);
+	s = copy_macro_content(content, s, &data->lineno);
 	if (*s != '\0' && *s != '\n')
 		goto __unexpected_char;
 
