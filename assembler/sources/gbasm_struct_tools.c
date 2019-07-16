@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 13:17:53 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/16 13:22:43 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/16 23:36:56 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -15,6 +15,57 @@
 #include "gbasm_struct.h"
 
 #define BYTE_ALLOC_SIZE		8
+
+extern void	push_params(code_area_t	*area, uint8_t inst[2], uint8_t p1[2], uint8_t p2[2], param_t t1, param_t t2, char *symbol)
+{
+	uint8_t	size = 0;
+	uint8_t	opsize = 0;
+
+	// opcode
+	if (inst[0] == 0xCB) {
+		size++;
+		area->cur->opcode[1] = inst[1];
+	}
+	size++;
+	area->cur->opcode[0] = inst[0];
+
+	//param1
+	if (t1 >= IMM16) {
+		size++;
+		opsize++;
+		area->cur->operand1[1] = p1[1];
+	}
+	if (t1 >= IMM8) {
+		size++;
+		opsize++;
+		area->cur->operand1[0] = p1[0];
+	}
+	area->cur->ope_size = opsize;
+	
+	//param2
+	opsize = 0;
+	if (t2 >= IMM16) {
+		size++;
+		opsize++;
+		area->cur->operand2[1] = p2[1];
+	}
+	if (t2 >= IMM8) {
+		size++;
+		opsize++;
+		area->cur->operand2[0] = p2[0];
+	}
+	area->cur->ope_size |= (opsize << 4);
+
+	//symbol
+	if (t1 == SYMBOL || t1 == SYMBOL8 || t2 == SYMBOL || t2 == SYMBOL8)
+	{
+		unkwn_sym_t	new = malloc(sizeof(unkwn_sym_t));
+		new->name = strdup(symbol);
+		new->type = VAR_OR_LABEL;
+		area->cur->umkwn = new;
+	}
+	area->cur->size = size;
+}
 
 extern void	new_instruction(code_area_t *area)
 {

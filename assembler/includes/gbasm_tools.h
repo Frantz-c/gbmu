@@ -1,3 +1,16 @@
+/* ************************************************************************** */
+/*                                                          LE - /            */
+/*                                                              /             */
+/*   gbasm_tools.h                                    .::    .:/ .      .::   */
+/*                                                 +:+:+   +:    +:  +:+:+    */
+/*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
+/*                                                 #+#   #+    #+    #+#      */
+/*   Created: 2019/07/16 22:10:32 by fcordon      #+#   ##    ##    #+#       */
+/*   Updated: 2019/07/16 23:13:35 by fcordon     ###    #+. /#+    ###.fr     */
+/*                                                         /                  */
+/*                                                        /                   */
+/* ************************************************************************** */
+
 #ifndef GBASM_TOOLS_H
 # define GBASM_TOOLS_H
 
@@ -11,8 +24,10 @@ uint32_t	var_len(const char *s);
 uint8_t		is_numeric(const char *s, uint32_t *len);
 uint32_t	alnum_len(const char *s);
 uint32_t	alpha_len(const char *s);
+void		str_to_lower(char *s);
 
 extern const uint32_t	ascii[256];
+extern const uint8_t	to_lower_char[128];
 
 # define FILE_MAX_LENGTH	0x800000u
 

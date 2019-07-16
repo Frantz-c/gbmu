@@ -1,3 +1,16 @@
+/* ************************************************************************** */
+/*                                                          LE - /            */
+/*                                                              /             */
+/*   gbasm_add_instruction.c                          .::    .:/ .      .::   */
+/*                                                 +:+:+   +:    +:  +:+:+    */
+/*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
+/*                                                 #+#   #+    #+    #+#      */
+/*   Created: 2019/07/16 22:10:25 by fcordon      #+#   ##    ##    #+#       */
+/*   Updated: 2019/07/16 23:26:11 by fcordon     ###    #+. /#+    ###.fr     */
+/*                                                         /                  */
+/*                                                        /                   */
+/* ************************************************************************** */
+
 #include "std_includes.h"
 #include "gbasm_struct.h"
 #include "gbasm_tools.h"
@@ -31,12 +44,104 @@ ssize_t		instruction_search(instructions_t inst[71], char *tofind)
 	return (0xffffffffu);
 }
 
-uint32_t	add_instruction_macro(char *name, vector_t *area, vector_t *label, char **s, data_t *data)
+int		set_params(char **p1, char **p2, char **s)
+{
+	while (is_space(**s)) (*s)++;
+	if (is_endl(**s))
+	{
+		*p1 = NULL;
+		return (0);
+	}
+
+	*p1 = *s;
+
+	//param1
+	while (is_alnum(**s) || **s == '_') (*s)++;
+	*p1 = strndup(*p1, *s - *p1);
+
+	while (is_space(**s)) (*s)++;
+	if (is_endl(**s))
+	{
+		*p2 = NULL;
+		return (0);
+	}
+	if (**s != ',')
+		return (-1);
+	while (is_space(**s)) (*s)++;
+
+	//param2
+	while (is_alnum(**s) || **s == '_') (*s)++;
+	*p2 = strndup(*p2, *s - *p2);
+
+	while (is_space(**s)) (*s)++;
+	if (is_endl(**s))
+		return (0);
+	return (-1);
+}
+
+// C_FF00 = (C)
+typedef enum	param_e
+{
+	NONE,A,B,C,D,E,F,H,L,AF,BC,DE,HL,SP,HL_ADDR,BC_ADDR,DE_ADDR,AF_ADDR,C_FF00,IMM8,ADDR8,SYMBOL8,IMM16,ADDR16,SYMBOL
+}
+param_t;
+
+char	*add_instruction_with_macro_replace(char *inst, vector_t *area, vector_t *label, char *s, data_t *data)
+{
+	char	*param1, *param2;
+	param_t	p1 = NONE, p2 = NONE;
+
+	str_to_lower(inst);
+	if (set_params(&param1, &param2, &s) == -1)
+	{
+		if (*s == ',')
+			goto __too_many_param;
+		goto __unexpected_char;
+	}
+
+	if (param1)
+	{
+		if	(
+			   (p1 = get_r(param1)) || (p1 = get_rr(param1)) || (p1 = get_rr_addr(param1))
+			|| (p1 = get_imm(param1)) || (p1 = get_addr(param1)) || (p1 = get_c_ff00(param1))
+			|| (p1 = get_macro(param1))
+			)
+		{
+			p1 = SYMBOL;
+		}
+		if (param2)
+		{
+			if ((p2 = get_r(param1)) || (p2 = get_rr(param1)) || (p2 = get_rr_addr(param1))
+					|| (p2 = get_imm(param1)) || (p2 = get_addr(param1)) || (p2 = get_c_ff00(param1)))
+			{
+				p2 = SYMBOL;
+			}
+		}
+	}
+
+	char	*symbol = param2;
+
+	if (p1 == SYMBOL)
+		symbol = param1;
+
+	add_bin_instruction(inst, p1, p2, area, symbol);
+	return (s);
+
+__unexpected_char:
+
+}
+
+uint32_t	add_instruction_without_macro_replace(char *inst, vector_t *area, vector_t *label, char **s, data_t *data)
 {
 	
 }
 
-uint32_t	add_bin_instruction(char *inst, char *param1, char *param2, vector_t *area) //"#"
+/*
+ *	si le type recu est imm8, c'est peut-etre une imm16.
+ *	penser a changer le type si necessaire. (idem pour addr8)
+ */
+
+uint32_t	add_bin_instruction(char *inst, param_t param1, param_t param2, vector_t *area, char *symbol)
 {
 	static const instructions_t	inst[71] = {
 		{"adc", &&__adc},		{"add", &&__add},		{"and", &&__and},		{"bit", &&__bit},

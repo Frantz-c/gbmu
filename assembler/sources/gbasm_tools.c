@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/12 23:05:07 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/13 22:27:17 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/16 23:13:48 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -29,6 +29,31 @@ const uint32_t	ascii[256] = {
 	0x28,0x28,0x28,0x28,0x28,0x28,0x28,0x28,0x28,0x28, //110
 	0x28,0x28,0x28,0,0,0,0,0,0,0 //120
 };
+
+const uint8_t	to_lower_char[128] = {
+	0,1,2,3,4,5,6,7,8,9,
+	10,11,12,13,14,15,16,17,18,19,
+	20,21,22,23,24,25,26,27,28,29,
+	30,31,32,33,34,35,36,37,38,39,
+	40,41,42,43,44,45,46,47,48,49,
+	50,51,52,53,54,55,56,57,58,59,
+	60,61,62,63,64,65,66,67,68,69,
+	70,71,72,73,74,75,76,77,78,79,
+	80,81,82,83,84,85,86,87,88,89,
+	90,91,92,93,94,95,96,65,66,67,
+	68,69,70,71,72,73,74,75,76,77,
+	78,79,80,81,82,83,84,85,86,87,
+	88,89,90,123,124,125,126,127
+};
+
+extern void __attribute__((always_inline))		str_to_lower(char *s)
+{
+	while (*s)
+	{
+		*s = to_lower_char[*s & 0x7f];
+		s++;
+	}
+}
 
 extern uint8_t		is_numeric(const char *s, uint32_t *len)
 {
@@ -81,9 +106,7 @@ extern uint32_t		alpha_len(const char *s)
 	return ((uint32_t)(p - s));
 }
 
-static char
-__attribute__((always_inline))
-*left_trim(char *s, int32_t *type)
+static char __attribute__((always_inline))		*left_trim(char *s, int32_t *type)
 {
 	while (*s == ' ' || *s == '\t')
 		s++;
@@ -112,8 +135,7 @@ __attribute__((always_inline))
 	return (s);
 }
 
- __attribute__((always_inline))
-static uint32_t				get_base_value(char c)
+static uint32_t __attribute__((always_inline))	get_base_value(char c)
 {
 	if (c >= 'a' && c <= 'f')
 		return (c - ('a' - 10));
