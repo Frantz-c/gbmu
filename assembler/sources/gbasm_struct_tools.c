@@ -16,7 +16,7 @@
 
 #define BYTE_ALLOC_SIZE		8
 
-extern void	new_byte_instruction(code_area_t *area)
+extern void	new_instruction(code_area_t *area)
 {
 	code_t	*new;
 

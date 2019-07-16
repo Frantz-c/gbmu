@@ -29,10 +29,61 @@ const uint32_t	ascii[256] = {
 	0x28,0x28,0x28,0x28,0x28,0x28,0x28,0x28,0x28,0x28, //110
 	0x28,0x28,0x28,0,0,0,0,0,0,0 //120
 };
+
+extern uint8_t		is_numeric(const char *s, uint32_t *len)
+{
+	uint8_t	type = 0;
+	char	*p = s;
+
+	if (*s == '0' && (s[1] == 'x' || s[1] == 'X'))
+	{
+		type = HEXA_NUM;
+		s += 2;
+		while (is_digit(*s) || (*s >= 'a' && *s <= 'f') || (*s >= 'A' && *s <= 'F')) s++;
+	}
+	else if (*s == '0')
+	{
+		type = OCTAL_NUM;
+		s++;
+		while (*s >= '0' && *s <= '7') s++;
+	}
+	else if (is_digit(*s))
+	{
+		type = DECIMAL_NUM;
+		s++;
+		while (is_digit(*s)) s++;
+	}
+	*len =  (uint32_t)(p - s);
+	return (type)
+}
+
+extern uint32_t		var_len(const char *s)
+{
+	const char	*p = s;
+	if (!is_alnum(*s) && *s != '_')
+		return (0);
+	s++;
+	while (is_alnum(*s) || *s == '_') s++;
+	return (p - s);
+}
  
- static char
- __attribute__((always_inline))
- *left_trim(char *s, int32_t *type)
+extern uint32_t		alnum_len(const char *s)
+{
+	const char *p = s;
+	while (is_alnum(*p)) p++;
+	return ((uint32_t)(p - s));
+}
+
+extern uint32_t		alpha_len(const char *s)
+{
+	const char *p = s;
+	while (is_alpha(*p)) p++;
+	return ((uint32_t)(p - s));
+}
+
+static char
+__attribute__((always_inline))
+*left_trim(char *s, int32_t *type)
 {
 	while (*s == ' ' || *s == '\t')
 		s++;

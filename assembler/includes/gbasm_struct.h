@@ -10,13 +10,6 @@ struct	macro_s
 	uint32_t	argc;
 	uint32_t	allocated;
 };
-/*
-struct	operands_s
-{
-	char				*name;
-	struct operands_s	*next;
-};
-*/
 
 struct	symbol_s
 {

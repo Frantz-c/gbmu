@@ -11,15 +11,6 @@
 /*                                                        /                   */
 /* ************************************************************************** */
 
-/*
-		premier tour:	analyse de tout le fichier
-		2e tour		:	analyse de toute la structure code_area_t
-						(vérification des labels utilisés dans les operandes
-						&& remplacement par l'addresse correcpondante)
-		
-
-*/
-
 #include "std_includes.h"
 #include "gbasm_tools.h"
 #include "gbasm_macro.h"
@@ -32,18 +23,6 @@
 #define BEG						do{
 #define END						}while(0)
 #define	SKIP_SPACES(ptr)		BEG while (is_space(*(ptr))) (ptr)++; END
-
-/*
-const char *const	inst[] = {
-	"adc", "add", "and", "bit", "call", "callc", "callnc", "callnz", "callz", "ccf", "cmp", "cp",
-	"cpl", "daa", "dec", "di", "ei", "halt", "inc", "jp", "jpc", "jpnc", "jpnz", "jpz", "jr", "jrc",
-	"jrnc", "jrnz", "jrz", "ld", "ldd", "ldhl", "ldi", "mov", "nop", "not", "or", "pop", "push",
-	"res", "reset", "ret", "retc", "reti", "retnc", "retnz", "retz", "rl", "rla", "rlc", "rlca",
-	"rr", "rra", "rrc", "rrca", "rst", "sar", "sbb", "sbc", "scf", "set", "shl", "shr", "sla",
-	"sra", "srl", "stop", "sub", "swap", "testb", "xor", NULL
-};
-*/
-
 
 uint32_t		g_error;
 uint32_t		g_warning;
@@ -256,7 +235,9 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 		}
 		else
 		{
-			char	*name = s;
+			char		*name = s;
+			uint32_t	macro_index = 0xffffffffu;
+			uint8_t		is_macro_with_param = 0;
 
 			if (!is_alpha(*s) && *s != '_')
 				goto __unexpected_char;
@@ -272,10 +253,48 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 				add_label(strndup(name, end - name), area, label, &data);
 				continue;
 			}
-			else if (!is_space(*s))
+			else if (!is_space(*s) && *s != '(')
 				goto __unexpected_char;
 
-			s = add_instruction(strndup(name, s - name), area, macro, label, s + 1, &data);
+			if (*s == '(')
+				is_macro_with_param = 1;
+			if ((macro_index = (uint32_t)vector_search(macro, (void*)&name)) != 0xffffffffu)
+			{
+				char	*content = VEC_ELEM(macro_t, macro, macro_index)->content;
+				char	*p;
+				int		 = 1;
+				uint32_t	argc = VEC_ELEM(macro_t, macro, macro_index)->argc;
+
+				if (is_macro_with_param)
+				{
+					if (argc == 0)
+						goto __macro_has_no_parameters; // print real macro
+					content = replace_param_content(s + 1, content, argc);
+				}
+				else
+				{
+					if (argc != 0)
+						goto __macro_has_parameters;	// print real macro
+				}
+
+				p = content;
+				while (!is_space(*p) && !is_endl(*p)) p++;
+				for (;;)
+				{
+					p = add_instruction(content, area, NULL, label, p, &data)
+					if (*p == '\0')
+						break;
+					content = p + 1;
+					while (!is_space(*p) && !is_endl(*p)) p++;
+					macro_lineno++;
+				}
+			}
+			else if (is_macro_with_param)
+				goto __;
+
+			name = strndup(name, s - name);
+			s = add_instruction(name, area, macro, label, s + 1, &data);
+			free(name);
 
 		__unexpected_char:
 			sprintf(data.buf, "unexpected character `%c`", *s);

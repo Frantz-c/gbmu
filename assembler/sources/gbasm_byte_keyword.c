@@ -23,8 +23,7 @@ extern char		*add_bytes(vector_t *area, char *s, data_t *data)
 	uint32_t	byte;
 	int32_t		error;
 
-//	new_byte_instruction( ((code_area_t *)(area->data + (data->cur_area * sizeof(code_area_t)))) );
-	new_byte_instruction( VEC_ELEM(code_area_t, area, data->cur_area) );
+	new_instruction( VEC_ELEM(code_area_t, area, data->cur_area) );
 	do
 	{
 		while (is_space(*s)) s++;
@@ -36,7 +35,6 @@ extern char		*add_bytes(vector_t *area, char *s, data_t *data)
 		if (byte > 0xffu)
 			print_warning(data->filename, data->lineno, data->line, "byte overflow: value truncated");
 
-//		if (push_byte( ((code_area_t *)(area->data + (data->cur_area * sizeof(code_area_t)))), byte & 0xffu) == -1)
 		if (push_byte(VEC_ELEM(code_area_t, area, data->cur_area) , byte & 0xffu) == -1)
 			goto __too_many_bytes;
 
@@ -62,7 +60,6 @@ extern char		*add_bytes(vector_t *area, char *s, data_t *data)
 	}
 	while (1);
 	VEC_ELEM(code_area_t, area, data->cur_area)->cur->size += 3;
-//	((code_area_t *)(area->data + (data->cur_area * sizeof(code_area_t))))->cur->size += 3;
 	return (s);
 
 __warning_no_bytes:
