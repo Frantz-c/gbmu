@@ -17,5 +17,6 @@ extern const uint32_t	ascii[256];
 # define is_upper_alpha(c)	(ascii[(uint8_t)c] & 0x10)
 # define is_space(c)		(ascii[(uint8_t)c] & 0x02)
 # define is_alnum(c)		(ascii[(uint8_t)c] & 0x09)
+# define is_endl(c)			(ascii[(uint8_t)c] & 0x42)
 
 #endif

@@ -11,6 +11,14 @@
 /*                                                        /                   */
 /* ************************************************************************** */
 
+/*
+		premier tour:	analyse de tout le fichier
+		2e tour		:	analyse de toute la structure code_area_t
+						(vérification des labels utilisés dans les operandes
+						&& remplacement par l'addresse correcpondante)
+		
+
+*/
 
 #include "std_includes.h"
 #include "gbasm_tools.h"
@@ -19,15 +27,13 @@
 #include "gbasm_callback.h"
 #include "gbasm_error.h"
 #include "gbasm_struct.h"
+#include "gbasm_instruction_or_label.h"
 
-#define	INPUT	0
-#define OUTPUT	1
-#define CGB		2
-#define DEFINE	3
-#define	SKIP_SPACES(ptr)		do { while (*ptr == ' ' || *ptr == '\t') ptr++; } while (0);
-#define LOCAL_MEMBLOCK		0
-#define GLOBAL_MEMBLOCK		1
+#define BEG						do{
+#define END						}while(0)
+#define	SKIP_SPACES(ptr)		BEG while (is_space(*(ptr))) (ptr)++; END
 
+/*
 const char *const	inst[] = {
 	"adc", "add", "and", "bit", "call", "callc", "callnc", "callnz", "callz", "ccf", "cmp", "cp",
 	"cpl", "daa", "dec", "di", "ei", "halt", "inc", "jp", "jpc", "jpnc", "jpnz", "jpz", "jr", "jrc",
@@ -36,10 +42,11 @@ const char *const	inst[] = {
 	"rr", "rra", "rrc", "rrca", "rst", "sar", "sbb", "sbc", "scf", "set", "shl", "shr", "sla",
 	"sra", "srl", "stop", "sub", "swap", "testb", "xor", NULL
 };
+*/
 
-uint32_t		g_error = 0;
-uint32_t		g_warning = 0;
-vector_t		*g_memblock = NULL;
+
+uint32_t		g_error;
+uint32_t		g_warning;
 
 static char	*get_include_filename(char **s, data_t *data)
 {
@@ -70,15 +77,44 @@ void			area_print(const void *a)
 	printf("addr = 0x%04x\n", area->addr);
 	if (area->data)
 	{
-		for (mnemonics_t *m = area->data; m; m = m->next)
+		for (code_t *c = area->data; c; c = c->next)
 		{
-			printf("\t\"%s\": ", m->name);
-			for (operands_t *o = m->operands; o; o = o->next)
+			if (c->size > 3)
 			{
-				if (m->name[0] == '$')
-					printf("0x%x ", (uint32_t)o->name);
+				uint8_t	*bytes = (uint8_t*)c->unkwn;
+				for (uint8_t i = 0; i < c->size - 3; i++)
+				{
+					if (i % 8 == 7)
+						puts("");
+					if (i == 0)
+						printf("bytes[%hhu] : 0x%hhx", bytes[i], c->size - 3);
+					else
+						printf(", 0x%hhx", bytes[i]);
+				}
+			}
+			else
+			{
+				if (c->opcode[0] == 0xcb)
+					printf("\t\"0x%hhX 0x%hhX\", ", c->opcode[0], c->opcode[1]);
 				else
-					printf("%s ", o->name);
+					printf("\t\"0x%hhX\", ", c->opcode[0]);
+
+				if ((c->ope_size & 0x0f) == 0)
+					printf("NO_OPERANDS");
+				else
+				{
+					if ((c->ope_size & 0x0f) == 1)
+						printf("0x%hhX", c->operand1[0]);
+					else
+						printf("0x%hhX 0x%hhX", c->operand1[0], c->operand1[0]);
+					if (((c->ope_size & 0xf0) >> 4) > 0)
+					{
+						if (((c->ope_size & 0xf0) >> 4) == 1)
+							printf(", 0x%hhX", c->operand2[0]);
+						else
+							printf(", 0x%hhX 0x%hhX", c->operand2[0], c->operand2[0]);
+					}
+				}
 			}
 			printf("\n");
 		}
@@ -87,15 +123,6 @@ void			area_print(const void *a)
 	{
 		printf("\tno data\n");
 	}
-}
-
-char	*get_keyword(char *s)
-{
-	char	*start = s;
-
-	while (*s != '\0' && *s != ' ' && *s != '\t' && *s != '\n')
-		s++;
-	return (strndup(start, s - start));
 }
 
 void			macro_print(const void *a)
@@ -107,16 +134,16 @@ void			macro_print(const void *a)
 
 void			memblock_print(const void *a)
 {
-	memblocks_t *b = (memblocks_t *)a;
-	vector_t	*v = ((memblocks_t *)a)->var;
+	memblock_t *b = (memblock_t *)a;
+	vector_t	*v = ((memblock_t *)a)->var;
 
 	printf("block %s, 0x%x - 0x%x\n", b->name, b->start, b->end);
 
 	if (v)
 	{
-		for (uint32_t i = 0; i < v->nitems * sizeof(variables_t); i += sizeof(variables_t))
+		for (uint32_t i = 0; i < v->nitems * sizeof(variable_t); i += sizeof(variable_t))
 		{
-			variables_t	*var = v->data + i;
+			variable_t	*var = (variable_t *)(v->data + i);
 			printf("\tvar %s, 0x%x, %u octet(s)\n", var->name, var->addr, var->size);
 		}
 	}
@@ -138,7 +165,16 @@ void			vector_print(vector_t *vec, char *name, void (*print)(const void *))
 	printf("\n");
 }
 
-static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_t *ext_label, vector_t *memblock, int32_t *cur_area)
+static char	*get_keyword(char *s)
+{
+	char	*start = s;
+
+	while (*s != '\0' && *s != ' ' && *s != '\t' && *s != '\n')
+		s++;
+	return (strndup(start, s - start));
+}
+
+static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_t *label, vector_t *symbol, vector_t *memblock, int32_t *cur_area)
 {
 	data_t		data;
 	char		*s;
@@ -174,7 +210,7 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 			{
 				s += 9;
 				include_filename = get_include_filename(&s, &data);
-				parse_file(include_filename, area, macro, ext_label, memblock, cur_area);
+				parse_file(include_filename, area, macro, label, symbol, memblock, cur_area);
 				free(include_filename);
 			}
 			else
@@ -193,15 +229,13 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 				s = add_bytes(area, s + 6, &data);
 			else if (strncmp(s + 1, "memlock", 7) == 0 && (s[8] == ' ' || s[8] == '\t'))
 				s = set_memlock_area(memblock, s + 9, &data);
-			else if (strncmp(s + 1, "global_memlock", 14) == 0 && (s[15] == ' ' || s[15] == '\t'))
-				s = set_memlock_area(g_memblock, s + 16, &data);
 				// .memlock uram_b0, 0xc000, end=0xca00
 				// .memlock uram_b0, 0xc000, len=1024
 			else if (strncmp(s + 1, "var", 3) == 0 && (s[4] > '0' && s[4] <= '9'))
-				s = assign_var_to_memory(*memblock, s + 4);
-/*			else if (strncmp(s + 1, "extern", 6) == 0 && (s[7] == ' ' || s[7] == '\t'))
-				s = set_external_label_or_memblock(extlab, s + 8, &err);
-*/
+				s = assign_var_to_memory(memblock, s + 4, &data);
+			else if (strncmp(s + 1, "extern", 6) == 0 && (s[7] == ' ' || s[7] == '\t'))
+				s = set_extern_symbol(symbol, s + 8, &data);
+
 			else
 			{
 				char *keyword = get_keyword(data.line);
@@ -212,8 +246,31 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 		}
 		else
 		{
-			exit(1);
-			//s = add_instruction_or_label(zon, curzon, def, s, &err);
+			char	*name = s;
+
+			if (!is_alpha(*s) && *s != '_')
+				goto __unexpected_char;
+			s++;
+			while (is_alnum(*s) || *s == '_') s++;
+
+			if (*s == ':')
+			{
+				char *end = s;
+				s++;
+				if (!is_space(*s) && !is_endl(*s))
+					goto __unexpected_char;
+				add_label(strndup(name, end - name), area, label, &data);
+				continue;
+			}
+			else if (!is_space(*s))
+				goto __unexpected_char;
+
+			s = add_instruction(strndup(name, s - name), area, macro, label, s + 1, &data);
+
+		__unexpected_char:
+			sprintf(data.buf, "unexpected character `%c`", *s);
+			print_error(data.filename, data.lineno, data.line, data.buf);
+			while (!is_endl(*s)) s++;
 		}
 	}
 	
@@ -297,10 +354,10 @@ int		main(int argc, char *argv[])
 	char			*file[3];
 	vector_t		*macro = NULL;
 	vector_t		*code_area = NULL;
-	vector_t		*ext_label = NULL;
+	vector_t		*symbol = NULL;
+	vector_t		*label = NULL;
 	vector_t		*memblock = NULL;
 	int32_t			cur_area;
-	code_area_t		area_elem = {0, NULL, NULL};
 
 	file[0]	=	"testfile1";
 	file[1]	=	"testfile2";
@@ -311,23 +368,28 @@ int		main(int argc, char *argv[])
 	code_area->compar = &area_cmp;
 	code_area->destroy = &area_destroy;
 	code_area->search = &area_match;
-	ext_label = vector_init(sizeof(label_t));
-	ext_label->compar = &label_cmp;
-	ext_label->search = &label_match;
-	ext_label->destroy = &label_destroy;
-	g_memblock = vector_init(sizeof(memblocks_t));
-	g_memblock->destroy = &memblock_destroy;
-	g_memblock->compar = &memblock_cmp;
-	g_memblock->search = &memblock_match;
-	memblock = vector_clone(g_memblock);
+	label = vector_init(sizeof(label_t));
+	label->compar = &label_cmp;
+	label->search = &label_match;
+	label->destroy = &label_destroy;
+	memblock = vector_init(sizeof(memblock_t));
+	memblock->destroy = &memblock_destroy;
+	memblock->compar = &memblock_cmp;
+	memblock->search = &memblock_match;
+	symbol = vector_init(sizeof(symbol_t));
+	symbol->destroy = &symbol_destroy;
+	symbol->compar = NULL;//&symbol_cmp;
+	symbol->search = NULL;//&symbol_match;
 
 	for (char **p = file; *p; p++)
 	{
 		g_error = 0;
+		g_warning = 0;
 		cur_area = 0;
+		code_area_t		area_elem = {0, NULL, NULL};
 		vector_push(code_area, (void*)&area_elem);
 
-		parse_file(*p, code_area, macro, ext_label, memblock, &cur_area);
+		parse_file(*p, code_area, macro, label, symbol, memblock, &cur_area);
 		if (g_error)
 		{
 			fprintf(stderr, "\e[1;31m%u errors\e[0m\n", g_error);
@@ -344,7 +406,6 @@ int		main(int argc, char *argv[])
 	vector_destroy(macro);
 	vector_destroy(ext_label);
 	vector_destroy(memblock);
-	vector_destroy(g_memblock);
 	return (0);
 }
 /*

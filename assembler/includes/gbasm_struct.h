@@ -10,29 +10,58 @@ struct	macro_s
 	uint32_t	argc;
 	uint32_t	allocated;
 };
-
+/*
 struct	operands_s
 {
 	char				*name;
 	struct operands_s	*next;
 };
+*/
 
-struct	mnemonics_s
+struct	symbol_s
 {
-	char				*name;
-	uint32_t			n_operand;
-	struct mnemonics_s	*next;
-	struct operands_s	*operands;
+	char		*name;
+	uint32_t	type;
+};
+
+struct	label_s
+{
+	char		*name;
+	uint32_t	addr;
+};
+
+struct	unkwn_sym_s
+{
+	char		*name;
+	uint32_t	lineno;	// for print an error if symbol
+						// is not declared
+	char		*filename;
+	// next ??
+};
+
+struct	code_s
+{
+	uint8_t			opcode[2];
+	uint8_t			operand1[2];
+	uint8_t			operand2[2];
+	uint8_t			size;	// instruction size (1 - 3)
+							// if .byte, 1 - 252 (0xffu - 3)
+	uint8_t			ope_size;	// 0xf0 -> ope1
+								// 0x0f -> ope2
+	void			*unkwn;	// not allocated
+							// unkwn_sym_t, uint8_t[]
+							// symbol   or  .bytes
+	struct code_s	*next;
 };
 
 struct	code_area_s
 {
-	uint32_t			addr;
-	struct mnemonics_s	*data;
-	struct mnemonics_s	*cur;
+	uint32_t		addr;
+	struct code_s	*data;
+	struct code_s	*cur;
 };
 
-struct	memblocks_s
+struct	memblock_s
 {
 	uint32_t			start;
 	uint32_t			end;
@@ -41,17 +70,11 @@ struct	memblocks_s
 	vector_t			*var;
 };
 
-struct	variables_s
+struct	variable_s
 {
 	char				*name;
 	uint32_t			addr;
 	uint32_t			size;
-};
-
-struct	label_s
-{
-	char		*name;
-	uint32_t	offset;	//code_area[offset] = label_position
 };
 
 struct	data_s
@@ -74,14 +97,15 @@ struct	error_s
 	uint32_t	info[5];
 };
 */
-typedef struct operands_s	operands_t;
-typedef struct mnemonics_s	mnemonics_t;
+typedef struct symbol_s		symbol_t;
+typedef struct unkwn_sym_s	unkwn_sym_t;
+typedef struct code_s		code_t;
 typedef struct macro_s		macro_t;
 typedef struct code_area_s	code_area_t;
 typedef struct label_s		label_t;
 typedef struct data_s		data_t;
-typedef struct variables_s	variables_t;
-typedef struct memblocks_s	memblocks_t;
+typedef struct variable_s	variable_t;
+typedef struct memblock_s	memblock_t;
 //typedef struct error_s		error_t;
 
 #endif

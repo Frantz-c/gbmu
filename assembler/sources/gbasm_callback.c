@@ -19,7 +19,7 @@
  */
 extern void		variables_destroy(void *a)
 {
-	variables_t	*var = (variables_t *)a;
+	variable_t	*var = (variable_t *)a;
 
 	free(var->name);
 }
@@ -28,8 +28,8 @@ extern void		memblock_destroy(void *a)
 {
 	vector_t	*v;
 
-	free(((memblocks_t *)a)->name);
-	v = (((memblocks_t *)a)->var);
+	free(((memblock_t *)a)->name);
+	v = (((memblock_t *)a)->var);
 
 	if (v != NULL)
 		vector_destroy(v);
@@ -59,7 +59,7 @@ extern int		macro_destroy_allocated(void *a)
 	return (0);
 }
 
-
+/* /!\  */
 extern void		area_destroy(void *a)
 {
 	mnemonics_t	*m = ((code_area_t*)a)->data;
@@ -86,6 +86,11 @@ extern void		label_destroy(void *a)
 	free(((label_t *)a)->name);
 }
 
+extern void		symbol_destroy(void *a)
+{
+	free(((symbol_t *)a)->name);
+}
+
 /*
  *	=============MATCH/SEARCH=============
  */
@@ -105,9 +110,9 @@ extern int		macro_match(const void *b, const void *a)
 
 extern int		memblock_match(const void *b, const void *a)
 {
-	if ( ((memblocks_t *)a)->start > *(uint32_t *)b )
+	if ( ((memblock_t *)a)->start > *(uint32_t *)b )
 		return (1);
-	else if ( ((memblocks_t *)a)->start == *(uint32_t *)b )
+	else if ( ((memblock_t *)a)->start == *(uint32_t *)b )
 		return (0);
 	return (-1);
 }
@@ -142,9 +147,9 @@ extern int		macro_cmp(const void *a, const void *b)
 
 extern int		memblock_cmp(const void *a, const void *b)
 {
-	if ( ((memblocks_t *)a)->start > ((memblocks_t *)b)->start )
+	if ( ((memblock_t *)a)->start > ((memblock_t *)b)->start )
 		return (1);
-	else if ( ((memblocks_t *)a)->start == ((memblocks_t *)b)->start )
+	else if ( ((memblock_t *)a)->start == ((memblock_t *)b)->start )
 		return (0);
 	return (-1);
 }

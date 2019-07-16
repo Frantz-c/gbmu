@@ -26,7 +26,7 @@ extern char		*add_bytes(vector_t *area, char *s, data_t *data)
 	int32_t		error;
 
 
-	new_instruction(area->data + (data->cur_area * sizeof(code_area_t)), strdup("$"));
+	new_byte_instruction(area->data + (data->cur_area * sizeof(code_area_t)));
 	do
 	{
 		while (*s == ' ' || *s == '\t') s++;
@@ -36,7 +36,8 @@ extern char		*add_bytes(vector_t *area, char *s, data_t *data)
 		if (byte > 0xffu)
 			print_warning(data->filename, data->lineno, data->line, "byte overflow: value truncated");
 
-		push_operand(area->data + (data->cur_area * sizeof(code_area_t)), INT_TO_STRPTR(byte & 0xffu));
+		if (push_byte(area->data + (data->cur_area * sizeof(code_area_t)), byte & 0xffu) == -1)
+			goto __too_many_bytes;
 
 		while (*s == ' ' || *s == '\t') s++;
 		if (*s == '\\')
@@ -62,10 +63,13 @@ extern char		*add_bytes(vector_t *area, char *s, data_t *data)
 
 	return (s);
 
+__too_many_bytes:
+	sprintf(data->buf, "more than 248 bytes, please cut this instruction");
+	goto __print_error;
 __unexpected_char:
 	sprintf(data->buf, "unexpected char `%c`", *s);
+__print_error:
 	print_error(data->filename, data->lineno, data->line, data->buf);
 	skip_macro(&s, &data->lineno);
 	return (s);
-	
 }

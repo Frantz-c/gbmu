@@ -25,8 +25,7 @@ extern char	*set_memlock_area(vector_t *memblock, char *s, data_t *data)
 	uint32_t	addr;
 	int			error;
 	uint32_t	end;
-	char		*name;
-	int			alloc = 0;
+	char		*name = NULL;
 
 //	ARGUMENT 1 -> (string) name
 	while (*s == ' ' || *s == '\t') s++;
@@ -38,7 +37,6 @@ extern char	*set_memlock_area(vector_t *memblock, char *s, data_t *data)
 	if (*s != ' ' && *s != '\t' && *s != ',')
 		goto __error;
 	name = strndup(name, s - name);
-	alloc = 1;
 	while (*s == ' ' || *s == '\t') s++;
 	if (*s == ',') {
 		s++;
@@ -49,6 +47,8 @@ extern char	*set_memlock_area(vector_t *memblock, char *s, data_t *data)
 	addr = atou_inc_all(&s, &error);
 	if (error)
 		goto __error;
+	if (addr >= 0xfffe || (addr >= 0xfea0 && addr < 0xff00) || (addr >= 0xe000 && addr < 0xfe00) || addr < 0x8000)
+		goto __invalid_region;
 
 	while (*s == ' ' || *s == '\t') s++;
 	if (*s == ',') {
@@ -74,6 +74,10 @@ extern char	*set_memlock_area(vector_t *memblock, char *s, data_t *data)
 	end += atou_inc_all(&s, &error);
 	if (error)
 		goto __error;
+	if (end < addr)
+		goto __too_little_end;
+	if (end >= 0xfffe || (end >= 0xfea0 && end < 0xff00) || (end >= 0xe000 && end < 0xfe00) || end < 0x8000)
+		goto __invalid_region2;
 
 	while (*s == ' ' || *s == '\t') s++;
 	if (*s != '\0' && *s != '\n')
@@ -84,11 +88,21 @@ extern char	*set_memlock_area(vector_t *memblock, char *s, data_t *data)
 
 	return (s);
 
+__too_little_end:
+	sprintf(data->buf, "in memory block %s, end < start", name);
+	goto __print_error;
+__invalid_region:
+	sprintf(data->buf, "in memory block %s, invalid start address (0x%hX)", name, start);
+	goto __print_error;
+__invalid_region2:
+	sprintf(data->buf, "in memory block %s, invalid end address (0x%hX)", *s, end);
+	goto __print_error;
 __error:
 	sprintf(data->buf, "unexpected character `%c`", *s);
+__print_error:
 	print_error(data->filename, data->lineno, data->line, data->buf);
 	while (*s && *s != '\n') s++;
-	if (alloc)
+	if (name)
 		free(name);
 	return (s);
 }
