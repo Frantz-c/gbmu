@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/13 23:06:57 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/16 15:45:50 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -75,54 +75,63 @@ void			area_print(const void *a)
 	code_area_t	*area = (code_area_t *)a;
 
 	printf("addr = 0x%04x\n", area->addr);
-	if (area->data)
+	for (code_t *c = area->data; c; c = c->next)
 	{
-		for (code_t *c = area->data; c; c = c->next)
+		if (c->size > 3)
 		{
-			if (c->size > 3)
+			uint8_t	*bytes = (uint8_t*)c->unkwn;
+			for (uint8_t i = 0; i < c->size - 3; i++)
 			{
-				uint8_t	*bytes = (uint8_t*)c->unkwn;
-				for (uint8_t i = 0; i < c->size - 3; i++)
-				{
-					if (i % 8 == 7)
-						puts("");
-					if (i == 0)
-						printf("bytes[%hhu] : 0x%hhx", bytes[i], c->size - 3);
-					else
-						printf(", 0x%hhx", bytes[i]);
-				}
+				if (i % 8 == 7)
+					puts("");
+				if (i == 0)
+					printf("\tbytes[%hhu] : 0x%hhx", (uint8_t)(c->size - 3), bytes[i]);
+				else
+					printf(", 0x%hhx", bytes[i]);
 			}
+		}
+		else
+		{
+			if (c->opcode[0] == 0xcb)
+				printf("\t\"0x%hhX 0x%hhX\", ", c->opcode[0], c->opcode[1]);
+			else
+				printf("\t\"0x%hhX\", ", c->opcode[0]);
+
+			if ((c->ope_size & 0x0f) == 0)
+				printf("NO_OPERANDS");
 			else
 			{
-				if (c->opcode[0] == 0xcb)
-					printf("\t\"0x%hhX 0x%hhX\", ", c->opcode[0], c->opcode[1]);
+				if ((c->ope_size & 0x0f) == 1)
+					printf("0x%hhX", c->operand1[0]);
 				else
-					printf("\t\"0x%hhX\", ", c->opcode[0]);
-
-				if ((c->ope_size & 0x0f) == 0)
-					printf("NO_OPERANDS");
-				else
+					printf("0x%hhX 0x%hhX", c->operand1[0], c->operand1[0]);
+				if (((c->ope_size & 0xf0) >> 4) > 0)
 				{
-					if ((c->ope_size & 0x0f) == 1)
-						printf("0x%hhX", c->operand1[0]);
+					if (((c->ope_size & 0xf0) >> 4) == 1)
+						printf(", 0x%hhX", c->operand2[0]);
 					else
-						printf("0x%hhX 0x%hhX", c->operand1[0], c->operand1[0]);
-					if (((c->ope_size & 0xf0) >> 4) > 0)
-					{
-						if (((c->ope_size & 0xf0) >> 4) == 1)
-							printf(", 0x%hhX", c->operand2[0]);
-						else
-							printf(", 0x%hhX 0x%hhX", c->operand2[0], c->operand2[0]);
-					}
+						printf(", 0x%hhX 0x%hhX", c->operand2[0], c->operand2[0]);
 				}
 			}
-			printf("\n");
 		}
+		printf("\n");
+		return;
 	}
-	else
-	{
-		printf("\tno data\n");
-	}
+	printf("\tno data\n");
+}
+
+void			symbol_print(const void *a)
+{
+	symbol_t	*s = (symbol_t *)a;
+
+	printf("\t%s\n", s->name);
+}
+
+void			label_print(const void *a)
+{
+	label_t	*l = (label_t *)a;
+
+	printf("\t%s\n", l->name);
 }
 
 void			macro_print(const void *a)
@@ -219,6 +228,7 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 				sprintf(data.buf, "unknown directive `%s`", keyword);
 				free(keyword);
 				print_error(data.filename, data.lineno, data.line, data.buf);
+				while (!is_endl(*s)) s++;
 			}
 		}
 		else if (*s == '.')
@@ -235,13 +245,13 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 				s = assign_var_to_memory(memblock, s + 4, &data);
 			else if (strncmp(s + 1, "extern", 6) == 0 && (s[7] == ' ' || s[7] == '\t'))
 				s = set_extern_symbol(symbol, s + 8, &data);
-
 			else
 			{
 				char *keyword = get_keyword(data.line);
 				sprintf(data.buf, "unknown keyword `%s`", keyword);
 				free(keyword);
 				print_error(data.filename, data.lineno, data.line, data.buf);
+				while (!is_endl(*s)) s++;
 			}
 		}
 		else
@@ -277,8 +287,8 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 	puts("");
 	vector_print(macro, "macro", &macro_print);
 	vector_print(area, "code area", &area_print);
-	//vector_print(ext_label, "label", &label_print);
-	vector_print(g_memblock, "global block", &memblock_print);
+	vector_print(symbol, "extern symbol", &symbol_print);
+	vector_print(label, "label", &label_print);
 	vector_print(memblock, "block", &memblock_print);
 }
 
@@ -396,15 +406,15 @@ int		main(int argc, char *argv[])
 			return (1);
 		}
 
-//		save_file_object(code_area, ext_label, *p);
+//		save_file_object(code_area, label, *p);
 		vector_reset(code_area);
-		vector_reset(ext_label);
+		vector_reset(label);
 		vector_reset(memblock);
 		vector_filter(macro, &macro_destroy_allocated);
 	}
 	vector_destroy(code_area);
 	vector_destroy(macro);
-	vector_destroy(ext_label);
+	vector_destroy(label);
 	vector_destroy(memblock);
 	return (0);
 }

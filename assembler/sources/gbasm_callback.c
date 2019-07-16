@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/12 10:39:48 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/13 19:52:42 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/16 13:06:24 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -59,24 +59,18 @@ extern int		macro_destroy_allocated(void *a)
 	return (0);
 }
 
-/* /!\  */
 extern void		area_destroy(void *a)
 {
-	mnemonics_t	*m = ((code_area_t*)a)->data;
+	code_t	*c = ((code_area_t*)a)->data;
 
-	while (m)
+	while (c)
 	{
-		operands_t	*o = m->operands;
-		while (o)
-		{
-			operands_t	*tmp = o;
-			o = o->next;
-			free(tmp->name);
-			free(tmp);
-		}
-		mnemonics_t *tmp = m;
-		m = m->next;
-		free(tmp->name);
+		code_t	*tmp;
+
+		if (c->unkwn)
+			free(c->unkwn);
+		tmp = c;
+		c = c->next;
 		free(tmp);
 	}
 }

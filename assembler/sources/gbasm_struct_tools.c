@@ -1,3 +1,16 @@
+/* ************************************************************************** */
+/*                                                          LE - /            */
+/*                                                              /             */
+/*   gbasm_struct_tools.c                             .::    .:/ .      .::   */
+/*                                                 +:+:+   +:    +:  +:+:+    */
+/*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
+/*                                                 #+#   #+    #+    #+#      */
+/*   Created: 2019/07/16 13:17:53 by fcordon      #+#   ##    ##    #+#       */
+/*   Updated: 2019/07/16 13:22:43 by fcordon     ###    #+. /#+    ###.fr     */
+/*                                                         /                  */
+/*                                                        /                   */
+/* ************************************************************************** */
+
 #include "std_includes.h"
 #include "gbasm_struct.h"
 
@@ -5,9 +18,9 @@
 
 extern void	new_byte_instruction(code_area_t *area)
 {
-	mnemonics_t	*new;
+	code_t	*new;
 
-	new = calloc(sizeof(code_t));
+	new = calloc(1, sizeof(code_t));
 
 	if (area->data == NULL)
 	{
@@ -21,22 +34,15 @@ extern void	new_byte_instruction(code_area_t *area)
 
 extern int	push_byte(code_area_t *area, uint8_t byte)
 {
-	operands_t *new;
-
-	if (area->size == 247)
-	{
+	if (area->cur->size == 247)
 		return (-1);
-	}
 
-	if (area->unkwn == NULL)
-	{
-		new = malloc(sizeof(uint8_t) * BYTE_ALLOC_SIZE);
-	}
-	else if ((area->size & 0x7) == 0)
-	{
-		area->unknw = realloc(area->unkwn, area->size, area->size + BYTE_ALLOC_SIZE);
-	}
-	(uint8_t*)(area->unkwn)[area->size++] = byte;
+	if (area->cur->unkwn == NULL)
+		area->cur->unkwn = (void *)malloc(sizeof(uint8_t) * BYTE_ALLOC_SIZE);
+	else if ((area->cur->size & 0x7) == 0)
+		area->cur->unkwn = realloc(area->cur->unkwn, area->cur->size + BYTE_ALLOC_SIZE);
+	((uint8_t*)(area->cur->unkwn))[area->cur->size++] = byte;
+
 	return (0);
 }
 

@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/12 16:22:55 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/13 21:40:58 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/16 16:04:55 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -18,25 +18,26 @@
 #include "gbasm_macro_func.h"
 #include "gbasm_error.h"
 
-#define INT_TO_STRPTR(exp)	(char*)((long)(exp))
-
 extern char		*add_bytes(vector_t *area, char *s, data_t *data)
 {
 	uint32_t	byte;
 	int32_t		error;
 
-
-	new_byte_instruction(area->data + (data->cur_area * sizeof(code_area_t)));
+//	new_byte_instruction( ((code_area_t *)(area->data + (data->cur_area * sizeof(code_area_t)))) );
+	new_byte_instruction( VEC_ELEM(code_area_t, area, data->cur_area) );
 	do
 	{
-		while (*s == ' ' || *s == '\t') s++;
+		while (is_space(*s)) s++;
+		if (is_endl(*s))
+			goto __warning_no_bytes;
 		byte = atou_inc_all(&s, &error);
 		if (error == 1)
 			goto __unexpected_char;
 		if (byte > 0xffu)
 			print_warning(data->filename, data->lineno, data->line, "byte overflow: value truncated");
 
-		if (push_byte(area->data + (data->cur_area * sizeof(code_area_t)), byte & 0xffu) == -1)
+//		if (push_byte( ((code_area_t *)(area->data + (data->cur_area * sizeof(code_area_t)))), byte & 0xffu) == -1)
+		if (push_byte(VEC_ELEM(code_area_t, area, data->cur_area) , byte & 0xffu) == -1)
 			goto __too_many_bytes;
 
 		while (*s == ' ' || *s == '\t') s++;
@@ -56,11 +57,16 @@ extern char		*add_bytes(vector_t *area, char *s, data_t *data)
 		}
 		else if (*s == ',')
 			s++;
-		else if (*s == '\n' || *s == '\0')
+		else if (is_endl(*s))
 			break;
 	}
 	while (1);
+	VEC_ELEM(code_area_t, area, data->cur_area)->cur->size += 3;
+//	((code_area_t *)(area->data + (data->cur_area * sizeof(code_area_t))))->cur->size += 3;
+	return (s);
 
+__warning_no_bytes:
+	print_warning(data->filename, data->lineno, data->line, ".byte -> no bytes specified");
 	return (s);
 
 __too_many_bytes:

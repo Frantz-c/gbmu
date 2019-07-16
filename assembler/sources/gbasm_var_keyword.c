@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/13 22:59:31 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/13 23:34:50 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/16 13:23:17 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -22,7 +22,7 @@ static uint32_t	get_block_addr(char *block, vector_t *memblock, uint32_t size)
 
 	for (uint32_t i = 0; i < memblock->nitems; i++)
 	{
-		memblocks_t	*b = (memblocks_t *)(memblock->data + (i * sizeof(memblocks_t)));
+		memblock_t	*b = (memblock_t *)(memblock->data + (i * sizeof(memblock_t)));
 		if (strcmp(b->name, block) == 0)
 		{
 			var_addr = b->end - b->space;
@@ -85,7 +85,7 @@ extern char	*assign_var_to_memory(vector_t *memblock, char *s, data_t *data)
 		goto __unknown_memblock;
 	if (addr == 0xfffffffeu)
 		goto __no_space;
-	variables_t	new = {name, addr, size};
+	variable_t	new = {name, addr, size};
 	vector_push(memblock, (void*)&new);
 	free(block);
 	return (s);
