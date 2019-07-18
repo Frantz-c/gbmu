@@ -195,7 +195,11 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *label, vector_t *symb
 		char		*p;
 		uint32_t	argc = VEC_ELEM(macro_t, macro, macro_index)->argc;
 		t_data		new_data;
-
+/*
+		content = replace_content(content, argc, &s);
+		if (content == NULL)
+			goto __unexpected_char;
+*/
 		new_data.filename = malloc(strlen(data->filename) + strlen(name) + 10);
 		sprintf(new_data.filename, "%s in macro %s", data->filename, name);
 		new_data.line = content;
@@ -229,9 +233,11 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *label, vector_t *symb
 			new_data.line = content;
 			new_data.lineno++;
 		}
+//		if (argc) free(content);
+		free(new_data.filename);
 	}
 	else if (is_macro_with_param)
-		goto __;
+		goto __macro_with_param_error;
 
 __add_instruction:
 	name = strndup(name, s - name);

@@ -34,9 +34,10 @@ extern const uint8_t	to_lower_char[128];
 # define VEC_ELEM(_struct, _var, _index)	((_struct *)((_var)->data + ((_index) * sizeof(_struct))))
 # define VEC_ELEM_LAST(_struct, _var)		((_struct *)((_var)->data + (((_var)->nitems - 1) * sizeof(_struct))))
 
-# define HEXA_NUM		1
-# define OCTAL_NUM		2
-# define DECIMAL_NUM	4
+# define HEXA_NUM		16
+# define OCTAL_NUM		8
+# define DECIMAL_NUM	10
+# define BINARY_NUM		2
 
 # define is_digit(c)		(ascii[(uint8_t)c] & 0x01)
 # define is_alpha(c)		(ascii[(uint8_t)c] & 0x08)

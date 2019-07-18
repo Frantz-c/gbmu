@@ -16,6 +16,18 @@
 #include "gbasm_tools.h"
 #include "gbasm_error.h"
 
+/*
+	etapes:
+	
+	1)	"ld (  FF80 + 12  ), A" -> is_macro("ld") ?
+	2)	to_lower() -> "ld (  ff80 + 12  ), a"
+	3)	param1 = "(ff80+12)", param2 = "a"
+	4)	is_macro_without_param("(ff80+12)") ? is_macro_with_param("a") ?
+	5)	calcul_param() -> param1 = "(ff80", val1 = 12; param2 = "a", val2 = 0
+
+*/
+
+
 typedef struct	instruction_s
 {
 	const char			*name;
@@ -58,13 +70,19 @@ int		set_params(char **p1, char **p2, char **s)
 	*p1 = *s;
 
 	//param1
-	if (**s == '(' || **s == '[') {
+	if (**s == '(') {
+		parent += **s;
+		(*s)++;
+		while (is_space(**s)) (*s)++;
+	}
+	if (**s == '[') {
 		parent += **s;
 		(*s)++;
 		while (is_space(**s)) (*s)++;
 	}
 	while (is_alnum(**s) || **s == '_' || is_operator(**s)) (*s)++;
 	*p1 = strndup(*p1, *s - *p1);
+	if (parent) **p1 = '(';
 	if (**s == ')' || **s == ']') {
 		parent -= **s;
 		(*s)++;
@@ -108,6 +126,108 @@ int		set_params(char **p1, char **p2, char **s)
 
 //"truc + bidule * machin"
 
+int		replace_macro(char **param, vector_t *macro)
+{
+	char		*s = *param;
+	char		*start, *end;
+	char		*new = NULL;
+	uint32_t	newl = 0;
+	char		*macro_name;
+	int32_t		index;
+	uint8_t		parent = 0;
+	uint8_t		count = 0;
+
+	if (*s == '[' || *s == '(') {
+		parent = 1;
+		s++;
+		while (is_space(*s)) s++;
+	}
+
+	// maybe a macro
+	while (!is_endl(*s) && count != 4)
+	{
+		if (is_alpha(*s) || *s == '_')
+		{
+			start = s;
+			s++;
+			while (is_alnum(*s) || *s == '_') s++;
+			if (!is_space(*s) && !is_endl(*s) && !is_operator(*s) && *s != ']' && *s != ')')
+			{
+				goto __unexpected_char;
+			}
+			if (is_operator(*s))
+			{
+				if ((count == 0 && *s == '*') || (count == 1 && *s != '*') || (count == 2 && *s != '+') || count == 3)
+					goto __unexpected_operator;
+			}
+			macro_name = strndup(start, s - start);
+			index = vector_search(macro, macro_name);
+			if (index > -1)
+			{
+				char		*macro_content = VEC_ELEM(macro_t, macro, index)->content;
+				uint32_t	macro_argc = VEC_ELEM(macro_t, macro, index)->argc;
+				uint32_t	len;
+
+				if (macro_argc != 0)
+					goto __macro_with_param;
+
+				if (is_numeric(macro_content, &len))
+				{
+					macro_content += len;
+					while (is_space(macro_content[len])) len++;
+					if (macro_content[len] != '\0')
+						goto __invalid_macro;
+					if (new == NULL)
+					{
+						newl = (start - *param) + (strlen(macro_content));
+						new = malloc(newl + 1);
+						strncpy(new, *param, start - *param);
+						strcpy(new + (start - *param), macro_content);
+					}
+					else
+					{
+						newl += (start - end) + (strlen(macro_content));
+						new = realloc(new, newl + 1);
+						strncat(new, end, start - end);
+						strcat(new, macro_content);
+					}
+				}
+				end = s;
+			}
+			while (is_space(*s)) s++;
+			if (is_operator(*s))
+			{
+				if ((count == 0 && *s == '*') || (count == 1 && *s != '*') || (count == 2 && *s != '+') || count == 3)
+					goto __unexpected_operator;
+				while (is_space(*s)) s++;
+			}
+			if (*s == ']' || *s == ')') {
+				if (parent == 0)
+					goto __unexpected_char;
+				parent--;
+				s++;
+			}
+		}
+		count++;
+	}
+
+	if (new)
+	{
+		strcat(new, end);
+		free(*param);
+		*param = new;
+	}
+	return (0);
+
+__unexpected_operator:
+__macro_with_param:
+__unexpected_char:
+	return (-1);
+__invalid_macro:
+	free(macro_name);
+	return (-1);
+}
+/*
 int		replace_macro(char **param, vector_t *macro)
 {
 	char		*s = *param;
@@ -193,6 +313,7 @@ __invalid_macro:
 	free(macro_name);
 	return (-1);
 }
+*/
 
 param_t	get_type(char *param1, uint16_t *n)
 {
@@ -212,7 +333,7 @@ param_t	get_type(char *param1, uint16_t *n)
 		// (C)
 		if (*s == 'c' && s[1] == parent && s[2] == '\0')
 			return (FF00_C);
-		if ((*s == '0' && s[1] == 'x')
+		if (*s == '0' && s[1] == 'x')
 		{
 			num = 1;
 			s += 2;
@@ -230,7 +351,7 @@ param_t	get_type(char *param1, uint16_t *n)
 						return (FF00_C);
 					if (is_numeric(s, &len))
 					{
-						tmp = atou_all(s, &error)
+						tmp = atou_all(s, &error);
 						if (error)
 							return (UNKNOWN);
 						if (tmp > 0xff)
@@ -349,6 +470,121 @@ __overflow_error:
 calculs -> addr only
 var		-> addr, 16bit op only
 */
+
+
+/*
+	calculs -> a + b * c + d
+			-> a - b * c + d
+			-> a + b * c
+			-> a - b * c
+			-> a + b
+			-> a - b
+
+	a		= number or symbol
+	b, c, d	= numbers
+
+	val[x] = valeur du paramX ou
+			si symbol, offset.
+	ex:	"(toto + 2 * 3 + 1)"	-> val = 7
+		"55 + 34"				-> val = 89
+*/
+
+uint16_t	calcul_param(char *param, uint16_t *n, int is_ld)
+{
+	int			parent = 0;
+	uint32_t	len;
+	uint32_t	base = 0;
+	uint32_t	result = 0;
+	uint8_t		neg = 0;
+
+	if (*param == '[' || *param == '(') {
+		parent = 1;
+		*param = '(';
+		param++;
+	}
+
+// A + b * c + d
+// ^
+	if (is_numeric(param, &len))
+	{
+		base = atou_all(param, NULL);
+		param += len;
+	}
+	while (*param != '+' && *param != '-')
+	{
+		if (*param == '\0')
+			goto __set_n_return;
+		param++;
+	}
+	if (*param == '-')
+		neg = 1;
+	while (is_space(*param)) param++;
+
+// a + B * c + d
+//     ^
+	if (is_numeric(param, &len))
+	{
+		result = atou_all(param, NULL);
+		param += len;
+	}
+	while (*param != '*')
+	{
+		if (*param == '\0')
+			goto __set_n_return;
+		param++;
+	}
+	while (is_space(*param)) param++;
+
+// a + b * C + d
+//         ^
+	if (is_numeric(param, &len))
+	{
+		result *= atou_all(param, NULL);
+		param += len;
+	}
+	while (*param != '+')
+	{
+		if (*param == '\0')
+			goto __set_n_return;
+		param++;
+	}
+	while (is_space(*param)) param++;
+
+// a + b * c + D
+//             ^
+	if (is_numeric(param, &len))
+	{
+		result += atou_all(param, NULL);
+		param += len;
+	}
+	while (is_space(*param)) param++;
+	if (parent && (*param == ']' || *param == ')'))
+		param++;
+	if (*param != '\0')
+		goto __error;
+
+
+__set_n_return:
+	if (parent && is_ld && base == 0xff00)
+	{
+		
+	}
+	result = (neg) ? base - result : base + result;
+	if (result > 0xffff)
+	{
+		// overflow error
+	}
+	*n = (result & 0xffff);
+	while (is_space(param[-1])) param--;
+	if (parent)
+		param[0] = ')'
+	return (0);
+
+__error:
+	*n = 0;
+	return (-1);
+}
+
 char	*add_instruction(char *inst, vector_t *area, vector_t *label, vector_t *macro, char *s, data_t *data)
 {
 	char		*param1, *param2;
@@ -369,6 +605,8 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *label, vector_t *mac
 		if (macro && replace_macro(&param1, macro) == -1) //without params only
 			goto __error;
 		str_to_lower(param1);
+		if (calcul_param(param1, val) == -1)
+			goto __error;
 		printf("replace_param1 = \"%s\"\n", param1);
 		p1 = get_type(param1, val); //default SYMBOL
 		if (param2)
@@ -376,6 +614,8 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *label, vector_t *mac
 			if (macro && replace_macro(&param2, macro) == -1)
 				goto __error;
 			str_to_lower(param2);
+			if (calcul_param(param2, val + 1) == -1)
+				goto __error;
 			printf("replace_param2 = \"%s\"\n", param2);
 			p2 = get_type(param2, val + 1); //default SYMBOL
 		}
@@ -391,7 +631,10 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *label, vector_t *mac
 */
 __unexpected_char:
 __too_many_param:
-
+__error:
+	while (!is_endl(*s))
+	s++;
+	return (s);
 }
 
 /*

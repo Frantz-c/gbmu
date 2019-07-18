@@ -37,13 +37,13 @@ const uint8_t	to_lower_char[128] = {
 	30,31,32,33,34,35,36,37,38,39,
 	40,41,42,43,44,45,46,47,48,49,
 	50,51,52,53,54,55,56,57,58,59,
-	60,61,62,63,64,65,66,67,68,69,
-	70,71,72,73,74,75,76,77,78,79,
-	80,81,82,83,84,85,86,87,88,89,
-	90,91,92,93,94,95,96,65,66,67,
-	68,69,70,71,72,73,74,75,76,77,
-	78,79,80,81,82,83,84,85,86,87,
-	88,89,90,123,124,125,126,127
+	60,61,62,63,64,97,98,99,100,101,
+	102,103,104,105,106,107,108,109,110,111,
+	112,113,114,115,116,117,118,119,120,121,
+	122,91,92,93,94,95,96,97,98,99,
+	100,101,102,103,104,105,106,107,108,109,
+	110,111,112,113,114,115,116,117,118,119,
+	120,121,122,123,124,125,126,127
 };
 
 extern void __attribute__((always_inline))		str_to_lower(char *s)
@@ -57,8 +57,8 @@ extern void __attribute__((always_inline))		str_to_lower(char *s)
 
 extern uint8_t		is_numeric(const char *s, uint32_t *len)
 {
-	uint8_t	type = 0;
-	char	*p = s;
+	uint8_t		type = 0;
+	const char	*p = s;
 
 	if (*s == '0' && (s[1] == 'x' || s[1] == 'X'))
 	{
@@ -80,20 +80,22 @@ __decimal:
 		type = DECIMAL_NUM;
 		s++;
 		while (is_digit(*s)) s++;
-		if ((*s >= 'a' && *s <= 'f') || (*s >= 'A' && *s <= 'F'))
+		if ((*s >= 'a' && *s <= 'f') || (*s >= 'A' && *s <= 'F') || *s == 'h' || *s == 'H')
 		{
+		__hexadecimal:
 			type = HEXA_NUM;
 			while (is_digit(*s) || (*s >= 'a' && *s <= 'f') || (*s >= 'A' && *s <= 'F')) s++;
 			if (*s == 'h' || *s == 'H') s++;
-			else
-			{
-				*len = 0;
-				return (0);
-			}
 		}
 	}
-	*len =  (uint32_t)(p - s);
-	return (type)
+	else if ((*s >= 'a' && *s <= 'f') || (*s >= 'A' && *s <= 'F'))
+	{
+		puts("HHHHEEEEXXXXAAA");
+		goto __hexadecimal;
+	}
+
+	*len =  (uint32_t)(s - p);
+	return (type);
 }
 
 extern uint32_t		var_len(const char *s)
@@ -199,6 +201,117 @@ static char		*ft_strtoi(char *s, uint32_t *value, int32_t type)
 	}
 	*value = n;
 	return (s);
+}
+
+static uint32_t		ft_strtoi_decimal(char **s)
+{
+	uint32_t	n = 0;
+
+	while (1)
+	{
+		if (**s < '0' || **s > '9')
+			break ;
+		n *= 10;
+		n += **s - '0';
+		(*s)++;
+	}
+	return (n);
+}
+
+static uint32_t		ft_strtoi_octal(char **s)
+{
+	uint32_t	n = 0;
+
+	while (1)
+	{
+		if (**s < '0' || **s > '6')
+			break ;
+		n *= 8;
+		n += **s - '0';
+		(*s)++;
+	}
+	return (n);
+}
+
+static uint32_t	__attribute__((always_inline))	get_hexa_value(char c)
+{
+	if (c >= 'a')
+		return (c - ('a' - 10));
+	return (c - '0');
+}
+
+static uint32_t		ft_strtoi_hexa(char **s)
+{
+	uint32_t	n = 0;
+
+	while (1)
+	{
+		register char	lower;
+		if (!is_digit(**s) &&
+			((lower = to_lower_char[(uint8_t)(**s)]) < 'a' || lower > 'f'))
+		{
+			break ;
+		}
+		n *= 16;
+		n += get_hexa_value(lower);
+		(*s)++;
+	}
+	if (to_lower_char[(uint8_t)(**s)] == 'h')
+		(*s)++;
+
+	return (n);
+}
+
+static uint32_t		ft_strtoi_binary(char **s)
+{
+	uint32_t	n = 0;
+
+	while (1)
+	{
+		register char	lower;
+		if (**s != '0' && **s != '1')
+		{
+			break ;
+		}
+		n *= 2;
+		n += **s - '0';
+		(*s)++;
+	}
+	if (to_lower_char[(uint8_t)(**s)] == 'b')
+		(*s)++;
+
+	return (n);
+}
+
+
+
+extern uint32_t		atou_type(char *s, uint32_t *len, uint8_t type)
+{
+	uint32_t	result;
+	char		*p = s;
+	
+	if (type == HEXA_NUM)
+	{
+		if (*s == '0' && to_lower_char[(uint8_t)(s[1])] == 'x') s += 2;
+		result = ft_strtoi_hexa(&s);
+	}
+	else if (type == DECIMAL_NUM)
+	{
+		result = ft_strtoi_decimal(&s);
+	}
+	else if (type == OCTAL_NUM)
+	{
+		if (*s == '0') s++;
+		result = ft_strtoi_octal(&s);
+	}
+	else if (type == BINARY_NUM)
+	{
+		if (*s == '0' && to_lower_char[(uint8_t)(s[1])] == 'b') s += 2;
+		result = ft_strtoi_binary(&s);
+	}
+	if (len)
+		*len = (uint32_t)(s - p);
+	return (result);
 }
 
 extern uint32_t		atou_all(char *s, int32_t *err)
