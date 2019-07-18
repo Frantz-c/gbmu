@@ -3,6 +3,14 @@
 
 # include "std_includes.h"
 
+// C_FF00 = (C)
+typedef enum	param_e
+{
+	UNKNOWN,NONE,A,B,C,D,E,F,H,L,AF,BC,DE,HL,SP,_NZ_,_Z_,_NC_,_C_,HLI,HLD,HL_ADDR,BC_ADDR,DE_ADDR,AF_ADDR,FF00_C,FF00_IMM8,IMM8,ADDR8,IMM16,ADDR16,SYMBOL
+}
+param_t;
+
+
 struct	macro_s
 {
 	char		*name;
@@ -72,7 +80,7 @@ struct	variable_s
 
 struct	data_s
 {
-	char		*s;
+//	char		*s;
 	char		*line;
 	char		*filename;
 	uint32_t	length;

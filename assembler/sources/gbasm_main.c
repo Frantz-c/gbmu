@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/16 15:45:50 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/18 04:54:45 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -162,6 +162,89 @@ static char	*get_keyword(char *s)
 	return (strndup(start, s - start));
 }
 
+char	*parse_instruction(char *s, vector_t *area, vector_t *label, vector_t *symbol, vector_t *macro, data_t *data)
+{
+	char		*name = s;
+	uint32_t	macro_index = 0xffffffffu;
+	uint8_t		is_macro_with_param = 0;
+
+	if (!is_alpha(*s) && *s != '_')
+		goto __unexpected_char;
+	s++;
+	while (is_alnum(*s) || *s == '_') s++;
+
+	if (*s == ':')
+	{
+		char *end = s;
+		s++;
+		if (!is_space(*s) && !is_endl(*s))
+			goto __unexpected_char;
+		add_label(strndup(name, end - name), area, label, &data);
+		continue;
+	}
+	else if (!is_space(*s) && *s != '(' && !is_endl(*s))
+		goto __unexpected_char;
+	if (!is_endl(*s))
+		goto __add_instruction;
+
+	if (*s == '(')
+		is_macro_with_param = 1;
+	if ((macro_index = (uint32_t)vector_search(macro, (void*)&name)) != 0xffffffffu)
+	{
+		char		*content = VEC_ELEM(macro_t, macro, macro_index)->content;
+		char		*p;
+		uint32_t	argc = VEC_ELEM(macro_t, macro, macro_index)->argc;
+		t_data		new_data;
+
+		new_data.filename = malloc(strlen(data->filename) + strlen(name) + 10);
+		sprintf(new_data.filename, "%s in macro %s", data->filename, name);
+		new_data.line = content;
+		new_data.lineno = 1;
+		new_data.buf = data->buf;
+		new_data.cur_area = data->cur_area;
+
+		if (is_macro_with_param)
+		{
+			if (argc == 0)
+				goto __macro_has_no_parameters; // print real macro
+			content = replace_param_content(s + 1, content, argc);
+		}
+		else
+		{
+			if (argc != 0)
+				goto __macro_has_parameters;	// print real macro
+		}
+
+		//p = content;
+		for (;;)
+		{
+			char *inst = content;
+			while (!is_space(*content) && !is_endl(*content)) content++;
+			inst = strndup(inst, content - inst);
+			content = add_instruction(inst, area, label, NULL, content, &new_data);
+			free(inst);
+			if (*content == '\0')
+				break;
+			content += 1;
+			new_data.line = content;
+			new_data.lineno++;
+		}
+	}
+	else if (is_macro_with_param)
+		goto __;
+
+__add_instruction:
+	name = strndup(name, s - name);
+	s = add_instruction(name, area, label, macro, s + 1, data);
+	free(name);
+
+__unexpected_char:
+	sprintf(data->buf, "unexpected character `%c`", *s);
+	print_error(data->filename, data->lineno, data->line, data->buf);
+	while (!is_endl(*s)) s++;
+	return (s);
+}
+
 static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_t *label, vector_t *symbol, vector_t *memblock, int32_t *cur_area)
 {
 	data_t		data;
@@ -235,71 +318,7 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 		}
 		else
 		{
-			char		*name = s;
-			uint32_t	macro_index = 0xffffffffu;
-			uint8_t		is_macro_with_param = 0;
-
-			if (!is_alpha(*s) && *s != '_')
-				goto __unexpected_char;
-			s++;
-			while (is_alnum(*s) || *s == '_') s++;
-
-			if (*s == ':')
-			{
-				char *end = s;
-				s++;
-				if (!is_space(*s) && !is_endl(*s))
-					goto __unexpected_char;
-				add_label(strndup(name, end - name), area, label, &data);
-				continue;
-			}
-			else if (!is_space(*s) && *s != '(')
-				goto __unexpected_char;
-
-			if (*s == '(')
-				is_macro_with_param = 1;
-			if ((macro_index = (uint32_t)vector_search(macro, (void*)&name)) != 0xffffffffu)
-			{
-				char	*content = VEC_ELEM(macro_t, macro, macro_index)->content;
-				char	*p;
-				int		 = 1;
-				uint32_t	argc = VEC_ELEM(macro_t, macro, macro_index)->argc;
-
-				if (is_macro_with_param)
-				{
-					if (argc == 0)
-						goto __macro_has_no_parameters; // print real macro
-					content = replace_param_content(s + 1, content, argc);
-				}
-				else
-				{
-					if (argc != 0)
-						goto __macro_has_parameters;	// print real macro
-				}
-
-				p = content;
-				while (!is_space(*p) && !is_endl(*p)) p++;
-				for (;;)
-				{
-					p = add_instruction(content, area, NULL, label, p, &data)
-					if (*p == '\0')
-						break;
-					content = p + 1;
-					while (!is_space(*p) && !is_endl(*p)) p++;
-					macro_lineno++;
-				}
-			}
-			else if (is_macro_with_param)
-				goto __;
-
-			name = strndup(name, s - name);
-			s = add_instruction(name, area, macro, label, s + 1, &data);
-			free(name);
-
-		__unexpected_char:
-			sprintf(data.buf, "unexpected character `%c`", *s);
-			print_error(data.filename, data.lineno, data.line, data.buf);
-			while (!is_endl(*s)) s++;
+			s = parse_instruction(s, area, label, symbol, macro, &data);
 		}
 	}
 	

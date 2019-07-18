@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 22:10:32 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/16 23:13:35 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/17 19:27:08 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -45,5 +45,8 @@ extern const uint8_t	to_lower_char[128];
 # define is_space(c)		(ascii[(uint8_t)c] & 0x02)
 # define is_alnum(c)		(ascii[(uint8_t)c] & 0x09)
 # define is_endl(c)			(ascii[(uint8_t)c] & 0x40)
+# define is_operator(c)		(ascii[(uint8_t)c] & 0x04)
+# define is_parent(c)		(ascii[(uint8_t)c] & 0x80)
+// is_operator = '+' || '*'
 
 #endif
