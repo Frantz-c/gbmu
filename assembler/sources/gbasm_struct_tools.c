@@ -16,29 +16,37 @@
 
 #define BYTE_ALLOC_SIZE		8
 
-extern void	push_params(code_area_t	*area, uint8_t inst[2], uint8_t p1[2], uint8_t p2[2], param_t t1, param_t t2, char *symbol)
+#define OP1	0
+#define OP2	1
+#define P11	2
+#define P12	3
+#define P21	4
+#define P22	5
+
+extern void	push_params(code_area_t	*area, uint8_t bin[6], param_t t1,
+						param_t t2, char *symbol, vector_t *symbols, data_t *data)
 {
 	uint8_t	size = 0;
 	uint8_t	opsize = 0;
 
 	// opcode
-	if (inst[0] == 0xCB) {
+	if (bin[0] == 0xCB) {
 		size++;
-		area->cur->opcode[1] = inst[1];
+		area->cur->opcode[1] = bin[OP2];
 	}
 	size++;
-	area->cur->opcode[0] = inst[0];
+	area->cur->opcode[0] = bin[OP1];
 
 	//param1
 	if (t1 >= IMM16) {
 		size++;
 		opsize++;
-		area->cur->operand1[1] = p1[1];
+		area->cur->operand1[1] = bin[P12];
 	}
 	if (t1 >= IMM8) {
 		size++;
 		opsize++;
-		area->cur->operand1[0] = p1[0];
+		area->cur->operand1[0] = bin[P11];
 	}
 	area->cur->ope_size = opsize;
 	
@@ -47,22 +55,25 @@ extern void	push_params(code_area_t	*area, uint8_t inst[2], uint8_t p1[2], uint8
 	if (t2 >= IMM16) {
 		size++;
 		opsize++;
-		area->cur->operand2[1] = p2[1];
+		area->cur->operand2[1] = bin[P22];
 	}
 	if (t2 >= IMM8) {
 		size++;
 		opsize++;
-		area->cur->operand2[0] = p2[0];
+		area->cur->operand2[0] = bin[P21];
 	}
 	area->cur->ope_size |= (opsize << 4);
 
 	//symbol
-	if (t1 == SYMBOL || t1 == SYMBOL8 || t2 == SYMBOL || t2 == SYMBOL8)
+	if (t1 == SYMBOL || t2 == SYMBOL)
 	{
-		unkwn_sym_t	new = malloc(sizeof(unkwn_sym_t));
+		unkwn_sym_t	*new = malloc(sizeof(unkwn_sym_t));
 		new->name = strdup(symbol);
-		new->type = VAR_OR_LABEL;
-		area->cur->umkwn = new;
+		new->lineno = data->lineno;
+		new->filename = data->filename;
+		area->cur->unkwn = new;
+		symbol_t	sym = {new->name, VAR_OR_LABEL};
+		vector_push(symbols, (void*)&sym);
 	}
 	area->cur->size = size;
 }

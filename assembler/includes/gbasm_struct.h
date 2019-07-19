@@ -10,6 +10,20 @@ typedef enum	param_e
 }
 param_t;
 
+// symbol types
+#define UNUSED			0x0
+#define	VAR_OR_LABEL	0x01
+#define	VAR				0x11
+#define LABEL			0x21
+#define MEMBLOCK		0x02
+
+typedef struct	value_s
+{
+	uint16_t	is_signed;
+	uint32_t	value;
+}
+value_t;
+
 
 struct	macro_s
 {

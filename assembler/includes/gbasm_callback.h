@@ -28,5 +28,6 @@ int		label_cmp(const void *a, const void *b);
 int		area_cmp(const void *a, const void *b);
 int		macro_cmp(const void *a, const void *b);
 int		memblock_cmp(const void *a, const void *b);
+int		macro_filter(void *a);
 
 #endif

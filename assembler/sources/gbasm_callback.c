@@ -35,6 +35,15 @@ extern void		memblock_destroy(void *a)
 		vector_destroy(v);
 }
 
+extern int		macro_filter(void *a)
+{
+	macro_t	*macro = (macro_t *)a;
+
+	if (macro->allocated)
+		return (1);
+	return (0);
+}
+
 extern void		macro_destroy(void *a)
 {
 	macro_t	*macro = (macro_t *)a;

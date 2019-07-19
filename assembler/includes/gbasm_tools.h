@@ -25,6 +25,7 @@ uint8_t		is_numeric(const char *s, uint32_t *len);
 uint32_t	alnum_len(const char *s);
 uint32_t	alpha_len(const char *s);
 void		str_to_lower(char *s);
+uint32_t	atou_type(char *s, uint32_t *len, uint8_t type);
 
 extern const uint32_t	ascii[256];
 extern const uint8_t	to_lower_char[128];

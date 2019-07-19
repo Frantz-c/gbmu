@@ -1,27 +1,12 @@
-%define	push_2_reg16(a,b)	\
-	push	a\
-	push	b
+%define toto	13
 
-%define push_all_reg16	\
-	push_2_reg16(AF, BC)
-	push_2_reg16(DE, HL)
+.extern		toto
+.memlock	variables, 0xC000, len=128
+.var12		titi, variables
 
-%define	SPACE_ELEM_SIZE		4
-%define	INDEX				2
+label:
+ld	(32h+    32 * 2 + 1)
 
-.extern		ext_symbol
+.bank	1
 
-.memlock	vars, 0xc000, end=0xc020
-.var16		space, vars
-
-push_all_reg16
-ld	A, B
-ld	(space), C
-ld	(space + 1), D
-ld	(space + 2), E
-ld	(space + 1 * SPACE_ELEM_SIZE)
-ld	(ext_symbol + INDEX * SPACE_ELEM_SIZE)
-
-%undef push_2_reg16
-%undef push_all_reg16
-%undef SPACE_ELEM_SIZE
+ld (10-2)

@@ -89,10 +89,10 @@ __too_little_end:
 	sprintf(data->buf, "in memory block %s, end < start", name);
 	goto __print_error;
 __invalid_region:
-	sprintf(data->buf, "in memory block %s, invalid start address (0x%hX)", name, addr);
+	sprintf(data->buf, "in memory block %s, invalid start address (0x%hX)", name, (uint16_t)addr);
 	goto __print_error;
 __invalid_region2:
-	sprintf(data->buf, "in memory block %s, invalid end address (0x%hX)", *s, end);
+	sprintf(data->buf, "in memory block %s, invalid end address (0x%hX)", s, (uint16_t)end);
 	goto __print_error;
 __error:
 	sprintf(data->buf, "unexpected character `%c`", *s);

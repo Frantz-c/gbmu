@@ -5,19 +5,6 @@
 /*                                                 +:+:+   +:    +:  +:+:+    */
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
-/*   Created: 2019/07/19 15:11:29 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/19 16:24:01 by fcordon     ###    #+. /#+    ###.fr     */
-/*                                                         /                  */
-/*                                                        /                   */
-/* ************************************************************************** */
-
-/* ************************************************************************** */
-/*                                                          LE - /            */
-/*                                                              /             */
-/*   gbasm_main.c                                     .::    .:/ .      .::   */
-/*                                                 +:+:+   +:    +:  +:+:+    */
-/*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
-/*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
 /*   Updated: 2019/07/19 15:05:57 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
@@ -42,7 +29,7 @@
 	{\
 		s += n;\
 		while (!is_endl(*s)) s++;\
-		print_directive_arg_error(get_keyword(data.line));\
+		print_directive_arg_error(get_keyword(data.line), &data);\
 		continue;\
 	}
 
@@ -51,7 +38,7 @@
 	{\
 		s += n;\
 		while (!is_endl(*s)) s++;\
-		print_keyword_arg_error(get_keyword(data.line));\
+		print_keyword_arg_error(get_keyword(data.line), &data);\
 		continue;\
 	}
 
@@ -59,25 +46,32 @@
 uint32_t		g_error;
 uint32_t		g_warning;
 
+
+void		print_directive_arg_error(char *keyword, data_t *data)
+{
+	sprintf(data->buf, "`%s` keyword expects arguments", keyword);
+	free(keyword);
+	print_error(data->filename, data->lineno, data->line, data->buf);
+	fprintf(stderr, "\e[1;31m%u errors\e[0m\n", g_error);
+}
+
 static char	*get_include_filename(char **s, data_t *data)
 {
 	char	*name;
 
-	while (**s == ' ' || **s == '\t') (*s)++;
+	while (is_space(**s)) (*s)++;
 	name = *s;
-	while (**s != ' ' && **s != '\t' && **s != '\n') (*s)++;
+	while (!is_space(**s) && !is_endl(**s)) (*s)++;
 	name = strndup(name, *s - name);
-	while (**s == ' ' || **s == '\t') (*s)++;
-	if (**s != '\n')
+	while (is_space(**s)) (*s)++;
+	if (!is_endl(**s))
 		goto __unexpected_char;
-	
 	return (name);
 
 __unexpected_char:
 	sprintf(data->buf, "unexpected character `%c`", **s);
 	print_error(data->filename, data->lineno, data->line, data->buf);
 	fprintf(stderr, "\e[1;31m%u errors\e[0m\n", g_error);
-	exit(1);
 	return (NULL);
 }
 
@@ -202,11 +196,11 @@ uint8_t		get_params(char **s, char *param[10])
 	for (;;)
 	{
 		while (is_space(**s)) s++;
-		start = s;
+		start = *s;
 		while (**s != ',' && !is_endl(**s) && **s != ')') (*s)++;
 		if (!is_endl(**s))
 		{
-			char	*end = s;
+			char	*end = *s;
 
 			if (nparam == 10)
 				return (0xffu); // too many params
@@ -218,9 +212,9 @@ uint8_t		get_params(char **s, char *param[10])
 					return (0xffu); // empty param
 			}
 			param[nparam++] = strndup(start, end - start);
-			if (*s == ')')
+			if (**s == ')')
 				break;
-			s++;
+			(*s)++;
 		}
 		if (is_endl(**s))
 		{
@@ -249,7 +243,7 @@ char	*replace_content(char *content, uint32_t argc, char *param[10])
 	new = malloc(strlen(content) + diff + 1);
 	new[0] = '\0';
 	pos = content;
-	while (pos = strchr(content, '#'))
+	while ((pos = strchr(content, '#')))
 	{
 		register uint8_t	i = pos[1] - '0';
 
@@ -284,8 +278,8 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *label, vector_t *symb
 		s++;
 		if (!is_space(*s) && !is_endl(*s))
 			goto __unexpected_char;
-		add_label(strndup(name, end - name), area, label, &data); //test if not mnemonic
-		continue;
+		add_label(strndup(name, end - name), area, label, data); //test if not mnemonic
+		return (s);
 	}
 	else if (!is_space(*s) && *s != '(' && !is_endl(*s))
 		goto __unexpected_char;
@@ -296,7 +290,7 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *label, vector_t *symb
 	if ((macro_index = (uint32_t)vector_search(macro, (void*)&name)) != 0xffffffffu)
 	{
 		char		*content_ptr = NULL;
-		t_data		new_data;
+		data_t		new_data;
 		content = VEC_ELEM(macro_t, macro, macro_index)->content;
 		argc = VEC_ELEM(macro_t, macro, macro_index)->argc;
 
@@ -322,7 +316,6 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *label, vector_t *symb
 		sprintf(new_data.filename, "%s in macro %s", data->filename, name);
 		new_data.line = content;
 		new_data.lineno = 1;
-		new_data.buf = data->buf;
 		new_data.cur_area = data->cur_area;
 
 
@@ -355,7 +348,7 @@ __add_instruction:
 __argc_error:
 	for (uint8_t i = 0; macro_param[i]; i++)
 		free(macro_param[i]);
-	sprintf(data->buf, "arguments expected: %hhu, %u given", argc, n_params);
+	sprintf(data->buf, "arguments expected: %hhu, %u given", (uint8_t)argc, n_params);
 	goto __print_error;
 	
 
@@ -575,7 +568,7 @@ int		main(int argc, char *argv[])
 		vector_reset(code_area);
 		vector_reset(label);
 		vector_reset(memblock);
-		vector_filter(macro, &macro_destroy_allocated);
+		vector_filter(macro, &macro_filter);
 	}
 	vector_destroy(code_area);
 	vector_destroy(macro);

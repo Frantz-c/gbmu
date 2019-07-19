@@ -35,7 +35,7 @@ typedef struct	instruction_s
 }
 instruction_t;
 
-ssize_t		instruction_search(instruction_t inst[71], char *tofind)
+ssize_t		instruction_search(const instruction_t inst[71], char *tofind)
 {
 	uint32_t	left, right, middle;
 	int			side;
@@ -59,10 +59,12 @@ ssize_t		instruction_search(instruction_t inst[71], char *tofind)
 int		set_params(char **param1, char **param2, char **s)
 {
 //	char		*param[2] = {NULL};
-	value_t		val[2] = {{0}};
+//	value_t		val[2] = {{0}};
 	uint8_t		parent = 0;
 	uint32_t	len, i;
 	char		*tmp;
+	*param1 = NULL;
+	*param2 = NULL;
 //	int			is_ld = 0;
 //	param_t		t1 = NONE, t2 = NONE;
 
@@ -83,11 +85,7 @@ int		set_params(char **param1, char **param2, char **s)
 
 	while (is_space(**s)) (*s)++;
 	if (is_endl(**s))
-	{
-		param1 = NULL;
-		param2 = NULL;
 		return (0);
-	}
 
 	tmp = *s;
 	if (**s == '(')
@@ -99,29 +97,29 @@ int		set_params(char **param1, char **param2, char **s)
 	{
 		if (!is_space(**s)) len++;
 	}
-	param1 = malloc(len + 1);
-	for (s = tmp, i = 0; **s != ',' && !is_endl(**s) && **s != parent; (*s)++)
+	*param1 = malloc(len + 1);
+	for (*s = tmp, i = 0; **s != ',' && !is_endl(**s) && **s != ')' && **s != ']'; (*s)++)
 	{
-		if (!is_space(**s)) param1[i++] = **s;
+		if (!is_space(**s)) (*param1)[i++] = **s;
 	}
-	param1[i] = '\0';
+	(*param1)[i] = '\0';
 	if (parent) {
 		if (**s != parent)
 			goto __parent_error;
-		param1[0] = '(';
+		(*param1)[0] = '(';
 		(*s)++;
 		while (is_space(**s)) (*s)++;
 	}
 
 	if (is_endl(**s))
-		goto __add_inst;
+		return (0);
 	if (**s != ',')
 		goto __unexpected_char;
 	s++;
 	parent = 0;
 
 	while (is_space(**s)) s++;
-	tmp = s;
+	tmp = *s;
 	if (**s == '(')
 		parent = ')';
 	else if (**s == '[')
@@ -131,16 +129,16 @@ int		set_params(char **param1, char **param2, char **s)
 	{
 		if (!is_space(**s)) len++;
 	}
-	param2 = malloc(len + 1);
-	for (*s = tmp, i = 0; **s != ',' && !is_endl(**s) && **s != parent; (*s)++)
+	(*param2) = malloc(len + 1);
+	for (*s = tmp, i = 0; **s != ',' && !is_endl(**s) && **s != ')' && **s != ']'; (*s)++)
 	{
-		if (!is_space(**s)) param2[i++] = **s;
+		if (!is_space(**s)) (*param2)[i++] = **s;
 	}
-	param2[i] = '\0';
+	(*param2)[i] = '\0';
 	if (parent) {
 		if (**s != parent)
 			goto __parent_error;
-		param2[0] = '(';
+		(*param2)[0] = '(';
 		s++;
 	}
 	
@@ -602,9 +600,9 @@ param_t	get_type(char *param, value_t *n)
 	char		*s = param;
 	int			parent = 0;
 	int			num = 0;
-	int			error;
+//	int			error;
 	uint32_t	len;
-	uint32_t	tmp;
+//	uint32_t	tmp;
 
 
 	// addr param
@@ -700,6 +698,13 @@ param_t	get_type(char *param, value_t *n)
 			return (IMM8);
 		}
 	}
+	if (is_alpha(*param) || *param == '_')
+	{
+		while (is_alnum(*param) || *param == '_')
+			param++;
+	}
+	if (*param != '\0')
+		return (UNKNOWN);
 	return (SYMBOL);
 }
 
@@ -809,7 +814,8 @@ int		calcul_param(char *param, value_t *n, int is_ld)
 	uint32_t	base = 0;
 	uint32_t	result = 0;
 	uint8_t		minus = 0;
-	uint8_t		type, _signed = 0;
+	uint8_t		type;
+//	uint8_t		_signed = 0;
 	char		*first_operator = NULL;
 
 	if (*param == '(') {
@@ -978,8 +984,11 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *label, vector_t *mac
 	char		*param1, *param2;
 	param_t		p1 = NONE, p2 = NONE;
 	value_t		val[2] = {{0}};
+	int			is_ld = 0;
 
 	str_to_lower(inst);
+	if (*inst == 'l' && inst[1] == 'd' && inst[2] == '\0')
+		is_ld = 1;
 	if (set_params(&param1, &param2, &s) == -1)
 	{
 		if (*s == ',')
@@ -1030,11 +1039,11 @@ __error:
  *	penser a changer le type si necessaire. (idem pour addr8)
  */
 
-uint32_t	add_bin_instruction(char *inst, param_t param1, param_t param2, vector_t *area, char *symbol, uint16_t val[2])
+uint32_t	add_bin_instruction(char *mnemonic, param_t param1, param_t param2, vector_t *area, char *symbol, value_t val[2])
 {
-	static const instructions_t	inst[71] = {
+	static const instruction_t	inst[71] = {
 		{"adc", &&__adc},		{"add", &&__add},		{"and", &&__and},		{"bit", &&__bit},
-		{"call", &&__call},		{"callc", &&__callc},	{"callnc", &&__callnc}, {"callnz", &&__callnz}
+		{"call", &&__call},		{"callc", &&__callc},	{"callnc", &&__callnc}, {"callnz", &&__callnz},
 		{"callz", &&__callz},	{"ccf", &&__ccf},		{"cmp", &&__cmp},		{"cp", &&__cp},
 		{"cpl", &&__cpl},		{"daa", &&__daa},		{"dec", &&__dec},		{"di", &&__di},
 		{"ei", &&__ei},			{"halt", &&__halt},		{"inc", &&__inc},		{"jp", &&__jp},
@@ -1058,15 +1067,14 @@ uint32_t	add_bin_instruction(char *inst, param_t param1, param_t param2, vector_
 	uint32_t	error1 = 0;
 	uint32_t	error2 = 0;
 
-	index = instruction_search(inst, name);
+	index = instruction_search(inst, mnemonic);
 	if (index == 0xffffffffu)
-		return (UNKNOWN_INST);
+		return (index);
 	
 //	new_instruction( VEC_ELEM(code_area_t, area, data->cur_area) );
 	goto *(inst[index].addr);
 
 __adc:
-	return (error1 | (error2 << 16));
 __add:
 __and:
 __bit:
@@ -1137,9 +1145,9 @@ __sub:
 __swap:
 __testb:
 __xor:
-
+	return (index);
 }
-/:;;*
+/*
 char	*add_instruction(char *name, vector_t *area, vector_t *macro, vector_t *label, char *s, data_t *data)
 {
 	static const instructions_t	inst[71] = {

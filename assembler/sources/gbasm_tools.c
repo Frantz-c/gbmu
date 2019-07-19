@@ -286,7 +286,6 @@ static uint32_t		ft_strtoi_binary(char **s, uint8_t prefix)
 
 	while (1)
 	{
-		register char	lower;
 		if (**s != '0' && **s != '1')
 		{
 			break ;
