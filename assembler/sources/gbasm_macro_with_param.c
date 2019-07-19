@@ -63,52 +63,52 @@ static int		string_replace(char *content, char *replace, char number)
 	return (count);
 }
 
-extern char	*add_macro_with_param(char *name, vector_t *macro, char *s, data_t *data)
+// name_start = "macro(x,y) toto_x_y", name = "(x,y) toto_x_y", s = " toto_x_y"
+extern char	*add_macro_with_param(char *name_start, vector_t *macro, char *s, data_t *data, char *name)
 {
-	char		*name_start = name;
 	uint32_t	count = 0;
 	uint32_t	cur = 0;
 	char		*pos[11] = {NULL};
 	char		*content;
 	uint32_t	length;
 
-	while (*name != '(') name++;
+	printf("name_start = \"%s\", name = \"%s\", s = \"%s\"\n", name_start, name, s);
+
 	*name = '\0';
 	if (vector_search(macro, (void*)&name_start) != -1)
 		goto __macro_already_defined;
 
-	do
+	name++;
+	while (is_space(*name)) name++;
+	while (1)
 	{
+		pos[cur++] = name;
+		while (is_alnum(*name) || *name == '_') name++;
+
+		if (*name == ')') {
+			*name = '\0';
+			break;
+		}
+		*(name++) = '\0';
+		while (*name == ',' || is_space(*name)) name++;
+		if (*name == ')') {
+			*name = '\0';
+			break;
+		}
 		if (cur == 10)
 			goto __too_many_parameters;
-
-		*name = '\0';
-		name++;
-		while (*name == ' ' || *name == '\t') name++;
-
-		if (*name == ')' || *name == ',')
-			goto __empty_argument_x;
-
-		pos[cur++] = name;
-		while (*name != '\0' && *name != ',') name++;
 	}
-	while (*name != '\0');
 
 	count = cur;
 
-	while (*s == ' ' || *s == '\t') s++;
+	while (is_space(*s)) s++;
 	length = get_macro_content_length(s);
 	content = malloc(length * 2);
 	s = copy_macro_content(content, s, &data->lineno);
 
 /*	/!\ vérifier les doublons dans les parametres /!\	*/
-	char *arg;
 	while (cur--)
 	{
-		arg = pos[cur];
-
-		while (*arg != ' ' && *arg != '\t' && *arg != ',' && *arg != ')' && *arg != '\0') arg++;
-		*arg = '\0';
 		if (string_replace(content, pos[cur], cur + '0') == 0)
 		{
 			sprintf(data->buf, "unused argument %s", pos[cur]);

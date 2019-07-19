@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 16:48:47 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/12 23:32:06 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/19 22:53:17 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -16,11 +16,12 @@
 #include "gbasm_macro_func.h"
 #include "gbasm_macro.h"
 #include "gbasm_error.h"
+#include "gbasm_tools.h"
 
 extern char	*define_macro(vector_t *macro, char *s, data_t *data)
 {
 	char	*name;
-	int		with_param = 0;
+	char	*parent = NULL;
 
 	while (*s == ' ' || *s == '\t') s++;
 	if (*s == '\n')
@@ -29,29 +30,46 @@ extern char	*define_macro(vector_t *macro, char *s, data_t *data)
 	/*
 	 *	get %define's name
 	 */
-	if (*s != '_' && (*s < 'A' || (*s > 'Z' && *s < 'a') || *s > 'z'))
+	if (*s != '_' && !is_alpha(*s))
 		goto __unexpected_char;
-	for (name = s; *s; s++)
+	name = s;
+	s++;
+	while (is_alnum(*s) || *s == '_') s++;
+	if (*s == '(') // if (macro_with_params)
 	{
-		if (with_param == 0 && *s == '(')
-			with_param++;
-		else if (with_param == 1 && *s == ')') {
-			with_param++;
-			s++;
-			break;
-		}
-		else if (*s != '_' && (with_param != 1 && (*s == ',' || *s == ' ' || *s == '\t'))
-				&& (*s < '0' || (*s > '9' && *s < 'A') || (*s > 'Z' && *s < 'a')
-				|| *s > 'z'))
+		parent = s;
+		s++;
+		while (is_space(*s)) s++;
+		if (*s != ')')
 		{
-			if (with_param == 0 && (*s == ' ' || *s == '\t'))
-				break;
-			goto __unexpected_char;
+			while (1)
+			{
+				if (*s != '_' && !is_alpha(*s))
+					goto __unexpected_char;
+				s++;
+				while (is_alnum(*s) || *s == '_') s++;
+				while (is_space(*s)) s++;
+				if (*s == ')') {
+					s++;
+					if (!is_space(*s))
+						goto __unexpected_char;
+					break;
+				}
+				if (*s != ',')
+					goto __unexpected_char;
+				s++;
+				while (is_space(*s)) s++;
+			}
 		}
-		else if (*s == ' ' && *s == '\t' && *s == '\n')
-			break;
+		else if (!is_space(s[1]))
+			goto __unexpected_char;
+		else
+		{
+			parent = NULL;
+			s++;
+		}
 	}
-	if (with_param == 1)
+	else if (!is_space(*s))
 		goto __unexpected_char;
 
 	/*
@@ -59,10 +77,10 @@ extern char	*define_macro(vector_t *macro, char *s, data_t *data)
 	 */
 	name = strndup(name, s - name);
 	while (*s == ' ' || *s == '\t') s++;
-	if (with_param == 0)
+	if (!parent)
 		s = add_macro_without_param(name, macro, s, data);
 	else
-		s = add_macro_with_param(name, macro, s, data);
+		s = add_macro_with_param(name, macro, s, data, parent);
 	return (s);
 
 /*

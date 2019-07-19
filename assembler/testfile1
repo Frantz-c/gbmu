@@ -1,4 +1,6 @@
 %define toto	13
+%define titi(abc, def)	ld abc, 12\
+						ld def, 0
 
 .extern		toto
 .memlock	variables, 0xC000, len=128
