@@ -10,7 +10,7 @@
 typedef struct	value_s
 {
 	uint16_t	is_signed;
-	uint16_t	value;
+	uint32_t	value;
 }
 value_t;
 
@@ -115,7 +115,7 @@ param_t	get_type(char *param1, value_t *n)
 			return (SP);
 		if (n->is_signed && *s == '-' && is_numeric(s + 1, &len))
 		{
-			if ((int16_t)n->value > 0x7f || (int16_t)n->value < 0xff)
+			if ((int32_t)n->value > 0x7f || (int32_t)n->value < -0x80)
 				return (IMM16);
 			return (IMM8);
 		}
@@ -169,6 +169,12 @@ int		calcul_param(char *param, value_t *n, int is_ld)
 		goto __signed_error;
 	if (*param != '+' && *param != '-')
 		goto __operator_error;
+	if (n->is_signed == 0 && LOWER(param[-1]) == 'l' && LOWER(param[-2]) == 'h'
+			&& (param[1] == '\0' || (param[1] == *param && param[2] == '\0')))
+	{
+		n->value = 0;
+		return (0);
+	}
 	if (*param == '-')
 		minus = 1;
 	first_operator = param;
@@ -246,8 +252,8 @@ __set_n_return:
 	}
 	if (n->is_signed)
 	{
-		n->value = (uint16_t)(0 - base);
-		if ((0 - base) < (int16_t)0x8000)
+		n->value = (uint32_t)(0 - base);
+		if ((0 - base) < (int32_t)0x8000)
 			fprintf(stderr, "value is to small\n");
 		return (0);
 	}
@@ -395,7 +401,7 @@ __add_inst:
 	}
 	
 __print_inst:
-	printf("%s %s(%u)::%s  %s(%u)::%s\n", inst, param[0], val[0].value, get_type_str(t1), param[1], val[1].value, get_type_str(t2));
+	printf("%s %s(%hu)::%s  %s(%hu)::%s\n", inst, param[0], (uint16_t)val[0].value, get_type_str(t1), param[1], (uint16_t)val[1].value, get_type_str(t2));
 	return;
 
 __no_param:

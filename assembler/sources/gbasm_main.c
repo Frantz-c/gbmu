@@ -5,8 +5,21 @@
 /*                                                 +:+:+   +:    +:  +:+:+    */
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
+/*   Created: 2019/07/19 15:11:29 by fcordon      #+#   ##    ##    #+#       */
+/*   Updated: 2019/07/19 16:24:01 by fcordon     ###    #+. /#+    ###.fr     */
+/*                                                         /                  */
+/*                                                        /                   */
+/* ************************************************************************** */
+
+/* ************************************************************************** */
+/*                                                          LE - /            */
+/*                                                              /             */
+/*   gbasm_main.c                                     .::    .:/ .      .::   */
+/*                                                 +:+:+   +:    +:  +:+:+    */
+/*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
+/*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/18 04:54:45 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/19 15:05:57 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -23,6 +36,25 @@
 #define BEG						do{
 #define END						}while(0)
 #define	SKIP_SPACES(ptr)		BEG while (is_space(*(ptr))) (ptr)++; END
+
+#define CHECK_ERROR_DIRECTIVE(n)	\
+	if (!is_space(s[n]))\
+	{\
+		s += n;\
+		while (!is_endl(*s)) s++;\
+		print_directive_arg_error(get_keyword(data.line));\
+		continue;\
+	}
+
+#define CHECK_ERROR_KEYWORD(n)	\
+	if (!is_space(s[n]))\
+	{\
+		s += n;\
+		while (!is_endl(*s)) s++;\
+		print_keyword_arg_error(get_keyword(data.line));\
+		continue;\
+	}
+
 
 uint32_t		g_error;
 uint32_t		g_warning;
@@ -162,24 +194,97 @@ static char	*get_keyword(char *s)
 	return (strndup(start, s - start));
 }
 
+uint8_t		get_params(char **s, char *param[10])
+{
+	char	*start;
+	uint8_t	nparam = 0;
+
+	for (;;)
+	{
+		while (is_space(**s)) s++;
+		start = s;
+		while (**s != ',' && !is_endl(**s) && **s != ')') (*s)++;
+		if (!is_endl(**s))
+		{
+			char	*end = s;
+
+			if (nparam == 10)
+				return (0xffu); // too many params
+			if (end == start)
+				return (0xffu); // empty param
+			while (is_space(end[-1])) {
+				end--;
+				if (end == start)
+					return (0xffu); // empty param
+			}
+			param[nparam++] = strndup(start, end - start);
+			if (*s == ')')
+				break;
+			s++;
+		}
+		if (is_endl(**s))
+		{
+			while (nparam)
+				free(param[--nparam]); // missing ')'
+			return (0xffu);
+		}
+	}
+	return (nparam);
+}
+
+char	*replace_content(char *content, uint32_t argc, char *param[10])
+{
+	char		*new = NULL;
+	int32_t		diff = 0;
+	uint32_t	len[10];
+	char		*pos;
+	char		*tofree = content;
+
+	for (uint32_t i = 0; i != argc; i++)
+	{
+		len[i] = strlen(param[i]);
+		diff += len[i] - 2;
+	}
+
+	new = malloc(strlen(content) + diff + 1);
+	new[0] = '\0';
+	pos = content;
+	while (pos = strchr(content, '#'))
+	{
+		register uint8_t	i = pos[1] - '0';
+
+		strncat(new, content, pos - content);
+		strncat(new, param[i], len[i]);
+		content = pos + 2;
+	}
+	strcat(new, content);
+	free(tofree);
+	return (new);
+}
+
 char	*parse_instruction(char *s, vector_t *area, vector_t *label, vector_t *symbol, vector_t *macro, data_t *data)
 {
 	char		*name = s;
 	uint32_t	macro_index = 0xffffffffu;
-	uint8_t		is_macro_with_param = 0;
+	char		*macro_param[10] = {NULL};
+	uint8_t		n_params = 0;
+	char		*content;
+	uint32_t	argc;
+
 
 	if (!is_alpha(*s) && *s != '_')
 		goto __unexpected_char;
 	s++;
 	while (is_alnum(*s) || *s == '_') s++;
 
+	// LABEL
 	if (*s == ':')
 	{
 		char *end = s;
 		s++;
 		if (!is_space(*s) && !is_endl(*s))
 			goto __unexpected_char;
-		add_label(strndup(name, end - name), area, label, &data);
+		add_label(strndup(name, end - name), area, label, &data); //test if not mnemonic
 		continue;
 	}
 	else if (!is_space(*s) && *s != '(' && !is_endl(*s))
@@ -187,19 +292,32 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *label, vector_t *symb
 	if (!is_endl(*s))
 		goto __add_instruction;
 
-	if (*s == '(')
-		is_macro_with_param = 1;
+	while (is_space(*s)) s++;
 	if ((macro_index = (uint32_t)vector_search(macro, (void*)&name)) != 0xffffffffu)
 	{
-		char		*content = VEC_ELEM(macro_t, macro, macro_index)->content;
-		char		*p;
-		uint32_t	argc = VEC_ELEM(macro_t, macro, macro_index)->argc;
+		char		*content_ptr = NULL;
 		t_data		new_data;
-/*
-		content = replace_content(content, argc, &s);
-		if (content == NULL)
-			goto __unexpected_char;
-*/
+		content = VEC_ELEM(macro_t, macro, macro_index)->content;
+		argc = VEC_ELEM(macro_t, macro, macro_index)->argc;
+
+		if (*s == '(')
+		{
+			s++;
+			n_params = get_params(&s, macro_param);
+			if (n_params == 0xffu)
+				goto __unexpected_char;
+			if (n_params != argc)
+				goto __argc_error;
+			if (n_params)
+			{
+				content = replace_content(content, argc, macro_param);
+				content_ptr = content;
+			}
+			for (uint8_t i = 0; macro_param[i]; i++)
+				free(macro_param[i]);
+		}
+
+
 		new_data.filename = malloc(strlen(data->filename) + strlen(name) + 10);
 		sprintf(new_data.filename, "%s in macro %s", data->filename, name);
 		new_data.line = content;
@@ -207,19 +325,7 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *label, vector_t *symb
 		new_data.buf = data->buf;
 		new_data.cur_area = data->cur_area;
 
-		if (is_macro_with_param)
-		{
-			if (argc == 0)
-				goto __macro_has_no_parameters; // print real macro
-			content = replace_param_content(s + 1, content, argc);
-		}
-		else
-		{
-			if (argc != 0)
-				goto __macro_has_parameters;	// print real macro
-		}
 
-		//p = content;
 		for (;;)
 		{
 			char *inst = content;
@@ -233,19 +339,29 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *label, vector_t *symb
 			new_data.line = content;
 			new_data.lineno++;
 		}
-//		if (argc) free(content);
+		if (content_ptr) free(content_ptr);
 		free(new_data.filename);
+		return (s);
 	}
-	else if (is_macro_with_param)
-		goto __macro_with_param_error;
+	else if (*s == '(' && !is_space(s[-1]))
+		goto __unexpected_char;
 
 __add_instruction:
 	name = strndup(name, s - name);
 	s = add_instruction(name, area, label, macro, s + 1, data);
 	free(name);
+	return (s);
+
+__argc_error:
+	for (uint8_t i = 0; macro_param[i]; i++)
+		free(macro_param[i]);
+	sprintf(data->buf, "arguments expected: %hhu, %u given", argc, n_params);
+	goto __print_error;
+	
 
 __unexpected_char:
 	sprintf(data->buf, "unexpected character `%c`", *s);
+__print_error:
 	print_error(data->filename, data->lineno, data->line, data->buf);
 	while (!is_endl(*s)) s++;
 	return (s);
@@ -279,12 +395,17 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 		}
 		if (*s == '%')
 		{
-			if (strncmp(s + 1, "define", 6) == 0 && (s[7] == ' ' || s[7] == '\t'))
+			if (strncmp(s + 1, "define", 6) == 0 && !is_alnum(s[7])) {
+				CHECK_ERROR_DIRECTIVE(7);
 				s = define_macro(macro, s + 8, &data);
-			else if (strncmp(s + 1, "undef", 5) == 0 && (s[6] == ' ' || s[6] == '\t'))
+			}
+			else if (strncmp(s + 1, "undef", 5) == 0 && !is_alnum(s[6])) {
+				CHECK_ERROR_DIRECTIVE(6);
 				s = undef_macro(macro, s + 7, &data);
-			else if (strncmp(s + 1, "include", 7) == 0 && (s[8] == ' ' || s[8] == '\t'))
+			}
+			else if (strncmp(s + 1, "include", 7) == 0 && !is_alnum(s[8]))
 			{
+				CHECK_ERROR_DIRECTIVE(8);
 				s += 9;
 				include_filename = get_include_filename(&s, &data);
 				parse_file(include_filename, area, macro, label, symbol, memblock, cur_area);
@@ -301,17 +422,17 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 		}
 		else if (*s == '.')
 		{
-			if (strncmp(s + 1, "bank", 4) == 0 && (s[5] == ' ' || s[5] == '\t'))
+			uint32_t	len;
+
+			if (strncmp(s + 1, "bank", 4) == 0 && !is_alnum(s[5]))
 				s = bank_switch(area, s + 6, &data);
-			else if (strncmp(s + 1, "byte", 4) == 0 && (s[5] == ' ' || s[5] == '\t'))
+			else if (strncmp(s + 1, "byte", 4) == 0 && !is_alnum(s[5]))
 				s = add_bytes(area, s + 6, &data);
-			else if (strncmp(s + 1, "memlock", 7) == 0 && (s[8] == ' ' || s[8] == '\t'))
+			else if (strncmp(s + 1, "memlock", 7) == 0 && !is_alnum(s[8]))
 				s = set_memlock_area(memblock, s + 9, &data);
-				// .memlock uram_b0, 0xc000, end=0xca00
-				// .memlock uram_b0, 0xc000, len=1024
-			else if (strncmp(s + 1, "var", 3) == 0 && (s[4] > '0' && s[4] <= '9'))
+			else if (strncmp(s + 1, "var", 3) == 0 && is_numeric(s + 4, &len) && is_space(s[len]))
 				s = assign_var_to_memory(memblock, s + 4, &data);
-			else if (strncmp(s + 1, "extern", 6) == 0 && (s[7] == ' ' || s[7] == '\t'))
+			else if (strncmp(s + 1, "extern", 6) == 0 && !is_alnum(s[7]))
 				s = set_extern_symbol(symbol, s + 8, &data);
 			else
 			{
