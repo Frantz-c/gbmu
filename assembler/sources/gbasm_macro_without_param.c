@@ -34,13 +34,20 @@
 
 extern char	*add_macro_without_param(char *name, vector_t *macro, char *s, data_t *data)
 {
-	char	*content;
+	char		*content;
+	uint32_t	length;
 
 	while (*s == ' ' || *s == '\t') s++;
 	if (*s == '\0' || *s == '\n')
 		goto __no_param;
 
-	content = malloc(get_macro_content_length(s) * 2);
+	length = get_macro_content_length(s);
+	if (length & 0x80000000u)
+	{
+		s += (length & 0x7fffffffu);
+		goto __unexpected_char;
+	}
+	content = malloc(length * 2);
 	s = copy_macro_content(content, s, &data->lineno);
 	if (*s != '\0' && *s != '\n')
 		goto __unexpected_char;

@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 16:48:47 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/19 22:53:17 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/20 21:24:25 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -20,8 +20,9 @@
 
 extern char	*define_macro(vector_t *macro, char *s, data_t *data)
 {
-	char	*name;
-	char	*parent = NULL;
+	char		*name;
+	char		*name_start;
+	uint32_t	parent = 0;
 
 	while (*s == ' ' || *s == '\t') s++;
 	if (*s == '\n')
@@ -37,7 +38,7 @@ extern char	*define_macro(vector_t *macro, char *s, data_t *data)
 	while (is_alnum(*s) || *s == '_') s++;
 	if (*s == '(') // if (macro_with_params)
 	{
-		parent = s;
+		parent = s - name;
 		s++;
 		while (is_space(*s)) s++;
 		if (*s != ')')
@@ -65,7 +66,7 @@ extern char	*define_macro(vector_t *macro, char *s, data_t *data)
 			goto __unexpected_char;
 		else
 		{
-			parent = NULL;
+			parent = 0;
 			s++;
 		}
 	}
@@ -75,12 +76,12 @@ extern char	*define_macro(vector_t *macro, char *s, data_t *data)
 	/*
 	 *	get %define's content
 	 */
-	name = strndup(name, s - name);
-	while (*s == ' ' || *s == '\t') s++;
+	name_start = strndup(name, s - name);
+	while (is_space(*s)) s++;
 	if (!parent)
-		s = add_macro_without_param(name, macro, s, data);
+		s = add_macro_without_param(name_start, macro, s, data);
 	else
-		s = add_macro_with_param(name, macro, s, data, parent);
+		s = add_macro_with_param(name_start, macro, s, data, name_start + parent);
 	return (s);
 
 /*

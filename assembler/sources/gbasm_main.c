@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/19 15:05:57 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/20 20:45:24 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -423,7 +423,7 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 				s = add_bytes(area, s + 6, &data);
 			else if (strncmp(s + 1, "memlock", 7) == 0 && !is_alnum(s[8]))
 				s = set_memlock_area(memblock, s + 9, &data);
-			else if (strncmp(s + 1, "var", 3) == 0 && is_numeric(s + 4, &len) && is_space(s[len]))
+			else if (strncmp(s + 1, "var", 3) == 0 && is_numeric(s + 4, &len) && is_space(s[len + 4]))
 				s = assign_var_to_memory(memblock, s + 4, &data);
 			else if (strncmp(s + 1, "extern", 6) == 0 && !is_alnum(s[7]))
 				s = set_extern_symbol(symbol, s + 8, &data);
@@ -561,7 +561,7 @@ int		main(int argc, char *argv[])
 		if (g_error)
 		{
 			fprintf(stderr, "\e[1;31m%u errors\e[0m\n", g_error);
-			return (1);
+			break;
 		}
 
 //		save_file_object(code_area, label, *p);

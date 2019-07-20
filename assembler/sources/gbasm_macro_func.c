@@ -1,5 +1,6 @@
 #include "../includes/std_includes.h"
 #include "../includes/gbasm_struct.h"
+#include "gbasm_tools.h"
 
 extern char		*copy_macro_content(char *dest, char *s, uint32_t *lineno)
 {
@@ -42,27 +43,29 @@ extern uint32_t	get_macro_content_length(char *s)
 
 	for (; ; s++, count++)
 	{
-		if (*s == '\n') {
+		if (is_endl(*s)) {
 			break;
 		}
 		else if (*s == '\\')
 		{
 			bs_pos = s;
 			s++;
-			if (*s == ' ' || *s == '\t') (s)++;
+			if (is_space(*s)) (s)++;
 			if (*s == '\n')
 			{
 				s++;
-				if (*s == ' ' || *s == '\t')
-				{
-					while (s[1] == ' ' || s[1] == '\t') s++;
-				}
-				count++;
+				if (is_space(*s))
+					while (is_space(s[1])) s++;
+				count++; //?
 				continue;
 			}
 			s = bs_pos;
 			count++;
 			continue;
+		}
+		else if (!is_alnum(*s) && !is_space(*s) && *s != '_' && *s != ',' && !is_parent(*s) && !is_operator(*s))
+		{
+			return ((count - 1) | 0x80000000u);
 		}
 	}
 

@@ -2,13 +2,17 @@
 %define titi(abc, def)	ld abc, 12\
 						ld def, 0
 
-.extern		toto
+%define VALUE	0x2a
+
+
+
+%define ILLEGAL			3 + 6 .?
+
+.extern		ext_var
 .memlock	variables, 0xC000, len=128
-.var12		titi, variables
+.var12		myvar, variables
+.var2		health, variables
+.var2		attack, variables
 
-label:
-ld	(32h+    32 * 2 + 1)
 
-.bank	1
-
-ld (10-2)
+ld		A, VALUE

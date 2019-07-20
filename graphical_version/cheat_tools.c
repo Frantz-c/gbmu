@@ -98,7 +98,10 @@ extern int	set_string_green(char *input, uint8_t maxlen, uint8_t *output)
 				else
 				{
 					if (get_katakana(&input, &output, &count) == -1)
+					{
+						puts("ERROR\n");
 						goto __error;
+					}
 				}
 			}
 			if (*input <= '9')

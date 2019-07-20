@@ -66,13 +66,9 @@ static int		string_replace(char *content, char *replace, char number)
 // name_start = "macro(x,y) toto_x_y", name = "(x,y) toto_x_y", s = " toto_x_y"
 extern char	*add_macro_with_param(char *name_start, vector_t *macro, char *s, data_t *data, char *name)
 {
-	uint32_t	count = 0;
 	uint32_t	cur = 0;
 	char		*pos[11] = {NULL};
 	char		*content;
-	uint32_t	length;
-
-	printf("name_start = \"%s\", name = \"%s\", s = \"%s\"\n", name_start, name, s);
 
 	*name = '\0';
 	if (vector_search(macro, (void*)&name_start) != -1)
@@ -99,10 +95,16 @@ extern char	*add_macro_with_param(char *name_start, vector_t *macro, char *s, da
 			goto __too_many_parameters;
 	}
 
-	count = cur;
+	uint32_t	count = cur;
+	uint32_t	length;
 
 	while (is_space(*s)) s++;
 	length = get_macro_content_length(s);
+	if (length & 0x80000000u)
+	{
+		s += (length & 0x7fffffffu);
+		goto __unexpected_char;
+	}
 	content = malloc(length * 2);
 	s = copy_macro_content(content, s, &data->lineno);
 
@@ -124,8 +126,12 @@ extern char	*add_macro_with_param(char *name_start, vector_t *macro, char *s, da
 /*
  *	=========ERRORS=========
  */
+
+__unexpected_char:
+	sprintf(data->buf, "unexpected character `%c`", *s);
+	goto __perror_and_exit;
 __empty_argument_x:
-	sprintf(data->buf, "argument %u is empty\n", cur + 1);
+	sprintf(data->buf, "argument %u is empty", cur + 1);
 	goto __perror_and_exit;
 
 __too_many_parameters:

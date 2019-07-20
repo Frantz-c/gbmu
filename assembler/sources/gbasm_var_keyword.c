@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/13 22:59:31 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/16 13:23:17 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/20 19:35:48 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -16,7 +16,7 @@
 #include "gbasm_struct.h"
 #include "gbasm_error.h"
 
-static uint32_t	get_block_addr(char *block, vector_t *memblock, uint32_t size)
+static uint32_t	get_block_addr(char *block, vector_t *memblock, uint32_t size, uint32_t *index)
 {
 	uint32_t	var_addr;
 
@@ -29,6 +29,7 @@ static uint32_t	get_block_addr(char *block, vector_t *memblock, uint32_t size)
 			b->space -= size;
 			if (b->space >= 0xffffu)
 				return (0xfffffffeu);
+			*index = i;
 			return (var_addr);
 		}
 	}
@@ -41,7 +42,7 @@ extern char	*assign_var_to_memory(vector_t *memblock, char *s, data_t *data)
 	uint32_t	addr;
 	int			error;
 	char		*name;
-	char		*block;
+	char		*blockname;
 
 	size = atou_inc_all(&s, &error);
 	if (error)
@@ -68,36 +69,42 @@ extern char	*assign_var_to_memory(vector_t *memblock, char *s, data_t *data)
 		free(name);
 		goto __error;
 	}
-	block = s;
+	blockname = s;
 	while (is_alnum(*s) || *s == '_') s++;
-	block = strndup(block, s - block);
+	blockname = strndup(blockname, s - blockname);
 
 	while (is_space(*s)) s++;
 	if (*s != '\n' && *s != '\0')
 	{
-		free(block);
+		free(blockname);
 		free(name);
 		goto __error;
 	}
 
-	addr = get_block_addr(block, memblock, size);
+	uint32_t	index = 0;
+	addr = get_block_addr(blockname, memblock, size, &index);
 	if (addr == 0xffffffffu)
 		goto __unknown_memblock;
 	if (addr == 0xfffffffeu)
 		goto __no_space;
+
+	memblock_t	*block = VEC_ELEM(memblock_t, memblock, index);
+	if (block->var == NULL)
+		block->var = vector_init(sizeof(variable_t));
+
 	variable_t	new = {name, addr, size};
-	vector_push(memblock, (void*)&new);
-	free(block);
+	vector_push(block->var, (void*)&new);
+	free(blockname);
 	return (s);
 
 __no_space:
-	sprintf(data->buf, "to few space in `%s`", block);
+	sprintf(data->buf, "to few space in `%s`", blockname);
 	goto __free_before_print_error;
 
 __unknown_memblock:
-	sprintf(data->buf, "unknown memblock `%s`", block);
+	sprintf(data->buf, "unknown memblock `%s`", blockname);
 __free_before_print_error:
-	free(block);
+	free(blockname);
 	free(name);
 	goto __print_error;
 

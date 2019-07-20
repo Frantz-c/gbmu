@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 12:49:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/13 19:57:51 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/20 21:50:51 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -133,7 +133,7 @@ void		vector_delete(vector_t *vec, size_t index)
 			vec->destroy(_vector_at_mul(vec, index));
 
 		memcpy(_vector_at_mul(vec, index), _vector_at_mul(vec, index + 1),
-				(vec->nitems - index));
+				(vec->nitems - index) * vec->elemsize);
 	}
 	else
 	{
@@ -177,7 +177,7 @@ ssize_t		vector_search(vector_t *vec, const void *elem)
 	if (vec->nitems == 0)
 		return (-1);
 	left = 0;
-	right = vec->nitems - 1;
+	right = vec->nitems;
 	while (left < right)
 	{
 		middle = (left + right) / 2;

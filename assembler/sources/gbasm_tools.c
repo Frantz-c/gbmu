@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/12 23:05:07 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/18 23:30:02 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/20 19:17:51 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -169,21 +169,18 @@ static char __attribute__((always_inline))		*left_trim(char *s, int32_t *type)
 	}
 	return (s);
 }
-
+/*
 static uint32_t __attribute__((always_inline))	get_base_value(char c)
 {
-	if (c >= 'a' && c <= 'f')
-		return (c - ('a' - 10));
-	if (c >= 'A' && c <= 'F')
-		return (c - ('a' - 10));
+	if (LOWER(c) >= 'a' && LOWER(c) <= 'f')
+		return (c - 87);
 	return (c - '0');
 }
-
+*/
 static char		*ft_strtoi(char *s, uint32_t *value, int32_t type)
 {
-	uint32_t	n;
+	uint32_t	n = 0;
 
-	n = 0;
 	if (type == 0)
 	{
 		while (1)
@@ -191,8 +188,7 @@ static char		*ft_strtoi(char *s, uint32_t *value, int32_t type)
 			if (*s < '0' || *s > '9')
 				break ;
 			n *= 10;
-			n += *s - '0';
-			s++;
+			n += *(s++) - '0';
 		}
 	}
 	else if (type == 1)
@@ -210,11 +206,11 @@ static char		*ft_strtoi(char *s, uint32_t *value, int32_t type)
 	{
 		while (1)
 		{
-			if (*s > 'f' || (*s > 'F' && *s < 'a')
-					|| (*s > '9' && *s < 'A') || *s < '0')
+			register char	lower = LOWER(*s);
+			if (!is_alnum(lower) && (lower < 'a' || lower > 'f'))
 				break ;
 			n *= 16;
-			n += get_base_value(*s);
+			n += (lower >= 'a') ? lower - 87 : lower - '0';
 			s++;
 		}
 	}
@@ -252,13 +248,6 @@ static uint32_t		ft_strtoi_octal(char **s)
 	return (n);
 }
 
-static uint32_t	__attribute__((always_inline))	get_hexa_value(char c)
-{
-	if (c >= 'a')
-		return (c - 87);
-	return (c - '0');
-}
-
 static uint32_t		ft_strtoi_hexa(char **s, uint8_t prefix)
 {
 	uint32_t	n = 0;
@@ -267,10 +256,10 @@ static uint32_t		ft_strtoi_hexa(char **s, uint8_t prefix)
 	{
 		register char	lower = to_lower_char[(uint8_t)(**s)];
 
-		if (!is_digit(**s) && (lower < 'a' || lower > 'f'))
+		if (!is_digit(lower) && (lower < 'a' || lower > 'f'))
 			break ;
 		n *= 16;
-		n += get_hexa_value(lower);
+		n += (lower >= 'a') ? lower - 87 : lower - '0';
 		(*s)++;
 	}
 	if (!prefix) {

@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/03 09:33:12 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/05 17:02:09 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/20 22:36:39 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -154,6 +154,7 @@ extern void		*command_line_thread(void *unused)
 		pkmn_addr[ROM_ATT] = 0x39658U;
 		pkmn_addr[ROM_ATT_NAME] = 0x10000U;
 		pkmn_addr[ROM_POK_NAME] = 0x39068U;
+		pkmn_addr[BADGES] = 0xd2d5U;
 	}
 	else
 		pkmn = 0;
@@ -1143,8 +1144,12 @@ __print:
 						while (*p == ' ') p++;
 					}
 
-					if (pkmn == PKMN_GRE)
-						set_string_green(p, 5, GET_REAL_ADDR(pkmn_addr[USER_NAME]));
+					if (pkmn == PKMN_GRE) {
+						printf("s = \"%s\"\n", p);
+						set_string_green(p, 5, GET_REAL_ADDR(0xc598));
+						set_string_green(p, 5, GET_REAL_ADDR(0xcc54));
+						set_string_green(p, 5, GET_REAL_ADDR(0xcc5a));
+					}
 					else
 						set_string_red(p, 10, 0, GET_REAL_ADDR(pkmn_addr[USER_NAME]));
 				}

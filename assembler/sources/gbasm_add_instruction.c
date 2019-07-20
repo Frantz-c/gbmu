@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 22:10:25 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/19 16:49:34 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/20 21:55:18 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -115,10 +115,10 @@ int		set_params(char **param1, char **param2, char **s)
 		return (0);
 	if (**s != ',')
 		goto __unexpected_char;
-	s++;
+	(*s)++;
 	parent = 0;
 
-	while (is_space(**s)) s++;
+	while (is_space(**s)) (*s)++;
 	tmp = *s;
 	if (**s == '(')
 		parent = ')';
@@ -139,11 +139,12 @@ int		set_params(char **param1, char **param2, char **s)
 		if (**s != parent)
 			goto __parent_error;
 		(*param2)[0] = '(';
-		s++;
+		(*s)++;
 	}
-	
+	printf("**s = %d\n", **s);
 	if (**s == ',') goto __too_many_arguments;
-	if (**s != '\0') goto __unexpected_char;
+	if (!is_endl(**s)) goto __unexpected_char;
+	return (0);
 
 
 __too_many_arguments:
@@ -266,7 +267,8 @@ int		replace_macro(char **param, vector_t *macro)
 					goto __unexpected_operator;
 			}
 			macro_name = strndup(start, s - start);
-			index = vector_search(macro, macro_name);
+			printf("macro_name = \"%s\"\n", macro_name);
+			index = vector_search(macro, (void*)&macro_name);
 			if (index > -1)
 			{
 				char		*macro_content = VEC_ELEM(macro_t, macro, index)->content;
@@ -278,23 +280,24 @@ int		replace_macro(char **param, vector_t *macro)
 
 				if (is_numeric(macro_content, &len))
 				{
+					char	*value = macro_content;
 					macro_content += len;
 					while (is_space(macro_content[len])) len++;
 					if (macro_content[len] != '\0')
 						goto __invalid_macro;
 					if (new == NULL)
 					{
-						newl = (start - *param) + (strlen(macro_content));
+						newl = (start - *param) + (strlen(value));
 						new = malloc(newl + 1);
 						strncpy(new, *param, start - *param);
-						strcpy(new + (start - *param), macro_content);
+						strcpy(new + (start - *param), value);
 					}
 					else
 					{
-						newl += (start - end) + (strlen(macro_content));
+						newl += (start - end) + (strlen(value));
 						new = realloc(new, newl + 1);
 						strncat(new, end, start - end);
-						strcat(new, macro_content);
+						strcat(new, value);
 					}
 				}
 				end = s;
@@ -1001,7 +1004,7 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *label, vector_t *mac
 	{
 		if (macro && replace_macro(&param1, macro) == -1) //without params only
 			goto __error;
-		str_to_lower(param1);
+		//str_to_lower(param1);
 		if (calcul_param(param1, val, is_ld) == -1)
 			goto __error;
 		printf("replace_param1 = \"%s\"\n", param1);
@@ -1010,7 +1013,7 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *label, vector_t *mac
 		{
 			if (macro && replace_macro(&param2, macro) == -1)
 				goto __error;
-			str_to_lower(param2);
+			//str_to_lower(param2);
 			if (calcul_param(param2, val + 1, is_ld) == -1)
 				goto __error;
 			printf("replace_param2 = \"%s\"\n", param2);
