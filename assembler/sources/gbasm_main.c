@@ -360,7 +360,7 @@ __print_error:
 	return (s);
 }
 
-static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_t *ext_symbol, loc_sym_t *local_symbol, int32_t *cur_area)
+static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_t *ext_symbol, loc_sym_t *loc_symbol, int32_t *cur_area)
 {
 	data_t		data;
 	char		*s;
@@ -401,7 +401,7 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 				CHECK_ERROR_DIRECTIVE(8);
 				s += 9;
 				include_filename = get_include_filename(&s, &data);
-				parse_file(include_filename, area, macro, symbol, local_symbol, cur_area);
+				parse_file(include_filename, area, macro, ext_symbol, loc_symbol, cur_area);
 				free(include_filename);
 			}
 			else
@@ -422,9 +422,9 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 			else if (strncmp(s + 1, "byte", 4) == 0 && !is_alnum(s[5]))
 				s = add_bytes(area, s + 6, &data);
 			else if (strncmp(s + 1, "memlock", 7) == 0 && !is_alnum(s[8]))
-				s = set_memlock_area(data->memblock, s + 9, &data);
+				s = set_memlock_area(loc_symbol->memblock, s + 9, &data);
 			else if (strncmp(s + 1, "var", 3) == 0 && is_numeric(s + 4, &len) && is_space(s[len + 4]))
-				s = assign_var_to_memory(data->memblock, s + 4, &data);
+				s = assign_var_to_memory(loc_symbol->memblock, s + 4, &data);
 			else if (strncmp(s + 1, "extern", 6) == 0 && !is_alnum(s[7]))
 				s = set_extern_symbol(ext_symbol, s + 8, &data);
 			else
@@ -438,16 +438,16 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 		}
 		else
 		{
-			s = parse_instruction(s, area, ext_symbol, local_symbol, macro, &data);
+			s = parse_instruction(s, area, ext_symbol, loc_symbol, macro, &data);
 		}
 	}
 	
 	puts("");
 	vector_print(macro, "macro", &macro_print);
 	vector_print(area, "code area", &area_print);
-	vector_print(symbol, "extern symbol", &symbol_print);
-	vector_print(label, "label", &label_print);
-	vector_print(memblock, "block", &memblock_print);
+	vector_print(ext_symbol, "extern symbol", &symbol_print);
+	vector_print(loc_symbol->label, "label", &label_print);
+	vector_print(loc_symbol->memblock, "block", &memblock_print);
 }
 
 /*

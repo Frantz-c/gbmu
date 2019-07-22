@@ -542,8 +542,8 @@ __signed_error:
 char	*add_instruction(char *inst, vector_t *area, vector_t *ext_symbol, loc_sym_t *loc_symbol, vector_t *macro, char *s, data_t *data)
 {
 	char		*param1, *param2;
-	param_t		p1 = NONE, p2 = NONE;
-	value_t		val[2] = {{0}};
+	param_t		param[2] = {NONE, NONE};
+	value_t		val = {0};
 	int			is_ld = 0;
 
 	str_to_lower(inst);
@@ -561,29 +561,37 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *ext_symbol, loc_sym_
 	{
 		if (macro && replace_macro(&param1, macro) == -1) //without params only
 			goto __error;
-		//str_to_lower(param1);
-		if (calcul_param(param1, val, is_ld) == -1)
+		if (calcul_param(param1, &val, is_ld) == -1)
 			goto __error;
 		printf("replace_param1 = \"%s\"\n", param1);
-		p1 = get_type(param1, val); //default SYMBOL
+		param[0] = get_type(param1, &val); //default SYMBOL
+
 		if (param2)
 		{
+			value_t	tmp_val = {0};
+
 			if (macro && replace_macro(&param2, macro) == -1)
 				goto __error;
-			//str_to_lower(param2);
-			if (calcul_param(param2, val + 1, is_ld) == -1)
+			if (calcul_param(param2, &tmp_val, is_ld) == -1)
 				goto __error;
 			printf("replace_param2 = \"%s\"\n", param2);
-			p2 = get_type(param2, val + 1); //default SYMBOL
+			param[1] = get_type(param2, &tmp_val); //default SYMBOL
+			if (param[0] < FF00_IMM8 && param[1] >= FF00_IMM8)
+				val = tmp_val;
 		}
 	}
 /*
 	char	*symbol = param2;
 
 	if (p1 == SYMBOL)
+	{
 		symbol = param1;
+		free(param2);
+	}
+	else
+		free(param1);
 
-	add_bin_instruction(inst, p1, p2, area, symbol, val);
+	add_bin_instruction(inst, param, area, symbol, ext_symbol, loc_symbol, &val, data);
 	return (s);
 */
 __unexpected_char:
@@ -599,7 +607,7 @@ __error:
  *	penser a changer le type si necessaire. (idem pour addr8)
  */
 
-uint32_t	add_bin_instruction(char *mnemonic, param_t param1, param_t param2, vector_t *area, char *symbol, vector_t *symbols, value_t val[2])
+uint32_t	add_bin_instruction(char *mnemonic, param_t param[2], vector_t *area, char *symbol, vector_t *ext_symbol, loc_sym_t *loc_symbol, value_t *val, data_t *data)
 {
 	static const instruction_t	inst[71] = {
 		{"adc", &&__adc},		{"add", &&__add},		{"and", &&__and},		{"bit", &&__bit},
@@ -706,6 +714,6 @@ __testb:
 __xor:
 
 __add_instruction:
-	push_instruction(area, bin, param1, param2, symbol, symbols, data);
+	push_instruction(area, bin, param, symbol, ext_symbol, loc_symbol, data);
 	return (index);
 }

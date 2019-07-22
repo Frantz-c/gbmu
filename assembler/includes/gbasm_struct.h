@@ -17,11 +17,12 @@ param_t;
 #define LABEL			0x21
 #define MEMBLOCK		0x02
 
-typedef struct	loc_sym_t
+typedef struct	loc_sym_s
 {
-	vector_t	block;
-	vector_t	label;
+	vector_t	*memblock;
+	vector_t	*label;
 }
+loc_sym_t;
 
 typedef struct	value_s
 {
