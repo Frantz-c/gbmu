@@ -17,6 +17,12 @@ param_t;
 #define LABEL			0x21
 #define MEMBLOCK		0x02
 
+typedef struct	loc_sym_t
+{
+	vector_t	block;
+	vector_t	label;
+}
+
 typedef struct	value_s
 {
 	uint16_t	is_signed;

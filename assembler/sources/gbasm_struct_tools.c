@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 13:17:53 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/16 23:36:56 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/22 20:05:42 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -23,7 +23,7 @@
 #define P21	4
 #define P22	5
 
-extern void	push_params(code_area_t	*area, uint8_t bin[6], param_t t1,
+extern void	push_instruction(code_area_t *area, uint8_t bin[6], param_t t1,
 						param_t t2, char *symbol, vector_t *symbols, data_t *data)
 {
 	uint8_t	size = 0;
