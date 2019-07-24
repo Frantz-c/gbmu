@@ -23,60 +23,98 @@
 #define P21	4
 #define P22	5
 
-extern void	push_instruction(code_area_t *area, uint8_t bin[6], param_t p[2], char *symbol,
+extern int32_t		variables_match_name(const vector_t *memblock, const char *s)
+{
+	register uint32_t	end = memblock->nitems * sizeof(memblock_t);
+	for (uint32_t i = 0; i < end; i += sizeof(memblock_t))
+	{
+		memblock_t	*block = (memblock_t *)(memblock->data + i);
+		ssize_t		index;
+
+		if ((index = vector_search(block->var, s)) != -1)
+			return ((int32_t)index);
+	}
+	return (-1);
+}
+
+extern int32_t		memblock_match_name(const vector_t *memblock, const char *s)
+{
+	register uint32_t	end = memblock->nitems * sizeof(memblock_t);
+	for (uint32_t i = 0; i < end; i += sizeof(memblock_t))
+	{
+		memblock_t *block = (memblock_t *)(memblock->data + i);
+		if (strcmp(block->name, s) == 0)
+			return ((int32_t)(i / sizeof(memblock_t)));
+	}
+	return (-1);
+}
+
+extern void	push_instruction(code_area_t *area, uint8_t bin[3], param_t p[2], char *symbol,
 						vector_t *ext_symbol, loc_sym_t *loc_symbol, data_t *data)
 {
-	uint8_t	size = 0;
-	uint8_t	opsize = 0;
+	uint32_t	size;
+	uint8_t		opsize = 0;
+
 
 	// opcode
-	if (bin[0] == 0xCB) {
-		size++;
-		area->cur->opcode[1] = bin[OP2];
-	}
-	size++;
-	area->cur->opcode[0] = bin[OP1];
-
-	//param1
-	if (p[0] >= IMM16) {
-		size++;
-		opsize++;
-		area->cur->operand1[1] = bin[P12];
-	}
-	if (p[0] >= IMM8) {
-		size++;
-		opsize++;
-		area->cur->operand1[0] = bin[P11];
-	}
-	area->cur->ope_size = opsize;
-	
-	//param2
-	opsize = 0;
-	if (p[1] >= IMM16) {
-		size++;
-		opsize++;
-		area->cur->operand2[1] = bin[P22];
-	}
-	if (p[1] >= IMM8) {
-		size++;
-		opsize++;
-		area->cur->operand2[0] = bin[P21];
-	}
-	area->cur->ope_size |= (opsize << 4);
-
-	//symbol
-	if (p[0] == SYMBOL || p[1] == SYMBOL)
+	if (bin[0] == 0xCB)
 	{
-		unkwn_sym_t	*new = malloc(sizeof(unkwn_sym_t));
-		new->name = strdup(symbol);
-		new->lineno = data->lineno;
-		new->filename = data->filename;
-		area->cur->unkwn = new;
-		// si non contenu dans loc_symbol
-		symbol_t	sym = {new->name, VAR_OR_LABEL};
-		vector_push(ext_symbol, (void*)&sym);
+		size = 2;
+		area->cur->opcode[1] = bin[1];
+		area->cur->opcode[0] = bin[0];
 	}
-	area->cur->size = size;
+	else
+	{
+		param_t		param = p[0];
+
+
+		size = 1;
+		area->cur->opcode[0] = bin[0];
+
+		if (param < p[1])
+			param = p[1];
+
+		if (param >= IMM16) {
+			size++;
+			area->cur->opcode[2] = bin[2];
+		}
+		else if (param >= FF00_IMM8) {
+			size++;
+			opsize++;
+			area->cur->opcode[1] = bin[1];
+		}
+
+		//symbol
+		if (param == SYMBOL)
+		{
+			unkwn_sym_t	*new = malloc(sizeof(unkwn_sym_t));
+			new->name = strdup(symbol);
+			new->lineno = data->lineno;
+			new->filename = data->filename;
+			area->cur->unkwn = new;
+
+			if (vector_search(loc_symbol->label, symbol) == -1
+				&& variables_match_name(loc_symbol->memblock, symbol) == -1)
+			{
+				if (memblock_match_name(loc_symbol->memblock, symbol) != -1)
+				{
+					//ERROR
+					fprintf(stderr, "can't use variables block as operand\n");
+				}
+				else if (vector_search(ext_symbol, symbol) == -1)
+				{
+					fprintf(stderr, "Unknown symbol %s\n", symbol);
+	//				symbol_t	sym = {new->name, VAR_OR_LABEL};
+	//				vector_push(ext_symbol, (void*)&sym);
+				}
+				else
+					puts("symbol exists");
+			}
+			else
+				puts("symbol exists");
+		}
+		area->cur->size = size;
+	}
 }
 
 extern void	new_instruction(code_area_t *area)

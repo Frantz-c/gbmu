@@ -26,8 +26,9 @@ loc_sym_t;
 
 typedef struct	value_s
 {
-	uint16_t	is_signed;
 	uint32_t	value;
+	uint16_t	is_signed;
+	uint8_t		sign;
 }
 value_t;
 
@@ -52,33 +53,21 @@ struct	label_s
 	uint32_t	addr;
 };
 
-struct	unkwn_sym_s
-{
-	char		*name;
-	uint32_t	lineno;	// for print an error if symbol
-						// is not declared
-	char		*filename;
-	// next ??
-};
-
 struct	code_s
 {
-	uint8_t			opcode[2];
-	uint8_t			operand1[2];
-	uint8_t			operand2[2];
-	uint8_t			size;	// instruction size (1 - 3)
-							// if .byte, 1 - 252 (0xffu - 3)
-	uint8_t			ope_size;	// 0xf0 -> ope1
-								// 0x0f -> ope2
-	void			*unkwn;	// not allocated
-							// unkwn_sym_t, uint8_t[]
-							// symbol   or  .bytes
+	uint8_t			opcode[4];	// opcode + value(2) + sign
+			// sign = '+', '-' ou '\0'
+			// if (sign) value is the complement
+	uint32_t		size;	// instruction size (1 - 3)
+			// if .byte, length = ((size & 0xffffff00) >> 8)
+	void			*symbol; // symbol   or  .bytes
 	struct code_s	*next;
 };
 
 struct	code_area_s
 {
 	uint32_t		addr;
+	uint32_t		count;
 	struct code_s	*data;
 	struct code_s	*cur;
 };
@@ -108,6 +97,7 @@ struct	data_s
 	uint32_t	lineno;
 	int32_t		cur_area;
 	char		buf[128];
+	uint32_t	inst_count;
 };
 
 /*

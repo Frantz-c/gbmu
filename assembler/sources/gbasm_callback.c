@@ -108,7 +108,6 @@ extern int		area_match(const void *b, const void *a)
 
 extern int		macro_match(const void *b, const void *a)
 {
-	printf("match(%s, %s)\n", ((macro_t *)a)->name, *(char**)b);
 	return (strcmp( ((macro_t *)a)->name, *(char**)b) );
 }
 
@@ -121,6 +120,13 @@ extern int		memblock_match(const void *b, const void *a)
 	return (-1);
 }
 
+extern int		ext_symbol_match(const void *b, const void *a)
+{
+	register symbol_t	*sym1 = (symbol_t *)a;
+
+	return (strcmp(sym1->name, *(char **)b));
+}
+
 extern int		label_match(const void *b, const void *a)
 {
 	return (strcmp(((label_t *)a)->name, *(char**)b));
@@ -129,6 +135,14 @@ extern int		label_match(const void *b, const void *a)
 /*
  *	=============COMPAR=============
  */
+
+extern int		ext_symbol_match(const void *a, const void *b)
+{
+	register symbol_t	*sym1 = (symbol_t *)a;
+	register symbol_t	*sym2 = (symbol_t *)b;
+
+	return (strcmp(sym1->name, sym2->name));
+}
 
 extern int		label_cmp(const void *a, const void *b)
 {

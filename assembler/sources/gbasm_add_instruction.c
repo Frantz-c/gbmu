@@ -544,6 +544,7 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *ext_symbol, loc_sym_
 	char		*param1, *param2;
 	param_t		param[2] = {NONE, NONE};
 	value_t		val = {0};
+	uint8_t		bin[4];
 	int			is_ld = 0;
 
 	str_to_lower(inst);
@@ -591,7 +592,12 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *ext_symbol, loc_sym_
 	else
 		free(param1);
 
-	add_bin_instruction(inst, param, area, symbol, ext_symbol, loc_symbol, &val, data);
+
+	uint32_t	error;
+	uint8_t		bin[4] = {0, 0, 0, val.sign};
+
+	error = get_bin_instruction(inst, param, &val, bin);
+	push_instruction(area, bin, param, symbol, ext_symbol, loc_symbol, data);
 	return (s);
 */
 __unexpected_char:
@@ -607,7 +613,7 @@ __error:
  *	penser a changer le type si necessaire. (idem pour addr8)
  */
 
-uint32_t	add_bin_instruction(char *mnemonic, param_t param[2], vector_t *area, char *symbol, vector_t *ext_symbol, loc_sym_t *loc_symbol, value_t *val, data_t *data)
+uint32_t	get_bin_instruction(char *mnemonic, param_t param[2], value_t *val, uint8_t bin[4])
 {
 	static const instruction_t	inst[71] = {
 		{"adc", &&__adc},		{"add", &&__add},		{"and", &&__and},		{"bit", &&__bit},
@@ -712,8 +718,5 @@ __sub:
 __swap:
 __testb:
 __xor:
-
-__add_instruction:
-	push_instruction(area, bin, param, symbol, ext_symbol, loc_symbol, data);
-	return (index);
+	return ((error1 << 16) | error2);
 }

@@ -16,3 +16,4 @@
 
 
 ld		A, VALUE
+ld		A, variables
