@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 13:17:53 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/22 20:05:42 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/24 12:52:56 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -87,11 +87,7 @@ extern void	push_instruction(code_area_t *area, uint8_t bin[3], param_t p[2], ch
 		//symbol
 		if (param == SYMBOL)
 		{
-			unkwn_sym_t	*new = malloc(sizeof(unkwn_sym_t));
-			new->name = strdup(symbol);
-			new->lineno = data->lineno;
-			new->filename = data->filename;
-			area->cur->unkwn = new;
+			area->cur->symbol = strdup(symbol);
 
 			if (vector_search(loc_symbol->label, symbol) == -1
 				&& variables_match_name(loc_symbol->memblock, symbol) == -1)
@@ -103,18 +99,14 @@ extern void	push_instruction(code_area_t *area, uint8_t bin[3], param_t p[2], ch
 				}
 				else if (vector_search(ext_symbol, symbol) == -1)
 				{
-					fprintf(stderr, "Unknown symbol %s\n", symbol);
-	//				symbol_t	sym = {new->name, VAR_OR_LABEL};
-	//				vector_push(ext_symbol, (void*)&sym);
+					label_t	sym = {symbol, 0, NOT_DECLARED};
+					size_t	index = vector_index(loc_symbol->label, (void*)&symbol);
+					vector_insert(loc_symbol->label, (void*)&sym, index);
 				}
-				else
-					puts("symbol exists");
 			}
-			else
-				puts("symbol exists");
 		}
-		area->cur->size = size;
 	}
+	area->cur->size = size;
 }
 
 extern void	new_instruction(code_area_t *area)
@@ -125,10 +117,12 @@ extern void	new_instruction(code_area_t *area)
 
 	if (area->data == NULL)
 	{
+		puts("area->data == NULL");
 		area->data = new;
 		area->cur = new;
 		return;
 	}
+	puts("area->data != NULL");
 	area->cur->next = new;
 	area->cur = new;
 }
@@ -138,11 +132,11 @@ extern int	push_byte(code_area_t *area, uint8_t byte)
 	if (area->cur->size == 247)
 		return (-1);
 
-	if (area->cur->unkwn == NULL)
-		area->cur->unkwn = (void *)malloc(sizeof(uint8_t) * BYTE_ALLOC_SIZE);
+	if (area->cur->symbol == NULL)
+		area->cur->symbol = (void *)malloc(sizeof(uint8_t) * BYTE_ALLOC_SIZE);
 	else if ((area->cur->size & 0x7) == 0)
-		area->cur->unkwn = realloc(area->cur->unkwn, area->cur->size + BYTE_ALLOC_SIZE);
-	((uint8_t*)(area->cur->unkwn))[area->cur->size++] = byte;
+		area->cur->symbol = realloc(area->cur->symbol, area->cur->size + BYTE_ALLOC_SIZE);
+	((uint8_t*)(area->cur->symbol))[area->cur->size++] = byte;
 
 	return (0);
 }

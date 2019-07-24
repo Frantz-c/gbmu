@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 22:10:25 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/22 22:58:57 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/24 14:08:49 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -613,7 +613,7 @@ __error:
  *	penser a changer le type si necessaire. (idem pour addr8)
  */
 
-uint32_t	get_bin_instruction(char *mnemonic, param_t param[2], value_t *val, uint8_t bin[4])
+param_error_t	get_bin_instruction(char *mnemonic, param_t param[2], value_t *val, uint8_t bin[4])
 {
 	static const instruction_t	inst[71] = {
 		{"adc", &&__adc},		{"add", &&__add},		{"and", &&__and},		{"bit", &&__bit},
@@ -635,10 +635,8 @@ uint32_t	get_bin_instruction(char *mnemonic, param_t param[2], value_t *val, uin
 		{"sra", &&__sra},		{"srl", &&__srl},		{"stop", &&__stop},		{"sub", &&__sub},
 		{"swap", &&__swap},		{"testb", &&__testb},	{"xor", &&__xor}
 	};
-	uint32_t	index;
-	uint8_t		bin[6];
-	uint32_t	error1 = 0;
-	uint32_t	error2 = 0;
+	uint32_t		index;
+	param_error_t	error = {0, 0}; // error.p1, error.p2
 
 	index = instruction_search(inst, mnemonic);
 	if (index == 0xffffffffu)
@@ -718,5 +716,5 @@ __sub:
 __swap:
 __testb:
 __xor:
-	return ((error1 << 16) | error2);
+	return (error);
 }

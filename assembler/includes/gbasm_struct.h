@@ -17,6 +17,15 @@ param_t;
 #define LABEL			0x21
 #define MEMBLOCK		0x02
 
+#define	NOT_DECLARED	0xffffffffu
+
+typedef struct	param_error_s
+{
+	uint32_t	p1;
+	uint32_t	p2;
+}
+param_error_t;
+
 typedef struct	loc_sym_s
 {
 	vector_t	*memblock;
@@ -51,6 +60,7 @@ struct	label_s
 {
 	char		*name;
 	uint32_t	addr;
+	uint32_t	base_or_status;	// 0xffffffffu = NOT_DECLARED, all others = DECLARED	
 };
 
 struct	code_s
@@ -95,7 +105,7 @@ struct	data_s
 	char		*filename;
 	uint32_t	length;
 	uint32_t	lineno;
-	int32_t		cur_area;
+	uint32_t	cur_area;
 	char		buf[128];
 	uint32_t	inst_count;
 };

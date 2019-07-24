@@ -14,6 +14,8 @@
 .var2		health, variables
 .var2		attack, variables
 
+.byte		0x32 0x33 0x34 0x35 0x0
+
 
 ld		A, VALUE
 ld		A, variables

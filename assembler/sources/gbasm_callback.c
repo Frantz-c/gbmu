@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/12 10:39:48 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/20 21:50:04 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/24 11:10:45 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -76,8 +76,8 @@ extern void		area_destroy(void *a)
 	{
 		code_t	*tmp;
 
-		if (c->unkwn)
-			free(c->unkwn);
+		if (c->symbol)
+			free(c->symbol);
 		tmp = c;
 		c = c->next;
 		free(tmp);
@@ -89,7 +89,7 @@ extern void		label_destroy(void *a)
 	free(((label_t *)a)->name);
 }
 
-extern void		symbol_destroy(void *a)
+extern void		ext_symbol_destroy(void *a)
 {
 	free(((symbol_t *)a)->name);
 }
@@ -136,7 +136,7 @@ extern int		label_match(const void *b, const void *a)
  *	=============COMPAR=============
  */
 
-extern int		ext_symbol_match(const void *a, const void *b)
+extern int		ext_symbol_cmp(const void *a, const void *b)
 {
 	register symbol_t	*sym1 = (symbol_t *)a;
 	register symbol_t	*sym2 = (symbol_t *)b;

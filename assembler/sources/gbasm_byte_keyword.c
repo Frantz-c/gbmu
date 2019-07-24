@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/12 16:22:55 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/16 16:04:55 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/24 12:49:43 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -59,7 +59,9 @@ extern char		*add_bytes(vector_t *area, char *s, data_t *data)
 			break;
 	}
 	while (1);
-	VEC_ELEM(code_area_t, area, data->cur_area)->cur->size += 3;
+	if (VEC_ELEM(code_area_t, area, data->cur_area)->cur->size > 0xffffffu)
+		goto __too_many_bytes;
+	VEC_ELEM(code_area_t, area, data->cur_area)->cur->size <<= 8;
 	return (s);
 
 __warning_no_bytes:
@@ -67,7 +69,7 @@ __warning_no_bytes:
 	return (s);
 
 __too_many_bytes:
-	sprintf(data->buf, "more than 248 bytes, please cut this instruction");
+	sprintf(data->buf, "more than 0xffffff bytes, please cut this instruction");
 	goto __print_error;
 __unexpected_char:
 	sprintf(data->buf, "unexpected char `%c`", *s);

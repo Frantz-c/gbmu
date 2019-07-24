@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/22 22:58:25 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/24 12:46:30 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -80,49 +80,38 @@ void			area_print(const void *a)
 	code_area_t	*area = (code_area_t *)a;
 
 	printf("addr = 0x%04x\n", area->addr);
-	for (code_t *c = area->data; c; c = c->next)
+	if (area->data)
 	{
-		if (c->size > 3)
+		for (code_t *c = area->data; c; c = c->next)
 		{
-			uint8_t	*bytes = (uint8_t*)c->unkwn;
-			for (uint8_t i = 0; i < c->size - 3; i++)
+			if (c->size & 0xffffff00u)
 			{
-				if (i % 8 == 7)
-					puts("");
-				if (i == 0)
-					printf("\tbytes[%hhu] : 0x%hhx", (uint8_t)(c->size - 3), bytes[i]);
-				else
-					printf(", 0x%hhx", bytes[i]);
-			}
-		}
-		else
-		{
-			if (c->opcode[0] == 0xcb)
-				printf("\t\"0x%hhX 0x%hhX\", ", c->opcode[0], c->opcode[1]);
-			else
-				printf("\t\"0x%hhX\", ", c->opcode[0]);
-
-			if ((c->ope_size & 0x0f) == 0)
-				printf("NO_OPERANDS");
-			else
-			{
-				if ((c->ope_size & 0x0f) == 1)
-					printf("0x%hhX", c->operand1[0]);
-				else
-					printf("0x%hhX 0x%hhX", c->operand1[0], c->operand1[0]);
-				if (((c->ope_size & 0xf0) >> 4) > 0)
+				uint8_t		*bytes = (uint8_t*)c->symbol;
+				uint32_t	size = (c->size & 0xffffff00u) >> 8;
+				for (uint8_t i = 0; i < size; i++)
 				{
-					if (((c->ope_size & 0xf0) >> 4) == 1)
-						printf(", 0x%hhX", c->operand2[0]);
+					if (i % 8 == 7)
+						puts("");
+					if (i == 0)
+						printf("\tbytes[%u] : 0x%hhx", size, bytes[i]);
 					else
-						printf(", 0x%hhX 0x%hhX", c->operand2[0], c->operand2[0]);
+						printf(", 0x%hhx", bytes[i]);
 				}
 			}
+			else
+			{
+				uint8_t	size = c->size;
+				printf("\t");
+				for (uint8_t i; i < size; i++)
+				{
+					printf("0x%hhX, ", c->opcode[i]);
+				}
+			}
+			printf("\n");
 		}
-		printf("\n");
-		return;
 	}
-	printf("\tno data\n");
+	else
+		printf("\tno data\n");
 }
 
 void			symbol_print(const void *a)
@@ -360,7 +349,7 @@ __print_error:
 	return (s);
 }
 
-static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_t *ext_symbol, loc_sym_t *loc_symbol, int32_t *cur_area)
+static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_t *ext_symbol, loc_sym_t *loc_symbol, uint32_t cur_area)
 {
 	data_t		data;
 	char		*s;
@@ -376,6 +365,7 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 	data.filename = filename;
 	data.line = s;
 	data.lineno = 1;
+	data.cur_area = cur_area;
 	while (*s)
 	{
 		SKIP_SPACES(s);
@@ -401,7 +391,7 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 				CHECK_ERROR_DIRECTIVE(8);
 				s += 9;
 				include_filename = get_include_filename(&s, &data);
-				parse_file(include_filename, area, macro, ext_symbol, loc_symbol, cur_area);
+				parse_file(include_filename, area, macro, ext_symbol, loc_symbol, data.cur_area);
 				free(include_filename);
 			}
 			else
@@ -523,8 +513,6 @@ int		main(int argc, char *argv[])
 	vector_t		*macro = NULL;
 	vector_t		*code_area = NULL;
 	vector_t		*extern_symbol = NULL;
-//	vector_t		*label = NULL;
-//	vector_t		*memblock = NULL;
 	loc_sym_t		local_symbol = {NULL, NULL};
 	int32_t			cur_area;
 
@@ -546,19 +534,19 @@ int		main(int argc, char *argv[])
 	local_symbol.memblock->compar = &memblock_cmp;
 	local_symbol.memblock->search = &memblock_match;
 	extern_symbol = vector_init(sizeof(symbol_t));
-	extern_symbol->destroy = &symbol_destroy;
-	extern_symbol->compar = NULL;//&symbol_cmp;
-	extern_symbol->search = NULL;//&symbol_match;
+	extern_symbol->destroy = &ext_symbol_destroy;
+	extern_symbol->compar = &ext_symbol_cmp;
+	extern_symbol->search = &ext_symbol_match;
 
 	for (char **p = file; *p; p++)
 	{
 		g_error = 0;
 		g_warning = 0;
-		cur_area = 0;
-		code_area_t		area_elem = {0, NULL, NULL};
+//		cur_area = 0;
+		code_area_t		area_elem = {0, 0, NULL, NULL};
 		vector_push(code_area, (void*)&area_elem);
 
-		parse_file(*p, code_area, macro, extern_symbol, &local_symbol, &cur_area);
+		parse_file(*p, code_area, macro, extern_symbol, &local_symbol, 0);
 		if (g_error)
 		{
 			fprintf(stderr, "\e[1;31m%u errors\e[0m\n", g_error);
