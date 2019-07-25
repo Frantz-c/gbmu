@@ -28,6 +28,13 @@ insn_err_t;
 
 #define	NOT_DECLARED	0xffffffffu
 
+typedef struct	instruction_s
+{
+	const char			*name;
+	const void *const	addr;
+}
+instruction_t;
+
 typedef struct	param_error_s
 {
 	uint32_t	p1;

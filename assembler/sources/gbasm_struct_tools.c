@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 13:17:53 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/25 09:43:44 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/25 10:15:52 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -52,7 +52,7 @@ extern int32_t		memblock_match_name(const vector_t *memblock, const char *s)
 	return (-1);
 }
 
-extern void	push_instruction(code_area_t *area, uint8_t bin[3], param_t p[2], char *symbol,
+extern void			push_instruction(code_area_t *area, uint8_t bin[4], param_t p[2], char *symbol,
 						vector_t *ext_symbol, loc_sym_t *loc_symbol, data_t *data)
 {
 	uint32_t	size;
@@ -93,14 +93,14 @@ extern void	push_instruction(code_area_t *area, uint8_t bin[3], param_t p[2], ch
 			area->cur->symbol = strdup(symbol);
 			int32_t	index;
 
-			if (vector_search(loc_symbol->label, symbol) == -1
+			if (vector_search(loc_symbol->label, (void*)&symbol) == -1
 				&& variables_match_name(loc_symbol->memblock, symbol, NULL) == -1)
 			{
 				if (memblock_match_name(loc_symbol->memblock, symbol) != -1)
 				{
 					fprintf(stderr, "can't use memory block as operand\n");
 				}
-				else if ((index = vector_search(ext_symbol, symbol)) == -1)
+				else if ((index = vector_search(ext_symbol, (void*)&symbol)) == -1)
 				{
 					label_t	sym = {symbol, 0, NOT_DECLARED, data->lineno, data->filename};
 					size_t	index = vector_index(loc_symbol->label, (void*)&symbol);
