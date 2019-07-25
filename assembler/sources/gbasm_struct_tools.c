@@ -6,33 +6,35 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 13:17:53 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/24 12:52:56 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/25 09:43:44 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
 #include "std_includes.h"
 #include "gbasm_struct.h"
+#include "gbasm_tools.h"
 
 #define BYTE_ALLOC_SIZE		8
 
-#define OP1	0
-#define OP2	1
-#define P11	2
-#define P12	3
-#define P21	4
-#define P22	5
 
-extern int32_t		variables_match_name(const vector_t *memblock, const char *s)
+extern int32_t		variables_match_name(const vector_t *memblock, const char *s, int32_t *block_i)
 {
 	register uint32_t	end = memblock->nitems * sizeof(memblock_t);
+
 	for (uint32_t i = 0; i < end; i += sizeof(memblock_t))
 	{
 		memblock_t	*block = (memblock_t *)(memblock->data + i);
 		ssize_t		index;
 
-		if ((index = vector_search(block->var, s)) != -1)
-			return ((int32_t)index);
+		if (block->var)
+		{
+			if ((index = vector_search(block->var, (void*)&s)) != -1)
+			{
+				if (block_i) *block_i = i / sizeof(memblock_t);
+				return ((int32_t)index);
+			}
+		}
 	}
 	return (-1);
 }
@@ -40,6 +42,7 @@ extern int32_t		variables_match_name(const vector_t *memblock, const char *s)
 extern int32_t		memblock_match_name(const vector_t *memblock, const char *s)
 {
 	register uint32_t	end = memblock->nitems * sizeof(memblock_t);
+
 	for (uint32_t i = 0; i < end; i += sizeof(memblock_t))
 	{
 		memblock_t *block = (memblock_t *)(memblock->data + i);
@@ -88,20 +91,31 @@ extern void	push_instruction(code_area_t *area, uint8_t bin[3], param_t p[2], ch
 		if (param == SYMBOL)
 		{
 			area->cur->symbol = strdup(symbol);
+			int32_t	index;
 
 			if (vector_search(loc_symbol->label, symbol) == -1
-				&& variables_match_name(loc_symbol->memblock, symbol) == -1)
+				&& variables_match_name(loc_symbol->memblock, symbol, NULL) == -1)
 			{
 				if (memblock_match_name(loc_symbol->memblock, symbol) != -1)
 				{
-					//ERROR
-					fprintf(stderr, "can't use variables block as operand\n");
+					fprintf(stderr, "can't use memory block as operand\n");
 				}
-				else if (vector_search(ext_symbol, symbol) == -1)
+				else if ((index = vector_search(ext_symbol, symbol)) == -1)
 				{
-					label_t	sym = {symbol, 0, NOT_DECLARED};
+					label_t	sym = {symbol, 0, NOT_DECLARED, data->lineno, data->filename};
 					size_t	index = vector_index(loc_symbol->label, (void*)&symbol);
 					vector_insert(loc_symbol->label, (void*)&sym, index);
+				}
+				else if (index > -1)
+				{
+					symbol_t	*sym = VEC_ELEM(symbol_t, ext_symbol, index);
+
+					if (sym->type == UNUSED)
+						sym->type = VAR_OR_LABEL;
+					else if (sym->type == MEMBLOCK)
+					{
+						fprintf(stderr, "can't use memory block as operand\n");
+					}
 				}
 			}
 		}
@@ -117,14 +131,14 @@ extern void	new_instruction(code_area_t *area)
 
 	if (area->data == NULL)
 	{
-		puts("area->data == NULL");
 		area->data = new;
 		area->cur = new;
+//		puts("area->data == NULL");
 		return;
 	}
-	puts("area->data != NULL");
 	area->cur->next = new;
 	area->cur = new;
+//	puts("area->data != NULL");
 }
 
 extern int	push_byte(code_area_t *area, uint8_t byte)

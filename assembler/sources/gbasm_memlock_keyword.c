@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/10 19:00:27 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/20 20:45:01 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/25 08:16:45 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -80,7 +80,7 @@ extern char	*set_memlock_area(vector_t *memblock, char *s, data_t *data)
 	if (*s != '\0' && *s != '\n')
 		goto __error;
 
-	memblock_t	new = {addr, end, end - addr, name, NULL};
+	memblock_t	new = {addr, end, end - addr, data->lineno, strdup(data->filename), name, NULL};
 	vector_push(memblock, (void*)&new);
 
 	return (s);

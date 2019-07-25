@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 22:10:25 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/24 14:08:49 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/25 09:19:14 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -543,7 +543,7 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *ext_symbol, loc_sym_
 {
 	char		*param1, *param2;
 	param_t		param[2] = {NONE, NONE};
-	value_t		val = {0};
+	value_t		val = {0, 0, 0};
 	uint8_t		bin[4];
 	int			is_ld = 0;
 
@@ -569,7 +569,7 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *ext_symbol, loc_sym_
 
 		if (param2)
 		{
-			value_t	tmp_val = {0};
+			value_t	tmp_val = {0, 0, 0};
 
 			if (macro && replace_macro(&param2, macro) == -1)
 				goto __error;
@@ -640,7 +640,11 @@ param_error_t	get_bin_instruction(char *mnemonic, param_t param[2], value_t *val
 
 	index = instruction_search(inst, mnemonic);
 	if (index == 0xffffffffu)
-		return (index);
+	{
+		error.p1 = 0xffffffffu;
+		error.p2 = 0xffffffffu;
+		return (error);
+	}
 	
 //	new_instruction( VEC_ELEM(code_area_t, area, data->cur_area) );
 	goto *(inst[index].addr);

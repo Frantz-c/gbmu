@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/12 10:39:48 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/24 11:10:45 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/25 09:35:41 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -17,11 +17,12 @@
 /*
  *	=============DESTROY=============
  */
-extern void		variables_destroy(void *a)
+extern void		variable_destroy(void *a)
 {
 	variable_t	*var = (variable_t *)a;
 
 	free(var->name);
+	free(var->filename);
 }
 
 extern void		memblock_destroy(void *a)
@@ -132,9 +133,19 @@ extern int		label_match(const void *b, const void *a)
 	return (strcmp(((label_t *)a)->name, *(char**)b));
 }
 
+extern int		variable_match(const void *a, const void *b)
+{
+	return ( strcmp( ((variable_t *)b)->name, *(char**)a) );
+}
+
 /*
  *	=============COMPAR=============
  */
+
+extern int		variable_cmp(const void *a, const void *b)
+{
+	return ( strcmp( ((variable_t *)a)->name, ((variable_t *)b)->name ));
+}
 
 extern int		ext_symbol_cmp(const void *a, const void *b)
 {

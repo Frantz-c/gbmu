@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/13 22:59:31 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/20 19:35:48 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/25 09:42:44 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -15,6 +15,7 @@
 #include "gbasm_tools.h"
 #include "gbasm_struct.h"
 #include "gbasm_error.h"
+#include "gbasm_callback.h"
 
 static uint32_t	get_block_addr(char *block, vector_t *memblock, uint32_t size, uint32_t *index)
 {
@@ -89,11 +90,22 @@ extern char	*assign_var_to_memory(vector_t *memblock, char *s, data_t *data)
 		goto __no_space;
 
 	memblock_t	*block = VEC_ELEM(memblock_t, memblock, index);
-	if (block->var == NULL)
-		block->var = vector_init(sizeof(variable_t));
+	variable_t	new = {name, addr, size, data->lineno, strdup(data->filename)};
 
-	variable_t	new = {name, addr, size};
-	vector_push(block->var, (void*)&new);
+	if (block->var == NULL)
+	{
+		block->var = vector_init(sizeof(variable_t));
+		block->var->destroy = &variable_destroy;
+		block->var->compar = &variable_cmp;
+		block->var->search = &variable_match;
+		vector_push(block->var, (void*)&new);
+	}
+	else
+	{
+		register size_t		i = vector_index(block->var, (void*)&name);
+
+		vector_insert(block->var, (void*)&new, i);
+	}
 	free(blockname);
 	return (s);
 

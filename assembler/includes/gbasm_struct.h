@@ -54,13 +54,17 @@ struct	symbol_s
 {
 	char		*name;
 	uint32_t	type;
+	uint32_t	line;
+	char		*filename;
 };
 
 struct	label_s
 {
 	char		*name;
-	uint32_t	addr;
-	uint32_t	base_or_status;	// 0xffffffffu = NOT_DECLARED, all others = DECLARED	
+	uint32_t	pos;
+	uint32_t	base_or_status;	// 0xffffffffu = NOT_DECLARED, all others = DECLARED
+	uint32_t	line;			// pour les symbols doubles
+	char		*filename;
 };
 
 struct	code_s
@@ -87,6 +91,8 @@ struct	memblock_s
 	uint32_t			start;
 	uint32_t			end;
 	uint32_t			space;
+	uint32_t			line;
+	char				*filename;
 	char				*name;
 	vector_t			*var;
 };
@@ -96,6 +102,8 @@ struct	variable_s
 	char				*name;
 	uint32_t			addr;
 	uint32_t			size;
+	uint32_t			line;
+	char				*filename;
 };
 
 struct	data_s

@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/12 16:22:40 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/13 21:20:30 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/25 09:13:19 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -72,7 +72,7 @@ extern char	*bank_switch(vector_t *area, char *s, data_t *data)
 		goto __addr_already_used;
 
 	data->cur_area = vector_index(area, (void*)&addr);
-	code_area_t	new = {addr, NULL, NULL};
+	code_area_t	new = {addr, 0, NULL, NULL};
 	vector_insert(area, (void*)&new, (size_t)data->cur_area);
 
 	__ret_s:

@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/24 12:46:30 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/25 09:19:56 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -102,7 +102,7 @@ void			area_print(const void *a)
 			{
 				uint8_t	size = c->size;
 				printf("\t");
-				for (uint8_t i; i < size; i++)
+				for (uint8_t i = 0; i < size; i++)
 				{
 					printf("0x%hhX, ", c->opcode[i]);
 				}
@@ -514,7 +514,7 @@ int		main(int argc, char *argv[])
 	vector_t		*code_area = NULL;
 	vector_t		*extern_symbol = NULL;
 	loc_sym_t		local_symbol = {NULL, NULL};
-	int32_t			cur_area;
+//	int32_t			cur_area;
 
 	file[0]	=	"testfile1";
 	file[1]	=	"testfile2";

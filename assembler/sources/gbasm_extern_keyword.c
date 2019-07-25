@@ -23,7 +23,7 @@ extern char	*set_extern_symbol(vector_t *symbol, char *s, data_t *data)
 		free(name);
 		goto __unexpected_char;
 	}
-	symbol_t	new = {name, 0};
+	symbol_t	new = {name, 0, data->lineno, strdup(data->filename)};
 	vector_push(symbol, (void*)&new);
 	return (s);
 	
