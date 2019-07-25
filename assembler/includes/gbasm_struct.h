@@ -10,6 +10,15 @@ typedef enum	param_e
 }
 param_t;
 
+typedef enum	insn_err_e
+{
+	ENONE, MISSING_PARAM, TOO_MANY_PARAMS, INVAL_ADC_SBB_SRC,
+	INVAL_ADD_SUB_DST, INVAL_ADD_SUB_SRC, INVAL_BIT_ARITH_SRC,
+	INVAL_CB_BIT_VALUE, INVAL_CB_BIT_DST, INVAL_JP_CALL_ADDR,
+	INVAL_CMP_SRC,
+}
+insn_err_t;
+
 // symbol types
 #define UNUSED			0x0
 #define	VAR_OR_LABEL	0x01
