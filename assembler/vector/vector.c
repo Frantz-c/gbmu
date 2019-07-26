@@ -188,7 +188,7 @@ ssize_t		vector_search(vector_t *vec, const void *elem)
 		if (side < 0)
 			left = middle + 1;
 		else if (side > 0)
-			right = middle - 1;
+			right = middle;
 		else
 			return ((ssize_t)middle);
 	}
@@ -203,7 +203,7 @@ size_t		vector_index(vector_t *vec, const void *elem)
 	if (vec->nitems == 0)
 		return (0);
 	left = 0;
-	right = vec->nitems; // - 1;
+	right = vec->nitems;
 	while (left < right)
 	{
 		middle = (left + right) / 2;

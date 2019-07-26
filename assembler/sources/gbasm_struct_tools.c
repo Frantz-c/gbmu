@@ -57,7 +57,19 @@ extern void			push_instruction(code_area_t *area, uint8_t bin[4], param_t p[2], 
 {
 	uint32_t	size;
 	uint8_t		opsize = 0;
-
+	code_t		*new;
+	
+	new = calloc(1, sizeof(code_t));
+	if (area->cur == NULL)
+	{
+		area->data = new;
+		area->cur = new;
+	}
+	else
+	{
+		area->cur->next = new;
+		area->cur = new;
+	}
 
 	// opcode
 	if (bin[0] == 0xCB)

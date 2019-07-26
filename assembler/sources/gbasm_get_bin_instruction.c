@@ -26,11 +26,12 @@ static ssize_t		instruction_search(const instruction_t inst[71], char *tofind)
 	while (left < right)
 	{
 		middle = (left + right) / 2;
+		printf("left = %u, right = %u\n\e[1;36mCOMPARE(\e[0;33m\"%s\"\e[1;36m, \e[0;33m\"%s\"\e[1;36m);\n\e[0m", left, right, inst[middle].name, tofind);
 		side = strcmp(inst[middle].name, tofind);
 		if (side < 0)
 			left = middle + 1;
 		else if (side > 0)
-			right = middle - 1;
+			right = middle;
 		else
 			return (middle);
 	}
@@ -70,6 +71,7 @@ extern param_error_t	get_bin_instruction(char *mnemonic, param_t param[2], value
 	index = instruction_search(inst, mnemonic);
 	if (index == 0xffffffffu)
 	{
+		puts("__PROBLEM__");
 		error.p1 = 0xffffffffu;
 		error.p2 = 0xffffffffu;
 		return (error);
@@ -277,6 +279,7 @@ __add:
 	}
 
 __and:
+puts("__AND__");
 	if (param[0] == A)
 	{
 		switch (param[1])
@@ -680,8 +683,10 @@ __stop:
 __sub:
 __swap:
 __testb:
+	return ((param_error_t){0x1,0x1});
 __xor:
-
+puts("__XOR__");
+	return ((param_error_t){0x1,0x1});
 __done:
 	return (error);
 }

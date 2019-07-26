@@ -159,6 +159,7 @@ int		replace_macro(char **param, vector_t *macro)
 			macro_name = strndup(start, s - start);
 			printf("macro_name = \"%s\"\n", macro_name);
 			index = vector_search(macro, (void*)&macro_name);
+			puts("search segv ?");
 			if (index > -1)
 			{
 				char		*macro_content = VEC_ELEM(macro_t, macro, index)->content;
@@ -569,7 +570,12 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *ext_symbol, loc_sym_
 	uint8_t		bin[4] = {0, 0, 0, val.sign};
 
 	error = get_bin_instruction(inst, param, &val, bin);
-	push_instruction(VEC_ELEM(code_area_t, area, data->cur_area), bin, param, symbol, ext_symbol, loc_symbol, data);
+	if (error.p1 || error.p2)
+	{
+		fprintf(stderr, "Error instruction\n");
+	}
+	else
+		push_instruction(VEC_ELEM(code_area_t, area, data->cur_area), bin, param, symbol, ext_symbol, loc_symbol, data);
 	return (s);
 
 __unexpected_char:
