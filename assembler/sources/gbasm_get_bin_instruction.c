@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/25 10:03:09 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/25 10:07:40 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/26 19:57:29 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -432,6 +432,8 @@ __call:
 	{
 		case IMM16:
 		case ADDR16:
+		case IMM8:
+		case ADDR8:
 			bin[0] = 0xCDu;
 			bin[1] = (uint8_t)val->value;
 			bin[2] = (uint8_t)(val->value >> 8);

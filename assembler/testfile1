@@ -16,8 +16,12 @@
 
 
 label:
-xor	B
-and	C
-and	A
-and	B
-and A, C
+%include	inc_file
+
+.bank		1
+
+add		A, H
+cp		C
+call	0x3000
+
+.var1		v, variable

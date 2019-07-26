@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/25 09:19:56 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/26 20:34:49 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -352,7 +352,7 @@ __print_error:
 static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_t *ext_symbol, loc_sym_t *loc_symbol, uint32_t cur_area)
 {
 	data_t		data;
-	char		*s;
+	char		*s, *content_start;
 	char		*include_filename;
 
 	if ((s = get_file_contents(filename, &data.length)) == NULL)
@@ -360,6 +360,7 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 		fprintf(stderr, "%s: file doesn't exist\n", filename);
 		exit(1);
 	}
+	content_start = s;
 	s[data.length] = '\0';
 
 	data.filename = filename;
@@ -414,7 +415,7 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 			else if (strncmp(s + 1, "memlock", 7) == 0 && !is_alnum(s[8]))
 				s = set_memlock_area(loc_symbol->memblock, s + 9, &data);
 			else if (strncmp(s + 1, "var", 3) == 0 && is_numeric(s + 4, &len) && is_space(s[len + 4]))
-				s = assign_var_to_memory(loc_symbol->memblock, s + 4, &data);
+				s = assign_var_to_memory(loc_symbol, ext_symbol, s + 4, &data);
 			else if (strncmp(s + 1, "extern", 6) == 0 && !is_alnum(s[7]))
 				s = set_extern_symbol(ext_symbol, s + 8, &data);
 			else
@@ -438,6 +439,7 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 	vector_print(ext_symbol, "extern symbol", &symbol_print);
 	vector_print(loc_symbol->label, "label", &label_print);
 	vector_print(loc_symbol->memblock, "block", &memblock_print);
+	free(content_start);
 }
 
 /*
@@ -553,7 +555,8 @@ int		main(int argc, char *argv[])
 			break;
 		}
 
-//		save_file_object(code_area, label, *p);
+		create_object_file(code_area, &local_symbol, extern_symbol, *p);
+
 		vector_reset(code_area);
 		vector_reset(local_symbol.label);
 		vector_reset(local_symbol.memblock);

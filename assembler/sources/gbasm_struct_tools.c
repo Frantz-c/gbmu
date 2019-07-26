@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 13:17:53 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/25 10:15:52 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/26 20:03:01 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -56,7 +56,7 @@ extern void			push_instruction(code_area_t *area, uint8_t bin[4], param_t p[2], 
 						vector_t *ext_symbol, loc_sym_t *loc_symbol, data_t *data)
 {
 	uint32_t	size;
-	uint8_t		opsize = 0;
+//	uint8_t		opsize = 0;
 	code_t		*new;
 	
 	new = calloc(1, sizeof(code_t));
@@ -90,12 +90,13 @@ extern void			push_instruction(code_area_t *area, uint8_t bin[4], param_t p[2], 
 			param = p[1];
 
 		if (param >= IMM16) {
-			size++;
+			size += 2;
 			area->cur->opcode[2] = bin[2];
+			area->cur->opcode[1] = bin[1];
 		}
 		else if (param >= FF00_IMM8) {
 			size++;
-			opsize++;
+//			opsize++;
 			area->cur->opcode[1] = bin[1];
 		}
 

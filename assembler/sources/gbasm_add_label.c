@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/22 22:53:58 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/25 09:44:35 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/26 19:40:49 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -33,7 +33,11 @@ void	add_label(char *name, vector_t *area, vector_t *ext_symbol, loc_sym_t *loc_
 		}
 		else
 		{
-			sprintf(data->buf, "duplicate symbol `%s` (previous declaration in file %s:%u)", name, lab->filename, lab->line);
+			sprintf(
+						data->buf,
+						"duplicate symbol `%s` (previous declaration in file %s:%u)",
+						name, lab->filename, lab->line
+					);
 			print_error(data->filename, data->lineno, data->line, data->buf);
 		}
 		free(name);
@@ -43,7 +47,11 @@ void	add_label(char *name, vector_t *area, vector_t *ext_symbol, loc_sym_t *loc_
 	{
 		memblock_t	*block = VEC_ELEM(memblock_t, loc_symbol->memblock, index);
 		
-		sprintf(data->buf, "duplicate symbol `%s` (previous declaration in file %s:%u)", name, block->filename, block->line);
+		sprintf(
+					data->buf,
+					"duplicate symbol `%s` (previous declaration in file %s:%u)",
+					name, block->filename, block->line
+				);
 		print_error(data->filename, data->lineno, data->line, data->buf);
 		free(name);
 		return;
@@ -53,7 +61,11 @@ void	add_label(char *name, vector_t *area, vector_t *ext_symbol, loc_sym_t *loc_
 		memblock_t	*block = VEC_ELEM(memblock_t, loc_symbol->memblock, block_index);
 		variable_t	*var = VEC_ELEM(variable_t, block->var, index);
 
-		sprintf(data->buf, "duplicate symbol `%s` (previous declaration in file %s:%u)", name, var->filename, var->line);
+		sprintf(
+					data->buf,
+					"duplicate symbol `%s` (previous declaration in file %s:%u)",
+					name, var->filename, var->line
+				);
 		print_error(data->filename, data->lineno, data->line, data->buf);
 		free(name);
 		return;
@@ -62,7 +74,11 @@ void	add_label(char *name, vector_t *area, vector_t *ext_symbol, loc_sym_t *loc_
 	{
 		symbol_t	*sym = VEC_ELEM(symbol_t, ext_symbol, index);
 
-		sprintf(data->buf, "duplicate symbol `%s` (previous declaration in file %s:%u)", name, sym->filename, sym->line);
+		sprintf(
+					data->buf,
+					"duplicate symbol `%s` (previous declaration in file %s:%u)",
+					name, sym->filename, sym->line
+				);
 		print_error(data->filename, data->lineno, data->line, data->buf);
 		free(name);
 		return;
@@ -74,6 +90,4 @@ void	add_label(char *name, vector_t *area, vector_t *ext_symbol, loc_sym_t *loc_
 
 	label_t	new = {name, pos, addr, data->lineno, strdup(data->filename)};
 	vector_insert(loc_symbol->label, (void*)&new, i);
-
-	return;
 }
