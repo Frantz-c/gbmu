@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/13 22:59:31 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/26 19:53:17 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/27 21:16:04 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -138,7 +138,11 @@ extern char	*assign_var_to_memory(loc_sym_t *loc_symbol, vector_t *ext_symbol, c
 	uint32_t	index = 0;
 	addr = get_block_addr(blockname, loc_symbol->memblock, size, &index);
 	if (addr == 0xffffffffu)
+	{
+		// verifier si le symbol est extern.
+		// si oui, conserver la valeur actuelle d'addr
 		goto __unknown_memblock;
+	}
 	if (addr == 0xfffffffeu)
 		goto __no_space;
 

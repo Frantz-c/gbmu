@@ -2,16 +2,14 @@ header
 {
 
 	uint32_t	header_length;
-//	uint32_t	extern_symbols_length;
-//	uint32_t	local_symbols_length;
-//	uint32_t	code_length;
+	uint32_t	extern_symbols_count;
+	uint32_t	local_symbols_count;
+	uint32_t	code_length;
 
 	symbols externes
 	{
 		char		*name;		// nom du symbol
 		uint32_t	type;		// var, label, block
-
-		if		!block
 		uint32_t	quantity;	// nombre d'appels
 		uint32_t	pos; ...	// position relative au debut du code de la valeur (apres le header)
 	}
@@ -39,7 +37,7 @@ header
 
 
 
-uint32_t	n_blocks
+//uint32_t	n_blocks
 
 code
 {

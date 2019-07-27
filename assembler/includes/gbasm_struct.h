@@ -6,7 +6,9 @@
 // C_FF00 = (C)
 typedef enum	param_e
 {
-	UNKNOWN,NONE,A,B,C,D,E,F,H,L,AF,BC,DE,HL,SP,_NZ_,_Z_,_NC_,_C_,HLI,HLD,SP_ADDR,HL_ADDR,BC_ADDR,DE_ADDR,AF_ADDR,FF00_C,FF00_IMM8,IMM8,ADDR8,IMM16,ADDR16,SYMBOL
+	UNKNOWN,NONE,A,B,C,D,E,F,H,L,AF,BC,DE,HL,SP,_NZ_,_Z_,_NC_,_C_,
+	HLI,HLD,SP_ADDR,HL_ADDR,BC_ADDR,DE_ADDR,AF_ADDR,FF00_C,
+	FF00_IMM8,IMM8,ADDR8,IMM16,ADDR16,SYMBOL
 }
 param_t;
 
@@ -28,9 +30,36 @@ insn_err_t;
 
 #define	NOT_DECLARED	0xffffffffu
 
+// object files generation
+typedef struct	intern_symbols_s
+{
+	uint8_t		*name;
+	uint32_t	type;
+	uint32_t	quantity;
+	uint32_t	*pos;		//			if VAR || LABEL
+
+	uint8_t		*blockname;	//			if VAR
+	uint32_t	data1;		// value	if LABEL || VAR
+							// start	if MEMBLOCK
+	uint32_t	data2;		// end		if MEMBLOCK
+							// size		if VAR
+}
+intern_symbols_t;
+
+typedef struct	extern_symbols_s
+{
+	uint8_t		*name;
+	uint32_t	type;
+	uint32_t	quantity;
+	uint32_t	*pos;
+}
+extern_symbols_t;
+
+
+// assembly files
 typedef struct	instruction_s
 {
-	const char			*name;
+	const char *const	name;
 	const void *const	addr;
 }
 instruction_t;
@@ -116,7 +145,7 @@ struct	memblock_s
 struct	variable_s
 {
 	char				*name;
-	uint32_t			addr;
+	uint32_t			addr;	// if external memblock: 0xffffffffu
 	uint32_t			size;
 	uint32_t			line;
 	char				*filename;

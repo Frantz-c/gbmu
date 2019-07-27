@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/26 20:34:49 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/27 21:11:48 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -549,7 +549,9 @@ int		main(int argc, char *argv[])
 		vector_push(code_area, (void*)&area_elem);
 
 		parse_file(*p, code_area, macro, extern_symbol, &local_symbol, 0);
-		//calcul_labels_real_addr(&local_symbol, code_area); //fait le tour de toutes les instructions
+		check_code_area_overflow(code_area); // a coder !
+		// remplacer les symbols internes avant de créer l'objet
+		replace_internal_symbols(code_area, &local_symbol); //fonction a coder
 		if (g_error)
 		{
 			fprintf(stderr, "\e[1;31m%u errors\e[0m\n", g_error);

@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 22:10:32 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/26 21:16:19 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/27 21:30:46 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -34,6 +34,7 @@ extern const uint8_t	to_lower_char[128];
 
 # define VEC_ELEM(_struct, _var, _index)	((_struct *)((_var)->data + ((_index) * sizeof(_struct))))
 # define VEC_ELEM_LAST(_struct, _var)		((_struct *)((_var)->data + (((_var)->nitems - 1) * sizeof(_struct))))
+# define VEC_ELEM_FIRST(_struct, _var)		((_struct *)((_var)->data))
 
 # define HEXA_NUM		16
 # define OCTAL_NUM		8
@@ -50,12 +51,13 @@ extern const uint8_t	to_lower_char[128];
 # define is_operator(c)		(ascii[(uint8_t)c] & 0x04)
 # define is_parent(c)		(ascii[(uint8_t)c] & 0x80)
 
-# define	LOWER(x)	to_lower_char[(uint8_t)x]
+# define LOWER(x)			to_lower_char[(uint8_t)x]
 // is_operator = '+' || '*'
 
-# define	VEC_SORTED_INSERT(_vector, _string, _new)	\
+# define VEC_SORTED_INSERT(_vector, _string, _new)	\
+{\
 	register size_t		vindex = vector_index(_vector, (void*)&_string);\
-	vector_insert(_vector, (void*)&_new, vindex);
-
+	vector_insert(_vector, (void*)&_new, vindex);\
+}
 
 #endif

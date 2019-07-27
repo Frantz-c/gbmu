@@ -3,36 +3,18 @@
 /*                                                              /             */
 /*   gbasm_create_object_file.c                       .::    .:/ .      .::   */
 /*                                                 +:+:+   +:    +:  +:+:+    */
-/*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
+/*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
-/*   Created: 2019/07/26 20:24:08 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/26 22:39:29 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Created: 2019/07/27 19:25:27 by fcordon      #+#   ##    ##    #+#       */
+/*   Updated: 2019/07/27 21:29:43 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
-typedef struct	intern_symbols_s
-{
-	uint8_t		*name;
-	uint32_t	type;
-	uint32_t	quantity;	//start if block
-	uint32_t	*pos;
-	//var
-	uint8_t		*blockname;
-	uint32_t	size;
-	//block
-	uint32_t	end;
-}
-intern_symbols_t;
-
-typedef struct	extern_symbols_s
-{
-	uint8_t		*name;
-	uint32_t	type;
-	uint32_t	quantity;
-	uint32_t	*pos;
-}
-extern_symbols_t;
+#include "std_includes.h"
+#include "gbasm_struct.h"
+#include "gbasm_tools.h"
+#include "gbasm_struct_tools.h"
 
 int		intern_cmp(const void *a, const void *b)
 {
@@ -83,7 +65,7 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 {
 	uint8_t		*code;
 	uint32_t	i = 0;
-	uint32_t	allocsize = 0;
+	uint32_t	allocsize;
 	uint32_t	j = 0;
 	uint32_t	len = 0;
 	uint32_t	len_pos = 0;
@@ -98,7 +80,8 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 	extern_->destroy = &extern_destroy;
 	extern_->search = &extern_match;
 
-	code = malloc(sizeof(uint8_t*) * 128);
+	code = malloc(sizeof(uint8_t) * 128);
+	allocsize = 128;
 
 	for (code_area_t *area = VEC_ELEM(code_area_t, code_area, 0); j < code_area->nitems; area += sizeof(code_area_t))
 	{
@@ -113,6 +96,7 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 		len_pos = i;
 		i += 4;
 
+		/************* ADD VAR OR LABEL *************/
 		for (code_t *c = area->data; c; c = c->next)
 		{
 			if (c->size > 0xffu)
@@ -131,13 +115,7 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 			{
 				ssize_t	index;
 
-				if ((allocsize - i) < c->size + (c->size == 3))
-				{
-					allocsize += 128;
-					code = realloc(code, allocsize);
-				}
-				memcpy(code + i, c->code, c->size + (c->size == 3));
-				i += c->size + (c->size == 3);
+				// extern symbol
 				if ((index = vector_search(extern_symbol, (void*)&c->symbol)) != -1)
 				{
 					register symbol_t	*sym = VEC_ELEM(symbol_t, extern_symbol, index);
@@ -145,41 +123,53 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 					if ((index = vector_search(_extern, (void*)&c->symbol)) != -1)
 					{
 						register extern_symbols_t	*sym = VEC_ELEM(extern_symbols_t, _intern, index);
+						sym->pos[sym->quantity] = i;
+						sym->quantity++;
+						if ((sym->quantity % 4) == 0)
+							sym->pos = realloc(sym->pos, sym->quantity + 4);
 						// add pos + inc quantity
 					}
 					else
 					{
+						extern_symbols_t	new = {sym->name, sym->type, 1, NULL};
+						new.pos = malloc(sizeof(uint32_t) * 4);
+						new.pos[0] = i;
+						VEC_SORTED_INSERT(_extern, c->symbol, new);
 						// add new symbol in _extern (quantity = 1, pos = i + 1)
 					}
 				}
-				else
+				else // intern symbol
 				{
-					char		*name;
-					char		*blockname;
+					char		*blockname = NULL;
 					uint32_t	type;
 					uint32_t	data1;
 					uint32_t	data2;
-					uint32_t	pos;
 
 					if ((index = vector_search(local_symbol->label, (void*)&c->symbol)) != -1)
 					{
 						register label_t	*lab = VEC_ELEM(label_t, local_symbol->label, index);
 
 						type = LABEL;
-						name = lab->name;
-						pos = lab->pos + lad->base_or_status;
+						data1 = lab->pos + lad->base_or_status; // virer lab->pos, metter directement la bonne valeur dans lab->base
+						data2 = 0;
 					}
-					else if ((index = vector_search(local_symbol->memblock, (void*)&c->symbol)) != -1)
+					else if ((index = vector_search(local_symbol->memblock, (void*)&c->symbol)) != -1) // impossible...
 					{
 						register label_t	*block = VEC_ELEM(memblock_t, local_symbol->memblock, index);
 
 						type = MEMBLOCK;
+						data1 = block->start;
+						data2 = block->end;
 					}
 					else
 					{
-						register variable_t	*var = variable_search(local_symbol->memblock, c->symbol);
+						uint32_t	block;
+						register variable_t	*var = variable_search(local_symbol->memblock, c->symbol, &block);
 
 						type = VAR;
+						blockname = VEC_ELEM(memblock_t, local_symbol->memblock, block)->name;
+						data2 = var->size;
+						data1 = var->addr;
 					}
 
 					if ((index = vector_search(_intern, (void*)&c->symbol)) != -1)
@@ -188,17 +178,37 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 						// add pos + inc quantity
 						if (type == LABEL)
 						{
+							sym->pos[sym->quantity] = i;
 							sym->quantity++;
-							// ajout de la position (realloc)
+							if ((sym->quantity % 4) == 0)
+								sym->pos = realloc(sym->pos, sym->quantity + 4);
 						}
 					}
 					else
 					{
-						intern_symbols_t	new = {name, type, 1, NULL, blockname, data1, data1, data2};
-						// add new symbol in _extern (quantity = 1, pos = i + 1, type = type)
-					}
+						intern_symbols_t	new = {name, type, 1, NULL, blockname, data1, data2};
 
+						if (type & VAR_OR_LABEL)
+						{
+							new.pos = malloc(sizeof(uint32_t) * 4);
+							new.pos[0] = i;
+						}
+						else
+						{
+							new.quantity = 0;
+						}
+						VEC_SORTED_INSERT(_extern, c->symbol, new);
+					}
 				}
+
+				// add instruction
+				if ((allocsize - i) < c->size + (c->size == 3))
+				{
+					allocsize += 128;
+					code = realloc(code, allocsize);
+				}
+				memcpy(code + i, c->code, c->size + (c->size == 3));
+				i += c->size + (c->size == 3);
 			}
 			else
 			{
@@ -211,5 +221,29 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 				i += c->size;
 			}
 		}
+		/*****************END******************/
+		*(uint32_t*)(code + len_pos) = (uint32_t)(i - (len_pos + 4));
 	}
+
+	//add_extern_memblocks();	// memblocks dans le vector extern_symbol (non utilisés par les instructions) INUTILE ? 
+	// fonction a coder
+	add_intern_symbols(_intern, local_symbol);	// symbols dans le vector local_symbol (non utilisés par les instructions)
+
+	// ecrire dans le fichier .o
+	FILE *file = fopen(filename, "w+");
+
+	uint32_t	header[4] =
+	{
+		_extern->nitems * sizeof(extern_symbols_t) + _intern->nitems * sizeof(intern_symbols_t),
+		_extern->nitems,
+		_intern->nitems,
+		i
+	};
+
+	fwrite(header, sizeof(uint32_t), 4, file);
+	fwrite(_extern->data, sizeof(extern_symbols_t), _extern->nitems, file); // impossible a cause de uint32_t *pos && uint8_t *name
+	fwrite(_intern->data, sizeof(intern_symbols_t), _intern->nitems, file); // "          "  "     " "          " "    "         "
+	fwrite(code, sizeof(uint8_t), i, file);
+
+	fclose(file);
 }

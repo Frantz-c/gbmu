@@ -5,7 +5,11 @@
 ;;;		y = numero du pokemon (1 - 6)
 ;;;		x = etat ("psn, bru, som, gel, par")
 
+;;;	le nom du cheat est affiché automatiquement devant le prototype
+;;;	le prototype est affiché automatiquement lors de l'affichage de l'aide
 .cheat_name		"pkmn_etat"
+.prototype		"(*int* pokemon_number, *string* etat)"
+.help			"pokemon_number = [1-6]", 10, "etat = \"psn\", \"par\", \"gel\", \"bru\", \"som\", \"ok\""
 
 ;;; .parse = arguments obligatoires (void = pas d'arg)
 ;;; .parse_optionnal = arguments facultatifs
@@ -18,12 +22,10 @@
 ;;;					une zone de 8 ou 16 bits
 .var16				status
 
-;;; argc vaut 0xff en cas d'erreur dans le parsing
-__start:
+;;;	le code commence a .start (plus de directives autorisees apres (. ou %)
+.start:
 	.autopush
 	ld	A, (argc)
-	cmp	0xff
-	jrz	_error
 
 
 	;;; calcul offset ;;;
@@ -104,8 +106,6 @@ cmp		0
 jrz		_set_som
 
 _error:
-	ld		HL, _ERROR	; HL = "Unknown argument"
-	call	__puts
 	.autopop
 	ret
 
