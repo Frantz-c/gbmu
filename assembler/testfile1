@@ -14,11 +14,11 @@
 .var2		health, variables
 .var2		attack, variables
 
-
+.bank	1
 label:
 %include	inc_file
 
-.bank		1
+.bank		0
 
 add		A, H
 cp		C

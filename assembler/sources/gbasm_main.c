@@ -367,6 +367,7 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 	data.line = s;
 	data.lineno = 1;
 	data.cur_area = cur_area;
+
 	while (*s)
 	{
 		SKIP_SPACES(s);
@@ -516,7 +517,6 @@ int		main(int argc, char *argv[])
 	vector_t		*code_area = NULL;
 	vector_t		*extern_symbol = NULL;
 	loc_sym_t		local_symbol = {NULL, NULL};
-//	int32_t			cur_area;
 
 	file[0]	=	"testfile1";
 	file[1]	=	"testfile2";
@@ -544,11 +544,12 @@ int		main(int argc, char *argv[])
 	{
 		g_error = 0;
 		g_warning = 0;
-//		cur_area = 0;
+		// by default, write code in address 0x0000
 		code_area_t		area_elem = {0, 0, NULL, NULL};
 		vector_push(code_area, (void*)&area_elem);
 
 		parse_file(*p, code_area, macro, extern_symbol, &local_symbol, 0);
+		//calcul_labels_real_addr(&local_symbol, code_area); //fait le tour de toutes les instructions
 		if (g_error)
 		{
 			fprintf(stderr, "\e[1;31m%u errors\e[0m\n", g_error);

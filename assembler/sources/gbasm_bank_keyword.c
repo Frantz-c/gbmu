@@ -59,24 +59,31 @@ extern char	*bank_switch(vector_t *area, char *s, data_t *data)
 	if	(addr == 0 &&
 			(
 				vector_size(area) == 1
-				|| ((code_area_t **)(area->data))[0]->data == NULL
+				|| VEC_ELEM(code_area_t, area, 0)->data == NULL
 			)
 		)
 	{
-		if (vector_size(area) != 1)
+		//if (vector_size(area) != 1)
 			data->cur_area = 0;
 		goto __ret_s;
 	}
 
-	if (vector_search(area, (void*)&addr) != -1)
-		goto __addr_already_used;
+	ssize_t		index;
+	if ((index = vector_search(area, (void*)&addr)) != -1)
+	{
+		if (VEC_ELEM(code_area_t, area, index)->data != NULL)
+			goto __addr_already_used;
+		data->cur_area = (uint32_t)index;
+		goto __ret_s;
+	}
+
+	code_area_t	new = {addr, 0, NULL, NULL};
 
 	data->cur_area = vector_index(area, (void*)&addr);
-	code_area_t	new = {addr, 0, NULL, NULL};
 	vector_insert(area, (void*)&new, (size_t)data->cur_area);
 
 	__ret_s:
-	while (*s && *s != '\n') s++;
+	while (!is_endl(*s)) s++;
 	return (s);
 
 /*

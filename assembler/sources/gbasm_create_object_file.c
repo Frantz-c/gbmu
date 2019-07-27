@@ -83,6 +83,7 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 {
 	uint8_t		*code;
 	uint32_t	i = 0;
+	uint32_t	allocsize = 0;
 	uint32_t	j = 0;
 	uint32_t	len = 0;
 	uint32_t	len_pos = 0;
@@ -97,9 +98,16 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 	extern_->destroy = &extern_destroy;
 	extern_->search = &extern_match;
 
+	code = malloc(sizeof(uint8_t*) * 128);
+
 	for (code_area_t *area = VEC_ELEM(code_area_t, code_area, 0); j < code_area->nitems; area += sizeof(code_area_t))
 	{
-		// allouer, reallouer code
+		if ((allocsize - i) < 10)
+		{
+			allocsize += 128;
+			code = realloc(code, allocsize);
+		}
+
 		*((uint16_t*)(code + i)) = (uint16_t)c->addr;
 		i += 2;
 		len_pos = i;
@@ -110,6 +118,11 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 			if (c->size > 0xffu)
 			{
 				c->size >>= 8;
+				if ((allocsize - i) < c->size)
+				{
+					allocsize += c->size;
+					code = realloc(code, allocsize);
+				}
 				len += c->size;
 				i += c->size;
 				memcpy(code + i, c->symbol, c->size);
@@ -118,6 +131,11 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 			{
 				ssize_t	index;
 
+				if ((allocsize - i) < c->size + (c->size == 3))
+				{
+					allocsize += 128;
+					code = realloc(code, allocsize);
+				}
 				memcpy(code + i, c->code, c->size + (c->size == 3));
 				i += c->size + (c->size == 3);
 				if ((index = vector_search(extern_symbol, (void*)&c->symbol)) != -1)
@@ -126,6 +144,7 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 
 					if ((index = vector_search(_extern, (void*)&c->symbol)) != -1)
 					{
+						register extern_symbols_t	*sym = VEC_ELEM(extern_symbols_t, _intern, index);
 						// add pos + inc quantity
 					}
 					else
@@ -135,27 +154,47 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 				}
 				else
 				{
+					char		*name;
+					char		*blockname;
 					uint32_t	type;
+					uint32_t	data1;
+					uint32_t	data2;
+					uint32_t	pos;
 
 					if ((index = vector_search(local_symbol->label, (void*)&c->symbol)) != -1)
 					{
 						register label_t	*lab = VEC_ELEM(label_t, local_symbol->label, index);
+
+						type = LABEL;
+						name = lab->name;
+						pos = lab->pos + lad->base_or_status;
 					}
 					else if ((index = vector_search(local_symbol->memblock, (void*)&c->symbol)) != -1)
 					{
 						register label_t	*block = VEC_ELEM(memblock_t, local_symbol->memblock, index);
+
+						type = MEMBLOCK;
 					}
 					else
 					{
 						register variable_t	*var = variable_search(local_symbol->memblock, c->symbol);
+
+						type = VAR;
 					}
 
-					if ((index = vector_search(_extern, (void*)&c->symbol)) != -1)
+					if ((index = vector_search(_intern, (void*)&c->symbol)) != -1)
 					{
+						register intern_symbols_t	*sym = VEC_ELEM(intern_symbols_t, _intern, index);
 						// add pos + inc quantity
+						if (type == LABEL)
+						{
+							sym->quantity++;
+							// ajout de la position (realloc)
+						}
 					}
 					else
 					{
+						intern_symbols_t	new = {name, type, 1, NULL, blockname, data1, data1, data2};
 						// add new symbol in _extern (quantity = 1, pos = i + 1, type = type)
 					}
 
@@ -163,6 +202,11 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 			}
 			else
 			{
+				if ((allocsize - i) < c->size)
+				{
+					allocsize += 128;
+					code = realloc(code, allocsize);
+				}
 				memcpy(code + i, c->code, c->size);
 				i += c->size;
 			}

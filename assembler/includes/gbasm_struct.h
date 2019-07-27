@@ -97,7 +97,7 @@ struct	code_s
 struct	code_area_s
 {
 	uint32_t		addr;
-	uint32_t		count;
+	uint32_t		size;
 	struct code_s	*data;
 	struct code_s	*cur;
 };
@@ -131,7 +131,6 @@ struct	data_s
 	uint32_t	lineno;
 	uint32_t	cur_area;
 	char		buf[128];
-	uint32_t	inst_count;
 };
 
 /*

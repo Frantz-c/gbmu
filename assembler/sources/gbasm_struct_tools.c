@@ -112,6 +112,7 @@ extern void			push_instruction(code_area_t *area, uint8_t bin[4], param_t p[2], 
 				if (memblock_match_name(loc_symbol->memblock, symbol) != -1)
 				{
 					fprintf(stderr, "can't use memory block as operand\n");
+					return;
 				}
 				else if ((index = vector_search(ext_symbol, (void*)&symbol)) == -1)
 				{
@@ -128,12 +129,14 @@ extern void			push_instruction(code_area_t *area, uint8_t bin[4], param_t p[2], 
 					else if (sym->type == MEMBLOCK)
 					{
 						fprintf(stderr, "can't use memory block as operand\n");
+						return;
 					}
 				}
 			}
 		}
 	}
 	area->cur->size = size;
+	area->size += size;
 }
 
 extern void	new_instruction(code_area_t *area)
@@ -156,14 +159,15 @@ extern void	new_instruction(code_area_t *area)
 
 extern int	push_byte(code_area_t *area, uint8_t byte)
 {
-	if (area->cur->size == 247)
-		return (-1);
+//	if (area->cur->size > )
+//		return (-1);
 
 	if (area->cur->symbol == NULL)
 		area->cur->symbol = (void *)malloc(sizeof(uint8_t) * BYTE_ALLOC_SIZE);
 	else if ((area->cur->size & 0x7) == 0)
 		area->cur->symbol = realloc(area->cur->symbol, area->cur->size + BYTE_ALLOC_SIZE);
 	((uint8_t*)(area->cur->symbol))[area->cur->size++] = byte;
+	area->size++;
 
 	return (0);
 }
