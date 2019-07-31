@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/08 11:02:11 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/11 09:10:10 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/07/17 09:17:51 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -181,13 +181,7 @@
 #define RET_IF(condition) \
 	if (condition) \
 	{ \
-		address = GET_REAL_ADDR(regs->reg_sp); \
-		imm_16 = *address; \
-		regs->reg_sp += 1; \
-		address = GET_REAL_ADDR(regs->reg_sp); \
-		imm_16 |= ((uint16_t)*address) << 8; \
-		regs->reg_sp += 1; \
-		SET_PC(imm_16); \
+		POP_REG_16(regs->reg_pc); \
 		return (20); \
 	} \
 	ADD_PC(1); \
@@ -832,7 +826,7 @@ adc_a_hl:
 		regs->reg_f |= FLAG_CY;
 	if ((imm_8 & 0xFu) < (regs->reg_a & 0xFu) ||
 		((imm_8 & 0xFu) == (regs->reg_a & 0xFu) && opcode))
-		regs->reg_f |= FLAG_CY;
+		regs->reg_f |= FLAG_H;
 	if (imm_8 == 0)
 		regs->reg_f |= FLAG_Z;
 	regs->reg_a = imm_8;
@@ -1034,7 +1028,7 @@ adc_a_imm8:
 		regs->reg_f |= FLAG_CY;
 	if ((imm_8 & 0xFu) < (regs->reg_a & 0xFu) ||
 		((imm_8 & 0xFu) == (regs->reg_a & 0xFu) && opcode))
-		regs->reg_f |= FLAG_CY;
+		regs->reg_f |= FLAG_H;
 	if (imm_8 == 0)
 		regs->reg_f |= FLAG_Z;
 	regs->reg_a = imm_8;
@@ -1108,7 +1102,7 @@ sbc_a_imm8:
 		regs->reg_f |= FLAG_CY;
 	if ((imm_8 & 0xFu) > (regs->reg_a & 0xFu) ||
 		((imm_8 & 0xFu) == (regs->reg_a & 0xFu) && opcode))
-		regs->reg_f |= FLAG_CY;
+		regs->reg_f |= FLAG_H;
 	if (imm_8 == 0)
 		regs->reg_f |= FLAG_Z;
 	regs->reg_a = imm_8;
@@ -1156,9 +1150,13 @@ add_sp_imm8:
 	ADD_PC(2);
 	regs->reg_f = 0;
 	imm_16 = regs->reg_sp + (int8_t)imm_8;
-	if (imm_16 < regs->reg_sp)
+	if ((imm_8 < 0x80u) && imm_16 < regs->reg_sp)
 		regs->reg_f |= FLAG_CY;
-	if ((imm_16 & 0xFFFu) < (regs->reg_sp & 0xFFFu))
+	else if ((imm_8 >= 0x80u) && imm_16 > regs->reg_sp)
+		regs->reg_f |= FLAG_CY;
+	if ((imm_8 < 0x80u) && (imm_16 & 0xFFFu) < (regs->reg_sp & 0xFFFu))
+		regs->reg_f |= FLAG_H;
+	else if ((imm_8 >= 0x80u) && (imm_16 & 0xFFFu) > (regs->reg_sp & 0xFFFu))
 		regs->reg_f |= FLAG_H;
 	regs->reg_sp = imm_16;
 	return (16);
@@ -1229,9 +1227,13 @@ ld_hl_sp_imm8:
 	ADD_PC(2);
 	regs->reg_f = 0;
 	imm_16 = regs->reg_sp + (int8_t)imm_8;
-	if (imm_16 < regs->reg_sp)
+	if ((imm_8 < 0x80u) && imm_16 < regs->reg_sp)
 		regs->reg_f |= FLAG_CY;
-	if ((imm_16 & 0xFFFu) < (regs->reg_sp & 0xFFFu))
+	else if ((imm_8 >= 0x80u) && imm_16 > regs->reg_sp)
+		regs->reg_f |= FLAG_CY;
+	if ((imm_8 < 0x80u) && (imm_16 & 0xFFFu) < (regs->reg_sp & 0xFFFu))
+		regs->reg_f |= FLAG_H;
+	else if ((imm_8 >= 0x80u) && (imm_16 & 0xFFFu) > (regs->reg_sp & 0xFFFu))
 		regs->reg_f |= FLAG_H;
 	regs->reg_hl = imm_16;
 	return (12);
