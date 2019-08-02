@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/25 10:03:09 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/02 09:51:34 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/02 09:53:53 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -197,39 +197,39 @@ __add:
 					break ;
 
 				case A:
-					bin[0] = 0x77u;
+					bin[0] = 0x87u;
 					break ;
 
 				case B:
-					bin[0] = 0x70u;
+					bin[0] = 0x80u;
 					break ;
 
 				case C:
-					bin[0] = 0x71u;
+					bin[0] = 0x81u;
 					break ;
 
 				case D:
-					bin[0] = 0x72u;
+					bin[0] = 0x82u;
 					break ;
 
 				case E:
-					bin[0] = 0x73u;
+					bin[0] = 0x83u;
 					break ;
 
 				case H:
-					bin[0] = 0x74u;
+					bin[0] = 0x84u;
 					break ;
 
 				case L:
-					bin[0] = 0x75u;
+					bin[0] = 0x85u;
 					break ;
 
 				case HL_ADDR:
-					bin[0] = 0x76u;
+					bin[0] = 0x86u;
 					break ;
 
 				case IMM8:
-					bin[0] = 0x77u;
+					bin[0] = 0xC6u;
 					bin[1] = (uint8_t)val->value;
 					break ;
 
