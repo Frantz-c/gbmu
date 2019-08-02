@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/25 10:03:09 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/02 09:53:53 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/02 10:08:38 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -401,6 +401,12 @@ __callnc:
 __callnz:
 __callz:
 __ccf:
+	if (param[0] != NONE)
+		error.p1 = TOO_MANY_PARAMS;
+	else
+		bin[0] = 0x3Fu;
+	goto __done;
+
 __cmp:
 __cp:
 	if (param[0] == NONE)
@@ -506,11 +512,41 @@ __cp:
 
 __cpl:
 __not:
+	if (param[0] != NONE && param[0] != A)
+		error.p1 = TOO_MANY_PARAMS;
+	else
+		bin[0] = 0x2Fu;
+	goto __done;
+
 __daa:
+	if (param[0] != NONE)
+		error.p1 = TOO_MANY_PARAMS;
+	else
+		bin[0] = 0x27u;
+	goto __done;
+
 __dec:
 __di:
+	if (param[0] != NONE)
+		error.p1 = TOO_MANY_PARAMS;
+	else
+		bin[0] = 0xF3u;
+	goto __done;
+
 __ei:
+	if (param[0] != NONE)
+		error.p1 = TOO_MANY_PARAMS;
+	else
+		bin[0] = 0xFBu;
+	goto __done;
+
 __halt:
+	if (param[0] != NONE)
+		error.p1 = TOO_MANY_PARAMS;
+	else
+		bin[0] = 0x76u;
+	goto __done;
+
 __inc:
 __jp:
 __jpc:
@@ -528,6 +564,12 @@ __ldd:
 __ldhl:
 __ldi:
 __nop:
+	if (param[0] != NONE)
+		error.p1 = TOO_MANY_PARAMS;
+	else
+		bin[0] = 0x00u;
+	goto __done;
+
 __or:
 	if (param[0] == NONE)
 	{
@@ -642,12 +684,35 @@ __retnz:
 __retz:
 __rl:
 __rla:
+	if (param[0] != NONE)
+		error.p1 = TOO_MANY_PARAMS;
+	else
+		bin[0] = 0x17u;
+	goto __done;
+
 __rlc:
 __rlca:
+	if (param[0] != NONE)
+		error.p1 = TOO_MANY_PARAMS;
+	else
+		bin[0] = 0x07u;
+	goto __done;
+
 __rr:
 __rra:
+	if (param[0] != NONE)
+		error.p1 = TOO_MANY_PARAMS;
+	else
+		bin[0] = 0x1Fu;
+	goto __done;
 __rrc:
 __rrca:
+	if (param[0] != NONE)
+		error.p1 = TOO_MANY_PARAMS;
+	else
+		bin[0] = 0x0Fu;
+	goto __done;
+
 __rst:
 __sar:
 __sbb:
@@ -754,6 +819,12 @@ __sbc:
 	goto __done;
 
 __scf:
+	if (param[0] != NONE)
+		error.p1 = TOO_MANY_PARAMS;
+	else
+		bin[0] = 0x3u;
+	goto __done;
+
 __set:
 __shl:
 __shr:
@@ -761,6 +832,16 @@ __sla:
 __sra:
 __srl:
 __stop:
+	if (param[0] != NONE && !(param[0] == IMM8 && val->value == 0))
+		error.p1 = TOO_MANY_PARAMS;
+	else
+	{
+		bin[0] = 0x10u;
+		bin[1] = 0x00u;
+		param[0] = IMM8;
+	}
+	goto __done;
+
 __sub:
 	if (param[0] == NONE)
 	{
