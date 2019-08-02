@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/25 10:03:09 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/26 19:57:29 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/02 09:51:34 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -81,1189 +81,557 @@ extern param_error_t	get_bin_instruction(char *mnemonic, param_t param[2], value
 	goto *(inst[index].addr);
 
 __adc:
-	if (param[0] == A)
+	if (param[0] == NONE)
+	{
+		error.p1 = MISSING_PARAM;
+	}
+	else if (param[0] == A)
 	{
 		switch (param[1])
 		{
-			case NONE:
 			case A:
+			case NONE:
 				bin[0] = 0x8Fu;
-				goto __done;
+				break ;
 
 			case B:
 				bin[0] = 0x88u;
-				goto __done;
-				
+				break ;
+
 			case C:
 				bin[0] = 0x89u;
-				goto __done;
+				break ;
 
 			case D:
 				bin[0] = 0x8Au;
-				goto __done;
+				break ;
 
 			case E:
 				bin[0] = 0x8Bu;
-				goto __done;
+				break ;
 
 			case H:
 				bin[0] = 0x8Cu;
-				goto __done;
+				break ;
 
 			case L:
 				bin[0] = 0x8Du;
-				goto __done;
+				break ;
 
 			case HL_ADDR:
 				bin[0] = 0x8Eu;
-				goto __done;
+				break ;
 
 			case IMM8:
 				bin[0] = 0xCEu;
 				bin[1] = (uint8_t)val->value;
-				goto __done;
+				break ;
 
 			default:
-				error.p2 = INVAL_ADC_SBB_SRC;
-				goto __done;
+				error.p2 = INVAL_SRC;
+				break ;
+		}
+		break ;
+	}
+	else
+	{
+		if (param[1] != NONE)
+		{
+			error.p2 = TOO_MANY_PARAMS;
+			goto __done;
+		}
+		switch (param[0])
+		{
+			case B:
+				bin[0] = 0x88u;
+				break ;
+
+			case C:
+				bin[0] = 0x89u;
+				break ;
+
+			case D:
+				bin[0] = 0x8Au;
+				break ;
+
+			case E:
+				bin[0] = 0x8Bu;
+				break ;
+
+			case H:
+				bin[0] = 0x8Cu;
+				break ;
+
+			case L:
+				bin[0] = 0x8Du;
+				break ;
+
+			case HL_ADDR:
+				bin[0] = 0x8Eu;
+				break ;
+
+			case IMM8:
+				bin[0] = 0xCEu;
+				bin[1] = (uint8_t)val->value;
+				break ;
+
+			default:
+				error.p1 = INVAL_SRC;
+				break ;
 		}
 	}
-	if (param[1] != NONE)
-	{
-		error.p2 = TOO_MANY_PARAMS;
-		goto __done;
-	}
-	switch (param[0])
-	{
-		case B:
-			bin[0] = 0x88u;
-			goto __done;
-
-		case C:
-			bin[0] = 0x89u;
-			goto __done;
-
-		case D:
-			bin[0] = 0x8Au;
-			goto __done;
-
-		case E:
-			bin[0] = 0x8Bu;
-			goto __done;
-
-		case H:
-			bin[0] = 0x8Cu;
-			goto __done;
-
-		case L:
-			bin[0] = 0x8Du;
-			goto __done;
-
-		case HL_ADDR:
-			bin[0] = 0x8Eu;
-			goto __done;
-
-		case IMM8:
-			bin[0] = 0xCEu;
-			bin[1] = (uint8_t)val->value;
-			goto __done;
-
-		case NONE:
-			error.p1 = MISSING_PARAM;
-			goto __done;
-
-		default:
-			error.p1 = INVAL_ADC_SBB_SRC;
-			goto __done;
-	}
+	goto __done;
 
 __add:
 	switch (param[0])
 	{
+		case NONE:
+			error.p1 = MISSING_PARAM;
+			break ;
+
 		case A:
 			switch (param[1])
 			{
-				case A:
-					bin[0] = 0x87u;
-					goto __done;
-
-				case B:
-					bin[0] = 0x80u;
-					goto __done;
-
-				case C:
-					bin[0] = 0x81u;
-					goto __done;
-
-				case D:
-					bin[0] = 0x82u;
-					goto __done;
-
-				case E:
-					bin[0] = 0x83u;
-					goto __done;
-
-				case H:
-					bin[0] = 0x84u;
-					goto __done;
-
-				case L:
-					bin[0] = 0x85u;
-					goto __done;
-
-				case HL_ADDR:
-					bin[0] = 0x86u;
-					goto __done;
-
-				case IMM8:
-					bin[0] = 0xC6u;
-					bin[1] = (uint8_t)val->value;
-					goto __done;
-
 				case NONE:
 					error.p2 = MISSING_PARAM;
-					goto __done;
+					break ;
+
+				case A:
+					bin[0] = 0x77u;
+					break ;
+
+				case B:
+					bin[0] = 0x70u;
+					break ;
+
+				case C:
+					bin[0] = 0x71u;
+					break ;
+
+				case D:
+					bin[0] = 0x72u;
+					break ;
+
+				case E:
+					bin[0] = 0x73u;
+					break ;
+
+				case H:
+					bin[0] = 0x74u;
+					break ;
+
+				case L:
+					bin[0] = 0x75u;
+					break ;
+
+				case HL_ADDR:
+					bin[0] = 0x76u;
+					break ;
+
+				case IMM8:
+					bin[0] = 0x77u;
+					bin[1] = (uint8_t)val->value;
+					break ;
 
 				default:
-					error.p2 = INVAL_ADD_SUB_SRC;
-					goto __done;
+					error.p2 = INVAL_SRC;
+					break ;
 			}
+			break ;
 
 		case HL:
 			switch (param[1])
 			{
+				case NONE:
+					error.p2 = MISSING_PARAM;
+					break ;
+
 				case BC:
 					bin[0] = 0x09u;
-					goto __done;
+					break ;
 
 				case DE:
 					bin[0] = 0x19u;
-					goto __done;
+					break ;
 
 				case HL:
 					bin[0] = 0x29u;
-					goto __done;
+					break ;
 
 				case SP:
 					bin[0] = 0x39u;
-					goto __done;
-
-				case NONE:
-					error.p2 = MISSING_PARAM;
-					goto __done;
+					break ;
 
 				default:
-					error.p2 = INVAL_ADD_SUB_SRC;
-					goto __done;
+					error.p2 = INVAL_SRC;
+					break ;
 			}
+			break ;
 
 		case SP:
-			if (param[1] == IMM8)
+			switch (param[1])
 			{
-				bin[0] = 0xE8u;
-				bin[1] = (uint8_t)val->value;
-			}
-			else if (param[1] == NONE)
-				error.p2 = MISSING_PARAM;
-			else
-				error.p2 = INVAL_ADD_SUB_SRC;
-			goto __done;
+				case NONE:
+					error.p2 = MISSING_PARAM;
+					break ;
 
-		case NONE:
-			error.p1 = MISSING_PARAM;
-			goto __done;
+				case IMM8:
+					bin[0] = 0xE8u;
+					bin[1] = (uint8_t)val->value;
+					break ;
+
+				default:
+					error.p2 = INVAL_SRC;
+					break ;
+			}
+			break ;
 
 		default:
-			error.p1 = INVAL_ADD_SUB_DST;
-			goto __done;
+			error.p1 = INVAL_DST;
+			break ;
 	}
+	goto __done;
 
 __and:
-puts("__AND__");
-	if (param[0] == A)
+	if (param[0] == NONE)
+	{
+		error.p1 = MISSING_PARAM;
+	}
+	else if (param[0] == A)
 	{
 		switch (param[1])
 		{
-			case NONE:
 			case A:
+			case NONE:
 				bin[0] = 0xA7u;
-				goto __done;
+				break ;
 
 			case B:
 				bin[0] = 0xA0u;
-				goto __done;
-				
+				break ;
+
 			case C:
 				bin[0] = 0xA1u;
-				goto __done;
+				break ;
 
 			case D:
 				bin[0] = 0xA2u;
-				goto __done;
+				break ;
 
 			case E:
 				bin[0] = 0xA3u;
-				goto __done;
+				break ;
 
 			case H:
 				bin[0] = 0xA4u;
-				goto __done;
+				break ;
 
 			case L:
 				bin[0] = 0xA5u;
-				goto __done;
+				break ;
 
 			case HL_ADDR:
 				bin[0] = 0xA6u;
-				goto __done;
+				break ;
 
 			case IMM8:
 				bin[0] = 0xE6u;
 				bin[1] = (uint8_t)val->value;
-				goto __done;
+				break ;
 
 			default:
-				error.p2 = INVAL_BIT_ARITH_SRC;
-				goto __done;
+				error.p2 = INVAL_SRC;
+				break ;
+		}
+		break ;
+	}
+	else
+	{
+		if (param[1] != NONE)
+		{
+			error.p2 = TOO_MANY_PARAMS;
+			goto __done;
+		}
+		switch (param[0])
+		{
+			case B:
+				bin[0] = 0xA0u;
+				break ;
+
+			case C:
+				bin[0] = 0xA1u;
+				break ;
+
+			case D:
+				bin[0] = 0xA2u;
+				break ;
+
+			case E:
+				bin[0] = 0xA3u;
+				break ;
+
+			case H:
+				bin[0] = 0xA4u;
+				break ;
+
+			case L:
+				bin[0] = 0xA5u;
+				break ;
+
+			case HL_ADDR:
+				bin[0] = 0xA6u;
+				break ;
+
+			case IMM8:
+				bin[0] = 0xE6u;
+				bin[1] = (uint8_t)val->value;
+				break ;
+
+			default:
+				error.p1 = INVAL_SRC;
+				break ;
 		}
 	}
-	if (param[1] != NONE)
-	{
-		error.p2 = TOO_MANY_PARAMS;
-		goto __done;
-	}
-	switch (param[0])
-	{
-		case B:
-			bin[0] = 0xA0u;
-			goto __done;
-
-		case C:
-			bin[0] = 0xA1u;
-			goto __done;
-
-		case D:
-			bin[0] = 0xA2u;
-			goto __done;
-
-		case E:
-			bin[0] = 0xA3u;
-			goto __done;
-
-		case H:
-			bin[0] = 0xA4u;
-			goto __done;
-
-		case L:
-			bin[0] = 0xA5u;
-			goto __done;
-
-		case HL_ADDR:
-			bin[0] = 0xA6u;
-			goto __done;
-
-		case IMM8:
-			bin[0] = 0xE6u;
-			bin[1] = (uint8_t)val->value;
-			goto __done;
-
-		case NONE:
-			error.p1 = MISSING_PARAM;
-			goto __done;
-
-		default:
-			error.p1 = INVAL_BIT_ARITH_SRC;
-			goto __done;
-	}
+	goto __done;
 
 __bit:
-	if (param[0] != IMM8 || val->value > 7)
-	{
-		error.p1 = INVAL_CB_BIT_VALUE;
-		goto __done;
-	}
-	bin[0] = 0xCBu;
-	val->value *= 8;
-	switch (param[1])
-	{
-		case A:
-			bin[1] = 0x47u + (uint8_t)val->value;
-			goto __done;
-
-		case B:
-			bin[1] = 0x40u + (uint8_t)val->value;
-			goto __done;
-
-		case C:
-			bin[1] = 0x41u + (uint8_t)val->value;
-			goto __done;
-
-		case D:
-			bin[1] = 0x42u + (uint8_t)val->value;
-			goto __done;
-
-		case E:
-			bin[1] = 0x43u + (uint8_t)val->value;
-			goto __done;
-
-		case H:
-			bin[1] = 0x44u + (uint8_t)val->value;
-			goto __done;
-
-		case L:
-			bin[1] = 0x45u + (uint8_t)val->value;
-			goto __done;
-
-		case HL_ADDR:
-			bin[1] = 0x46u + (uint8_t)val->value;
-			goto __done;
-
-		case NONE:
-			error.p1 = MISSING_PARAM;
-			goto __done;
-
-		default:
-			error.p1 = INVAL_CB_BIT_DST;
-			goto __done;
-	}
-
 __call:
-	switch (param[0])
-	{
-		case IMM16:
-		case ADDR16:
-		case IMM8:
-		case ADDR8:
-			if (param[1] != NONE)
-			{
-				error.p2 = TOO_MANY_PARAMS;
-				goto __done;
-			}
-			bin[0] = 0xCDu;
-			bin[1] = (uint8_t)val->value;
-			bin[2] = (uint8_t)(val->value >> 8);
-			param[0] = IMM16;
-			goto __done;
-
-		case _NZ_:
-		case _Z_:
-		case _NC_:
-		case _C_:
-			if (param[1] != IMM16 && param[1] != ADDR16 && param[1] != IMM8 && param[1] != ADDR8)
-			{
-				error.p2 = (param[1] == NONE) ? MISSING_PARAM : INVAL_JP_CALL_ADDR;
-				goto __done;
-			}
-			bin[1] = (uint8_t)val->value;
-			bin[2] = (uint8_t)(val->value >> 8);
-			if (param[0] == _NZ_)
-				bin[0] = 0xC4u;
-			else if (param[0] == _Z_)
-				bin[0] = 0xCCu;
-			else if (param[0] == _NC_)
-				bin[0] = 0xD4u;
-			else
-				bin[0] = 0xDCu;
-			param[1] = IMM16;
-			goto __done;
-
-		case NONE:
-			error.p1 = MISSING_PARAM;
-			goto __done;
-
-		default:
-			error.p1 = INVAL_JP_CALL_ADDR;
-			goto __done;
-	}
-
 __callc:
-	if (param[0] == IMM16 || param[0] == ADDR16 || param[0] == IMM8 || param[0] = ADDR8)
-	{
-		if (param[1] != NONE)
-		{
-			error.p2 = TOO_MANY_PARAMS;
-			goto __done;
-		}
-		bin[0] = 0xDCu;
-		bin[1] = (uint8_t)val->value;
-		bin[2] = (uint8_t)(val->value >> 8);
-		param[0] = IMM16;
-	}
-	else if (param[0] == NONE)
-		error.p1 = MISSING_PARAM;
-	else
-		error.p1 = INVAL_JP_CALL_ADDR;
-	goto __done;
-
 __callnc:
-	if (param[0] == IMM16 || param[0] == ADDR16 || param[0] == IMM8 || param[0] = ADDR8)
-	{
-		if (param[1] != NONE)
-		{
-			error.p2 = TOO_MANY_PARAMS;
-			goto __done;
-		}
-		bin[0] = 0xD4u;
-		bin[1] = (uint8_t)val->value;
-		bin[2] = (uint8_t)(val->value >> 8);
-		param[0] = IMM16;
-	}
-	else if (param[0] == NONE)
-		error.p1 = MISSING_PARAM;
-	else
-		error.p1 = INVAL_JP_CALL_ADDR;
-	goto __done;
-
 __callnz:
-	if (param[0] == IMM16 || param[0] == ADDR16 || param[0] == IMM8 || param[0] = ADDR8)
-	{
-		if (param[1] != NONE)
-		{
-			error.p2 = TOO_MANY_PARAMS;
-			goto __done;
-		}
-		bin[0] = 0xC4u;
-		bin[1] = (uint8_t)val->value;
-		bin[2] = (uint8_t)(val->value >> 8);
-		param[0] = IMM16;
-	}
-	else if (param[0] == NONE)
-		error.p1 = MISSING_PARAM;
-	else
-		error.p1 = INVAL_JP_CALL_ADDR;
-	goto __done;
-
 __callz:
-	if (param[0] == IMM16 || param[0] == ADDR16 || param[0] == IMM8 || param[0] = ADDR8)
-	{
-		if (param[1] != NONE)
-		{
-			error.p2 = TOO_MANY_PARAMS;
-			goto __done;
-		}
-		bin[0] = 0xCCu;
-		bin[1] = (uint8_t)val->value;
-		bin[2] = (uint8_t)(val->value >> 8);
-		param[0] = IMM16;
-	}
-	else if (param[0] == NONE)
-		error.p1 = MISSING_PARAM;
-	else
-		error.p1 = INVAL_JP_CALL_ADDR;
-	goto __done;
-
 __ccf:
-	if (param[0] != NONE)
-		error.p1 = TOO_MANY_PARAMS;
-	else
-		bin[0] = 0x3Fu;
-	goto __done;
-
 __cmp:
 __cp:
-	if (param[0] == A)
+	if (param[0] == NONE)
+	{
+		error.p1 = MISSING_PARAM;
+	}
+	else if (param[0] == A)
 	{
 		switch (param[1])
 		{
-			case NONE:
 			case A:
+			case NONE:
 				bin[0] = 0xBFu;
-				goto __done;
+				break ;
 
 			case B:
 				bin[0] = 0xB8u;
-				goto __done;
-				
+				break ;
+
 			case C:
 				bin[0] = 0xB9u;
-				goto __done;
+				break ;
 
 			case D:
 				bin[0] = 0xBAu;
-				goto __done;
+				break ;
 
 			case E:
 				bin[0] = 0xBBu;
-				goto __done;
+				break ;
 
 			case H:
 				bin[0] = 0xBCu;
-				goto __done;
+				break ;
 
 			case L:
 				bin[0] = 0xBDu;
-				goto __done;
+				break ;
 
 			case HL_ADDR:
 				bin[0] = 0xBEu;
-				goto __done;
+				break ;
 
 			case IMM8:
 				bin[0] = 0xFEu;
 				bin[1] = (uint8_t)val->value;
-				goto __done;
+				break ;
 
 			default:
-				error.p2 = INVAL_CMP_SRC;
-				goto __done;
+				error.p2 = INVAL_SRC;
+				break ;
+		}
+		break ;
+	}
+	else
+	{
+		if (param[1] != NONE)
+		{
+			error.p2 = TOO_MANY_PARAMS;
+			goto __done;
+		}
+		switch (param[0])
+		{
+			case B:
+				bin[0] = 0xB8u;
+				break ;
+
+			case C:
+				bin[0] = 0xB9u;
+				break ;
+
+			case D:
+				bin[0] = 0xBAu;
+				break ;
+
+			case E:
+				bin[0] = 0xBBu;
+				break ;
+
+			case H:
+				bin[0] = 0xBCu;
+				break ;
+
+			case L:
+				bin[0] = 0xBDu;
+				break ;
+
+			case HL_ADDR:
+				bin[0] = 0xBEu;
+				break ;
+
+			case IMM8:
+				bin[0] = 0xFEu;
+				bin[1] = (uint8_t)val->value;
+				break ;
+
+			default:
+				error.p1 = INVAL_SRC;
+				break ;
 		}
 	}
-	if (param[1] != NONE)
-	{
-		error.p2 = TOO_MANY_PARAMS;
-		goto __done;
-	}
-	switch (param[0])
-	{
-		case B:
-			bin[0] = 0xB8u;
-			goto __done;
-
-		case C:
-			bin[0] = 0xB9u;
-			goto __done;
-
-		case D:
-			bin[0] = 0xBAu;
-			goto __done;
-
-		case E:
-			bin[0] = 0xBBu;
-			goto __done;
-
-		case H:
-			bin[0] = 0xBCu;
-			goto __done;
-
-		case L:
-			bin[0] = 0xBDu;
-			goto __done;
-
-		case HL_ADDR:
-			bin[0] = 0xBEu;
-			goto __done;
-
-		case IMM8:
-			bin[0] = 0xFEu;
-			bin[1] = (uint8_t)val->value;
-			goto __done;
-
-		case NONE:
-			error.p1 = MISSING_PARAM;
-			goto __done;
-
-		default:
-			error.p1 = INVAL_CMP_SRC;
-			goto __done;
-	}
+	goto __done;
 
 __cpl:
 __not:
-	if (param[0] == NONE)
-		bin[0] = 0x2Fu;
-	else if (param[0] == A)
-	{
-		if (param[1] == NONE)
-			bin[0] = 0x2Fu;
-		else
-			error.p2 = TOO_MANY_PARAMS;
-	}
-	else
-		error.p1 = INVAL_AOP_DST;
-	goto __done;
-
 __daa:
-	if (param[0] != NONE)
-		error.p1 = TOO_MANY_PARAMS;
-	else
-		bin[0] = 0x27u;
-	goto __done;
-
 __dec:
-	if (param[0] == NONE)
-	{
-		error.p1 = MISSING_PARAM;
-		goto __done;
-	}
-	if (param[1] != NONE)
-	{
-		error.p2 == TOO_MANY_PARAMS;
-		goto __done;
-	}
-	switch (param[0])
-	{
-		case A:
-			bin[0] = 0x3Du;
-			goto __done;
-
-		case B:
-			bin[0] = 0x05u;
-			goto __done;
-
-		case C:
-			bin[0] = 0x0Du;
-			goto __done;
-
-		case D:
-			bin[0] = 0x15u;
-			goto __done;
-
-		case E:
-			bin[0] = 0x1Du;
-			goto __done;
-
-		case H:
-			bin[0] = 0x25u;
-			goto __done;
-
-		case L:
-			bin[0] = 0x2Du;
-			goto __done;
-
-		case HL_ADDR:
-			bin[0] = 0x35u;
-			goto __done;
-
-		case BC:
-			bin[0] = 0x0Bu;
-			goto __done;
-
-		case DE:
-			bin[0] = 0x1Bu;
-			goto __done;
-
-		case HL:
-			bin[0] = 0x2Bu;
-			goto __done;
-
-		case SP:
-			bin[0] = 0x3Bu;
-			goto __done;
-
-		default:
-			error.p1 = INVAL_INC_DEC_DST;
-			goto __done;
-	}
-
 __di:
-	if (param[0] != NONE)
-		error.p1 = TOO_MANY_PARAMS;
-	else
-		bin[0] = 0xF3u;
-	goto __done;
-
 __ei:
-	if (param[0] != NONE)
-		error.p1 = TOO_MANY_PARAMS;
-	else
-		bin[0] = 0xFBu;
-	goto __done;
-
 __halt:
-	if (param[0] != NONE)
-		error.p1 = TOO_MANY_PARAMS;
-	else
-		bin[0] = 0x76u;
-	goto __done;
-
 __inc:
-	if (param[0] == NONE)
-	{
-		error.p1 = MISSING_PARAM;
-		goto __done;
-	}
-	if (param[1] != NONE)
-	{
-		error.p2 == TOO_MANY_PARAMS;
-		goto __done;
-	}
-	switch (param[0])
-	{
-		case A:
-			bin[0] = 0x3Cu;
-			goto __done;
-
-		case B:
-			bin[0] = 0x04u;
-			goto __done;
-
-		case C:
-			bin[0] = 0x0Cu;
-			goto __done;
-
-		case D:
-			bin[0] = 0x14u;
-			goto __done;
-
-		case E:
-			bin[0] = 0x1Cu;
-			goto __done;
-
-		case H:
-			bin[0] = 0x24u;
-			goto __done;
-
-		case L:
-			bin[0] = 0x2Cu;
-			goto __done;
-
-		case HL_ADDR:
-			bin[0] = 0x34u;
-			goto __done;
-
-		case BC:
-			bin[0] = 0x03u;
-			goto __done;
-
-		case DE:
-			bin[0] = 0x13u;
-			goto __done;
-
-		case HL:
-			bin[0] = 0x23u;
-			goto __done;
-
-		case SP:
-			bin[0] = 0x33u;
-			goto __done;
-
-		default:
-			error.p1 = INVAL_INC_DEC_DST;
-			goto __done;
-	}
-
 __jp:
-	switch (param[0])
-	{
-		case IMM16:
-		case ADDR16:
-		case IMM8:
-		case ADDR8:
-			if (param[1] != NONE)
-			{
-				error.p2 = TOO_MANY_PARAMS;
-				goto __done;
-			}
-			bin[0] = 0xC3u;
-			bin[1] = (uint8_t)val->value;
-			bin[2] = (uint8_t)(val->value >> 8);
-			param[0] = IMM16;
-			goto __done;
-
-		case _NZ_:
-		case _Z_:
-		case _NC_:
-		case _C_:
-			if (param[1] != IMM16 && param[1] != ADDR16 && param[1] != IMM8 && param[1] != ADDR8)
-			{
-				error.p2 = (param[1] == NONE) ? MISSING_PARAM : INVAL_JP_CALL_ADDR;
-				goto __done;
-			}
-			bin[1] = (uint8_t)val->value;
-			bin[2] = (uint8_t)(val->value >> 8);
-			if (param[0] == _NZ_)
-				bin[0] = 0xC2u;
-			else if (param[0] == _Z_)
-				bin[0] = 0xCAu;
-			else if (param[0] == _NC_)
-				bin[0] = 0xD2u;
-			else
-				bin[0] = 0xDAu;
-			param[1] = IMM16;
-			goto __done;
-
-		case HL:
-		case HL_ADDR:
-			if (param[1] != NONE)
-			{
-				error.p2 = TOO_MANY_PARAMS;
-				goto __done;
-			}
-			bin[0] = 0xE9u;
-			goto __done;
-
-		case NONE:
-			error.p1 = MISSING_PARAM;
-			goto __done;
-
-		default:
-			error.p1 = INVAL_JP_CALL_ADDR;
-			goto __done;
-	}
-
 __jpc:
-	if (param[0] == IMM16 || param[0] == ADDR16 || param[0] == IMM8 || param[0] = ADDR8)
-	{
-		if (param[1] != NONE)
-		{
-			error.p2 = TOO_MANY_PARAMS;
-			goto __done;
-		}
-		bin[0] = 0xDAu;
-		bin[1] = (uint8_t)val->value;
-		bin[2] = (uint8_t)(val->value >> 8);
-		param[0] = IMM16;
-	}
-	else if (param[0] == NONE)
-		error.p1 = MISSING_PARAM;
-	else
-		error.p1 = INVAL_JP_CALL_ADDR;
-	goto __done;
-
 __jpnc:
-	if (param[0] == IMM16 || param[0] == ADDR16 || param[0] == IMM8 || param[0] = ADDR8)
-	{
-		if (param[1] != NONE)
-		{
-			error.p2 = TOO_MANY_PARAMS;
-			goto __done;
-		}
-		bin[0] = 0xD2u;
-		bin[1] = (uint8_t)val->value;
-		bin[2] = (uint8_t)(val->value >> 8);
-		param[0] = IMM16;
-	}
-	else if (param[0] == NONE)
-		error.p1 = MISSING_PARAM;
-	else
-		error.p1 = INVAL_JP_CALL_ADDR;
-	goto __done;
-
 __jpnz:
-	if (param[0] == IMM16 || param[0] == ADDR16 || param[0] == IMM8 || param[0] = ADDR8)
-	{
-		if (param[1] != NONE)
-		{
-			error.p2 = TOO_MANY_PARAMS;
-			goto __done;
-		}
-		bin[0] = 0xC2u;
-		bin[1] = (uint8_t)val->value;
-		bin[2] = (uint8_t)(val->value >> 8);
-		param[0] = IMM16;
-	}
-	else if (param[0] == NONE)
-		error.p1 = MISSING_PARAM;
-	else
-		error.p1 = INVAL_JP_CALL_ADDR;
-	goto __done;
-
 __jpz:
-	if (param[0] == IMM16 || param[0] == ADDR16 || param[0] == IMM8 || param[0] = ADDR8)
-	{
-		if (param[1] != NONE)
-		{
-			error.p2 = TOO_MANY_PARAMS;
-			goto __done;
-		}
-		bin[0] = 0xCAu;
-		bin[1] = (uint8_t)val->value;
-		bin[2] = (uint8_t)(val->value >> 8);
-		param[0] = IMM16;
-	}
-	else if (param[0] == NONE)
-		error.p1 = MISSING_PARAM;
-	else
-		error.p1 = INVAL_JP_CALL_ADDR;
-	goto __done;
-
 __jr:
-	switch (param[0])
-	{
-		case IMM8:
-		case ADDR8:
-			if (param[1] != NONE)
-			{
-				error.p2 = TOO_MANY_PARAMS;
-				goto __done;
-			}
-			bin[0] = 0x18u;
-			bin[1] = (uint8_t)val->value;
-			goto __done;
-
-		case _NZ_:
-		case _Z_:
-		case _NC_:
-		case _C_:
-			if (param[1] != IMM8 || param[2] != ADDR8)
-			{
-				error.p2 = (param[1] == NONE) ? MISSING_PARAM : INVAL_JP_CALL_ADDR;
-				goto __done;
-			}
-			if (param[0] == _NZ_)
-				bin[0] = 0x20u;
-			else if (param[0] == _NC_)
-				bin[0] = 0x30u;
-			else if (param[1] == _Z_)
-				bin[0] = 0x28u;
-			else
-				bin[0] = 0x38u;
-			bin[1] = (uint8_t)val->value;
-			goto __done;
-
-		case NONE:
-			error.p1 = MISSING_PARAM;
-			goto __done;
-
-		default:
-			error.p1 = INVAL_JP_CALL_ADDR;
-			goto __done;
-	}
-
 __jrc:
-	if (param[0] == IMM8 || param[0] = ADDR8)
-	{
-		if (param[1] != NONE)
-		{
-			error.p2 = TOO_MANY_PARAMS;
-			goto __done;
-		}
-		bin[0] = 0x38u;
-		bin[1] = (uint8_t)val->value;
-		bin[2] = (uint8_t)(val->value >> 8);
-		param[0] = IMM16;
-	}
-	else if (param[0] == NONE)
-		error.p1 = MISSING_PARAM;
-	else
-		error.p1 = INVAL_JP_CALL_ADDR;
-	goto __done;
-
 __jrnc:
-	if (param[0] == IMM8 || param[0] = ADDR8)
-	{
-		if (param[1] != NONE)
-		{
-			error.p2 = TOO_MANY_PARAMS;
-			goto __done;
-		}
-		bin[0] = 0x30u;
-		bin[1] = (uint8_t)val->value;
-		bin[2] = (uint8_t)(val->value >> 8);
-		param[0] = IMM16;
-	}
-	else if (param[0] == NONE)
-		error.p1 = MISSING_PARAM;
-	else
-		error.p1 = INVAL_JP_CALL_ADDR;
-	goto __done;
-
 __jrnz:
-	if (param[0] == IMM8 || param[0] = ADDR8)
-	{
-		if (param[1] != NONE)
-		{
-			error.p2 = TOO_MANY_PARAMS;
-			goto __done;
-		}
-		bin[0] = 0x20u;
-		bin[1] = (uint8_t)val->value;
-		bin[2] = (uint8_t)(val->value >> 8);
-		param[0] = IMM16;
-	}
-	else if (param[0] == NONE)
-		error.p1 = MISSING_PARAM;
-	else
-		error.p1 = INVAL_JP_CALL_ADDR;
-	goto __done;
-
 __jrz:
-	if (param[0] == IMM8 || param[0] = ADDR8)
-	{
-		if (param[1] != NONE)
-		{
-			error.p2 = TOO_MANY_PARAMS;
-			goto __done;
-		}
-		bin[0] = 0x28u;
-		bin[1] = (uint8_t)val->value;
-		bin[2] = (uint8_t)(val->value >> 8);
-		param[0] = IMM16;
-	}
-	else if (param[0] == NONE)
-		error.p1 = MISSING_PARAM;
-	else
-		error.p1 = INVAL_JP_CALL_ADDR;
-	goto __done;
-
 __ld:
 __mov:
-
 __ldd:
 __ldhl:
 __ldi:
 __nop:
-	if (param[0] != NONE)
-		error.p1 = TOO_MANY_PARAMS;
-	else
-		bin[0] = 0x00u;
-	goto __done;
-
 __or:
-	if (param[0] == A)
+	if (param[0] == NONE)
+	{
+		error.p1 = MISSING_PARAM;
+	}
+	else if (param[0] == A)
 	{
 		switch (param[1])
 		{
-			case NONE:
 			case A:
+			case NONE:
 				bin[0] = 0xB7u;
-				goto __done;
+				break ;
 
 			case B:
 				bin[0] = 0xB0u;
-				goto __done;
-				
+				break ;
+
 			case C:
 				bin[0] = 0xB1u;
-				goto __done;
+				break ;
 
 			case D:
 				bin[0] = 0xB2u;
-				goto __done;
+				break ;
 
 			case E:
 				bin[0] = 0xB3u;
-				goto __done;
+				break ;
 
 			case H:
 				bin[0] = 0xB4u;
-				goto __done;
+				break ;
 
 			case L:
 				bin[0] = 0xB5u;
-				goto __done;
+				break ;
 
 			case HL_ADDR:
 				bin[0] = 0xB6u;
-				goto __done;
+				break ;
 
 			case IMM8:
 				bin[0] = 0xF6u;
 				bin[1] = (uint8_t)val->value;
-				goto __done;
+				break ;
 
 			default:
-				error.p2 = INVAL_BIT_ARITH_SRC;
-				goto __done;
+				error.p2 = INVAL_SRC;
+				break ;
+		}
+		break ;
+	}
+	else
+	{
+		if (param[1] != NONE)
+		{
+			error.p2 = TOO_MANY_PARAMS;
+			goto __done;
+		}
+		switch (param[0])
+		{
+			case B:
+				bin[0] = 0xB0u;
+				break ;
+
+			case C:
+				bin[0] = 0xB1u;
+				break ;
+
+			case D:
+				bin[0] = 0xB2u;
+				break ;
+
+			case E:
+				bin[0] = 0xB3u;
+				break ;
+
+			case H:
+				bin[0] = 0xB4u;
+				break ;
+
+			case L:
+				bin[0] = 0xB5u;
+				break ;
+
+			case HL_ADDR:
+				bin[0] = 0xB6u;
+				break ;
+
+			case IMM8:
+				bin[0] = 0xF6u;
+				bin[1] = (uint8_t)val->value;
+				break ;
+
+			default:
+				error.p1 = INVAL_SRC;
+				break ;
 		}
 	}
-	if (param[1] != NONE)
-	{
-		error.p2 = TOO_MANY_PARAMS;
-		goto __done;
-	}
-	switch (param[0])
-	{
-		case B:
-			bin[0] = 0xB0u;
-			goto __done;
-
-		case C:
-			bin[0] = 0xB1u;
-			goto __done;
-
-		case D:
-			bin[0] = 0xB2u;
-			goto __done;
-
-		case E:
-			bin[0] = 0xB3u;
-			goto __done;
-
-		case H:
-			bin[0] = 0xB4u;
-			goto __done;
-
-		case L:
-			bin[0] = 0xB5u;
-			goto __done;
-
-		case HL_ADDR:
-			bin[0] = 0xB6u;
-			goto __done;
-
-		case IMM8:
-			bin[0] = 0xF6u;
-			bin[1] = (uint8_t)val->value;
-			goto __done;
-
-		case NONE:
-			error.p1 = MISSING_PARAM;
-			goto __done;
-
-		default:
-			error.p1 = INVAL_BIT_ARITH_SRC;
-			goto __done;
-	}
+	goto __done;
 
 __pop:
-	if (param[0] == NONE)
-	{
-		error.p1 = MISSING_PARAM;
-		goto __done;
-	}
-	if (param[1] != NONE)
-	{
-		error.p2 = TOO_MANY_PARAMS;
-		goto __done;
-	}
-	switch (param[0])
-	{
-		case AF:
-			bin[0] = 0xF1u;
-			goto __done;
-
-		case BC:
-			bin[1] = 0xC1u;
-			goto __done;
-
-		case DE:
-			bin[1] = 0xD1u;
-			goto __done;
-
-		case HL:
-			bin[1] = 0xE1u;
-			goto __done;
-
-		default:
-			error.p1 = INVAL_POP_PUSH_SRC;
-			goto __done;
-	}
-
 __push:
-	if (param[0] == NONE)
-	{
-		error.p1 = MISSING_PARAM;
-		goto __done;
-	}
-	if (param[1] != NONE)
-	{
-		error.p2 = TOO_MANY_PARAMS;
-		goto __done;
-	}
-	switch (param[0])
-	{
-		case AF:
-			bin[0] = 0xF5u;
-			goto __done;
-
-		case BC:
-			bin[1] = 0xC5u;
-			goto __done;
-
-		case DE:
-			bin[1] = 0xD5u;
-			goto __done;
-
-		case HL:
-			bin[1] = 0xE5u;
-			goto __done;
-
-		default:
-			error.p1 = INVAL_POP_PUSH_SRC;
-			goto __done;
-	}
-
 __res:
 __reset:
 __ret:
@@ -1284,6 +652,107 @@ __rst:
 __sar:
 __sbb:
 __sbc:
+	if (param[0] == NONE)
+	{
+		error.p1 = MISSING_PARAM;
+	}
+	else if (param[0] == A)
+	{
+		switch (param[1])
+		{
+			case A:
+			case NONE:
+				bin[0] = 0x9Fu;
+				break ;
+
+			case B:
+				bin[0] = 0x98u;
+				break ;
+
+			case C:
+				bin[0] = 0x99u;
+				break ;
+
+			case D:
+				bin[0] = 0x9Au;
+				break ;
+
+			case E:
+				bin[0] = 0x9Bu;
+				break ;
+
+			case H:
+				bin[0] = 0x9Cu;
+				break ;
+
+			case L:
+				bin[0] = 0x9Du;
+				break ;
+
+			case HL_ADDR:
+				bin[0] = 0x9Eu;
+				break ;
+
+			case IMM8:
+				bin[0] = 0xDEu;
+				bin[1] = (uint8_t)val->value;
+				break ;
+
+			default:
+				error.p2 = INVAL_SRC;
+				break ;
+		}
+		break ;
+	}
+	else
+	{
+		if (param[1] != NONE)
+		{
+			error.p2 = TOO_MANY_PARAMS;
+			goto __done;
+		}
+		switch (param[0])
+		{
+			case B:
+				bin[0] = 0x98u;
+				break ;
+
+			case C:
+				bin[0] = 0x99u;
+				break ;
+
+			case D:
+				bin[0] = 0x9Au;
+				break ;
+
+			case E:
+				bin[0] = 0x9Bu;
+				break ;
+
+			case H:
+				bin[0] = 0x9Cu;
+				break ;
+
+			case L:
+				bin[0] = 0x9Du;
+				break ;
+
+			case HL_ADDR:
+				bin[0] = 0x9Eu;
+				break ;
+
+			case IMM8:
+				bin[0] = 0xDEu;
+				bin[1] = (uint8_t)val->value;
+				break ;
+
+			default:
+				error.p1 = INVAL_SRC;
+				break ;
+		}
+	}
+	goto __done;
+
 __scf:
 __set:
 __shl:
@@ -1293,12 +762,212 @@ __sra:
 __srl:
 __stop:
 __sub:
+	if (param[0] == NONE)
+	{
+		error.p1 = MISSING_PARAM;
+	}
+	else if (param[0] == A)
+	{
+		switch (param[1])
+		{
+			case A:
+			case NONE:
+				bin[0] = 0x97u;
+				break ;
+
+			case B:
+				bin[0] = 0x90u;
+				break ;
+
+			case C:
+				bin[0] = 0x91u;
+				break ;
+
+			case D:
+				bin[0] = 0x92u;
+				break ;
+
+			case E:
+				bin[0] = 0x93u;
+				break ;
+
+			case H:
+				bin[0] = 0x94u;
+				break ;
+
+			case L:
+				bin[0] = 0x95u;
+				break ;
+
+			case HL_ADDR:
+				bin[0] = 0x96u;
+				break ;
+
+			case IMM8:
+				bin[0] = 0xD6u;
+				bin[1] = (uint8_t)val->value;
+				break ;
+
+			default:
+				error.p2 = INVAL_SRC;
+				break ;
+		}
+		break ;
+	}
+	else
+	{
+		if (param[1] != NONE)
+		{
+			error.p2 = TOO_MANY_PARAMS;
+			goto __done;
+		}
+		switch (param[0])
+		{
+			case B:
+				bin[0] = 0x90u;
+				break ;
+
+			case C:
+				bin[0] = 0x91u;
+				break ;
+
+			case D:
+				bin[0] = 0x92u;
+				break ;
+
+			case E:
+				bin[0] = 0x93u;
+				break ;
+
+			case H:
+				bin[0] = 0x94u;
+				break ;
+
+			case L:
+				bin[0] = 0x95u;
+				break ;
+
+			case HL_ADDR:
+				bin[0] = 0x96u;
+				break ;
+
+			case IMM8:
+				bin[0] = 0xD6u;
+				bin[1] = (uint8_t)val->value;
+				break ;
+
+			default:
+				error.p1 = INVAL_SRC;
+				break ;
+		}
+	}
+	goto __done;
+
 __swap:
 __testb:
 	return ((param_error_t){0x1,0x1});
 __xor:
-puts("__XOR__");
-	return ((param_error_t){0x1,0x1});
+	if (param[0] == NONE)
+	{
+		error.p1 = MISSING_PARAM;
+	}
+	else if (param[0] == A)
+	{
+		switch (param[1])
+		{
+			case A:
+			case NONE:
+				bin[0] = 0xAFu;
+				break ;
+
+			case B:
+				bin[0] = 0xA8u;
+				break ;
+
+			case C:
+				bin[0] = 0xA9u;
+				break ;
+
+			case D:
+				bin[0] = 0xAAu;
+				break ;
+
+			case E:
+				bin[0] = 0xABu;
+				break ;
+
+			case H:
+				bin[0] = 0xACu;
+				break ;
+
+			case L:
+				bin[0] = 0xADu;
+				break ;
+
+			case HL_ADDR:
+				bin[0] = 0xAEu;
+				break ;
+
+			case IMM8:
+				bin[0] = 0xEEu;
+				bin[1] = (uint8_t)val->value;
+				break ;
+
+			default:
+				error.p2 = INVAL_SRC;
+				break ;
+		}
+		break ;
+	}
+	else
+	{
+		if (param[1] != NONE)
+		{
+			error.p2 = TOO_MANY_PARAMS;
+			goto __done;
+		}
+		switch (param[0])
+		{
+			case B:
+				bin[0] = 0xA8u;
+				break ;
+
+			case C:
+				bin[0] = 0xA9u;
+				break ;
+
+			case D:
+				bin[0] = 0xAAu;
+				break ;
+
+			case E:
+				bin[0] = 0xABu;
+				break ;
+
+			case H:
+				bin[0] = 0xACu;
+				break ;
+
+			case L:
+				bin[0] = 0xADu;
+				break ;
+
+			case HL_ADDR:
+				bin[0] = 0xAEu;
+				break ;
+
+			case IMM8:
+				bin[0] = 0xEEu;
+				bin[1] = (uint8_t)val->value;
+				break ;
+
+			default:
+				error.p1 = INVAL_SRC;
+				break ;
+		}
+	}
+	goto __done;
+
 __done:
 	return (error);
 }
