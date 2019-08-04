@@ -47,6 +47,88 @@ uint32_t		g_error;
 uint32_t		g_warning;
 
 
+void		check_code_area_overflow(vector_t *area)
+{
+	register code_area_t	*a;
+	register uint32_t	end;
+	
+	if (area->nitems == 0)
+		return (0);
+	a = (code_area_t *)area->data;
+	end = a->addr + size;
+	a += sizeof(code_area_t);
+
+	for (uint32_t i = 1; i < area->nitems; i++, a += sizeof(code_area_t))
+	{
+		if (end <= a->addr)
+		{
+			g_error++;
+			fprintf(stderr, "chevauchement zone memoire (end = 0x%x, start = 0x%x)\n", end, a->addr);
+		}
+	}
+}
+
+int		replace_internal_symbols(vector_t *area, loc_sym_t *local_symbol)
+{
+	register code_area_t	*a;
+
+	a = (code_area_t *)area->data;
+	for (uint32_t i = 0; i < area->nitems; i++, a += sizeof(code_area_t))
+	{
+		register code_t	*c = a->data;
+		for (; c; c = c->next)
+		{
+			if (c->symbol && (c->size & 0xffffff00u) == 0)
+			{
+				// remplacement + calcul
+				register ssize_t	index;
+
+				if ((index = vector_search(local_symbol->label, (void*)&c->symbol)) != -1)
+				{
+					register label_t	*lab = VEC_ELEM(label_t, local_symbol->label, index);
+					register uint32_t	val;
+					
+					val = c->opcode[1] | (c->opcode[2] << 8);
+					val = (c->opcode[3] == '-') ? lab->base_or_status - val: lab->base_or_status + val;
+					c->opcode[1] = (uint8_t)val;
+					c->opcode[2] = (val >> 8);
+					if (val > 0xffffu)
+					{
+						g_error++;
+						fprintf(stderr, "overflow label\n");
+					}
+					if (*c->opcode == JR || *c->opcode == JRZ || *c->opcode == JRNZ)
+						|| *c->opcode == JRC || *c->opcode == JRNC)
+					{
+						if (val & 0xff00u)
+						{
+							g_error++;
+							fprintf(stderr, "too big jump\n");
+						}
+					}
+					// virer lab->pos, mettre directement la bonne valeur
+				}
+				/*
+				else
+				{
+					uint32_t			block;
+					register variable_t	*var = variable_search(local_symbol->memblock, c->symbol, &block);
+					register uint32_t	val;
+
+					if (var)
+					{
+						val = c->opcode[1] | (c->opcode[2] << 8);
+						val = (c->opcode[3] == '-') ? var->addr - val: var->addr + val;
+						c->opcode[1] = (uint8_t)val;
+						c->opcode[2] = (val >> 8);
+					}
+				}
+				*/
+			}
+		}
+	}
+}
+
 void		print_directive_arg_error(char *keyword, data_t *data)
 {
 	sprintf(data->buf, "`%s` keyword expects arguments", keyword);
@@ -510,6 +592,11 @@ vector_t	*set_builtin_macro(void)
 	return (macro);
 }
 
+/*
+
+	revoir le systeme de symbols (symbols internes tous dans le meme vecteur)
+
+*/
 int		main(int argc, char *argv[])
 {
 	char			*file[3];
@@ -522,7 +609,7 @@ int		main(int argc, char *argv[])
 	file[1]	=	"testfile2";
 	file[2]	=	NULL;
 
-	macro = set_builtin_macro(); //macro + cmp()
+	macro = set_builtin_macro();
 	code_area = vector_init(sizeof(code_area_t));
 	code_area->compar = &area_cmp;
 	code_area->destroy = &area_destroy;
@@ -544,14 +631,13 @@ int		main(int argc, char *argv[])
 	{
 		g_error = 0;
 		g_warning = 0;
-		// by default, write code in address 0x0000
+		// by default, code is writed in address 0x0000
 		code_area_t		area_elem = {0, 0, NULL, NULL};
 		vector_push(code_area, (void*)&area_elem);
 
 		parse_file(*p, code_area, macro, extern_symbol, &local_symbol, 0);
-		check_code_area_overflow(code_area); // a coder !
-		// remplacer les symbols internes avant de créer l'objet
-		replace_internal_symbols(code_area, &local_symbol); //fonction a coder
+		check_code_area_overflow(code_area);
+		replace_internal_symbols(code_area, &local_symbol);
 		if (g_error)
 		{
 			fprintf(stderr, "\e[1;31m%u errors\e[0m\n", g_error);

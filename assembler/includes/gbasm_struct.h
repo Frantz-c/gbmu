@@ -14,8 +14,11 @@ param_t;
 
 typedef enum	insn_err_e
 {
-	ENONE, MISSING_PARAM, TOO_MANY_PARAMS, INVAL_SRC,
-	INVAL_DST, OVERFLOW
+	ENONE, MISSING_PARAM, TOO_MANY_PARAMS, INVAL_ADC_SBB_SRC,
+	INVAL_ADD_SUB_DST, INVAL_ADD_SUB_SRC, INVAL_BIT_ARITH_SRC,
+	INVAL_CB_BIT_VALUE, INVAL_CB_BIT_DST, INVAL_JP_CALL_ADDR,
+	INVAL_CMP_SRC, INVAL_AOP_DST, INVAL_INC_DEC_DST,
+	INVAL_POP_PUSH_SRC
 }
 insn_err_t;
 
@@ -29,6 +32,9 @@ insn_err_t;
 #define	NOT_DECLARED	0xffffffffu
 
 // object files generation
+
+/*
+// quantity & pos inutiles ??
 typedef struct	intern_symbols_s
 {
 	uint8_t		*name;
@@ -39,6 +45,21 @@ typedef struct	intern_symbols_s
 	uint8_t		*blockname;	//			if VAR
 	uint32_t	data1;		// value	if LABEL || VAR
 							// start	if MEMBLOCK
+	uint32_t	data2;		// end		if MEMBLOCK
+							// size		if VAR
+}
+intern_symbols_t;
+*/
+
+typedef struct	intern_symbols_s
+{
+	uint8_t		*name;
+	uint32_t	type;
+	uint32_t	data1;		// value	if LABEL
+							// quantity	if VAR
+							// start	if MEMBLOCK
+	uint32_t	*pos;		//			if VAR
+	uint8_t		*blockname;	//			if VAR
 	uint32_t	data2;		// end		if MEMBLOCK
 							// size		if VAR
 }
@@ -131,22 +152,22 @@ struct	code_area_s
 
 struct	memblock_s
 {
-	uint32_t			start;
-	uint32_t			end;
-	uint32_t			space;
-	uint32_t			line;
-	char				*filename;
-	char				*name;
-	vector_t			*var;
+	uint32_t	start;
+	uint32_t	end;
+	uint32_t	space;
+	uint32_t	line;
+	char		*filename;
+	char		*name;
+	vector_t	*var;
 };
 
 struct	variable_s
 {
-	char				*name;
-	uint32_t			addr;	// if external memblock: 0xffffffffu
-	uint32_t			size;
-	uint32_t			line;
-	char				*filename;
+	char		*name;
+	uint32_t	addr;	// extern memblocks not allowed
+	uint32_t	size;
+	uint32_t	line;
+	char		*filename;
 };
 
 struct	data_s

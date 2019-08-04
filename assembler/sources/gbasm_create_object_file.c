@@ -60,6 +60,38 @@ int		extern_match(const void *a, const void *b)
 	return (strcmp(ea->name, comp));
 }
 
+void	add_intern_labels(vector_t *_intern, vector_t *label)
+{
+	label_t				new = {0};
+	register label_t	*lab = (label_t *)label->data;
+
+	for (uint32_t i = 0; i < label->nitems; i++, lab += sizeof(label_t))
+	{
+		new.name = lab->name;
+		new.type = LABEL;
+		new.data1 = lab->base_or_status;
+		VEC_SORTED_INSERT(_intern, lab->name, new);
+	}
+}
+
+void	add_intern_memblocks_and_variables(vector_t *_intern, vector_t *memblock)
+{
+	memblock_t			new = {0};
+	register memblock_t	*block = (memblock_t *)memblock->data;
+
+	for (uint32_t i = 0; i < memblock->nitems; i++, block += sizeof(memblock_t))
+	{
+		//
+	}
+}
+
+void	__attribute__((always_inline))
+	add_intern_symbols(vector_t *_intern, loc_sym_t *local_symbol)
+{
+	add_intern_labels(_intern, local_symbol->label);
+	add_intern_memblocks_and_variables(_intern, local_symbol->memblock);
+}
+
 
 int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *extern_symbol, char *filename)
 {
@@ -138,68 +170,6 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 						// add new symbol in _extern (quantity = 1, pos = i + 1)
 					}
 				}
-				else // intern symbol
-				{
-					char		*blockname = NULL;
-					uint32_t	type;
-					uint32_t	data1;
-					uint32_t	data2;
-
-					if ((index = vector_search(local_symbol->label, (void*)&c->symbol)) != -1)
-					{
-						register label_t	*lab = VEC_ELEM(label_t, local_symbol->label, index);
-
-						type = LABEL;
-						data1 = lab->pos + lad->base_or_status; // virer lab->pos, metter directement la bonne valeur dans lab->base
-						data2 = 0;
-					}
-					else if ((index = vector_search(local_symbol->memblock, (void*)&c->symbol)) != -1) // impossible...
-					{
-						register label_t	*block = VEC_ELEM(memblock_t, local_symbol->memblock, index);
-
-						type = MEMBLOCK;
-						data1 = block->start;
-						data2 = block->end;
-					}
-					else
-					{
-						uint32_t	block;
-						register variable_t	*var = variable_search(local_symbol->memblock, c->symbol, &block);
-
-						type = VAR;
-						blockname = VEC_ELEM(memblock_t, local_symbol->memblock, block)->name;
-						data2 = var->size;
-						data1 = var->addr;
-					}
-
-					if ((index = vector_search(_intern, (void*)&c->symbol)) != -1)
-					{
-						register intern_symbols_t	*sym = VEC_ELEM(intern_symbols_t, _intern, index);
-						// add pos + inc quantity
-						if (type == LABEL)
-						{
-							sym->pos[sym->quantity] = i;
-							sym->quantity++;
-							if ((sym->quantity % 4) == 0)
-								sym->pos = realloc(sym->pos, sym->quantity + 4);
-						}
-					}
-					else
-					{
-						intern_symbols_t	new = {name, type, 1, NULL, blockname, data1, data2};
-
-						if (type & VAR_OR_LABEL)
-						{
-							new.pos = malloc(sizeof(uint32_t) * 4);
-							new.pos[0] = i;
-						}
-						else
-						{
-							new.quantity = 0;
-						}
-						VEC_SORTED_INSERT(_extern, c->symbol, new);
-					}
-				}
 
 				// add instruction
 				if ((allocsize - i) < c->size + (c->size == 3))
@@ -225,12 +195,13 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 		*(uint32_t*)(code + len_pos) = (uint32_t)(i - (len_pos + 4));
 	}
 
-	//add_extern_memblocks();	// memblocks dans le vector extern_symbol (non utilisés par les instructions) INUTILE ? 
 	// fonction a coder
 	add_intern_symbols(_intern, local_symbol);	// symbols dans le vector local_symbol (non utilisés par les instructions)
 
 	// ecrire dans le fichier .o
 	FILE *file = fopen(filename, "w+");
+
+	uint32_t	i = 0;
 
 	uint32_t	header[4] =
 	{
@@ -241,8 +212,45 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 	};
 
 	fwrite(header, sizeof(uint32_t), 4, file);
-	fwrite(_extern->data, sizeof(extern_symbols_t), _extern->nitems, file); // impossible a cause de uint32_t *pos && uint8_t *name
-	fwrite(_intern->data, sizeof(intern_symbols_t), _intern->nitems, file); // "          "  "     " "          " "    "         "
+	for (extern_symbols_t *ext = (extern_symbols_t *)_extern->data; i < _extern->nitems; i++, ext += sizeof(extern_symbols_t))
+	{
+		uint32_t	len = strlen(ext->name) + 1;
+
+		fwrite(ext->name, 1, len, file);
+		fwrite(&ext->type, sizeof(uint32_t), 1, file);
+		fwrite(&ext->quantity, sizeof(uint32_t), 1, file);
+		fwrite(ext->pos, sizeof(uint32_t), ext->quantity, ext->pos);
+	}
+	i = 0;
+	for (intern_symbols_t *in = (intern_symbols_t *)_intern->data; i < _intern->nitems; i++, in += sizeof(intern_symbols_t))
+	{
+		uint32_t	len = strlen(in->name) + 1;
+
+		fwrite(in->name, 1, len, file);
+		fwrite(&in->type, sizeof(uint32_t), 1, file);
+		fwrite(&in->quantity, sizeof(uint32_t), 1, file);
+		if (in->type & VAR_OR_LABEL)
+		{
+			fwrite(in->pos, sizeof(uint32_t), in->quantity, in->pos);
+			if (in->type == VAR)
+			{
+				len = strlen(in->blockname) + 1;
+
+				fwrite(in->blockname, 1, len, file);
+				fwrite(&in->data1, sizeof(uint32_t), 1, file);
+				fwrite(&in->data2, sizeof(uint32_t), 1, file);
+			}
+			else
+			{
+				fwrite(&in->data1, sizeof(uint32_t), 1, file);
+			}
+		}
+		else //memblock
+		{
+			fwrite(&in->data1, sizeof(uint32_t), 1, file);
+			fwrite(&in->data2, sizeof(uint32_t), 1, file);
+		}
+	}
 	fwrite(code, sizeof(uint8_t), i, file);
 
 	fclose(file);

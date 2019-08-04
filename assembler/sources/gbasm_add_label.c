@@ -28,7 +28,7 @@ void	add_label(char *name, vector_t *area, vector_t *ext_symbol, loc_sym_t *loc_
 
 		if (lab->base_or_status == NOT_DECLARED)
 		{
-			lab->base_or_status = VEC_ELEM(code_area_t, area, data->cur_area)->addr;
+			lab->base_or_status = VEC_ELEM(code_area_t, area, data->cur_area)->addr + VEC_ELEM(code_area_t, area, data->cur_area)->count;
 			lab->pos = VEC_ELEM(code_area_t, area, data->cur_area)->count;
 		}
 		else
@@ -87,7 +87,7 @@ void	add_label(char *name, vector_t *area, vector_t *ext_symbol, loc_sym_t *loc_
 	register uint32_t	addr = VEC_ELEM(code_area_t, area, data->cur_area)->addr;
 	register uint32_t	pos = VEC_ELEM(code_area_t, area, data->cur_area)->size;
 	register size_t		i = vector_index(loc_symbol->label, (void*)&name);
-	label_t	new = {name, pos, addr, data->lineno, strdup(data->filename)};
+	label_t	new = {name, pos, addr + pos, data->lineno, strdup(data->filename)};
 
 	vector_insert(loc_symbol->label, (void*)&new, i);
 }

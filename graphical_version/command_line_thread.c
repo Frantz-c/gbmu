@@ -59,7 +59,7 @@ extern void		*command_line_thread(void *unused)
 	unsigned char	*ptr;
 	unsigned int	pkmn;
 	int				err;
-	uint32_t		pkmn_addr[43] = {0};
+	uint32_t		pkmn_addr[49] = {0};
 
 	srand(time(NULL));
 	write(2, "\e[?25l", 6);
@@ -78,6 +78,12 @@ extern void		*command_line_thread(void *unused)
 		pkmn_addr[ATT4] = 0xd17bU;
 		pkmn_addr[ID] = 0xd17cU;
 		pkmn_addr[XP] = 0xd17eU;
+		pkmn_addr[IV_HP] = 0xd181U;
+		pkmn_addr[IV_FOR] = 0xd183U;
+		pkmn_addr[IV_DEF] = 0xd185U;
+		pkmn_addr[IV_VIT] = 0xd187U;
+		pkmn_addr[IV_SPE] = 0xd189U;
+		pkmn_addr[EV] = 0xd18bU;
 		pkmn_addr[PP1] = 0xd18dU;
 		pkmn_addr[PP2] = 0xd18eU;
 		pkmn_addr[PP3] = 0xd18fU;
@@ -92,7 +98,7 @@ extern void		*command_line_thread(void *unused)
 		pkmn_addr[NAME] = 0xd2baU;
 		pkmn_addr[OBJ] = 0xd322U;
 		pkmn_addr[OBJ_PC] = 0xd53fU;
-		pkmn_addr[CASH] = 0xd34dU;
+		pkmn_addr[CASH] = 0xd34cU;
 		pkmn_addr[CBT_CHP] = 0xd01aU;
 		pkmn_addr[CBT_HP] = 0xd028U;
 		pkmn_addr[ADV_HP] = 0xcfebU;
@@ -1489,24 +1495,118 @@ __print:
 						}
 					}
 				}
-				else if (strncmp(p, "argent", 4) == 0 && non_alnum(p[6]))
+				else if (strncmp(p, "iv_pv", 5) == 0 && non_alnum(p[5]))
 				{
-					unsigned int cash = 0;
+					unsigned int	pv = 0;
 
-					if (va_parse_u32(p + 4, 1, 1, &cash) == NULL)
+					if (va_parse_u32(p + 5, 1, 1, &pv) == NULL)
 						goto __forest_end;
 
 					if (pkmn == PKMN_GRE)
 					{
-						*GET_REAL_ADDR(pkmn_addr[CASH]) = (uint8_t)((cash & 0xffff00) >> 16);
-						*GET_REAL_ADDR(pkmn_addr[CASH] + 1) = (uint8_t)((cash & 0xff00) >> 8);
-						*GET_REAL_ADDR(pkmn_addr[CASH] + 2) = (uint8_t)(cash & 0xff);
+						goto __forest_end;
 					}
 					else
 					{
-						*GET_REAL_ADDR(pkmn_addr[CASH]) = (uint8_t)((cash & 0xff00) >> 8);
-						*GET_REAL_ADDR(pkmn_addr[CASH] + 1) = (uint8_t)(cash & 0xff);
+						*GET_REAL_ADDR(pkmn_addr[IV_HP]) = (uint8_t)(pv >> 8);
+						*GET_REAL_ADDR(pkmn_addr[IV_HP] + 1) = (uint8_t)(pv);
 					}
+				}
+				else if (strncmp(p, "iv_for", 6) == 0 && non_alnum(p[6]))
+				{
+					unsigned int	force = 0;
+
+					if (va_parse_u32(p + 6, 1, 1, &force) == NULL)
+						goto __forest_end;
+
+					if (pkmn == PKMN_GRE)
+					{
+						goto __forest_end;
+					}
+					else
+					{
+						*GET_REAL_ADDR(pkmn_addr[IV_FOR]) = (uint8_t)(force >> 8);
+						*GET_REAL_ADDR(pkmn_addr[IV_FOR] + 1) = (uint8_t)(force);
+					}
+				}
+				else if (strncmp(p, "iv_def", 6) == 0 && non_alnum(p[6]))
+				{
+					unsigned int	def = 0;
+
+					if (va_parse_u32(p + 6, 1, 1, &def) == NULL)
+						goto __forest_end;
+
+					if (pkmn == PKMN_GRE)
+					{
+						goto __forest_end;
+					}
+					else
+					{
+						*GET_REAL_ADDR(pkmn_addr[IV_DEF]) = (uint8_t)(def >> 8);
+						*GET_REAL_ADDR(pkmn_addr[IV_DEF] + 1) = (uint8_t)(def);
+					}
+				}
+				else if (strncmp(p, "iv_vit", 6) == 0 && non_alnum(p[6]))
+				{
+					unsigned int	vit = 0;
+
+					if (va_parse_u32(p + 6, 1, 1, &vit) == NULL)
+						goto __forest_end;
+
+					if (pkmn == PKMN_GRE)
+					{
+						goto __forest_end;
+					}
+					else
+					{
+						*GET_REAL_ADDR(pkmn_addr[IV_VIT]) = (uint8_t)(vit >> 8);
+						*GET_REAL_ADDR(pkmn_addr[IV_VIT] + 1) = (uint8_t)(vit);
+					}
+				}
+				else if (strncmp(p, "iv_spe", 6) == 0 && non_alnum(p[6]))
+				{
+					unsigned int	spe = 0;
+
+					if (va_parse_u32(p + 6, 1, 1, &spe) == NULL)
+						goto __forest_end;
+
+					if (pkmn == PKMN_GRE)
+					{
+						goto __forest_end;
+					}
+					else
+					{
+						*GET_REAL_ADDR(pkmn_addr[IV_SPE]) = (uint8_t)(spe >> 8);
+						*GET_REAL_ADDR(pkmn_addr[IV_SPE] + 1) = (uint8_t)(spe);
+					}
+				}
+				else if (strncmp(p, "ev", 2) == 0 && non_alnum(p[2]))
+				{
+					unsigned int	ev = 0;
+
+					if (va_parse_u32(p + 2, 1, 1, &ev) == NULL)
+						goto __forest_end;
+
+					if (pkmn == PKMN_GRE)
+					{
+						goto __forest_end;
+					}
+					else
+					{
+						*GET_REAL_ADDR(pkmn_addr[EV]) = (uint8_t)(ev >> 8);
+						*GET_REAL_ADDR(pkmn_addr[EV] + 1) = (uint8_t)(ev);
+					}
+				}
+				else if (strncmp(p, "argent", 6) == 0 && non_alnum(p[6]))
+				{
+					unsigned int cash = 0;
+
+					if (va_parse_u32(p + 6, 1, 1, &cash) == NULL)
+						goto __forest_end;
+
+					*GET_REAL_ADDR(pkmn_addr[CASH]) = (uint8_t)((cash & 0xffff00) >> 16);
+					*GET_REAL_ADDR(pkmn_addr[CASH] + 1) = (uint8_t)((cash & 0xff00) >> 8);
+					*GET_REAL_ADDR(pkmn_addr[CASH] + 2) = (uint8_t)(cash & 0xff);
 				}
 				else
 					write(1, "syntax error\n", 13);
@@ -1524,5 +1624,3 @@ __forest_end:
 	term_noecho_mode(0);
 	write(2, "\e[?25h", 6);
 }
-
-
