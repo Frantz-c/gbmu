@@ -1,0 +1,17 @@
+%define	inst	and
+
+inst	A, B
+inst	A, C
+inst	A, D
+inst	A, E
+inst	A, H
+inst	A, L
+inst	A, A
+
+inst	B
+inst	C
+inst	D
+inst	E
+inst	H
+inst	L
+inst	A

@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/22 22:53:58 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/26 19:40:49 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/04 16:39:31 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -28,8 +28,8 @@ void	add_label(char *name, vector_t *area, vector_t *ext_symbol, loc_sym_t *loc_
 
 		if (lab->base_or_status == NOT_DECLARED)
 		{
-			lab->base_or_status = VEC_ELEM(code_area_t, area, data->cur_area)->addr + VEC_ELEM(code_area_t, area, data->cur_area)->count;
-			lab->pos = VEC_ELEM(code_area_t, area, data->cur_area)->count;
+			lab->base_or_status = VEC_ELEM(code_area_t, area, data->cur_area)->addr + VEC_ELEM(code_area_t, area, data->cur_area)->size;
+			lab->pos = VEC_ELEM(code_area_t, area, data->cur_area)->size;
 		}
 		else
 		{

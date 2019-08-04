@@ -44,7 +44,8 @@ code
 	uint16_t	start_addr;
 	uint32_t	length;
 	
-	uint8_t		byte; ...
+	uint8_t		byte; ...	// .byte -> 0x0, uint32_t length, bytes
+							// inst -> size8_t, opcode, [operand16_t, op]?   (op = '-', '+' ou '\0')
 	// code
 }.time(n_blocks);
 

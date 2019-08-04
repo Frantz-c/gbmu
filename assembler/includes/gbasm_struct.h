@@ -18,7 +18,7 @@ typedef enum	insn_err_e
 	INVAL_ADD_SUB_DST, INVAL_ADD_SUB_SRC, INVAL_BIT_ARITH_SRC,
 	INVAL_CB_BIT_VALUE, INVAL_CB_BIT_DST, INVAL_JP_CALL_ADDR,
 	INVAL_CMP_SRC, INVAL_AOP_DST, INVAL_INC_DEC_DST,
-	INVAL_POP_PUSH_SRC
+	INVAL_POP_PUSH_SRC,INVAL_SRC,INVAL_DST
 }
 insn_err_t;
 
@@ -30,27 +30,15 @@ insn_err_t;
 #define MEMBLOCK		0x02
 
 #define	NOT_DECLARED	0xffffffffu
+#define BYTE_DIRECTIVE	0xffffff00u
+
+#define JR		0x18
+#define JRZ		0x28
+#define JRNZ	0x20
+#define JRC		0x38
+#define JRNC	0x30
 
 // object files generation
-
-/*
-// quantity & pos inutiles ??
-typedef struct	intern_symbols_s
-{
-	uint8_t		*name;
-	uint32_t	type;
-	uint32_t	quantity;
-	uint32_t	*pos;		//			if VAR || LABEL
-
-	uint8_t		*blockname;	//			if VAR
-	uint32_t	data1;		// value	if LABEL || VAR
-							// start	if MEMBLOCK
-	uint32_t	data2;		// end		if MEMBLOCK
-							// size		if VAR
-}
-intern_symbols_t;
-*/
-
 typedef struct	intern_symbols_s
 {
 	uint8_t		*name;

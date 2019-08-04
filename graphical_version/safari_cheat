@@ -2,3 +2,6 @@
 0xcce9 --> appat (0 - 0xff)
 0xda4c --> nombre de safari ball
 0xd712 --> nombre de pas (0 - 0xffff)
+
+rset 0xd8a1 1 0xb4 0xff -> pokemons dresseur adverse
+set 0xd8ca 0x63 -> level pkmn adverse

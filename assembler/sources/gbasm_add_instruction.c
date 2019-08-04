@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 22:10:25 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/25 10:16:35 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/04 19:22:33 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -572,6 +572,7 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *ext_symbol, loc_sym_
 	error = get_bin_instruction(inst, param, &val, bin);
 	if (error.p1 || error.p2)
 	{
+		g_error++;
 		fprintf(stderr, "Error instruction\n");
 	}
 	else

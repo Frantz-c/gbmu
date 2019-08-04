@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/27 21:11:48 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/04 19:49:37 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -19,6 +19,7 @@
 #include "gbasm_error.h"
 #include "gbasm_struct.h"
 #include "gbasm_instruction_or_label.h"
+#include "gbasm_create_object_file.h"
 
 #define BEG						do{
 #define END						}while(0)
@@ -47,15 +48,15 @@ uint32_t		g_error;
 uint32_t		g_warning;
 
 
-void		check_code_area_overflow(vector_t *area)
+void	check_code_area_overflow(vector_t *area)
 {
 	register code_area_t	*a;
 	register uint32_t	end;
 	
 	if (area->nitems == 0)
-		return (0);
+		return;
 	a = (code_area_t *)area->data;
-	end = a->addr + size;
+	end = a->addr + a->size;
 	a += sizeof(code_area_t);
 
 	for (uint32_t i = 1; i < area->nitems; i++, a += sizeof(code_area_t))
@@ -68,7 +69,10 @@ void		check_code_area_overflow(vector_t *area)
 	}
 }
 
-int		replace_internal_symbols(vector_t *area, loc_sym_t *local_symbol)
+/*
+ *	replace labels only
+ */
+void		replace_internal_symbols(vector_t *area, loc_sym_t *local_symbol)
 {
 	register code_area_t	*a;
 
@@ -97,7 +101,7 @@ int		replace_internal_symbols(vector_t *area, loc_sym_t *local_symbol)
 						g_error++;
 						fprintf(stderr, "overflow label\n");
 					}
-					if (*c->opcode == JR || *c->opcode == JRZ || *c->opcode == JRNZ)
+					if (*c->opcode == JR || *c->opcode == JRZ || *c->opcode == JRNZ
 						|| *c->opcode == JRC || *c->opcode == JRNC)
 					{
 						if (val & 0xff00u)
@@ -106,24 +110,9 @@ int		replace_internal_symbols(vector_t *area, loc_sym_t *local_symbol)
 							fprintf(stderr, "too big jump\n");
 						}
 					}
-					// virer lab->pos, mettre directement la bonne valeur
+					free(c->symbol);
+					c->symbol = NULL;
 				}
-				/*
-				else
-				{
-					uint32_t			block;
-					register variable_t	*var = variable_search(local_symbol->memblock, c->symbol, &block);
-					register uint32_t	val;
-
-					if (var)
-					{
-						val = c->opcode[1] | (c->opcode[2] << 8);
-						val = (c->opcode[3] == '-') ? var->addr - val: var->addr + val;
-						c->opcode[1] = (uint8_t)val;
-						c->opcode[2] = (val >> 8);
-					}
-				}
-				*/
 			}
 		}
 	}
@@ -327,6 +316,10 @@ char	*replace_content(char *content, uint32_t argc, char *param[10])
 	return (new);
 }
 
+
+/*
+ *	A recoder proprement
+ */
 char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t *loc_symbol, vector_t *macro, data_t *data)
 {
 	char		*name = s;
@@ -335,7 +328,9 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 	uint8_t		n_params = 0;
 	char		*content;
 	uint32_t	argc;
+	char		*search = NULL;
 
+	puts("\e[1;31mPARSE_INSTRUCTION\e[0m");
 
 	if (!is_alpha(*s) && *s != '_')
 		goto __unexpected_char;
@@ -345,6 +340,7 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 	// LABEL
 	if (*s == ':')
 	{
+		// start = name
 		char *end = s;
 		s++;
 		if (!is_space(*s) && !is_endl(*s))
@@ -354,17 +350,21 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 	}
 	else if (!is_space(*s) && *s != '(' && !is_endl(*s))
 		goto __unexpected_char;
+	/*
 	if (!is_endl(*s))
 		goto __add_instruction;
-
+*/
+	search = strndup(name, s - name);
 	while (is_space(*s)) s++;
-	if ((macro_index = (uint32_t)vector_search(macro, (void*)&name)) != 0xffffffffu)
+	printf("\e[1;44mvector_search(\"%s\")\e[0m\n", search);
+	if ((macro_index = (uint32_t)vector_search(macro, (void*)&search)) != 0xffffffffu)
 	{
 		char		*content_ptr = NULL;
 		data_t		new_data;
 		content = VEC_ELEM(macro_t, macro, macro_index)->content;
 		argc = VEC_ELEM(macro_t, macro, macro_index)->argc;
 
+		puts("\e[1;44mREPLACE_MACRO\e[0m\n");
 		if (*s == '(')
 		{
 			s++;
@@ -381,8 +381,22 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 			for (uint8_t i = 0; macro_param[i]; i++)
 				free(macro_param[i]);
 		}
+		char	*tmp = content;
+		while (!is_space(*tmp) && !is_endl(*tmp)) tmp++;
+		if (!is_endl(*tmp))
+		{
+			while (is_space(*tmp)) tmp++;
+			if (!is_endl(*tmp))
+				goto __next;
+		}
+		
+		name = (argc) ? content : strdup(content);
+		s = add_instruction(name, area, ext_symbol, loc_symbol, macro, s, data);
+		free(name);
+		return (s);
 
-
+		
+__next:
 		new_data.filename = malloc(strlen(data->filename) + strlen(name) + 10);
 		sprintf(new_data.filename, "%s in macro %s", data->filename, name);
 		new_data.line = content;
@@ -405,16 +419,18 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 		}
 		if (content_ptr) free(content_ptr);
 		free(new_data.filename);
+		free(search);
 		return (s);
 	}
 	else if (*s == '(' && !is_space(s[-1]))
 		goto __unexpected_char;
+	free(search);
 
-__add_instruction:
-	name = strndup(name, s - name);
+//__add_instruction:
+//	name = strndup(name, s - name);
 	s = add_instruction(name, area, ext_symbol, loc_symbol, macro, s + 1, data);
-	free(name);
-	return (s);
+//	free(name);
+//	return (s);
 
 __argc_error:
 	for (uint8_t i = 0; macro_param[i]; i++)
@@ -425,6 +441,7 @@ __argc_error:
 
 __unexpected_char:
 	sprintf(data->buf, "unexpected character `%c`", *s);
+	if (search) free(search);
 __print_error:
 	print_error(data->filename, data->lineno, data->line, data->buf);
 	while (!is_endl(*s)) s++;
@@ -592,6 +609,25 @@ vector_t	*set_builtin_macro(void)
 	return (macro);
 }
 
+char	*get_object_name(const char *s)
+{
+	const char	*end = s + strlen(s) - 1;
+
+	while (*end != '.')
+	{
+		if (end == s)
+		{
+			fprintf(stderr, "fichier sans extention !\n");
+			exit(1);
+		}
+		end--;
+	}
+
+	char	*new = malloc((end - s) + 5);
+	sprintf(new, "%.*s.gbo", (int)(end - s), s);
+	return (new);
+}
+
 /*
 
 	revoir le systeme de symbols (symbols internes tous dans le meme vecteur)
@@ -605,9 +641,8 @@ int		main(int argc, char *argv[])
 	vector_t		*extern_symbol = NULL;
 	loc_sym_t		local_symbol = {NULL, NULL};
 
-	file[0]	=	"testfile1";
-	file[1]	=	"testfile2";
-	file[2]	=	NULL;
+	file[0]	=	"test.gbs";
+	file[1]	=	NULL;
 
 	macro = set_builtin_macro();
 	code_area = vector_init(sizeof(code_area_t));
@@ -644,7 +679,9 @@ int		main(int argc, char *argv[])
 			break;
 		}
 
-		create_object_file(code_area, &local_symbol, extern_symbol, *p);
+		char	*object_name = get_object_name(*p);
+		create_object_file(code_area, &local_symbol, extern_symbol, object_name);
+		free(object_name);
 
 		vector_reset(code_area);
 		vector_reset(local_symbol.label);

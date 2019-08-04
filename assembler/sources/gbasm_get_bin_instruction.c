@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/25 10:03:09 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/02 10:08:38 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/04 18:50:28 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -26,7 +26,6 @@ static ssize_t		instruction_search(const instruction_t inst[71], char *tofind)
 	while (left < right)
 	{
 		middle = (left + right) / 2;
-		printf("left = %u, right = %u\n\e[1;36mCOMPARE(\e[0;33m\"%s\"\e[1;36m, \e[0;33m\"%s\"\e[1;36m);\n\e[0m", left, right, inst[middle].name, tofind);
 		side = strcmp(inst[middle].name, tofind);
 		if (side < 0)
 			left = middle + 1;
@@ -131,7 +130,6 @@ __adc:
 				error.p2 = INVAL_SRC;
 				break ;
 		}
-		break ;
 	}
 	else
 	{
@@ -343,7 +341,6 @@ __and:
 				error.p2 = INVAL_SRC;
 				break ;
 		}
-		break ;
 	}
 	else
 	{
@@ -400,6 +397,7 @@ __callc:
 __callnc:
 __callnz:
 __callz:
+	return ((param_error_t){0x1,0x1});
 __ccf:
 	if (param[0] != NONE)
 		error.p1 = TOO_MANY_PARAMS;
@@ -408,6 +406,7 @@ __ccf:
 	goto __done;
 
 __cmp:
+	return ((param_error_t){0x1,0x1});
 __cp:
 	if (param[0] == NONE)
 	{
@@ -459,7 +458,6 @@ __cp:
 				error.p2 = INVAL_SRC;
 				break ;
 		}
-		break ;
 	}
 	else
 	{
@@ -511,6 +509,7 @@ __cp:
 	goto __done;
 
 __cpl:
+	return ((param_error_t){0x1,0x1});
 __not:
 	if (param[0] != NONE && param[0] != A)
 		error.p1 = TOO_MANY_PARAMS;
@@ -526,6 +525,7 @@ __daa:
 	goto __done;
 
 __dec:
+	return ((param_error_t){0x1,0x1});
 __di:
 	if (param[0] != NONE)
 		error.p1 = TOO_MANY_PARAMS;
@@ -563,6 +563,7 @@ __mov:
 __ldd:
 __ldhl:
 __ldi:
+	return ((param_error_t){0x1,0x1});
 __nop:
 	if (param[0] != NONE)
 		error.p1 = TOO_MANY_PARAMS;
@@ -621,7 +622,6 @@ __or:
 				error.p2 = INVAL_SRC;
 				break ;
 		}
-		break ;
 	}
 	else
 	{
@@ -683,6 +683,7 @@ __retnc:
 __retnz:
 __retz:
 __rl:
+	return ((param_error_t){0x1,0x1});
 __rla:
 	if (param[0] != NONE)
 		error.p1 = TOO_MANY_PARAMS;
@@ -691,6 +692,7 @@ __rla:
 	goto __done;
 
 __rlc:
+	return ((param_error_t){0x1,0x1});
 __rlca:
 	if (param[0] != NONE)
 		error.p1 = TOO_MANY_PARAMS;
@@ -699,6 +701,7 @@ __rlca:
 	goto __done;
 
 __rr:
+	return ((param_error_t){0x1,0x1});
 __rra:
 	if (param[0] != NONE)
 		error.p1 = TOO_MANY_PARAMS;
@@ -706,6 +709,7 @@ __rra:
 		bin[0] = 0x1Fu;
 	goto __done;
 __rrc:
+	return ((param_error_t){0x1,0x1});
 __rrca:
 	if (param[0] != NONE)
 		error.p1 = TOO_MANY_PARAMS;
@@ -716,6 +720,7 @@ __rrca:
 __rst:
 __sar:
 __sbb:
+	return ((param_error_t){0x1,0x1});
 __sbc:
 	if (param[0] == NONE)
 	{
@@ -767,7 +772,6 @@ __sbc:
 				error.p2 = INVAL_SRC;
 				break ;
 		}
-		break ;
 	}
 	else
 	{
@@ -831,6 +835,7 @@ __shr:
 __sla:
 __sra:
 __srl:
+	return ((param_error_t){0x1,0x1});
 __stop:
 	if (param[0] != NONE && !(param[0] == IMM8 && val->value == 0))
 		error.p1 = TOO_MANY_PARAMS;
@@ -893,7 +898,6 @@ __sub:
 				error.p2 = INVAL_SRC;
 				break ;
 		}
-		break ;
 	}
 	else
 	{
@@ -945,6 +949,7 @@ __sub:
 	goto __done;
 
 __swap:
+	return ((param_error_t){0x1,0x1});
 __testb:
 	return ((param_error_t){0x1,0x1});
 __xor:
@@ -998,7 +1003,6 @@ __xor:
 				error.p2 = INVAL_SRC;
 				break ;
 		}
-		break ;
 	}
 	else
 	{
