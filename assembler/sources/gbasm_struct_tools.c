@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 13:17:53 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/26 20:03:01 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/05 10:17:14 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -132,6 +132,12 @@ extern void			push_instruction(code_area_t *area, uint8_t bin[4], param_t p[2], 
 						return;
 					}
 				}
+			}
+			if (bin[3])
+			{
+				area->cur->opcode[3] = bin[3];
+				area->cur->opcode[2] = bin[2];
+				area->cur->opcode[1] = bin[1];
 			}
 		}
 	}

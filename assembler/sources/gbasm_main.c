@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/04 19:49:37 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/05 11:39:25 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -61,7 +61,7 @@ void	check_code_area_overflow(vector_t *area)
 
 	for (uint32_t i = 1; i < area->nitems; i++, a += sizeof(code_area_t))
 	{
-		if (end <= a->addr)
+		if (end >= a->addr)
 		{
 			g_error++;
 			fprintf(stderr, "chevauchement zone memoire (end = 0x%x, start = 0x%x)\n", end, a->addr);
@@ -330,8 +330,6 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 	uint32_t	argc;
 	char		*search = NULL;
 
-	puts("\e[1;31mPARSE_INSTRUCTION\e[0m");
-
 	if (!is_alpha(*s) && *s != '_')
 		goto __unexpected_char;
 	s++;
@@ -424,13 +422,12 @@ __next:
 	}
 	else if (*s == '(' && !is_space(s[-1]))
 		goto __unexpected_char;
-	free(search);
 
 //__add_instruction:
-//	name = strndup(name, s - name);
-	s = add_instruction(name, area, ext_symbol, loc_symbol, macro, s + 1, data);
-//	free(name);
-//	return (s);
+	printf("name = \"%s\"\n", search);
+	s = add_instruction(search, area, ext_symbol, loc_symbol, macro, s, data);
+	free(search);
+	return (s);
 
 __argc_error:
 	for (uint8_t i = 0; macro_param[i]; i++)

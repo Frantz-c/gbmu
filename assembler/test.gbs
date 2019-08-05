@@ -1,6 +1,5 @@
 .bank	31,	0x500
 
-_start:
 	callc	0x48
 	callnc	0x48
 	callz	0x48
@@ -9,15 +8,3 @@ _start:
 	callnc	0x8521
 	callz	0x8521
 	callnz	0x8521
-	callc	_start
-	callnc	_start
-	callz	_start
-	callnz	_start
-	callc	A
-	callnc	A
-	callz	A
-	callnz	A
-	callc	HLI
-	callnc	fuck
-	callz	(
-	callnz	]

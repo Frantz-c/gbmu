@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 22:10:25 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/04 19:22:33 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/05 11:28:14 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -529,7 +529,7 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *ext_symbol, loc_sym_
 			goto __too_many_param;
 		goto __unexpected_char;
 	}
-	printf("inst = \"%s\", param1 = \"%s\", param2 = \"%s\"\n", inst, param1, param2);
+	//printf("inst = \"%s\", param1 = \"%s\", param2 = \"%s\"\n", inst, param1, param2);
 
 	if (param1)
 	{
