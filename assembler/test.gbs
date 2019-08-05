@@ -1,17 +1,23 @@
-%define	inst	and
+.bank	31,	0x500
 
-inst	A, B
-inst	A, C
-inst	A, D
-inst	A, E
-inst	A, H
-inst	A, L
-inst	A, A
-
-inst	B
-inst	C
-inst	D
-inst	E
-inst	H
-inst	L
-inst	A
+_start:
+	callc	0x48
+	callnc	0x48
+	callz	0x48
+	callnz	0x48
+	callc	0x8521
+	callnc	0x8521
+	callz	0x8521
+	callnz	0x8521
+	callc	_start
+	callnc	_start
+	callz	_start
+	callnz	_start
+	callc	A
+	callnc	A
+	callz	A
+	callnz	A
+	callc	HLI
+	callnc	fuck
+	callz	(
+	callnz	]
