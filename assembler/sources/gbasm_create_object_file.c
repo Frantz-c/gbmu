@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/27 19:25:27 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/05 13:28:10 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/05 14:55:51 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -110,8 +110,10 @@ void __attribute__((always_inline))
 		*code = realloc(*code, *allocsize);
 	}
 
-
-	(*code)[(*i)++] = (uint8_t)inst->size;
+/*
+**	jr.size = 3 ?
+*/
+//	(*code)[(*i)++] = (uint8_t)inst->size;
 	if (inst->size == 3)
 	{
 		memcpy(*code + *i, inst->opcode, 4);
@@ -121,7 +123,8 @@ void __attribute__((always_inline))
 	{
 		memcpy(*code + *i, inst->opcode, 2);
 		*i += 2;
-		(*code)[(*i)++] = inst->opcode[3];
+		if (*inst->opcode != 0xcb)
+			(*code)[(*i)++] = 0;
 	}
 	else
 	{
@@ -158,7 +161,7 @@ void __attribute__((always_inline))
 	}
 
 	// copy de l'opcode dans code[]
-	(*code)[(*i)++] = (uint8_t)inst->size;
+//	(*code)[(*i)++] = (uint8_t)inst->size;
 	if (inst->size == 3)
 	{
 		memcpy(*code + *i, inst->opcode, 4);
@@ -168,7 +171,8 @@ void __attribute__((always_inline))
 	{
 		memcpy(*code + *i, inst->opcode, 2);
 		*i += 2;
-		(*code)[(*i)++] = inst->opcode[3];
+		if (*inst->opcode != 0xcb)
+			(*code)[(*i)++] = inst->opcode[3];
 	}
 	else
 	{
@@ -221,7 +225,7 @@ void __attribute__((always_inline))
 
 
 	// copy de l'opcode dans code[]
-	(*code)[(*i)++] = (uint8_t)inst->size;
+//	(*code)[(*i)++] = (uint8_t)inst->size;
 	if (inst->size == 3)
 	{
 		memcpy(*code + *i, inst->opcode, 4);
@@ -266,18 +270,22 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 	printf("\e[1;36mcode_area->nitems = %u\e[0m\n", code_area->nitems);
 	for (code_area_t *area = VEC_ELEM_FIRST(code_area_t, code_area); j < code_area->nitems; j++, area++)
 	{
+		if (area->size == 0)
+			continue;
 		printf("&code_area->addr = %p\n", &area->addr);
-		if ((allocsize - i) < 10)
+		if ((allocsize - i) < 16)
 		{
 			allocsize += 128;
 			code = realloc(code, allocsize);
 		}
 
 		// ([start_addr]) * 2, ([length]) * 4
-		code[i] = (uint8_t)(area->addr >> 8);
-		code[i + 1] = (uint8_t)area->addr;
-		len_pos = i + 2;
-		i += 6;
+		code[i] = (uint8_t)(area->addr >> 24);
+		code[i + 1] = (uint8_t)(area->addr >> 16);
+		code[i + 2] = (uint8_t)(area->addr >> 8);
+		code[i + 3] = (uint8_t)area->addr;
+		len_pos = i + 4;
+		i += 8;
 
 		for (register code_t *inst = area->data; inst; inst = inst->next)
 		{
@@ -290,7 +298,7 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 					allocsize += n_bytes - (allocsize - i) + 128;
 					code = realloc(code, allocsize);
 				}
-				code[i++] = 0x0;
+				code[i++] = 0xddu;
 				code[i++] = n_bytes >> 24;
 				code[i++] = n_bytes >> 16;
 				code[i++] = n_bytes >> 8;
@@ -326,17 +334,16 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 
 	// ecrire dans le fichier .o
 	FILE *file = fopen(filename, "w+");
+	uint32_t	header_size = 0;
+	uint32_t	extern_size;
 
-	uint32_t	header[4] =
+	uint32_t	header[3] =
 	{
-		0,
-		extern_->nitems,
-		intern_->nitems,
-		i
+		0, 0, i // header_size, extern_symbol size, code size
 	};
 
 	j = 0;
-	fwrite(header, sizeof(uint32_t), 4, file);
+	fwrite(header, sizeof(uint32_t), 3, file);
 	for (extern_symbols_t *ext = (extern_symbols_t *)extern_->data; j < extern_->nitems; j++, ext++)
 	{
 		uint32_t	len = strlen((const char*)ext->name) + 1;
@@ -345,7 +352,9 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 		fwrite(&ext->type, sizeof(uint32_t), 1, file);
 		fwrite(&ext->quantity, sizeof(uint32_t), 1, file);
 		fwrite(ext->pos, sizeof(uint32_t), ext->quantity, file);
+		header_size += len + (sizeof(uint32_t) * (2 + ext->quantity));
 	}
+	extern_size = header_size;
 	j = 0;
 	for (intern_symbols_t *in = (intern_symbols_t *)intern_->data; j < intern_->nitems; j++, in++)
 	{
@@ -353,6 +362,7 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 
 		fwrite(in->name, 1, len, file);
 		fwrite(&in->type, sizeof(uint32_t), 1, file);
+		header_size += len + sizeof(uint32_t);
 
 		if (in->type == VAR)
 		{
@@ -361,18 +371,25 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 			len = strlen((const char*)in->blockname) + 1;
 			fwrite(in->blockname, 1, len, file);
 			fwrite(&in->data2, sizeof(uint32_t), 1, file);
+			header_size += (sizeof(uint32_t) * (2 + in->data1)) + len;
 		}
 		else if (in->type == LABEL)
 		{
 			fwrite(&in->data1, sizeof(uint32_t), 1, file);
+			header_size += sizeof(uint32_t);
 		}
 		else //memblock
 		{
 			fwrite(&in->data1, sizeof(uint32_t), 1, file);
 			fwrite(&in->data2, sizeof(uint32_t), 1, file);
+			header_size += (sizeof(uint32_t) * 2);
 		}
 	}
 	fwrite(code, sizeof(uint8_t), i, file);
+
+	rewind(file);
+	fwrite(&header_size, sizeof(uint32_t), 1, file);
+	fwrite(&extern_size, sizeof(uint32_t), 1, file);
 
 	fclose(file);
 	return (0);

@@ -2,8 +2,7 @@ header
 {
 
 	uint32_t	header_length;
-	uint32_t	extern_symbols_count;
-	uint32_t	local_symbols_count;
+	uint32_t	extern_symbols_length;
 	uint32_t	code_length;
 
 	symbols externes
@@ -16,22 +15,25 @@ header
 
 	symbols locaux
 	{
-		char		*name;
-		uint8_t		type;
+		char		*name;		// nom du symbol
+		uint32_t	type;
 
-		if		labels
-		uint32_t	quantity;
-		uint32_t	pos; ...
-
-		else if	variables
-		char		*blockname;
-		uint32_t	size;
-		uint32_t	quantity;
-		uint32_t	pos; ...
-
-		else if	block
-		uint32_t	start;
-		uint32_t	end;
+		if		(type == LABEL)
+		{
+			uint32_t	value;	// adresse du symbol
+		}
+		else if	(type == VARIABLE)
+		{
+			uint32_t	quantity;	// nombre d'utilisations
+			uint32_t	pos[];		// positions des instructions qui l'utilisent
+			char		*blockname;	// nom du block contenant la variable
+			uint32_t	size;		// taille de la variable
+		}
+		else if	(type == MEMBLOCK)
+		{
+			uint32_t	start;		// adresse de depart du block
+			uint32_t	end;		// adresse de fin du block
+		}
 	}
 };
 
@@ -41,17 +43,25 @@ header
 
 code
 {
-	uint16_t	start_addr;
+	uint32_t	start_addr;
 	uint32_t	length;
 	
-	uint8_t		byte; ...	// .byte -> 0x0, uint32_t length, bytes
-							// inst -> size8_t, opcode, [operand16_t, op]?   (op = '-', '+' ou '\0')
-	// code
-}.time(n_blocks);
+	if (.byte)
+	{
+		unit8_t		0xddU;
+		uint32_t	n_bytes;
+		uint8_t		bytes[];
+	}
+	else
+	{
+		uint8_t		byte[n_elem];	// n_elem = 1, 2 ou 4 (1 = pas d'operande, 2 = prefix 0xcb, 4 = avec operande + calcul potentiel (byte[3]))
+									// (byte[3] = '-', '+' ou '\0')
+	}
+};
+(x times)
 
 
 
 
 /*********** COMPILATION DES .O ************/
 
-recuperation de tous les symbols locaux
