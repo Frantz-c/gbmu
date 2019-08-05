@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/05 11:39:25 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/05 12:20:17 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -57,9 +57,9 @@ void	check_code_area_overflow(vector_t *area)
 		return;
 	a = (code_area_t *)area->data;
 	end = a->addr + a->size;
-	a += sizeof(code_area_t);
+	a++;
 
-	for (uint32_t i = 1; i < area->nitems; i++, a += sizeof(code_area_t))
+	for (uint32_t i = 1; i < area->nitems; i++, a++)
 	{
 		if (end >= a->addr)
 		{
@@ -77,7 +77,7 @@ void		replace_internal_symbols(vector_t *area, loc_sym_t *local_symbol)
 	register code_area_t	*a;
 
 	a = (code_area_t *)area->data;
-	for (uint32_t i = 0; i < area->nitems; i++, a += sizeof(code_area_t))
+	for (uint32_t i = 0; i < area->nitems; i++, a++)
 	{
 		register code_t	*c = a->data;
 		for (; c; c = c->next)
@@ -91,9 +91,13 @@ void		replace_internal_symbols(vector_t *area, loc_sym_t *local_symbol)
 				{
 					register label_t	*lab = VEC_ELEM(label_t, local_symbol->label, index);
 					register uint32_t	val;
+					register uint32_t	lab_addr = lab->base_or_status;
 					
+					if (lab_addr >= 0x8000)
+						lab_addr = (lab_addr % 0x4000) + 0x4000;
 					val = c->opcode[1] | (c->opcode[2] << 8);
-					val = (c->opcode[3] == '-') ? lab->base_or_status - val: lab->base_or_status + val;
+					printf("val = 0x%x, lab->base = 0x%x\n", val, lab->base_or_status);
+					val = (c->opcode[3] == '-') ? lab_addr - val: lab_addr + val;
 					c->opcode[1] = (uint8_t)val;
 					c->opcode[2] = (val >> 8);
 					if (val > 0xffffu)
@@ -668,7 +672,9 @@ int		main(int argc, char *argv[])
 		vector_push(code_area, (void*)&area_elem);
 
 		parse_file(*p, code_area, macro, extern_symbol, &local_symbol, 0);
+		puts("CHEVAUCHEMENT");
 		check_code_area_overflow(code_area);
+		puts("INTERNAL_SYMBOL");
 		replace_internal_symbols(code_area, &local_symbol);
 		if (g_error)
 		{
@@ -677,7 +683,9 @@ int		main(int argc, char *argv[])
 		}
 
 		char	*object_name = get_object_name(*p);
+		puts("CREATE_OBJECT START");
 		create_object_file(code_area, &local_symbol, extern_symbol, object_name);
+		puts("CREATE_OBJECT END");
 		free(object_name);
 
 		vector_reset(code_area);

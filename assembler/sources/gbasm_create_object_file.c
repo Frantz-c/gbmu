@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/27 19:25:27 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/04 18:39:44 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/05 13:28:10 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -65,7 +65,7 @@ void	add_intern_labels(vector_t *intern_, vector_t *label)
 	intern_symbols_t	new;
 	register label_t	*lab = (label_t *)label->data;
 
-	for (uint32_t i = 0; i < label->nitems; i++, lab += sizeof(label_t))
+	for (uint32_t i = 0; i < label->nitems; i++, lab++)
 	{
 		if (vector_search(intern_, (void*)&lab->name) != -1)
 			continue;
@@ -81,7 +81,7 @@ void	add_intern_memblocks(vector_t *intern_, vector_t *memblock)
 	intern_symbols_t	new;
 	register memblock_t	*block = (memblock_t *)memblock->data;
 
-	for (uint32_t i = 0; i < memblock->nitems; i++, block += sizeof(memblock_t))
+	for (uint32_t i = 0; i < memblock->nitems; i++, block++)
 	{
 		new.name = (uint8_t*)block->name;
 		new.type = MEMBLOCK;
@@ -264,7 +264,7 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 		exit(1);
 	}
 	printf("\e[1;36mcode_area->nitems = %u\e[0m\n", code_area->nitems);
-	for (code_area_t *area = VEC_ELEM_FIRST(code_area_t, code_area); j < code_area->nitems; j++, area += sizeof(code_area_t))
+	for (code_area_t *area = VEC_ELEM_FIRST(code_area_t, code_area); j < code_area->nitems; j++, area++)
 	{
 		printf("&code_area->addr = %p\n", &area->addr);
 		if ((allocsize - i) < 10)
@@ -329,7 +329,7 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 
 	uint32_t	header[4] =
 	{
-		extern_->nitems * sizeof(extern_symbols_t) + intern_->nitems * sizeof(intern_symbols_t),
+		0,
 		extern_->nitems,
 		intern_->nitems,
 		i
@@ -337,7 +337,7 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 
 	j = 0;
 	fwrite(header, sizeof(uint32_t), 4, file);
-	for (extern_symbols_t *ext = (extern_symbols_t *)extern_->data; j < extern_->nitems; j++, ext += sizeof(extern_symbols_t))
+	for (extern_symbols_t *ext = (extern_symbols_t *)extern_->data; j < extern_->nitems; j++, ext++)
 	{
 		uint32_t	len = strlen((const char*)ext->name) + 1;
 
@@ -347,7 +347,7 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 		fwrite(ext->pos, sizeof(uint32_t), ext->quantity, file);
 	}
 	j = 0;
-	for (intern_symbols_t *in = (intern_symbols_t *)intern_->data; j < intern_->nitems; j++, in += sizeof(intern_symbols_t))
+	for (intern_symbols_t *in = (intern_symbols_t *)intern_->data; j < intern_->nitems; j++, in++)
 	{
 		uint32_t	len = strlen((const char*)in->name) + 1;
 
