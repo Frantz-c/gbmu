@@ -1,17 +1,8 @@
 header
 {
-
 	uint32_t	header_length;
-	uint32_t	extern_symbols_length;
+	uint32_t	intern_symbols_length;
 	uint32_t	code_length;
-
-	symbols externes
-	{
-		char		*name;		// nom du symbol
-		uint32_t	type;		// var, label, block
-		uint32_t	quantity;	// nombre d'appels
-		uint32_t	pos; ...	// position relative au debut du code de la valeur (apres le header)
-	}
 
 	symbols locaux
 	{
@@ -35,6 +26,14 @@ header
 			uint32_t	end;		// adresse de fin du block
 		}
 	}
+
+	symbols externes
+	{
+		char		*name;		// nom du symbol
+		uint32_t	type;		// var, label, block
+		uint32_t	quantity;	// nombre d'appels
+		uint32_t	pos[]; ...	// position relative au debut du code de la valeur (apres le header)
+	}
 };
 
 
@@ -54,7 +53,7 @@ code
 	}
 	else
 	{
-		uint8_t		byte[n_elem];	// n_elem = 1, 2 ou 4 (1 = pas d'operande, 2 = prefix 0xcb, 4 = avec operande + calcul potentiel (byte[3]))
+		uint8_t		byte[n_elem];	// n_elem = 1, 2 ou 4 (1 = pas d'operande, 2 = prefix 0xcb, 3 = jr, 4 = avec operande + calcul potentiel (byte[3]))
 									// (byte[3] = '-', '+' ou '\0')
 	}
 };

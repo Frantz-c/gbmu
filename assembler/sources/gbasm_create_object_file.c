@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/27 19:25:27 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/05 14:55:51 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/05 18:02:07 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -335,26 +335,14 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 	// ecrire dans le fichier .o
 	FILE *file = fopen(filename, "w+");
 	uint32_t	header_size = 0;
-	uint32_t	extern_size;
+	uint32_t	intern_size;
 
 	uint32_t	header[3] =
 	{
 		0, 0, i // header_size, extern_symbol size, code size
 	};
-
-	j = 0;
 	fwrite(header, sizeof(uint32_t), 3, file);
-	for (extern_symbols_t *ext = (extern_symbols_t *)extern_->data; j < extern_->nitems; j++, ext++)
-	{
-		uint32_t	len = strlen((const char*)ext->name) + 1;
 
-		fwrite(ext->name, 1, len, file);
-		fwrite(&ext->type, sizeof(uint32_t), 1, file);
-		fwrite(&ext->quantity, sizeof(uint32_t), 1, file);
-		fwrite(ext->pos, sizeof(uint32_t), ext->quantity, file);
-		header_size += len + (sizeof(uint32_t) * (2 + ext->quantity));
-	}
-	extern_size = header_size;
 	j = 0;
 	for (intern_symbols_t *in = (intern_symbols_t *)intern_->data; j < intern_->nitems; j++, in++)
 	{
@@ -385,11 +373,25 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 			header_size += (sizeof(uint32_t) * 2);
 		}
 	}
+	intern_size = header_size;
+
+	j = 0;
+	for (extern_symbols_t *ext = (extern_symbols_t *)extern_->data; j < extern_->nitems; j++, ext++)
+	{
+		uint32_t	len = strlen((const char*)ext->name) + 1;
+
+		fwrite(ext->name, 1, len, file);
+		fwrite(&ext->type, sizeof(uint32_t), 1, file);
+		fwrite(&ext->quantity, sizeof(uint32_t), 1, file);
+		fwrite(ext->pos, sizeof(uint32_t), ext->quantity, file);
+		header_size += len + (sizeof(uint32_t) * (2 + ext->quantity));
+	}
+
 	fwrite(code, sizeof(uint8_t), i, file);
 
 	rewind(file);
 	fwrite(&header_size, sizeof(uint32_t), 1, file);
-	fwrite(&extern_size, sizeof(uint32_t), 1, file);
+	fwrite(&intern_size, sizeof(uint32_t), 1, file);
 
 	fclose(file);
 	return (0);

@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/05 12:20:17 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/05 18:00:39 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -46,6 +46,7 @@
 
 uint32_t		g_error;
 uint32_t		g_warning;
+cart_info_t		cartridge_info;
 
 
 void	check_code_area_overflow(vector_t *area)
@@ -629,6 +630,23 @@ char	*get_object_name(const char *s)
 	return (new);
 }
 
+uint8_t	get_complement_check(void)
+{
+	uint8_t	*n = cartridge_info.title;
+	uint8_t total = 0;
+
+	for (uint32_t i = 0; i < 24; i++)
+	{
+		total += n[i];
+	}
+	return ((uint8_t)(0x100u - total));
+}
+
+void	get_symbols(const char *filename, vector_t *sym)
+{
+	// get all local_symbols
+}
+
 /*
 
 	revoir le systeme de symbols (symbols internes tous dans le meme vecteur)
@@ -641,9 +659,34 @@ int		main(int argc, char *argv[])
 	vector_t		*code_area = NULL;
 	vector_t		*extern_symbol = NULL;
 	loc_sym_t		local_symbol = {NULL, NULL};
+	uint32_t		n_files;
+
+	cartridge_info._0x00c3[0] = 0x00U;
+	cartridge_info._0x00c3[1] = 0xc3U;
+	cartridge_info._0x33 = 0x33U;
+
+
+	/* infos temporaires */
+	cartridge_info.start_addr[0] = 0x50u;
+	cartridge_info.start_addr[1] = 0x01u;
+	strncpy((char*)cartridge_info.title, "__TEST__\0\0\0", 11);
+	strncpy((char*)&cartridge_info.game_code, "TOTO", 4);
+	cartridge_info.cgb_support = 0x80;
+	cartridge_info.maker_code[0] = '0';
+	cartridge_info.maker_code[1] = '1';
+	cartridge_info.sgb_support = 0;
+	cartridge_info.game_pack_type = 0x1bU;	// mbc-5 + SRAM + BATTERY
+	cartridge_info.rom_size = 0;			// 256 KBits (32 KBytes)
+	cartridge_info.ram_size = 2;			// 64 Kbit (8 KBytes)
+	cartridge_info.destination = 1;			// All others
+	cartridge_info.mask_rom_version = 0;	//version du jeu
+	cartridge_info.complement_check = get_complement_check();
+	/* end */
+
 
 	file[0]	=	"test.gbs";
 	file[1]	=	NULL;
+	n_files = 1;
 
 	macro = set_builtin_macro();
 	code_area = vector_init(sizeof(code_area_t));
@@ -672,9 +715,7 @@ int		main(int argc, char *argv[])
 		vector_push(code_area, (void*)&area_elem);
 
 		parse_file(*p, code_area, macro, extern_symbol, &local_symbol, 0);
-		puts("CHEVAUCHEMENT");
 		check_code_area_overflow(code_area);
-		puts("INTERNAL_SYMBOL");
 		replace_internal_symbols(code_area, &local_symbol);
 		if (g_error)
 		{
@@ -682,11 +723,8 @@ int		main(int argc, char *argv[])
 			break;
 		}
 
-		char	*object_name = get_object_name(*p);
-		puts("CREATE_OBJECT START");
-		create_object_file(code_area, &local_symbol, extern_symbol, object_name);
-		puts("CREATE_OBJECT END");
-		free(object_name);
+		*p = get_object_name(*p);
+		create_object_file(code_area, &local_symbol, extern_symbol, *p);
 
 		vector_reset(code_area);
 		vector_reset(local_symbol.label);
@@ -697,10 +735,37 @@ int		main(int argc, char *argv[])
 	vector_destroy(macro);
 	vector_destroy(local_symbol.label);
 	vector_destroy(local_symbol.memblock);
+
+	vector_t	*sym = vector_init(sizeof(all_sym_t));
+	vector_t	*code = vector_init(sizeof(all_code_t));
+
+	if (g_error == 0)
+	{
+		for (uint32_t i = 0; file[i]; i++)
+		{
+			get_symbols(file[i], sym);
+		}
+		for (uint32_t i = 0; file[i]; i++)
+			free(file[i]);
+	}
 	return (0);
 }
 /*
  *	./prog -c file.gs -o file.go
  *	./prog -o bin.gb file.go
  *	./prog -o bin.gb file.gs   // supprimer les .o
+ *
+ *
+ *
+ *	2 programmes ?
+ *
+ *	./prog -i file.gbs -o file.gbo   ||   ./prog -i file.gbs
+ *
+ *	./prog2 file.gbo [options]
+ *		options = 
+ *			--gb		: MGB, CGB	(MGB = CGB = MGL)
+ *			--country	: JPN, OTH	(OTH = OTHER)
+ *			--start		: (uint16_t)					// program start address
+ *			--title		: 
+ *			--fill		: (uint8_t)						// unused byte fill character
  */

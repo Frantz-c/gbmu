@@ -18,7 +18,7 @@ typedef enum	insn_err_e
 	INVAL_ADD_SUB_DST, INVAL_ADD_SUB_SRC, INVAL_BIT_ARITH_SRC,
 	INVAL_CB_BIT_VALUE, INVAL_CB_BIT_DST, INVAL_JP_CALL_ADDR,
 	INVAL_CMP_SRC, INVAL_AOP_DST, INVAL_INC_DEC_DST,
-	INVAL_POP_PUSH_SRC,INVAL_SRC,INVAL_DST
+	INVAL_POP_PUSH_SRC,INVAL_SRC,INVAL_DST,OVERFLOW
 }
 insn_err_t;
 
@@ -37,6 +37,28 @@ insn_err_t;
 #define JRNZ	0x20
 #define JRC		0x38
 #define JRNC	0x30
+
+
+// final binary generation
+typedef struct	all_sym_s
+{
+	char		*name;
+	uint32_t	type;
+	uint32_t	data1;	// value	if LABEL
+						// addr		if VAR
+						// start	if MEMBLOCK
+	uint32_t	data2;	// size		if VAR
+						// end		if MEMBLOCK
+}
+all_sym_t;
+
+typedef struct	all_code_s
+{
+	uint32_t	start;
+	uint32_t	end;
+	uint8_t		*code;
+}
+all_code_t;
 
 // object files generation
 typedef struct	intern_symbols_s
@@ -64,6 +86,26 @@ extern_symbols_t;
 
 
 // assembly files
+typedef struct	cart_info_s
+{
+	uint8_t		_0x00c3[2];
+	uint8_t		start_addr[4];
+	uint8_t		title[11];
+	uint8_t		game_code[4];
+	uint8_t		cgb_support;
+	uint8_t		maker_code[2];
+	uint8_t		sgb_support;
+	uint8_t		game_pack_type;
+	uint8_t		rom_size;
+	uint8_t		ram_size;
+	uint8_t		destination;
+	uint8_t		_0x33;	//0x33
+	uint8_t		mask_rom_version;
+	uint8_t		complement_check;
+	uint8_t		check_sum[2];
+}
+cart_info_t;
+
 typedef struct	instruction_s
 {
 	const char *const	name;
