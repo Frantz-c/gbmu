@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/06 11:36:30 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/06 19:59:46 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -97,8 +97,9 @@ void		replace_internal_symbols(vector_t *area, loc_sym_t *local_symbol)
 					if (lab_addr >= 0x8000)
 						lab_addr = (lab_addr % 0x4000) + 0x4000;
 					val = c->opcode[1] | (c->opcode[2] << 8);
-					printf("val = 0x%x, lab->base = 0x%x\n", val, lab->base_or_status);
+					printf("(1)val = 0x%x, lab->base = 0x%x\n", val, lab->base_or_status);
 					val = (c->opcode[3] == '-') ? lab_addr - val: lab_addr + val;
+					printf("(2)val = 0x%x, lab->base = 0x%x\n", val, lab->base_or_status);
 					c->opcode[1] = (uint8_t)val;
 					c->opcode[2] = (val >> 8);
 					if (val > 0xffffu)
@@ -642,6 +643,99 @@ uint8_t	get_complement_check(void)
 	return ((uint8_t)(0x100u - total));
 }
 
+int			all_code_cmp(const void *a, const void *b)
+{
+	register all_code_t	*aa = (all_code_t *)a;
+	register all_code_t	*bb = (all_code_t *)b;
+
+	if (aa->start > bb->start)
+		return (1);
+	else if (aa->start < bb->start)
+		return (-1);
+	else
+		return (0);
+}
+
+int			all_code_search(const void *b, const void *a)
+{
+	register all_code_t	*aa; = (all_code_t *)a;
+	register uint32_t	bb = *(uint32_t *)b;
+
+	if (aa->name > bb)
+		return (1);
+	if (aa->name < bb)
+		return (-1);
+	else
+		return (0);
+}
+
+void		all_code_destroy(void *a)
+{
+	register all_code_t	*aa = (all_code_t *)a;
+
+	free(aa->code);
+}
+
+int			all_ext_sym_cmp(const void *a, const void *b)
+{
+	register all_ext_sym_t	*aa = (all_ext_sym_t *)a;
+	register all_ext_sym_t	*bb = (all_ext_sym_t *)b;
+
+	return (strcmp(aa->name, bb->name));
+}
+
+int			all_ext_sym_search(const void *b, const void *a)
+{
+	register all_ext_sym_t	*aa = (all_ext_sym_t *)a;
+	register char			*bb = *(char **)b;
+
+	return (strcmp(aa->name, bb);
+}
+
+void		all_ext_sym_destroy(void *a)
+{
+	register all_ext_sym_t	*aa = (all_ext_sym_t *)a;
+
+	free(aa->name);
+	free(aa->pos);
+}
+
+int			all_sym_cmp(const void *a, const void *b)
+{
+	register all_sym_t	*aa = (all_sym_t *)a;
+	register all_sym_t	*bb = (all_sym_t *)b;
+
+	return (strcmp(aa->name, bb->name));
+}
+
+int			all_sym_search(const void *b, const void *a)
+{
+	register all_sym_t	*aa = (all_sym_t *)a;
+	register char		*bb = *(char **)b;
+
+	return (strcmp(aa->name, bb);
+}
+
+void		all_sym_destroy(void *a)
+{
+	register all_sym_t	*aa = (all_sym_t *)a;
+
+	free(aa->name);
+	if (aa->var_data)
+	{
+		register var_data_t	*p = aa->var_data;
+		while (p)
+		{
+			register var_data	*tmp = p;
+			free(p->block);
+			free(p->pos);
+			p = p->next;
+			free(tmp);
+		}
+		free(aa->var_data);
+	}
+}
+
 const char	*get_type_str(uint32_t type)
 {
 	if (type == LABEL)
@@ -653,33 +747,11 @@ const char	*get_type_str(uint32_t type)
 	return ("unknown");
 }
 
-void	get_symbols(const char *filename, vector_t *sym)
+int		add_intern_symbols_bin(vector_t *sym, char *buf, uint32_t len, uint32_t file_number)
 {
-	tmp_header_t	header;
-	FILE			*file;
 	all_sym_t		tmp;
-	char			*buf;
 
-	if ((file = fopen(filename, "r")) == NULL)
-	{
-		fprintf(stderr, "file %s does not exist\n", filename);
-		exit(1);
-	}
-
-	if (fread(&header, sizeof header, 1, file) != sizeof header)
-		goto __file_error;
-
-	if (header.header_length < header.intern_symbols_length)
-		goto __file_error;
-	
-	buf = malloc(header.intern_symbols_length);
-	if (fread(buf, 1, header.intern_symbols_length, file) != header.intern_symbols_length)
-	{
-		free(buf);
-		goto __file_error;
-	}
-
-	for (uint32_t i = 0; i < header.intern_symbols_length; i++)
+	for (uint32_t i = 0; i < len; i++)
 	{
 		register char	*name;
 		
@@ -697,23 +769,62 @@ void	get_symbols(const char *filename, vector_t *sym)
 			{
 				tmp.data1 = *(uint32_t*)(buf + i);
 				i += sizeof(uint32_t);
+				tmp.data2 = 0;
+				tmp.var_data = NULL;
+				if (vector_search(sym, (void*)&tmp.name) != -1)
+				{
+					free(tmp.name);
+					goto __loop_end;
+				}
 				break;
 			}
 			case VAR:
 			{
-				register uint32_t	quantity;
+				var_data_t	*var_data = malloc(sizeof(var_data_t));
 
-				quantity = *(uint32_t *)(buf + i);
-				i += sizeof(uint32_t) * (quantity + 1);
+				var_data->quantity = *(uint32_t *)(buf + i);
+				i += sizeof(uint32_t);
+				var_data->pos = malloc(sizeof(uint32_t) * var_data->quantity);
+				memcpy(var_data->pos, buf + i, var_data->quantity * sizeof(uint32_t));
+				i += (sizeof(uint32_t) * var_data->quantity);
 				name = buf + i;
 				while (buf[i]) i++;
-				tmp.block = strndup(name, i);
+				var_data->block = strndup(name, i);
 				i++;
+				var_data->file_number = file_number;
+				var_data->next = NULL;
 
-				tmp.data1 = *(uint32_t*)(buf + i);
+				tmp.data2 = *(uint32_t*)(buf + i);
 				i += sizeof(uint32_t);
 
-				tmp.data2 = 0;
+				tmp.data1 = 0;	// addr
+				tmp.var_data = var_data;
+
+				ssize_t	index;
+				if ((index = vector_search(sym, (void*)&tmp.name)) != -1)
+				{
+					register all_sym_t	*p = VEC_ELEM(all_sym_t, sym, index);
+
+					if (strcmp(p->name, tmp.name) != 0 || p->type != tmp.type
+							|| p->data2 != tmp.data2 || strcmp(p->var_data->block, tmp.var_data->block) != 0)
+					{
+						g_error++;
+						fprintf(stderr, "duplicate symbol %s (file %u, %u)\n", p->name, file_number, p->var_data->file_number);
+
+						free(tmp.var_data->block);
+						free(tmp.var_data->pos);
+						free(tmp.var_data);
+					}
+					free(tmp.name);
+					
+					//push var_data
+					
+					register var_data_t *v = p->var_data
+					for (; v->next; v = v->next);
+					v->next = var_data;
+
+					goto __loop_end;
+				}
 				break;
 			}
 			case MEMBLOCK:
@@ -723,16 +834,134 @@ void	get_symbols(const char *filename, vector_t *sym)
 
 				tmp.data2 = *(uint32_t*)(buf + i);
 				i += sizeof(uint32_t);
+
+				tmp.var_data = NULL;
+
+				ssize_t	index;
+				if (vector_search(sym, (void*)&tmp.name) != -1)
+				{
+					register all_sym_t	*p = VEC_ELEM(all_sym_t, sym, index);
+
+					if (strcmp(p->name, tmp.name) != 0 || p->type != tmp.type
+							|| p->data2 != tmp.data2 || strcmp(p->var_data->block, tmp.var_data->block) != 0)
+					{
+						g_error++;
+						fprintf(stderr, "duplicate symbol %s (file %u, %u)\n", p->name, file_number, p->var_data->file_number);
+
+						free(tmp.var_data->block);
+						free(tmp.var_data->pos);
+						free(tmp.var_data);
+						free(tmp.name);
+					}
+					goto __loop_end;
+				}
 				break;
 			}
 			default:
-				goto __file_error;
+				return (-1);
 		}
 
 		if (sym->nitems == 0)
 			vector_push(sym, (void*)&tmp);
 		else
 			VEC_SORTED_INSERT(sym, tmp.name, tmp);
+__loop_end:
+	}
+	return (0);
+}
+
+int		add_extern_symbols_bin(vector_t *sym, char *buf, uint32_t len, uint32_t file_number)
+{
+	all_ext_sym_t		tmp;
+
+	for (uint32_t i = 0; i < len; i++)
+	{
+		register char	*name;
+		
+		name = buf + i;
+		while (buf[i]) i++;
+		tmp.name = strndup(name, i);
+		i++;
+
+		tmp.type = *(uint32_t*)(buf + i);
+		i += sizeof(uint32_t);
+
+		if (tmp.type != VAR && tmp.type != LABEL)
+			return (-1);
+
+		tmp.quantity = *(uint32_t*)(buf + i);
+		i += sizeof(uint32_t);
+
+		tmp.pos = malloc(sizeof(uint32_t) * tmp.quantity);
+		memcpy(tmp.pos, buf + i, tmp.quantity * sizeof(uint32_t));
+		i += (sizeof(uint32_t) * tmp.quantity);
+
+		tmp.file_number = file_number;
+
+		if (sym->nitems == 0)
+			vector_push(sym, (void*)&tmp);
+		else
+			VEC_SORTED_INSERT(sym, tmp.name, tmp);
+	}
+	return (0);
+}
+
+void	get_symbols(const char *filename, vector_t *sym, vector_t *ext_sym, uint32_t file_number)
+{
+	tmp_header_t	header;
+	FILE			*file;
+	char			*buf;
+
+	if ((file = fopen(filename, "r")) == NULL)
+	{
+		fprintf(stderr, "file %s does not exist\n", filename);
+		exit(1);
+	}
+
+	if (fread(&header, sizeof(tmp_header_t), 1, file) != 1)
+		goto __file_error;
+
+	printf("{%u, %u, %u}\n", header.header_length, header.intern_symbols_length, header.code_length);
+	if (header.header_length < header.intern_symbols_length)
+		goto __file_error;
+	
+	if (header.intern_symbols_length != 0)
+	{
+		buf = malloc(header.intern_symbols_length);
+		if (fread(buf, 1, header.intern_symbols_length, file) != header.intern_symbols_length)
+		{
+			free(buf);
+			goto __file_error;
+		}
+		if (add_intern_symbols_bin(sym, buf, header.intern_symbols_length, file_number) == -1)
+		{
+			free(buf);
+			// free(var)
+			goto __file_error;
+		}
+	}
+
+
+	register uint32_t	extern_length = header.header_length - header.intern_symbols_length;
+
+	if (extern_length != 0)
+	{
+		if (buf == NULL)
+			buf = malloc(extern_length);
+		else if (header.intern_symbols_length < extern_length)
+			buf = realloc(buf, extern_length);
+
+		if (fread(buf, 1, extern_length, file) != extern_length)
+		{
+			free(buf);
+			goto __file_error;
+		}
+		if (add_extern_symbols_bin(ext_sym, buf, extern_length, file_number) == -1)
+		{
+			free(buf);
+			// free(var)
+			goto __file_error;
+		}
 	}
 
 	free(buf);
@@ -743,6 +972,269 @@ __file_error:
 	fprintf(stderr, "object file not well formated\n");
 	fclose(file);
 	exit(1);
+}
+
+void		all_extern_symbols_exist(vector_t *sym, vector_t *ext_sym, char *file[])
+{
+	for (uint32_t i = 0; i < ext_sym->nitems; i++)
+	{
+		register all_ext_sym_t	*elem;
+		if (vector_search(sym, (void*)&elem->name) == -1)
+		{
+			g_error++;
+			fprintf(stderr, "undefined symbol %s (%s)\n", file[elem->file_number]);
+		}
+	}
+}
+
+void		assign_var_addr(vector_t *sym)
+{
+	vector_t	*memblock;
+
+	memblock = vector_init(sizeof(memblock2_t));
+	memblock->search = &memblock_match;
+	memblock->compar = &memblock_cmp;
+
+	for (uint32_t i = 0; i < sym->nitems; i++)
+	{
+		register all_sym_t	*elem = VEC_ELEM(all_sym_t, sym, i);
+
+		if (elem->type == MEMBLOCK)
+		{
+			memblock2_t	new = {elem->data1, elem->data2, elem->data2 - elem->data1, 0, elem->name};
+			if (memblock->nitems == 0)
+				vector_push(memblock, (void*)&new);
+			else
+				VEC_SORTED_INSERT(memblock, elem->name, new);
+		}
+	}
+
+//	memblock->destroy = &memblock2_destroy;
+
+	for (uint32_t i = 0; i < sym->nitems; i++)
+	{
+		register all_sym_t	*elem = VEC_ELEM(all_sym_t, sym, i);
+		register ssize_t	index;
+
+		if (elem->type == VAR)
+		{
+			if ((index = vector_search(memblock, (void*)&elem->name)) != -1)
+			{
+				register memblock2_t	*block = VEC_ELEM(memblock2_t, memblock, index);
+
+				if (memblock->space < elem->data2)
+				{
+					fprintf(stderr, "too few space in %s memory block for variable %s\n", block->name, elem->name);
+					g_error++;
+				}
+				else
+				{
+					elem->data1 = memblock->end - memblock->space;
+					memblock->space -= elem->data2;
+				}
+			}
+		}
+	}
+
+	// print remaind space in memblocks
+	for (uint32_t i = 0; i < memblock->nitems; i++)
+	{
+		register memblock2_t	*block = VEC_ELEM(memblock2_t, memblock, i);
+
+		if (block->space != 0)
+		{
+			fprintf(stderr, "WARNING: %u bytes left in %s memory block\n", block->space, block->name);
+		}
+	}
+
+}
+
+uint8_t	inst_length[256] =
+{
+	1,3,1,1,1,1,2,1,3,1,1,1,1,1,2,1,1,3,1,1,1,1,2,1,2,1,1,1,1,1,2,1,2,3,1,1,1,1,
+	2,1,2,1,1,1,1,1,2,1,2,3,1,1,1,1,2,1,2,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,3,3,3,1,2,1,1,1,3,2,3,3,2,1,1,1,3,0,3,1,2,1,1,1,3,0,3,0,2,1,2,1,1,0,
+	0,1,2,1,2,1,3,0,0,0,2,1,2,1,1,1,0,1,2,1,2,1,3,1,0,0,2,1
+};
+
+void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code, char *file[])
+{
+	uint8_t			*buf;
+	FILE			*file;
+	tmp_header_t	header;
+	uint32_t		length = 0;
+	uint32_t		k;
+	uint32_t		code_start, code_length;
+
+	for (uint32_t i = 0; file[i]; i++)
+	{
+		file = fopen(file[i], "r");
+		fread(&header, sizeof(tmp_header_t), 1, file);
+		fseek(file, header.header_length, SEEK_SET);
+
+		if (fread(&code_start, sizeof(uint32_t), 1, file) != 1)
+			goto __error;
+		if (fread(&code_length, sizeof(uint32_t), 1, file) != 1)
+			goto __error;
+
+		if (length == 0)
+			buf = malloc(code_length);
+		else if (length < code_length)
+			buf = realloc(buf, code_length);
+
+		if (fread(buf, 1, code_length, file) != header.code_length)
+		{
+		__error:
+			fprintf(stderr, "erreur chargement du code fichier %s\n", file[i]);
+			exit(1);
+		}
+		fclose(file);
+	
+		k = 0;
+		for (uint32_t j = 0; j < ext_sym->nitems; j++)
+		{
+			register all_ext_sym_t	*elem = VEC_ELEM(all_ext_sym_t, ext_sym, j);
+
+			if (elem->file_number == i)
+			{
+				for (uint32_t l = 0; l < elem->quantity; l++)
+				{
+					uint8_t		*inst = buf + elem->pos[l];
+					uint8_t		symbol_size = inst_length[*inst];
+					int32_t		index;
+					
+					index = vector_search(sym, (void*)&elem->name);
+					register all_sym_t	*p = VEC_ELEM(all_sym_t, sym, index);
+
+					uint8_t		operation = inst[symbol_size];
+					inst++;
+					uint32_t	value = inst[0] | (inst[1] << 8);
+
+					if (operation == '-')
+						value -= p->data1;
+					else if (operation == '+')
+						value += p->data1;
+					if (symbol_size == 3)
+					{
+						if (value > 0xffff || value < 0x0)
+							fprintf(stderr, "OVERFLOW inst ????? file ?????\n");
+
+						inst[0] = (uint8_t)value;
+						inst[1] = (uint8_t)(value >> 8);
+						inst[2] = 0xdd;
+					}
+					else if (symbol_size == 2)
+					{
+						if (value > 0xff || value < 0x0)
+							fprintf(stderr, "OVERFLOW inst ????? file ?????\n");
+
+						inst[0] = (uint8_t)value;
+						inst[1] = 0xdd;
+					}
+
+				}
+			}
+		}
+
+		uint8_t		*new_buf = malloc(header.code_length);
+		uint32_t	z = 0;
+
+		for (uint32_t j = 0; j < code_length; j++)
+		{
+			register uint8_t	len;
+
+			if ((len = inst[buf[j]]) != 0)
+			{
+				while (len)
+				{
+					new_buf[z++] = buf[j];
+					if (--len == 0)
+						break;
+					j++;
+				}
+			}
+		}
+
+		all_code_t	new = {code_start, code_start + code_length, new_buf, i};
+		if (code->nitems == 0)
+			vector_push(code, (void*)&new);
+		else
+			VEC_SORTED_INSERT(code, code_start, new);
+	}
+
+	all_code_t	new = {0x100, 0x150, NULL, -1};
+	new.code = get_cartridge_header_code();
+	VEC_SORTED_INSERT(code, code_start, new);
+
+	//check code overlap
+	register all_code_t		*elem = VEC_ELEM_FIRST(all_code_t, code);
+	uint32_t				end = elem->end;
+	if ((elem->start > 0x100 && elem->start < 0x150) || (elem->end > 0x100 && elem->end < 0x150))
+	{
+		fprintf(stderr, "cartridge header overlap\n");
+		g_error++;
+	}
+	elem++;
+	for (uint32_t i = 1; i < code->nitems; i++, elem++)
+	{
+		if (elem->start < end)
+		{
+			fprintf(stderr, "code overlap in 0x%x (previous code start), 0x%x (next code end)\n", elem->start, end);
+			g_error++;
+		}
+		if ((elem->start > 0x100 && elem->start < 0x150) || (elem->end > 0x100 && elem->end < 0x150))
+		{
+			fprintf(stderr, "cartridge header overlap\n");
+			g_error++;
+		}
+	}
+}
+
+void		write_binary(vector_t *code, const char *filename)
+{
+	register all_code_t		*elem = VEC_ELEM_FIRST(all_code_t, code);
+	FILE					*file;
+	uint8_t					fill[128] = 0;
+
+	if ((file = fopen(filename, "w+")) == NULL)
+	{
+		fprintf(stderr, "cannot open the file %s\n", filename);
+		exit(1);
+	}
+
+	register uint32_t	tmp = elem->start;
+	register uint32_t	end = elem->end;
+	
+	while (tmp > 128)
+	{
+		fwrite(fill, 1, 128, file);
+		tmp -= 128;
+	}
+	fwrite(fill, 1, tmp, file);
+	fwrite(elem->code, 1, elem->end - elem->start, file);
+	elem++;
+
+	for (uint32_t i = 1; i < code->nitems; i++, elem++)
+	{
+		if (end > elem->start)
+		{
+			tmp = elem->start;
+			
+			while (tmp > 128)
+			{
+				fwrite(fill, 1, 128, file);
+				tmp -= 128;
+			}
+			fwrite(fill, 1, tmp, file);
+		}
+		fwrite(elem->code, 1, elem->end - elem->start, file);
+		end = elem->end;
+	}
+
+	fclose(file);
 }
 
 /*
@@ -832,20 +1324,64 @@ int		main(int argc, char *argv[])
 	vector_destroy(local_symbol.label);
 	vector_destroy(local_symbol.memblock);
 
+	// nouveau fichier !!!!!!
 	vector_t	*sym = vector_init(sizeof(all_sym_t));
+	vector_t	*ext_sym = vector_init(sizeof(all_ext_sym_t));
 	vector_t	*code = vector_init(sizeof(all_code_t));
+
+	ext_sym->destroy = &all_ext_sym_destroy;
+	ext_sym->compar = &all_ext_sym_cmp;
+	ext_sym->search = &all_ext_sym_search;
+	sym->destroy = &all_sym_destroy;
+	sym->compar = &all_sym_cmp;
+	sym->search = &all_sym_search;
+	code->destroy = &all_code_destroy;
+	code->compar = &all_code_compar;
+	code->search = &all_code_search;
 
 	if (g_error == 0)
 	{
+		g_error = 0;
 		for (uint32_t i = 0; file[i]; i++)
 		{
-			get_symbols(file[i], sym);
+			get_symbols(file[i], sym, ext_sym, i);
 		}
+		puts("intern symbols");
 		for (uint32_t i = 0; i < sym->nitems; i++)
 		{
 			register all_sym_t	*tmp = VEC_ELEM(all_sym_t, sym, i);
 
-			printf("%s (%s) = %u, %u (%s)\n", tmp->name, get_type_str(tmp->type), tmp->data1, tmp->data2, tmp->block);
+			printf("%s (%s) = 0x%x, 0x%x\n", tmp->name, get_type_str(tmp->type), tmp->data1, tmp->data2);
+		}
+		puts("extern symbols");
+		for (uint32_t i = 0; i < ext_sym->nitems; i++)
+		{
+			register all_ext_sym_t	*tmp = VEC_ELEM(all_ext_sym_t, ext_sym, i);
+
+			printf("%s (%s) : quantity 0x%x\n", tmp->name, get_type_str(tmp->type), tmp->quantity);
+		}
+
+		all_extern_symbols_exist(sym, ext_sym, file);
+		if (g_error)
+			goto __end_compilation;
+
+		assign_var_addr(sym);
+		if (g_error)
+			goto __end_compilation;
+
+		get_code_with_replacement(sym, ext_sym, code, file);
+		if (g_error)
+			goto __end_compilation;
+
+		write_binary(code, "binary.gb");
+
+		//free tout le bordel
+
+	_end_compilation:
+		if (g_error)
+		{
+			fprintf(stderr, "\e[1;31m%u errors\e[0m\n", g_error);
+			break;
 		}
 		for (uint32_t i = 0; file[i]; i++)
 			free(file[i]);

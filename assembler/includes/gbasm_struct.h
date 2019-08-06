@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/06 11:38:18 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/06 11:38:20 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/06 18:44:29 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -70,16 +70,52 @@ typedef struct	tmp_variable_s
 }
 tmp_variable_t;
 
+struct	memblock2_s
+{
+	uint32_t	start;
+	uint32_t	end;
+	uint32_t	space;
+	uint32_t	garbage;
+	char		*name;
+}
+memblock2_t;
+
+typedef struct	var_data_s
+{
+	uint32_t	quantity;	
+	uint32_t	file_number;
+	char		*block;		
+	char		*pos;		
+	struct var_data_t	*next;
+}
+var_data_t;
+
+/*
+ *	if extern_symbol: 
+ *		- data1 -> quantity
+ *		- data2 -> unused
+ *		- data	-> pos
+ */
+typedef struct	all_ext_sym_s
+{
+	char		*name;
+	uint32_t	type;
+	uint32_t	quantity;
+	uint32_t	*pos;
+	uint32_t	file_number;
+}
+all_ext_sym_t;
+
 typedef struct	all_sym_s
 {
 	char		*name;
 	uint32_t	type;
-	uint32_t	data1;	// value	if LABEL
-						// addr		if VAR
-						// start	if MEMBLOCK
-	uint32_t	data2;	// size		if VAR
-						// end		if MEMBLOCK
-	char		*block;	//			if VAR
+	uint32_t	data1;		// value	if LABEL
+							// addr		if VAR
+							// start	if MEMBLOCK
+	uint32_t	data2;		// size		if VAR
+							// end		if MEMBLOCK
+	var_data_t	*var_data;
 }
 all_sym_t;
 
@@ -88,6 +124,7 @@ typedef struct	all_code_s
 	uint32_t	start;
 	uint32_t	end;
 	uint8_t		*code;
+	uint32_t	file_number;
 }
 all_code_t;
 
@@ -217,8 +254,8 @@ struct	memblock_s
 	uint32_t	end;
 	uint32_t	space;
 	uint32_t	line;
-	char		*filename;
 	char		*name;
+	char		*filename;
 	vector_t	*var;
 };
 
