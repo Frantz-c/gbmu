@@ -1,3 +1,16 @@
+/* ************************************************************************** */
+/*                                                          LE - /            */
+/*                                                              /             */
+/*   gbasm_struct.h                                   .::    .:/ .      .::   */
+/*                                                 +:+:+   +:    +:  +:+:+    */
+/*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
+/*                                                 #+#   #+    #+    #+#      */
+/*   Created: 2019/08/06 11:38:18 by fcordon      #+#   ##    ##    #+#       */
+/*   Updated: 2019/08/06 11:38:20 by fcordon     ###    #+. /#+    ###.fr     */
+/*                                                         /                  */
+/*                                                        /                   */
+/* ************************************************************************** */
+
 #ifndef GBASM_STRUCT_H
 # define GBASM_STRUCT_H
 
@@ -14,11 +27,7 @@ param_t;
 
 typedef enum	insn_err_e
 {
-	ENONE, MISSING_PARAM, TOO_MANY_PARAMS, INVAL_ADC_SBB_SRC,
-	INVAL_ADD_SUB_DST, INVAL_ADD_SUB_SRC, INVAL_BIT_ARITH_SRC,
-	INVAL_CB_BIT_VALUE, INVAL_CB_BIT_DST, INVAL_JP_CALL_ADDR,
-	INVAL_CMP_SRC, INVAL_AOP_DST, INVAL_INC_DEC_DST,
-	INVAL_POP_PUSH_SRC,INVAL_SRC,INVAL_DST,OVERFLOW
+	ENONE, MISSING_PARAM, TOO_MANY_PARAMS, INVAL_DST, INVAL_SRC, OVERFLOW
 }
 insn_err_t;
 
