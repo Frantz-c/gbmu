@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/05 18:00:39 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/06 11:36:30 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -642,16 +642,112 @@ uint8_t	get_complement_check(void)
 	return ((uint8_t)(0x100u - total));
 }
 
+const char	*get_type_str(uint32_t type)
+{
+	if (type == LABEL)
+		return ("label");
+	if (type == VAR)
+		return ("variable");
+	if (type == MEMBLOCK)
+		return ("memblock");
+	return ("unknown");
+}
+
 void	get_symbols(const char *filename, vector_t *sym)
 {
-	// get all local_symbols
+	tmp_header_t	header;
+	FILE			*file;
+	all_sym_t		tmp;
+	char			*buf;
+
+	if ((file = fopen(filename, "r")) == NULL)
+	{
+		fprintf(stderr, "file %s does not exist\n", filename);
+		exit(1);
+	}
+
+	if (fread(&header, sizeof header, 1, file) != sizeof header)
+		goto __file_error;
+
+	if (header.header_length < header.intern_symbols_length)
+		goto __file_error;
+	
+	buf = malloc(header.intern_symbols_length);
+	if (fread(buf, 1, header.intern_symbols_length, file) != header.intern_symbols_length)
+	{
+		free(buf);
+		goto __file_error;
+	}
+
+	for (uint32_t i = 0; i < header.intern_symbols_length; i++)
+	{
+		register char	*name;
+		
+		name = buf + i;
+		while (buf[i]) i++;
+		tmp.name = strndup(name, i);
+		i++;
+
+		tmp.type = *(uint32_t*)(buf + i);
+		i += sizeof(uint32_t);
+
+		switch (tmp.type)
+		{
+			case LABEL:
+			{
+				tmp.data1 = *(uint32_t*)(buf + i);
+				i += sizeof(uint32_t);
+				break;
+			}
+			case VAR:
+			{
+				register uint32_t	quantity;
+
+				quantity = *(uint32_t *)(buf + i);
+				i += sizeof(uint32_t) * (quantity + 1);
+				name = buf + i;
+				while (buf[i]) i++;
+				tmp.block = strndup(name, i);
+				i++;
+
+				tmp.data1 = *(uint32_t*)(buf + i);
+				i += sizeof(uint32_t);
+
+				tmp.data2 = 0;
+				break;
+			}
+			case MEMBLOCK:
+			{
+				tmp.data1 = *(uint32_t*)(buf + i);
+				i += sizeof(uint32_t);
+
+				tmp.data2 = *(uint32_t*)(buf + i);
+				i += sizeof(uint32_t);
+				break;
+			}
+			default:
+				goto __file_error;
+		}
+
+		if (sym->nitems == 0)
+			vector_push(sym, (void*)&tmp);
+		else
+			VEC_SORTED_INSERT(sym, tmp.name, tmp);
+	}
+
+	free(buf);
+	fclose(file);
+	return;
+
+__file_error:
+	fprintf(stderr, "object file not well formated\n");
+	fclose(file);
+	exit(1);
 }
 
 /*
-
-	revoir le systeme de symbols (symbols internes tous dans le meme vecteur)
-
-*/
+ *	bloquer la taille maximum des symbols, ...
+ */
 int		main(int argc, char *argv[])
 {
 	char			*file[3];
@@ -679,13 +775,13 @@ int		main(int argc, char *argv[])
 	cartridge_info.rom_size = 0;			// 256 KBits (32 KBytes)
 	cartridge_info.ram_size = 2;			// 64 Kbit (8 KBytes)
 	cartridge_info.destination = 1;			// All others
-	cartridge_info.mask_rom_version = 0;	//version du jeu
+	cartridge_info.mask_rom_version = 0;	// version du jeu
 	cartridge_info.complement_check = get_complement_check();
 	/* end */
 
 
-	file[0]	=	"test.gbs";
-	file[1]	=	NULL;
+	file[0]	= "test.gbs";
+	file[1]	= NULL;
 	n_files = 1;
 
 	macro = set_builtin_macro();
@@ -744,6 +840,12 @@ int		main(int argc, char *argv[])
 		for (uint32_t i = 0; file[i]; i++)
 		{
 			get_symbols(file[i], sym);
+		}
+		for (uint32_t i = 0; i < sym->nitems; i++)
+		{
+			register all_sym_t	*tmp = VEC_ELEM(all_sym_t, sym, i);
+
+			printf("%s (%s) = %u, %u (%s)\n", tmp->name, get_type_str(tmp->type), tmp->data1, tmp->data2, tmp->block);
 		}
 		for (uint32_t i = 0; file[i]; i++)
 			free(file[i]);

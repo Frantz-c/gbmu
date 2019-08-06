@@ -8,7 +8,7 @@ typedef enum	param_e
 {
 	UNKNOWN,NONE,A,B,C,D,E,F,H,L,AF,BC,DE,HL,SP,_NZ_,_Z_,_NC_,_C_,
 	HLI,HLD,SP_ADDR,HL_ADDR,BC_ADDR,DE_ADDR,AF_ADDR,FF00_C,
-	FF00_IMM8,IMM8,ADDR8,IMM16,ADDR16,SYMBOL
+	SP_IMM8,FF00_IMM8,IMM8,ADDR8,IMM16,ADDR16,SYMBOL
 }
 param_t;
 
@@ -40,6 +40,27 @@ insn_err_t;
 
 
 // final binary generation
+typedef struct	tmp_header_s
+{
+	uint32_t	header_length;
+	uint32_t	intern_symbols_length;
+	uint32_t	code_length;
+}
+tmp_header_t;
+
+typedef struct	tmp_label_s
+{
+	uint32_t	value;
+}
+tmp_label_t;
+
+typedef struct	tmp_variable_s
+{
+	uint32_t	quantity;
+	uint32_t	pos[];
+}
+tmp_variable_t;
+
 typedef struct	all_sym_s
 {
 	char		*name;
@@ -49,6 +70,7 @@ typedef struct	all_sym_s
 						// start	if MEMBLOCK
 	uint32_t	data2;	// size		if VAR
 						// end		if MEMBLOCK
+	char		*block;	//			if VAR
 }
 all_sym_t;
 

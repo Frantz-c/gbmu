@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/27 19:25:27 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/05 18:02:07 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/06 10:32:04 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -279,11 +279,14 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 			code = realloc(code, allocsize);
 		}
 
-		// ([start_addr]) * 2, ([length]) * 4
+		// ([start_addr]) * 4, ([length]) * 4
+		*(uint32_t*)(code + i) = area->addr;
+		/*
 		code[i] = (uint8_t)(area->addr >> 24);
 		code[i + 1] = (uint8_t)(area->addr >> 16);
 		code[i + 2] = (uint8_t)(area->addr >> 8);
 		code[i + 3] = (uint8_t)area->addr;
+		*/
 		len_pos = i + 4;
 		i += 8;
 
@@ -333,7 +336,7 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 
 
 	// ecrire dans le fichier .o
-	FILE *file = fopen(filename, "w+");
+	FILE		*file = fopen(filename, "w+");
 	uint32_t	header_size = 0;
 	uint32_t	intern_size;
 
