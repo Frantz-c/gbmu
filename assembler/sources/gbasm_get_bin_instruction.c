@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/25 10:03:09 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/05 15:20:31 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/06 08:44:01 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -392,6 +392,7 @@ __and:
 	goto __done;
 
 __bit:
+__testb:
 	if (param[0] == NONE)
 		error.p1 = MISSING_PARAM;
 	else if (param[0] != IMM8 || val->value > 7)
@@ -399,7 +400,7 @@ __bit:
 	else
 	{
 		val->value *= 8;
-		bin[0] = 0xCB;
+		bin[0] = 0xCBu;
 		switch (param[1])
 		{
 			case NONE:
@@ -1494,14 +1495,120 @@ __push:
 
 __res:
 __reset:
+	if (param[0] == NONE)
+		error.p1 = MISSING_PARAM;
+	else if (param[0] != IMM8 || val->value > 7)
+		error.p1 = INVAL_SRC;
+	else
+	{
+		val->value *= 8;
+		bin[0] = 0xCBu;
+		switch (param[1])
+		{
+			case NONE:
+				error.p2 = MISSING_PARAM;
+				break ;
+
+			case A:
+				bin[1] = 0x87u + (uint8_t)val->value;
+				break ;
+
+			case B:
+				bin[1] = 0x80u + (uint8_t)val->value;
+				break ;
+
+			case C:
+				bin[1] = 0x81u + (uint8_t)val->value;
+				break ;
+
+			case D:
+				bin[1] = 0x82u + (uint8_t)val->value;
+				break ;
+
+			case E:
+				bin[1] = 0x83u + (uint8_t)val->value;
+				break ;
+
+			case H:
+				bin[1] = 0x84u + (uint8_t)val->value;
+				break ;
+
+			case L:
+				bin[1] = 0x85u + (uint8_t)val->value;
+				break ;
+
+			case HL_ADDR:
+				bin[1] = 0x86u + (uint8_t)val->value;
+				break ;
+
+			default:
+				error.p2 = INVAL_DST;
+				break ;
+		}
+	}
+	goto __done;
+
 __ret:
 __retc:
 __reti:
+	if (param[0] != NONE)
+		error.p1 = TOO_MANY_PARAMS;
+	else
+		bin[0] = 0xD9u;
+	goto __done;
+
 __retnc:
 __retnz:
 __retz:
 __rl:
-	return ((param_error_t){0x1,0x1});
+	if (param[0] == NONE)
+		error.p1 = MISSING_PARAM;
+	else if (param[1] != NONE)
+		error.p2 = TOO_MANY_PARAMS;
+	else
+	{
+		bin[0] = 0xCBu;
+		switch (param[0])
+		{
+			case A:
+				bin[1] = 0x17u;
+				break ;
+
+			case B:
+				bin[1] = 0x10u;
+				break ;
+
+			case C:
+				bin[1] = 0x11u;
+				break ;
+
+			case D:
+				bin[1] = 0x12u;
+				break ;
+
+			case E:
+				bin[1] = 0x13u;
+				break ;
+
+			case H:
+				bin[1] = 0x14u;
+				break ;
+
+			case L:
+				bin[1] = 0x15u;
+				break ;
+
+			case HL_ADDR:
+				bin[1] = 0x16u;
+				break ;
+
+			default:
+				error.p1 = INVAL_DST;
+				break ;
+		}
+	}
+	goto __done;
+
 __rla:
 	if (param[0] != NONE)
 		error.p1 = TOO_MANY_PARAMS;
@@ -1510,7 +1617,54 @@ __rla:
 	goto __done;
 
 __rlc:
-	return ((param_error_t){0x1,0x1});
+	if (param[0] == NONE)
+		error.p1 = MISSING_PARAM;
+	else if (param[1] != NONE)
+		error.p2 = TOO_MANY_PARAMS;
+	else
+	{
+		bin[0] = 0xCBu;
+		switch (param[0])
+		{
+			case A:
+				bin[1] = 0x07u;
+				break ;
+
+			case B:
+				bin[1] = 0x00u;
+				break ;
+
+			case C:
+				bin[1] = 0x01u;
+				break ;
+
+			case D:
+				bin[1] = 0x02u;
+				break ;
+
+			case E:
+				bin[1] = 0x03u;
+				break ;
+
+			case H:
+				bin[1] = 0x04u;
+				break ;
+
+			case L:
+				bin[1] = 0x05u;
+				break ;
+
+			case HL_ADDR:
+				bin[1] = 0x06u;
+				break ;
+
+			default:
+				error.p1 = INVAL_DST;
+				break ;
+		}
+	}
+	goto __done;
+
 __rlca:
 	if (param[0] != NONE)
 		error.p1 = TOO_MANY_PARAMS;
@@ -1519,15 +1673,110 @@ __rlca:
 	goto __done;
 
 __rr:
-	return ((param_error_t){0x1,0x1});
+	if (param[0] == NONE)
+		error.p1 = MISSING_PARAM;
+	else if (param[1] != NONE)
+		error.p2 = TOO_MANY_PARAMS;
+	else
+	{
+		bin[0] = 0xCBu;
+		switch (param[0])
+		{
+			case A:
+				bin[1] = 0x1Fu;
+				break ;
+
+			case B:
+				bin[1] = 0x18u;
+				break ;
+
+			case C:
+				bin[1] = 0x19u;
+				break ;
+
+			case D:
+				bin[1] = 0x1Au;
+				break ;
+
+			case E:
+				bin[1] = 0x1Bu;
+				break ;
+
+			case H:
+				bin[1] = 0x1Cu;
+				break ;
+
+			case L:
+				bin[1] = 0x1Du;
+				break ;
+
+			case HL_ADDR:
+				bin[1] = 0x1Eu;
+				break ;
+
+			default:
+				error.p1 = INVAL_DST;
+				break ;
+		}
+	}
+	goto __done;
+
 __rra:
 	if (param[0] != NONE)
 		error.p1 = TOO_MANY_PARAMS;
 	else
 		bin[0] = 0x1Fu;
 	goto __done;
+
 __rrc:
-	return ((param_error_t){0x1,0x1});
+	if (param[0] == NONE)
+		error.p1 = MISSING_PARAM;
+	else if (param[1] != NONE)
+		error.p2 = TOO_MANY_PARAMS;
+	else
+	{
+		bin[0] = 0xCBu;
+		switch (param[0])
+		{
+			case A:
+				bin[1] = 0x0Fu;
+				break ;
+
+			case B:
+				bin[1] = 0x08u;
+				break ;
+
+			case C:
+				bin[1] = 0x09u;
+				break ;
+
+			case D:
+				bin[1] = 0x0Au;
+				break ;
+
+			case E:
+				bin[1] = 0x0Bu;
+				break ;
+
+			case H:
+				bin[1] = 0x0Cu;
+				break ;
+
+			case L:
+				bin[1] = 0x0Du;
+				break ;
+
+			case HL_ADDR:
+				bin[1] = 0x0Eu;
+				break ;
+
+			default:
+				error.p1 = INVAL_DST;
+				break ;
+		}
+	}
+	goto __done;
+
 __rrca:
 	if (param[0] != NONE)
 		error.p1 = TOO_MANY_PARAMS;
@@ -1536,8 +1785,35 @@ __rrca:
 	goto __done;
 
 __rst:
-__sar:
-	return ((param_error_t){0x1,0x1});
+	if (param[0] == NONE)
+		error.p1 = MISSING_PARAM;
+	else if (param[1] != NONE)
+		error.p2 = TOO_MANY_PARAMS;
+	else if (param[0] != IMM8)
+		error.p1 = INVAL_DST;
+	else
+	{
+		switch (val->value)
+		{
+			case 0x00u:
+			case 0x08u:
+			case 0x10u:
+			case 0x18u:
+			case 0x20u:
+			case 0x28u:
+			case 0x30u:
+			case 0x38u:
+				bin[0] = 0xC7 + (uint8_t)val->value;
+				param[0] = NONE;
+				break ;
+
+			default:
+				error.p1 = INVAL_DST;
+				break ;
+		}
+	}
+	goto __done;
+
 __sbb:
 __sbc:
 	if (param[0] == NONE)
@@ -1648,12 +1924,209 @@ __scf:
 	goto __done;
 
 __set:
+	if (param[0] == NONE)
+		error.p1 = MISSING_PARAM;
+	else if (param[0] != IMM8 || val->value > 7)
+		error.p1 = INVAL_SRC;
+	else
+	{
+		val->value *= 8;
+		bin[0] = 0xCBu;
+		switch (param[1])
+		{
+			case NONE:
+				error.p2 = MISSING_PARAM;
+				break ;
+
+			case A:
+				bin[1] = 0xC7u + (uint8_t)val->value;
+				break ;
+
+			case B:
+				bin[1] = 0xC0u + (uint8_t)val->value;
+				break ;
+
+			case C:
+				bin[1] = 0xC1u + (uint8_t)val->value;
+				break ;
+
+			case D:
+				bin[1] = 0xC2u + (uint8_t)val->value;
+				break ;
+
+			case E:
+				bin[1] = 0xC3u + (uint8_t)val->value;
+				break ;
+
+			case H:
+				bin[1] = 0xC4u + (uint8_t)val->value;
+				break ;
+
+			case L:
+				bin[1] = 0xC5u + (uint8_t)val->value;
+				break ;
+
+			case HL_ADDR:
+				bin[1] = 0xC6u + (uint8_t)val->value;
+				break ;
+
+			default:
+				error.p2 = INVAL_DST;
+				break ;
+		}
+	}
+	goto __done;
+
 __shl:
-__shr:
 __sla:
+	if (param[0] == NONE)
+		error.p1 = MISSING_PARAM;
+	else if (param[1] != NONE)
+		error.p2 = TOO_MANY_PARAMS;
+	else
+	{
+		bin[0] = 0xCBu;
+		switch (param[0])
+		{
+			case A:
+				bin[1] = 0x27u;
+				break ;
+
+			case B:
+				bin[1] = 0x20u;
+				break ;
+
+			case C:
+				bin[1] = 0x21u;
+				break ;
+
+			case D:
+				bin[1] = 0x22u;
+				break ;
+
+			case E:
+				bin[1] = 0x23u;
+				break ;
+
+			case H:
+				bin[1] = 0x24u;
+				break ;
+
+			case L:
+				bin[1] = 0x25u;
+				break ;
+
+			case HL_ADDR:
+				bin[1] = 0x26u;
+				break ;
+
+			default:
+				error.p1 = INVAL_DST;
+				break ;
+		}
+	}
+	goto __done;
+
+__sar:
 __sra:
+	if (param[0] == NONE)
+		error.p1 = MISSING_PARAM;
+	else if (param[1] != NONE)
+		error.p2 = TOO_MANY_PARAMS;
+	else
+	{
+		bin[0] = 0xCBu;
+		switch (param[0])
+		{
+			case A:
+				bin[1] = 0x2Fu;
+				break ;
+
+			case B:
+				bin[1] = 0x28u;
+				break ;
+
+			case C:
+				bin[1] = 0x29u;
+				break ;
+
+			case D:
+				bin[1] = 0x2Au;
+				break ;
+
+			case E:
+				bin[1] = 0x2Bu;
+				break ;
+
+			case H:
+				bin[1] = 0x2Cu;
+				break ;
+
+			case L:
+				bin[1] = 0x2Du;
+				break ;
+
+			case HL_ADDR:
+				bin[1] = 0x2Eu;
+				break ;
+
+			default:
+				error.p1 = INVAL_DST;
+				break ;
+		}
+	}
+	goto __done;
+
+__shr:
 __srl:
-	return ((param_error_t){0x1,0x1});
+	if (param[0] == NONE)
+		error.p1 = MISSING_PARAM;
+	else if (param[1] != NONE)
+		error.p2 = TOO_MANY_PARAMS;
+	else
+	{
+		bin[0] = 0xCBu;
+		switch (param[0])
+		{
+			case A:
+				bin[1] = 0x3Fu;
+				break ;
+
+			case B:
+				bin[1] = 0x38u;
+				break ;
+
+			case C:
+				bin[1] = 0x39u;
+				break ;
+
+			case D:
+				bin[1] = 0x3Au;
+				break ;
+
+			case E:
+				bin[1] = 0x3Bu;
+				break ;
+
+			case H:
+				bin[1] = 0x3Cu;
+				break ;
+
+			case L:
+				bin[1] = 0x3Du;
+				break ;
+
+			case HL_ADDR:
+				bin[1] = 0x3Eu;
+				break ;
+
+			default:
+				error.p1 = INVAL_DST;
+				break ;
+		}
+	}
+	goto __done;
+
 __stop:
 	if (param[0] != NONE && !(param[0] == IMM8 && val->value == 0))
 		error.p1 = TOO_MANY_PARAMS;
@@ -1767,9 +2240,54 @@ __sub:
 	goto __done;
 
 __swap:
-	return ((param_error_t){0x1,0x1});
-__testb:
-	return ((param_error_t){0x1,0x1});
+	if (param[0] == NONE)
+		error.p1 = MISSING_PARAM;
+	else if (param[1] != NONE)
+		error.p2 = TOO_MANY_PARAMS;
+	else
+	{
+		bin[0] = 0xCBu;
+		switch (param[0])
+		{
+			case A:
+				bin[1] = 0x37u;
+				break ;
+
+			case B:
+				bin[1] = 0x30u;
+				break ;
+
+			case C:
+				bin[1] = 0x31u;
+				break ;
+
+			case D:
+				bin[1] = 0x32u;
+				break ;
+
+			case E:
+				bin[1] = 0x33u;
+				break ;
+
+			case H:
+				bin[1] = 0x34u;
+				break ;
+
+			case L:
+				bin[1] = 0x35u;
+				break ;
+
+			case HL_ADDR:
+				bin[1] = 0x36u;
+				break ;
+
+			default:
+				error.p1 = INVAL_DST;
+				break ;
+		}
+	}
+	goto __done;
+
 __xor:
 	if (param[0] == NONE)
 	{
