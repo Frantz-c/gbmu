@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/25 10:03:09 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/06 10:42:51 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/06 11:23:50 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -1335,6 +1335,7 @@ __mov:
 				case IMM8:
 					param[1] = IMM16;
 
+				case SYMBOL:
 				case IMM16:
 					bin[0] = 0x01u;
 					bin[1] = (uint8_t)val->value;
@@ -1353,6 +1354,7 @@ __mov:
 				case IMM8:
 					param[1] = IMM16;
 
+				case SYMBOL:
 				case IMM16:
 					bin[0] = 0x11u;
 					bin[1] = (uint8_t)val->value;
@@ -1371,6 +1373,7 @@ __mov:
 				case IMM8:
 					param[1] = IMM16;
 
+				case SYMBOL:
 				case IMM16:
 					bin[0] = 0x21u;
 					bin[1] = (uint8_t)val->value;
@@ -1394,6 +1397,7 @@ __mov:
 				case IMM8:
 					param[1] = IMM16;
 
+				case SYMBOL:
 				case IMM16:
 					bin[0] = 0x31u;
 					bin[1] = (uint8_t)val->value;
