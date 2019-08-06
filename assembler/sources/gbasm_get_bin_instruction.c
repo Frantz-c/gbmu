@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/25 10:03:09 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/06 08:44:01 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/06 10:42:51 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -1317,10 +1317,676 @@ __jrz:
 
 __ld:
 __mov:
+	if (param[0] == NONE)
+	{
+		error.p1 = MISSING_PARAM;
+		goto __done;
+	}
+	if (param[1] == NONE)
+	{
+		error.p2 = MISSING_PARAM;
+		goto __done;
+	}
+	switch (param[0])
+	{
+		case BC:
+			switch (param[1])
+			{
+				case IMM8:
+					param[1] = IMM16;
+
+				case IMM16:
+					bin[0] = 0x01u;
+					bin[1] = (uint8_t)val->value;
+					bin[2] = (uint8_t)(val->value >> 8);
+					break ;
+
+				default:
+					error.p2 = INVAL_SRC;
+					break ;
+			}
+			break ;
+
+		case DE:
+			switch (param[1])
+			{
+				case IMM8:
+					param[1] = IMM16;
+
+				case IMM16:
+					bin[0] = 0x11u;
+					bin[1] = (uint8_t)val->value;
+					bin[2] = (uint8_t)(val->value >> 8);
+					break ;
+
+				default:
+					error.p2 = INVAL_SRC;
+					break ;
+			}
+			break ;
+
+		case HL:
+			switch (param[1])
+			{
+				case IMM8:
+					param[1] = IMM16;
+
+				case IMM16:
+					bin[0] = 0x21u;
+					bin[1] = (uint8_t)val->value;
+					bin[2] = (uint8_t)(val->value >> 8);
+					break ;
+
+				case SP_IMM8:
+					bin[0] = 0xF8u;
+					bin[1] = (uint8_t)val->value;
+					break ;
+
+				default:
+					error.p2 = INVAL_SRC;
+					break ;
+			}
+			break ;
+
+		case SP:
+			switch (param[1])
+			{
+				case IMM8:
+					param[1] = IMM16;
+
+				case IMM16:
+					bin[0] = 0x31u;
+					bin[1] = (uint8_t)val->value;
+					bin[2] = (uint8_t)(val->value >> 8);
+					break ;
+
+				case HL:
+					bin[0] = 0xF9u;
+					break ;
+
+				default:
+					error.p2 = INVAL_SRC;
+					break ;
+			}
+			break ;
+
+		case ADDR8:
+		case ADDR16:
+			switch (param[1])
+			{
+				case SP:
+					param[0] = ADDR16;
+					bin[0] = 0x08u;
+					bin[1] = (uint8_t)val->value;
+					bin[2] = (uint8_t)(val->value >> 8);
+					break ;
+
+				case A:
+					if (val->value > 0xFF00u)
+					{
+						param[0] = ADDR8;
+						bin[0] = 0xE0u;
+						bin[1] = (uint8_t)val->value;
+					}
+					else
+					{
+						param[0] = ADDR16;
+						bin[0] = 0xEAu;
+						bin[1] = (uint8_t)val->value;
+						bin[2] = (uint8_t)(val->value >> 8);
+					}
+					break ;
+
+				default:
+					error.p2 = INVAL_SRC;
+					break ;
+			}
+			break ;
+
+		case SYMBOL:
+			switch (param[1])
+			{
+				case SP:
+					bin[0] = 0x08u;
+					bin[1] = (uint8_t)val->value;
+					bin[2] = (uint8_t)(val->value >> 8);
+					break ;
+
+				case A:
+					bin[0] = 0xEAu;
+					bin[1] = (uint8_t)val->value;
+					bin[2] = (uint8_t)(val->value >> 8);
+					break ;
+
+				default:
+					error.p2 = INVAL_SRC;
+					break ;
+			}
+
+		case BC_ADDR:
+			switch (param[1])
+			{
+				case A:
+					bin[0] = 0x02u;
+					break ;
+
+				default:
+					error.p2 = INVAL_SRC;
+					break ;
+			}
+			break ;
+
+		case DE_ADDR:
+			switch (param[1])
+			{
+				case A:
+					bin[0] = 0x12u;
+					break ;
+
+				default:
+					error.p2 = INVAL_SRC;
+					break ;
+			}
+
+		case HLI:
+			switch (param[1])
+			{
+				case A:
+					bin[0] = 0x22u;
+					break ;
+
+				default:
+					error.p2 = INVAL_SRC;
+					break ;
+			}
+
+		case HLD:
+			switch (param[1])
+			{
+				case A:
+					bin[0] = 0x32u;
+					break ;
+
+				default:
+					error.p2 = INVAL_SRC;
+					break ;
+			}
+
+		case FF00_C:
+			switch (param[1])
+			{
+				case A:
+					bin[0] = 0xE2u;
+					break ;
+
+				default:
+					error.p2 = INVAL_SRC;
+					break ;
+			}
+
+		case A:
+			switch (param[1])
+			{
+				case BC_ADDR:
+					bin[0] = 0x0Au;
+					break ;
+
+				case DE_ADDR:
+					bin[0] = 0x1Au;
+					break ;
+
+				case HLI:
+					bin[0] = 0x2Au;
+					break ;
+
+				case HLD:
+					bin[0] = 0x3Au;
+					break ;
+
+				case IMM8:
+					bin[0] = 0x3Eu;
+					bin[1] = (uint8_t)val->value;
+					break ;
+
+				case B:
+					bin[0] = 0x78u;
+					break ;
+
+				case C:
+					bin[0] = 0x79u;
+					break ;
+
+				case D:
+					bin[0] = 0x7Au;
+					break ;
+
+				case E:
+					bin[0] = 0x7Bu;
+					break ;
+
+				case H:
+					bin[0] = 0x7Cu;
+					break ;
+
+				case L:
+					bin[0] = 0x7Du;
+					break ;
+
+				case HL_ADDR:
+					bin[0] = 0x7Eu;
+					break ;
+
+				case A:
+					bin[0] = 0x7Fu;
+					break ;
+
+				case ADDR8:
+				case ADDR16:
+					if (val->value > 0xFF00u)
+					{
+						param[0] = ADDR8;
+						bin[0] = 0xF0u;
+						bin[1] = (uint8_t)val->value;
+					}
+					else
+					{
+						param[0] = ADDR16;
+						bin[0] = 0xFAu;
+						bin[1] = (uint8_t)val->value;
+						bin[2] = (uint8_t)(val->value >> 8);
+					}
+					break ;
+
+				case FF00_C:
+					bin[0] = 0xF2u;
+					break ;
+
+				case SYMBOL:
+					bin[0] = 0xFAu;
+					bin[1] = (uint8_t)val->value;
+					bin[2] = (uint8_t)(val->value >> 8);
+					break ;
+
+				default:
+					error.p2 = INVAL_SRC;
+					break ;
+			}
+			break ;
+
+		case B:
+			switch (param[1])
+			{
+				case IMM8:
+					bin[0] = 0x06u;
+					bin[1] = (uint8_t)val->value;
+					break ;
+
+				case B:
+					bin[0] = 0x40u;
+					break ;
+
+				case C:
+					bin[0] = 0x41u;
+					break ;
+
+				case D:
+					bin[0] = 0x42u;
+					break ;
+
+				case E:
+					bin[0] = 0x43u;
+					break ;
+
+				case H:
+					bin[0] = 0x44u;
+					break ;
+
+				case L:
+					bin[0] = 0x45u;
+					break ;
+
+				case HL_ADDR:
+					bin[0] = 0x46u;
+					break ;
+
+				case A:
+					bin[0] = 0x47u;
+					break ;
+
+				default:
+					error.p2 = INVAL_SRC;
+					break ;
+			}
+			break ;
+
+		case C:
+			switch (param[1])
+			{
+				case IMM8:
+					bin[0] = 0x0Eu;
+					bin[1] = (uint8_t)val->value;
+					break ;
+
+				case B:
+					bin[0] = 0x48u;
+					break ;
+
+				case C:
+					bin[0] = 0x49u;
+					break ;
+
+				case D:
+					bin[0] = 0x4Au;
+					break ;
+
+				case E:
+					bin[0] = 0x4Bu;
+					break ;
+
+				case H:
+					bin[0] = 0x4Cu;
+					break ;
+
+				case L:
+					bin[0] = 0x4Du;
+					break ;
+
+				case HL_ADDR:
+					bin[0] = 0x4Eu;
+					break ;
+
+				case A:
+					bin[0] = 0x4Fu;
+					break ;
+
+				default:
+					error.p2 = INVAL_SRC;
+					break ;
+			}
+			break ;
+
+		case D:
+			switch (param[1])
+			{
+				case IMM8:
+					bin[0] = 0x16u;
+					bin[1] = (uint8_t)val->value;
+					break ;
+
+				case B:
+					bin[0] = 0x50u;
+					break ;
+
+				case C:
+					bin[0] = 0x51u;
+					break ;
+
+				case D:
+					bin[0] = 0x52u;
+					break ;
+
+				case E:
+					bin[0] = 0x53u;
+					break ;
+
+				case H:
+					bin[0] = 0x54u;
+					break ;
+
+				case L:
+					bin[0] = 0x55u;
+					break ;
+
+				case HL_ADDR:
+					bin[0] = 0x56u;
+					break ;
+
+				case A:
+					bin[0] = 0x57u;
+					break ;
+
+				default:
+					error.p2 = INVAL_SRC;
+					break ;
+			}
+			break ;
+
+		case E:
+			switch (param[1])
+			{
+				case IMM8:
+					bin[0] = 0x1Eu;
+					bin[1] = (uint8_t)val->value;
+					break ;
+
+				case B:
+					bin[0] = 0x58u;
+					break ;
+
+				case C:
+					bin[0] = 0x59u;
+					break ;
+
+				case D:
+					bin[0] = 0x5Au;
+					break ;
+
+				case E:
+					bin[0] = 0x5Bu;
+					break ;
+
+				case H:
+					bin[0] = 0x5Cu;
+					break ;
+
+				case L:
+					bin[0] = 0x5Du;
+					break ;
+
+				case HL_ADDR:
+					bin[0] = 0x5Eu;
+					break ;
+
+				case A:
+					bin[0] = 0x5Fu;
+					break ;
+
+				default:
+					error.p2 = INVAL_SRC;
+					break ;
+			}
+			break ;
+
+		case H:
+			switch (param[1])
+			{
+				case IMM8:
+					bin[0] = 0x26u;
+					bin[1] = (uint8_t)val->value;
+					break ;
+
+				case B:
+					bin[0] = 0x60u;
+					break ;
+
+				case C:
+					bin[0] = 0x61u;
+					break ;
+
+				case D:
+					bin[0] = 0x62u;
+					break ;
+
+				case E:
+					bin[0] = 0x63u;
+					break ;
+
+				case H:
+					bin[0] = 0x64u;
+					break ;
+
+				case L:
+					bin[0] = 0x65u;
+					break ;
+
+				case HL_ADDR:
+					bin[0] = 0x66u;
+					break ;
+
+				case A:
+					bin[0] = 0x67u;
+					break ;
+
+				default:
+					error.p2 = INVAL_SRC;
+					break ;
+			}
+			break ;
+
+		case L:
+			switch (param[1])
+			{
+				case IMM8:
+					bin[0] = 0x2Eu;
+					bin[1] = (uint8_t)val->value;
+					break ;
+
+				case B:
+					bin[0] = 0x68u;
+					break ;
+
+				case C:
+					bin[0] = 0x69u;
+					break ;
+
+				case D:
+					bin[0] = 0x6Au;
+					break ;
+
+				case E:
+					bin[0] = 0x6Bu;
+					break ;
+
+				case H:
+					bin[0] = 0x6Cu;
+					break ;
+
+				case L:
+					bin[0] = 0x6Du;
+					break ;
+
+				case HL_ADDR:
+					bin[0] = 0x6Eu;
+					break ;
+
+				case A:
+					bin[0] = 0x6Fu;
+					break ;
+
+				default:
+					error.p2 = INVAL_SRC;
+					break ;
+			}
+			break ;
+
+		case HL_ADDR:
+			switch (param[1])
+			{
+				case IMM8:
+					bin[0] = 0x36u;
+					bin[1] = (uint8_t)val->value;
+					break ;
+
+				case B:
+					bin[0] = 0x70u;
+					break ;
+
+				case C:
+					bin[0] = 0x71u;
+					break ;
+
+				case D:
+					bin[0] = 0x72u;
+					break ;
+
+				case E:
+					bin[0] = 0x73u;
+					break ;
+
+				case H:
+					bin[0] = 0x74u;
+					break ;
+
+				case L:
+					bin[0] = 0x75u;
+					break ;
+
+				case A:
+					bin[0] = 0x77u;
+					break ;
+
+				default:
+					error.p2 = INVAL_SRC;
+					break ;
+			}
+			break ;
+
+		default:
+			error.p1 = INVAL_DST;
+			break ;
+	}
+	goto __done;
+
 __ldd:
+	if (param[0] == A)
+	{
+		if (param[1] != HL_ADDR)
+			error.p2 = INVAL_SRC;
+		else
+			bin[0] = 0x2Au;
+	}
+	else if (param[0] == HL_ADDR)
+	{
+		if (param[1] != A)
+			error.p2 = INVAL_SRC;
+		else
+			bin[0] = 0x22u;
+	}
+	else
+		error.p1 = INVAL_DST;
+	goto __done;
+
 __ldhl:
+	if (param[0] != SP)
+		error.p1 = INVAL_SRC;
+	else if (param[1] != IMM8)
+		error.p1 = INVAL_DST;
+	else
+	{
+		bin[0] = 0xF8u;
+		bin[1] = (uint8_t)val->value;
+	}
+	goto __done;
+
 __ldi:
-	return ((param_error_t){0x1,0x1});
+	if (param[0] == A)
+	{
+		if (param[1] != HL_ADDR)
+			error.p2 = INVAL_SRC;
+		else
+			bin[0] = 0x3Au;
+	}
+	else if (param[0] == HL_ADDR)
+	{
+		if (param[1] != A)
+			error.p2 = INVAL_SRC;
+		else
+			bin[0] = 0x32u;
+	}
+	else
+		error.p1 = INVAL_DST;
+	goto __done;
+
 __nop:
 	if (param[0] != NONE)
 		error.p1 = TOO_MANY_PARAMS;
@@ -1549,7 +2215,46 @@ __reset:
 	goto __done;
 
 __ret:
+	if (param[1] != NONE)
+		error.p2 = TOO_MANY_PARAMS;
+	else
+	{
+		switch (param[0])
+		{
+			case NONE:
+				bin[0] = 0xC9u;
+				break ;
+
+			case _C_:
+				bin[0] = 0xD8u;
+				break ;
+
+			case _NC_:
+				bin[0] = 0xD0u;
+				break ;
+
+			case _Z_:
+				bin[0] = 0xC8u;
+				break ;
+
+			case _NZ_:
+				bin[0] = 0xC0u;
+				break ;
+
+			default:
+				error.p1 = INVAL_DST;
+				break ;
+		}
+	}
+	goto __done;
+
 __retc:
+	if (param[0] != NONE)
+		error.p1 = TOO_MANY_PARAMS;
+	else
+		bin[0] = 0xD8u;
+	goto __done;
+
 __reti:
 	if (param[0] != NONE)
 		error.p1 = TOO_MANY_PARAMS;
@@ -1558,8 +2263,26 @@ __reti:
 	goto __done;
 
 __retnc:
+	if (param[0] != NONE)
+		error.p1 = TOO_MANY_PARAMS;
+	else
+		bin[0] = 0xD0u;
+	goto __done;
+
 __retnz:
+	if (param[0] != NONE)
+		error.p1 = TOO_MANY_PARAMS;
+	else
+		bin[0] = 0xC0u;
+	goto __done;
+
 __retz:
+	if (param[0] != NONE)
+		error.p1 = TOO_MANY_PARAMS;
+	else
+		bin[0] = 0xC8u;
+	goto __done;
+
 __rl:
 	if (param[0] == NONE)
 		error.p1 = MISSING_PARAM;
