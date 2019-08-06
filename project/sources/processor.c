@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/08 11:02:11 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/17 09:17:51 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/06 15:20:41 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -1150,13 +1150,13 @@ add_sp_imm8:
 	ADD_PC(2);
 	regs->reg_f = 0;
 	imm_16 = regs->reg_sp + (int8_t)imm_8;
-	if ((imm_8 < 0x80u) && imm_16 < regs->reg_sp)
+	if ((imm_8 < 0x80u) && (imm_16 & 0xFFu) < (regs->reg_sp & 0xFFu))
 		regs->reg_f |= FLAG_CY;
-	else if ((imm_8 >= 0x80u) && imm_16 > regs->reg_sp)
+	else if ((imm_8 >= 0x80u) && (imm_16 & 0xFFu) > (regs->reg_sp & 0xFFu))
 		regs->reg_f |= FLAG_CY;
-	if ((imm_8 < 0x80u) && (imm_16 & 0xFFFu) < (regs->reg_sp & 0xFFFu))
+	if ((imm_8 < 0x80u) && (imm_16 & 0xFu) < (regs->reg_sp & 0xFu))
 		regs->reg_f |= FLAG_H;
-	else if ((imm_8 >= 0x80u) && (imm_16 & 0xFFFu) > (regs->reg_sp & 0xFFFu))
+	else if ((imm_8 >= 0x80u) && (imm_16 & 0xFu) > (regs->reg_sp & 0xFu))
 		regs->reg_f |= FLAG_H;
 	regs->reg_sp = imm_16;
 	return (16);
@@ -1227,13 +1227,13 @@ ld_hl_sp_imm8:
 	ADD_PC(2);
 	regs->reg_f = 0;
 	imm_16 = regs->reg_sp + (int8_t)imm_8;
-	if ((imm_8 < 0x80u) && imm_16 < regs->reg_sp)
+	if ((imm_8 < 0x80u) && (imm_16 & 0xFFu) < (regs->reg_sp & 0xFFu))
 		regs->reg_f |= FLAG_CY;
-	else if ((imm_8 >= 0x80u) && imm_16 > regs->reg_sp)
+	else if ((imm_8 >= 0x80u) && (imm_16 & 0xFFu) > (regs->reg_sp & 0xFFu))
 		regs->reg_f |= FLAG_CY;
-	if ((imm_8 < 0x80u) && (imm_16 & 0xFFFu) < (regs->reg_sp & 0xFFFu))
+	if ((imm_8 < 0x80u) && (imm_16 & 0xFu) < (regs->reg_sp & 0xFu))
 		regs->reg_f |= FLAG_H;
-	else if ((imm_8 >= 0x80u) && (imm_16 & 0xFFFu) > (regs->reg_sp & 0xFFFu))
+	else if ((imm_8 >= 0x80u) && (imm_16 & 0xFu) > (regs->reg_sp & 0xFu))
 		regs->reg_f |= FLAG_H;
 	regs->reg_hl = imm_16;
 	return (12);
