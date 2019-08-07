@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/29 17:38:18 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/27 14:42:21 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/07 12:52:24 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -24,7 +24,7 @@
 
 /* en cours... */	
 
-#define NITENDO_LOGO		"\xCE\xED\x66\x66\xCC\x0D\x00\x0B\x03\x73\x00\x83"\
+#define NINTENDO_LOGO		"\xCE\xED\x66\x66\xCC\x0D\x00\x0B\x03\x73\x00\x83"\
 							"\x00\x0C\x00\x0D\x00\x08\x11\x1F\x88\x89\x00\x0E"\
 							"\xDC\xCC\x6E\xE6\xDD\xDD\xD9\x99\xBB\xBB\x67\x63"\
 							"\x6E\x0E\xEC\xCC\xDD\xDC\x99\x9F\xBB\xB9\x33\x3E"
@@ -104,7 +104,10 @@ static int		set_cartridge_info(uint8_t *mem, cartridge_t *cart)
 	
 	mem += 0x100;
 	if (*mem != 0x00 || mem[1] != 0xc3)
+	{
+		puts("ERROR #1");
 		return (-1);
+	}
 	mem += 2;
 
 #if __BYTE_ORDER == __ORDER_LITTLE_ENDIAN
@@ -114,14 +117,20 @@ static int		set_cartridge_info(uint8_t *mem, cartridge_t *cart)
 #endif
 	mem += 2;
 
-	if (memcmp(mem, NITENDO_LOGO, 48))
+	if (memcmp(mem, NINTENDO_LOGO, 48))
+	{
+		puts("ERROR #2");
 		return (-1);
+	}
 	mem += 48;
 
 	for (uint32_t i = 0; i < 11; i++)
 	{
 		if (mem[i] && !isalnum(mem[i]) && mem[i] != '_' && mem[i] != ' ')
+		{
+			puts("ERROR #3");
 			return (-1);
+		}
 	}
 	strncpy(cart->game_title, (char*)mem, 11);
 	cart->game_title[11] = '\0';
@@ -130,14 +139,20 @@ static int		set_cartridge_info(uint8_t *mem, cartridge_t *cart)
 	for (unsigned int i = 0; i < 4; i++)
 	{
 		if (mem[i] && (mem[i] < 'A' || mem[i] > 'Z') && !isdigit(mem[i]))
+		{
+			puts("ERROR #4");
 			return (-1);
+		}
 	}
 	strncpy(cart->game_code, (char*)mem, 4);
 	cart->game_code[4] = 0;
 	mem += 4;
 
 	if (*mem != 0x00 && *mem != 0x80 && *mem != 0xc0)
+	{
+		puts("ERROR #5");
 		return (-1);
+	}
 	cart->cgb_support_code = *(mem++);
 
 	cart->maker_code[0] = *(mem++);
@@ -145,21 +160,33 @@ static int		set_cartridge_info(uint8_t *mem, cartridge_t *cart)
 	cart->maker_code[2] = 0;
 
 	if (*mem == 0x03 && *(start + 0x14b) != 0x33)
+	{
+		puts("ERROR #6");
 		return (-1);
+	}
 	cart->sgb_support_code = *(mem++);
 
 	cart->type = *(mem++);
 
 	if (*mem > 0x08)
+	{
+		puts("ERROR #7");
 		return (-1);
+	}
 	cart->rom_size = *(mem++);
 
 	if (*mem > 0x04)
+	{
+		puts("ERROR #8");
 		return (-1);
+	}
 	cart->extern_ram_size = *(mem++);
 
 	if (*mem > 0x01)
+	{
+		puts("ERROR #9");
 		return (-1);
+	}
 	cart->destination_code = *mem;
 
 	mem += 2;
@@ -172,7 +199,10 @@ static int		set_cartridge_info(uint8_t *mem, cartridge_t *cart)
 	}
 	sum += 0x19U + *mem;
 	if (sum != 0x0)
+	{
+		puts("ERROR #10");
 		return (-1);
+	}
 	cart->sum_complement = *(mem++);
 
 	return (cart->type);

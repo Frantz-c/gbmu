@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/12 23:05:07 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/20 19:17:51 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/07 16:52:12 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -71,9 +71,8 @@ extern uint8_t		is_numeric(const char *s, uint32_t *len)
 	{
 		type = HEXA_NUM;
 		s += 2;
-		do {
+		while (is_digit(*s) || (to_lower_char[(uint8_t)*s] >= 'a' && to_lower_char[(uint8_t)*s] <= 'f'))
 			s++;
-		} while (is_digit(*s) || (to_lower_char[(uint8_t)s[2]] >= 'a' && to_lower_char[(uint8_t)s[2]] <= 'f'));
 	}
 	else if (*s == '0' && s[1] >= '0' && s[1] <= '7')
 	{

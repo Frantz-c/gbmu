@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/07 11:55:54 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/07 12:58:33 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -648,10 +648,12 @@ uint8_t	get_complement_check(void)
 	uint8_t	*n = cartridge_info.title;
 	uint8_t total = 0;
 
-	for (uint32_t i = 0; i < 24; i++)
+	for (uint32_t i = 0; i < 25; i++)
 	{
 		total += n[i];
 	}
+	total += 0x19u;
+	printf("total = %hhu, cpl = %hhu, result = %hhu\n\n", total, (uint8_t)(0x100u - total), (uint8_t)(total + (uint8_t)(0x100u - total)));
 	return ((uint8_t)(0x100u - total));
 }
 

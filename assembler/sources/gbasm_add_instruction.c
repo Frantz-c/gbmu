@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 22:10:25 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/05 11:28:14 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/07 16:56:45 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -20,35 +20,20 @@
 
 int		set_params(char **param1, char **param2, char **s)
 {
-//	char		*param[2] = {NULL};
-//	value_t		val[2] = {{0}};
 	uint8_t		parent = 0;
 	uint32_t	len, i;
 	char		*tmp;
 	*param1 = NULL;
 	*param2 = NULL;
-//	int			is_ld = 0;
-//	param_t		t1 = NONE, t2 = NONE;
 
-/*
-	inst = s;
-	while (!is_space(*s))
-	{
-		if (is_endl(*s))
-			goto __no_param;
-		s++;
-	}
-	inst = strndup(inst, s - inst);
-
-
-	if (strcmp(inst, "ld") == 0)
-		is_ld = 1;
-*/
 
 	while (is_space(**s)) (*s)++;
 	if (is_endl(**s))
 		return (0);
 
+	/*
+	** isolate parameter 1
+	*/
 	tmp = *s;
 	if (**s == '(')
 		parent = ')';
@@ -72,6 +57,7 @@ int		set_params(char **param1, char **param2, char **s)
 		(*s)++;
 		while (is_space(**s)) (*s)++;
 	}
+	printf("ISOLATE PARAM1 = \"%s\"\n", (*param1));
 
 	if (is_endl(**s))
 		return (0);
@@ -80,6 +66,10 @@ int		set_params(char **param1, char **param2, char **s)
 	(*s)++;
 	parent = 0;
 
+
+	/*
+	** isolate parameter 2
+	*/
 	while (is_space(**s)) (*s)++;
 	tmp = *s;
 	if (**s == '(')
@@ -103,31 +93,36 @@ int		set_params(char **param1, char **param2, char **s)
 		(*param2)[0] = '(';
 		(*s)++;
 	}
-	printf("**s = %d\n", **s);
+	printf("ISOLATE PARAM2 = \"%s\"\n", (*param2));
+
 	if (**s == ',') goto __too_many_arguments;
 	if (!is_endl(**s)) goto __unexpected_char;
 	return (0);
 
 
 __too_many_arguments:
+	g_error++;
 	puts("TOO MANY ARGUMENTS\n");
 	return (-1);
 
 __parent_error:
+	g_error++;
 	puts("parent error\n");
 	return (-1);
 
 __unexpected_char:
+	g_error++;
 	puts("unexpected character\n");
 	return (-1);
 }
 
-int		replace_macro(char **param, vector_t *macro)
+int		replace_macro(char **param, vector_t *macro)	// and delete spaces
 {
 	char		*s = *param;
 	char		*start, *end;
-	char		*new = NULL;
-	uint32_t	newl = 0;
+	char		*new_content[5] = {NULL};
+	uint32_t	total_length = 0;
+	char		new_operator[5][2] = {{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}};
 	char		*macro_name;
 	int32_t		index;
 	uint8_t		parent = 0;
@@ -140,89 +135,144 @@ int		replace_macro(char **param, vector_t *macro)
 	}
 
 	// maybe a macro
-	while (!is_endl(*s) && count != 4)
+	while (!is_endl(*s) && *s != ']' && *s != ')' && count != 4)
 	{
 		if (is_alpha(*s) || *s == '_')
 		{
 			start = s;
 			s++;
-			while (is_alnum(*s) || *s == '_') s++;
+			while (is_alnum(*s) || *s == '_') s++; // s = identifier's end
+			end = s;
+
+			printf("*s = '%c'\n", *s);
+			/*
+			**	check if next character is valid (a +/- b * c + d)
+			*/
 			if (!is_space(*s) && !is_endl(*s) && !is_operator(*s) && *s != ']' && *s != ')')
-			{
 				goto __unexpected_char;
-			}
 			if (is_operator(*s))
 			{
 				if ((count == 0 && *s == '*') || (count == 1 && *s != '*') || (count == 2 && *s != '+') || count == 3)
 					goto __unexpected_operator;
 			}
-			macro_name = strndup(start, s - start);
-			printf("macro_name = \"%s\"\n", macro_name);
+			new_operator[count][0] = *s;
+
+			/*
+			**	copy identifier's name in macro_name
+			*/
+			macro_name = strndup(start, end - start);
+
+			/*
+			**	search identifier into macro list
+			*/
 			index = vector_search(macro, (void*)&macro_name);
-			puts("search segv ?");
-			if (index > -1)
+			if (index > -1)		// identifier founded
 			{
 				char		*macro_content = VEC_ELEM(macro_t, macro, index)->content;
 				uint32_t	macro_argc = VEC_ELEM(macro_t, macro, index)->argc;
 				uint32_t	len;
 
+				// macro with param forbidden into operands
 				if (macro_argc != 0)
 					goto __macro_with_param;
 
 				if (is_numeric(macro_content, &len))
 				{
 					char	*value = macro_content;
-					macro_content += len;
+
+					// check if no characters after number
 					while (is_space(macro_content[len])) len++;
 					if (macro_content[len] != '\0')
 						goto __invalid_macro;
-					if (new == NULL)
-					{
-						newl = (start - *param) + (strlen(value));
-						new = malloc(newl + 1);
-						strncpy(new, *param, start - *param);
-						strcpy(new + (start - *param), value);
-					}
-					else
-					{
-						newl += (start - end) + (strlen(value));
-						new = realloc(new, newl + 1);
-						strncat(new, end, start - end);
-						strcat(new, value);
-					}
+
+					new_content[count] = strndup(value, len);
+					total_length += len;
 				}
-				end = s;
+				else
+				{
+					char	*value = macro_content;
+					char	*end = value + strlen(value + 1);
+
+					// check if no characters after number
+					while (is_space(*value)) value++;
+					while (is_space(end[-1])) end--;
+
+					new_content[count] = strndup(value, end - value);
+					total_length += end - value;
+				}
+				free(macro_name);
 			}
+			else
+			{
+				new_content[count] = macro_name;
+				total_length += end - start;
+			}
+
+			if (is_endl(*s))
+				break;
+			s++;
 			while (is_space(*s)) s++;
+		}
+		else
+		{
+			start = s;
+			while (is_alnum(*s)) s++;
+			end = s;
+			if (!is_space(*s) && !is_endl(*s) && !is_operator(*s) && *s != ']' && *s != ')')
+				goto __unexpected_char;
 			if (is_operator(*s))
 			{
 				if ((count == 0 && *s == '*') || (count == 1 && *s != '*') || (count == 2 && *s != '+') || count == 3)
 					goto __unexpected_operator;
-				while (is_space(*s)) s++;
 			}
-			if (*s == ']' || *s == ')') {
-				if (parent == 0)
-					goto __unexpected_char;
-				parent--;
-				s++;
-			}
+			new_operator[count][0] = *s;
+			new_content[count] = strndup(start, end - start);
+			total_length += end - start;
+
+
+			if (is_endl(*s))
+				break;
+			while (is_space(*s)) s++;
+			s++;
 		}
 		count++;
 	}
 
-	if (new)
+	char	*new_operand = malloc(total_length + 1 + count + parent);
+	if (parent)
 	{
-		strcat(new, end);
-		free(*param);
-		*param = new;
+		new_operand[0] = '(';
+		new_operand[1] = '\0';
 	}
+	else
+		new_operand[0] = 0;
+	new_operator[4][0] = '\0';
+
+	for (uint32_t i = 0; new_content[i]; i++)
+	{
+		strcat(new_operand, new_content[i]);
+		strcat(new_operand, new_operator[i]);
+	}
+	free(*param);
+	printf("new_operand = \e[0;33m\"%s\"\e[0m\n", new_operand);
+	*param = new_operand;
+
 	return (0);
 
 __unexpected_operator:
+	g_error++;
+	fprintf(stderr, "unexpected operator %c\n", *s);
+	return (-1);
 __macro_with_param:
+	g_error++;
+	fprintf(stderr, "ERROR: macro with_param...\n");
+	return (-1);
 __unexpected_char:
+	g_error++;
+	fprintf(stderr, "unexpected char %c\n", *s);
 	return (-1);
 __invalid_macro:
+	fprintf(stderr, "invalid macro\n");
 	free(macro_name);
 	return (-1);
 }
@@ -512,6 +562,47 @@ __signed_error:
 	return (-1);
 }
 
+STATIC_DEBUG const char		*get_param_type(enum param_e p)
+{
+	switch (p)
+	{
+		case UNKNOWN: return ("UNKNOWN");
+		case NONE: return ("NONE");
+		case A: return ("A");
+		case B: return ("B");
+		case C: return ("C");
+		case D: return ("D");
+		case E: return ("E");
+		case F: return ("F");
+		case H: return ("H");
+		case L: return ("L");
+		case AF: return ("AF");
+		case BC: return ("BC");
+		case DE: return ("DE");
+		case HL: return ("HL");
+		case SP: return ("SP");
+		case _NZ_: return ("_NZ_");
+		case _Z_: return ("_Z_");
+		case _NC_: return ("_NC_");
+		case _C_: return ("_C_");
+		case HLI: return ("HLI");
+		case HLD: return ("HLD");
+		case SP_ADDR: return ("SP_ADDR");
+		case HL_ADDR: return ("HL_ADDR");
+		case BC_ADDR: return ("BC_ADDR");
+		case DE_ADDR: return ("DE_ADDR");
+		case AF_ADDR: return ("AF_ADDR");
+		case FF00_C: return ("FF00_C");
+		case FF00_IMM8: return ("FF00_IMM8");
+		case SP_IMM8: return ("SP_IMM8");
+		case IMM8: return ("IMM8");
+		case ADDR8: return ("ADDR8");
+		case IMM16: return ("IMM16");
+		case ADDR16: return ("ADDR16");
+		case SYMBOL: return ("SYMBOL");
+	}
+	return ("PARAM TYPE ERROR");
+}
 
 char	*add_instruction(char *inst, vector_t *area, vector_t *ext_symbol, loc_sym_t *loc_symbol, vector_t *macro, char *s, data_t *data)
 {
@@ -521,15 +612,16 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *ext_symbol, loc_sym_
 	int			is_ld = 0;
 
 	str_to_lower(inst);
+	printf("MNEMONIC = \"%s\"\n", inst);
 	if (*inst == 'l' && inst[1] == 'd' && inst[2] == '\0')
 		is_ld = 1;
 	if (set_params(&param1, &param2, &s) == -1)
 	{
+		// error checked in set_params()
 		if (*s == ',')
 			goto __too_many_param;
 		goto __unexpected_char;
 	}
-	//printf("inst = \"%s\", param1 = \"%s\", param2 = \"%s\"\n", inst, param1, param2);
 
 	if (param1)
 	{
@@ -537,8 +629,8 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *ext_symbol, loc_sym_
 			goto __error;
 		if (calcul_param(param1, &val, is_ld) == -1)
 			goto __error;
-		printf("replace_param1 = \"%s\"\n", param1);
 		param[0] = get_type(param1, &val); //default SYMBOL
+		printf("\e[0;33mPARAM1 after replace\e[0m = \"%s\" (%s)\n", param1, get_param_type(param[0]));
 
 		if (param2)
 		{
@@ -548,8 +640,8 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *ext_symbol, loc_sym_
 				goto __error;
 			if (calcul_param(param2, &tmp_val, is_ld) == -1)
 				goto __error;
-			printf("replace_param2 = \"%s\"\n", param2);
 			param[1] = get_type(param2, &tmp_val); //default SYMBOL
+			printf("\e[0;33mPARAM2 after replace\e[0m = \"%s\" (%s)\n", param2, get_param_type(param[1]));
 			if (param[0] < FF00_IMM8 && param[1] >= FF00_IMM8)
 				val = tmp_val;
 		}
@@ -582,6 +674,7 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *ext_symbol, loc_sym_
 __unexpected_char:
 __too_many_param:
 __error:
+	g_error++;
 	while (!is_endl(*s))
 	s++;
 	return (s);

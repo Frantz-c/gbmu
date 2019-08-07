@@ -1,4 +1,16 @@
-.bank	1,	0x500
+%define	ELEMSIZ		4
 
-_start:
-	callz	_start
+.memlock	block, 0xc000, end=0xc020
+.var1		var, block
+.var12		tab, block
+
+.bank	0,	0x150
+
+
+ld		A, 0xf0
+jrz		__loop
+ld		(ff00h+STAT), A
+ld		(var), A
+__loop:
+	xor		A
+	jr		__loop
