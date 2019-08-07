@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 22:10:25 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/07 16:56:45 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/07 17:21:44 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -282,9 +282,7 @@ param_t	get_type(char *param, value_t *n)
 	char		*s = param;
 	int			parent = 0;
 	int			num = 0;
-//	int			error;
 	uint32_t	len;
-//	uint32_t	tmp;
 
 
 	// addr param
@@ -348,6 +346,7 @@ param_t	get_type(char *param, value_t *n)
 			if (LOWER(s[2]) == 'd' && s[3] == '\0')
 				return (HLD);
 		}
+		return (SYMBOL);
 	}
 	else
 	{
@@ -379,6 +378,7 @@ param_t	get_type(char *param, value_t *n)
 				return (IMM16);
 			return (IMM8);
 		}
+		return (SYMBOL);
 	}
 	if (is_alpha(*param) || *param == '_')
 	{
