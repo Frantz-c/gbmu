@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 22:10:25 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/07 16:56:45 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/07 17:21:16 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -665,7 +665,17 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *ext_symbol, loc_sym_
 	if (error.p1 || error.p2)
 	{
 		g_error++;
-		fprintf(stderr, "Error instruction\n");
+		const char *errtable[OVERFLOW + 1] = {
+			"Missing parameter for instruction\n",
+			"Too many parameters for instruction\n",
+			"Invalid destination for instruction\n",
+			"Invalid source for instruction\n",
+			"Address overflow\n"
+		};
+		if (error.p1)
+			fprintf(stderr, errtable[error.p1]);
+		else
+			fprintf(stderr, errtable[error.p2]);
 	}
 	else
 		push_instruction(VEC_ELEM(code_area_t, area, data->cur_area), bin, param, symbol, ext_symbol, loc_symbol, data);
