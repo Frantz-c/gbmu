@@ -4,5 +4,7 @@ ressources
 log_gbmul
 *.sav
 *.d
-.*.d
 project/gbmu_project
+Gbmu.app
+roms
+unit-test
