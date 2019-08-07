@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/06 11:38:18 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/06 18:44:29 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/07 11:10:10 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -30,6 +30,12 @@ typedef enum	insn_err_e
 	ENONE, MISSING_PARAM, TOO_MANY_PARAMS, INVAL_DST, INVAL_SRC, OVERFLOW
 }
 insn_err_t;
+
+#define NINTENDO_LOGO		"\xCE\xED\x66\x66\xCC\x0D\x00\x0B\x03\x73\x00\x83"\
+							"\x00\x0C\x00\x0D\x00\x08\x11\x1F\x88\x89\x00\x0E"\
+							"\xDC\xCC\x6E\xE6\xDD\xDD\xD9\x99\xBB\xBB\x67\x63"\
+							"\x6E\x0E\xEC\xCC\xDD\xDC\x99\x9F\xBB\xB9\x33\x3E"
+
 
 // symbol types
 #define UNUSED			0x0
@@ -70,7 +76,7 @@ typedef struct	tmp_variable_s
 }
 tmp_variable_t;
 
-struct	memblock2_s
+typedef struct	memblock2_s
 {
 	uint32_t	start;
 	uint32_t	end;
@@ -86,7 +92,7 @@ typedef struct	var_data_s
 	uint32_t	file_number;
 	char		*block;		
 	char		*pos;		
-	struct var_data_t	*next;
+	struct var_data_s	*next;
 }
 var_data_t;
 
@@ -157,7 +163,8 @@ extern_symbols_t;
 typedef struct	cart_info_s
 {
 	uint8_t		_0x00c3[2];
-	uint8_t		start_addr[4];
+	uint8_t		start_addr[2];
+	// logo position
 	uint8_t		title[11];
 	uint8_t		game_code[4];
 	uint8_t		cgb_support;

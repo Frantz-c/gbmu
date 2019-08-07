@@ -1,4 +1,4 @@
-.bank	31,	0x500
+.bank	1,	0x500
 
 _start:
 	callz	_start

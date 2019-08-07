@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/06 19:59:46 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/07 11:55:54 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -48,6 +48,18 @@ uint32_t		g_error;
 uint32_t		g_warning;
 cart_info_t		cartridge_info;
 
+void	*get_cartridge_header_code(void)
+{
+	void	*buf;
+
+	buf = malloc(0x50);
+	
+	memcpy(buf, &cartridge_info, 4);
+	memcpy(buf + 4, NINTENDO_LOGO, 48);
+	memcpy(buf + 52, &cartridge_info.title, 28);
+
+	return (buf);
+}
 
 void	check_code_area_overflow(vector_t *area)
 {
@@ -658,12 +670,12 @@ int			all_code_cmp(const void *a, const void *b)
 
 int			all_code_search(const void *b, const void *a)
 {
-	register all_code_t	*aa; = (all_code_t *)a;
+	register all_code_t	*aa = (all_code_t *)a;
 	register uint32_t	bb = *(uint32_t *)b;
 
-	if (aa->name > bb)
+	if (aa->start > bb)
 		return (1);
-	if (aa->name < bb)
+	if (aa->start < bb)
 		return (-1);
 	else
 		return (0);
@@ -689,7 +701,7 @@ int			all_ext_sym_search(const void *b, const void *a)
 	register all_ext_sym_t	*aa = (all_ext_sym_t *)a;
 	register char			*bb = *(char **)b;
 
-	return (strcmp(aa->name, bb);
+	return (strcmp(aa->name, bb));
 }
 
 void		all_ext_sym_destroy(void *a)
@@ -713,7 +725,7 @@ int			all_sym_search(const void *b, const void *a)
 	register all_sym_t	*aa = (all_sym_t *)a;
 	register char		*bb = *(char **)b;
 
-	return (strcmp(aa->name, bb);
+	return (strcmp(aa->name, bb));
 }
 
 void		all_sym_destroy(void *a)
@@ -726,7 +738,7 @@ void		all_sym_destroy(void *a)
 		register var_data_t	*p = aa->var_data;
 		while (p)
 		{
-			register var_data	*tmp = p;
+			register var_data_t	*tmp = p;
 			free(p->block);
 			free(p->pos);
 			p = p->next;
@@ -819,7 +831,7 @@ int		add_intern_symbols_bin(vector_t *sym, char *buf, uint32_t len, uint32_t fil
 					
 					//push var_data
 					
-					register var_data_t *v = p->var_data
+					register var_data_t *v = p->var_data;
 					for (; v->next; v = v->next);
 					v->next = var_data;
 
@@ -838,7 +850,7 @@ int		add_intern_symbols_bin(vector_t *sym, char *buf, uint32_t len, uint32_t fil
 				tmp.var_data = NULL;
 
 				ssize_t	index;
-				if (vector_search(sym, (void*)&tmp.name) != -1)
+				if ((index = vector_search(sym, (void*)&tmp.name)) != -1)
 				{
 					register all_sym_t	*p = VEC_ELEM(all_sym_t, sym, index);
 
@@ -866,6 +878,7 @@ int		add_intern_symbols_bin(vector_t *sym, char *buf, uint32_t len, uint32_t fil
 		else
 			VEC_SORTED_INSERT(sym, tmp.name, tmp);
 __loop_end:
+		continue;
 	}
 	return (0);
 }
@@ -976,13 +989,14 @@ __file_error:
 
 void		all_extern_symbols_exist(vector_t *sym, vector_t *ext_sym, char *file[])
 {
-	for (uint32_t i = 0; i < ext_sym->nitems; i++)
+	register all_ext_sym_t	*elem = VEC_ELEM_FIRST(all_ext_sym_t, ext_sym);
+
+	for (uint32_t i = 0; i < ext_sym->nitems; i++, elem++)
 	{
-		register all_ext_sym_t	*elem;
 		if (vector_search(sym, (void*)&elem->name) == -1)
 		{
 			g_error++;
-			fprintf(stderr, "undefined symbol %s (%s)\n", file[elem->file_number]);
+			fprintf(stderr, "undefined symbol %s\n", file[elem->file_number]);
 		}
 	}
 }
@@ -1022,15 +1036,15 @@ void		assign_var_addr(vector_t *sym)
 			{
 				register memblock2_t	*block = VEC_ELEM(memblock2_t, memblock, index);
 
-				if (memblock->space < elem->data2)
+				if (block->space < elem->data2)
 				{
 					fprintf(stderr, "too few space in %s memory block for variable %s\n", block->name, elem->name);
 					g_error++;
 				}
 				else
 				{
-					elem->data1 = memblock->end - memblock->space;
-					memblock->space -= elem->data2;
+					elem->data1 = block->end - block->space;
+					block->space -= elem->data2;
 				}
 			}
 		}
@@ -1060,7 +1074,7 @@ uint8_t	inst_length[256] =
 	0,1,2,1,2,1,3,0,0,0,2,1,2,1,1,1,0,1,2,1,2,1,3,1,0,0,2,1
 };
 
-void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code, char *file[])
+void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code, char *files[])
 {
 	uint8_t			*buf;
 	FILE			*file;
@@ -1068,27 +1082,35 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 	uint32_t		length = 0;
 	uint32_t		k;
 	uint32_t		code_start, code_length;
+	uint32_t		ret = 0;
 
-	for (uint32_t i = 0; file[i]; i++)
+	for (uint32_t i = 0; files[i]; i++)
 	{
-		file = fopen(file[i], "r");
+		file = fopen(files[i], "r");
 		fread(&header, sizeof(tmp_header_t), 1, file);
-		fseek(file, header.header_length, SEEK_SET);
+		fseek(file, header.header_length + 12, SEEK_SET);
 
 		if (fread(&code_start, sizeof(uint32_t), 1, file) != 1)
+		{
+			printf("error code_start\n");
 			goto __error;
+		}
 		if (fread(&code_length, sizeof(uint32_t), 1, file) != 1)
+		{
+			printf("error code_length\n");
 			goto __error;
+		}
+		printf("code_start = 0x%x, code_length = %u\n", code_start, code_length);
 
 		if (length == 0)
 			buf = malloc(code_length);
 		else if (length < code_length)
 			buf = realloc(buf, code_length);
 
-		if (fread(buf, 1, code_length, file) != header.code_length)
+		if ((ret = fread(buf, 1, code_length, file)) != code_length)
 		{
 		__error:
-			fprintf(stderr, "erreur chargement du code fichier %s\n", file[i]);
+			fprintf(stderr, "erreur chargement du code fichier %s (%u/%u)\n", files[i], ret, code_length);
 			exit(1);
 		}
 		fclose(file);
@@ -1119,7 +1141,7 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 						value += p->data1;
 					if (symbol_size == 3)
 					{
-						if (value > 0xffff || value < 0x0)
+						if (value > 0xffff)
 							fprintf(stderr, "OVERFLOW inst ????? file ?????\n");
 
 						inst[0] = (uint8_t)value;
@@ -1128,7 +1150,7 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 					}
 					else if (symbol_size == 2)
 					{
-						if (value > 0xff || value < 0x0)
+						if (value > 0xff)
 							fprintf(stderr, "OVERFLOW inst ????? file ?????\n");
 
 						inst[0] = (uint8_t)value;
@@ -1146,7 +1168,7 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 		{
 			register uint8_t	len;
 
-			if ((len = inst[buf[j]]) != 0)
+			if ((len = inst_length[buf[j]]) != 0)
 			{
 				while (len)
 				{
@@ -1193,11 +1215,42 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 	}
 }
 
+/*
+00h -  32KBytes (no ROM banking)
+01h -  64KBytes (4 banks)
+02h - 128KBytes (8 banks)
+03h - 256KBytes (16 banks)
+04h - 512KBytes (32 banks)
+05h -   1MByte (64 banks)  - only 63 banks used by MBC1
+06h -   2MBytes (128 banks) - only 125 banks used by MBC1
+07h -   4MBytes (256 banks)
+08h -   8MBytes (512 banks)
+52h - 1.1MBytes (72 banks)
+53h - 1.2MBytes (80 banks)
+54h - 1.5MBytes (96 banks)
+*/
+uint32_t	get_rom_end(void)
+{
+	switch (cartridge_info.rom_size)
+	{
+		case 0x00: return (0x8000u);
+		case 0x01: return (0x10000u);
+		case 0x02: return (0x20000u);
+		case 0x03: return (0x40000u);
+		case 0x04: return (0x80000u);
+		case 0x05: return (0x100000u); //if mc1 -1 bank
+		case 0x06: return (0x200000u); //if mbc1 -1 bank
+		case 0x07: return (0x400000u);
+		case 0x08: return (0x800000u);
+	}
+	return (0);
+}
+
 void		write_binary(vector_t *code, const char *filename)
 {
 	register all_code_t		*elem = VEC_ELEM_FIRST(all_code_t, code);
 	FILE					*file;
-	uint8_t					fill[128] = 0;
+	uint8_t					fill[128] = {0};
 
 	if ((file = fopen(filename, "w+")) == NULL)
 	{
@@ -1219,9 +1272,9 @@ void		write_binary(vector_t *code, const char *filename)
 
 	for (uint32_t i = 1; i < code->nitems; i++, elem++)
 	{
-		if (end > elem->start)
+		if (end < elem->start)
 		{
-			tmp = elem->start;
+			tmp = elem->start - end;
 			
 			while (tmp > 128)
 			{
@@ -1234,6 +1287,23 @@ void		write_binary(vector_t *code, const char *filename)
 		end = elem->end;
 	}
 
+	if (end > get_rom_end())
+	{
+		fprintf(stderr, "ERROR: code too long\n");
+		exit(1);
+	}
+
+	if (end < get_rom_end())
+	{
+		tmp = get_rom_end() - end;
+		
+		while (tmp > 128)
+		{
+			fwrite(fill, 1, 128, file);
+			tmp -= 128;
+		}
+		fwrite(fill, 1, tmp, file);
+	}
 	fclose(file);
 }
 
@@ -1336,7 +1406,7 @@ int		main(int argc, char *argv[])
 	sym->compar = &all_sym_cmp;
 	sym->search = &all_sym_search;
 	code->destroy = &all_code_destroy;
-	code->compar = &all_code_compar;
+	code->compar = &all_code_cmp;
 	code->search = &all_code_search;
 
 	if (g_error == 0)
@@ -1377,11 +1447,11 @@ int		main(int argc, char *argv[])
 
 		//free tout le bordel
 
-	_end_compilation:
+	__end_compilation:
 		if (g_error)
 		{
 			fprintf(stderr, "\e[1;31m%u errors\e[0m\n", g_error);
-			break;
+			return (1);
 		}
 		for (uint32_t i = 0; file[i]; i++)
 			free(file[i]);
