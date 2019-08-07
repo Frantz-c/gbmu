@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/25 10:03:09 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/06 11:23:50 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/07 17:03:10 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -1528,6 +1528,19 @@ __mov:
 					break ;
 			}
 
+		case FF00_IMM8:
+			switch (param[1])
+			{
+				case A:
+					bin[0] = 0xE0u;
+					bin[1] = (uint8_t)val->value;
+					break ;
+
+				default:
+					error.p2 = INVAL_SRC;
+					break ;
+			}
+
 		case A:
 			switch (param[1])
 			{
@@ -1603,6 +1616,11 @@ __mov:
 
 				case FF00_C:
 					bin[0] = 0xF2u;
+					break ;
+
+				case FF00_IMM8:
+					bin[0] = 0xF0u;
+					bin[1] = (uint8_t)val->value;
 					break ;
 
 				case SYMBOL:
