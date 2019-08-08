@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/27 19:25:27 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/06 10:32:04 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/08 11:38:12 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -116,11 +116,13 @@ void __attribute__((always_inline))
 //	(*code)[(*i)++] = (uint8_t)inst->size;
 	if (inst->size == 3)
 	{
+		printf("\e[1;46m   >   \e[0minstruction \"0x%hhx\" => %u\n", inst->opcode[0], inst->size);
 		memcpy(*code + *i, inst->opcode, 4);
 		*i += 4;
 	}
 	else if (inst->size == 2)
 	{
+		printf("\e[1;46m   >   \e[0minstruction \"0x%hhx\" => %u\n", inst->opcode[0], inst->size);
 		memcpy(*code + *i, inst->opcode, 2);
 		*i += 2;
 		if (*inst->opcode != 0xcb)
@@ -164,11 +166,13 @@ void __attribute__((always_inline))
 //	(*code)[(*i)++] = (uint8_t)inst->size;
 	if (inst->size == 3)
 	{
+		printf("\e[1;46m   >   \e[0minstruction \"0x%hhx\" => %u\n", inst->opcode[0], inst->size);
 		memcpy(*code + *i, inst->opcode, 4);
 		*i += 4;
 	}
 	else if (inst->size == 2)
 	{
+		printf("\e[1;46m   >   \e[0minstruction \"0x%hhx\" => %u\n", inst->opcode[0], inst->size);
 		memcpy(*code + *i, inst->opcode, 2);
 		*i += 2;
 		if (*inst->opcode != 0xcb)
@@ -355,6 +359,7 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 		fwrite(&in->type, sizeof(uint32_t), 1, file);
 		header_size += len + sizeof(uint32_t);
 
+			printf("write: intern symbol \"%s\" (%u) : ", in->name, in->type);
 		if (in->type == VAR)
 		{
 			fwrite(&in->data1, sizeof(uint32_t), 1, file);
@@ -363,17 +368,20 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 			fwrite(in->blockname, 1, len, file);
 			fwrite(&in->data2, sizeof(uint32_t), 1, file);
 			header_size += (sizeof(uint32_t) * (2 + in->data1)) + len;
+				printf("quantity = %u, ..., block = \"%s\", size = %u\n", in->data1, in->blockname, in->data2);
 		}
 		else if (in->type == LABEL)
 		{
 			fwrite(&in->data1, sizeof(uint32_t), 1, file);
 			header_size += sizeof(uint32_t);
+				printf("addr = 0x%x\n", in->data1);
 		}
 		else //memblock
 		{
 			fwrite(&in->data1, sizeof(uint32_t), 1, file);
 			fwrite(&in->data2, sizeof(uint32_t), 1, file);
 			header_size += (sizeof(uint32_t) * 2);
+				printf("start = 0x%x, end = 0x%x\n", in->data1, in->data2);
 		}
 	}
 	intern_size = header_size;

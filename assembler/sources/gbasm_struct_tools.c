@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 13:17:53 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/05 10:17:14 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/08 10:25:30 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -119,6 +119,7 @@ extern void			push_instruction(code_area_t *area, uint8_t bin[4], param_t p[2], 
 					label_t	sym = {symbol, 0, NOT_DECLARED, data->lineno, data->filename};
 					size_t	index = vector_index(loc_symbol->label, (void*)&symbol);
 					vector_insert(loc_symbol->label, (void*)&sym, index);
+					printf("\e[1;33minsert label undeclared %s\n", sym.name);
 				}
 				else if (index > -1)
 				{
@@ -141,6 +142,8 @@ extern void			push_instruction(code_area_t *area, uint8_t bin[4], param_t p[2], 
 			}
 		}
 	}
+	printf("\e[1;42m   \e[0maddr = 0x%x, size = %u\n", area->addr, area->size);
+	area->cur->addr = area->size + area->addr;
 	area->cur->size = size;
 	area->size += size;
 }

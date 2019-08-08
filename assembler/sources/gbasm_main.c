@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/07 12:58:33 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/08 11:15:11 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -103,29 +103,42 @@ void		replace_internal_symbols(vector_t *area, loc_sym_t *local_symbol)
 				if ((index = vector_search(local_symbol->label, (void*)&c->symbol)) != -1)
 				{
 					register label_t	*lab = VEC_ELEM(label_t, local_symbol->label, index);
-					register uint32_t	val;
-					register uint32_t	lab_addr = lab->base_or_status;
-					
-					if (lab_addr >= 0x8000)
-						lab_addr = (lab_addr % 0x4000) + 0x4000;
-					val = c->opcode[1] | (c->opcode[2] << 8);
-					printf("(1)val = 0x%x, lab->base = 0x%x\n", val, lab->base_or_status);
-					val = (c->opcode[3] == '-') ? lab_addr - val: lab_addr + val;
-					printf("(2)val = 0x%x, lab->base = 0x%x\n", val, lab->base_or_status);
-					c->opcode[1] = (uint8_t)val;
-					c->opcode[2] = (val >> 8);
-					if (val > 0xffffu)
-					{
-						g_error++;
-						fprintf(stderr, "overflow label\n");
-					}
+
+
 					if (*c->opcode == JR || *c->opcode == JRZ || *c->opcode == JRNZ
 						|| *c->opcode == JRC || *c->opcode == JRNC)
 					{
-						if (val & 0xff00u)
+						register int32_t	val = c->opcode[1] | (c->opcode[2] << 8);
+						register uint32_t	lab_addr = (int32_t)lab->base_or_status;
+
+						printf("val = %i, lab_addr = 0x%x, c->addr = 0x%x\n", val, lab_addr, c->addr);
+						lab_addr -= c->addr;
+						val = (c->opcode[3] == '-') ? lab_addr - val : lab_addr + val;
+						printf("jr val = %i\n", val);
+						if ((uint32_t)val & 0xffffff00u)
 						{
 							g_error++;
 							fprintf(stderr, "too big jump\n");
+						}
+						c->opcode[1] = (uint8_t)val;
+						c->opcode[2] = 0;
+					}
+					else
+					{
+						register uint32_t	lab_addr = lab->base_or_status;
+						register uint32_t	val = c->opcode[1] | (c->opcode[2] << 8);
+
+						if (lab_addr >= 0x8000)
+							lab_addr = (lab_addr % 0x4000) + 0x4000;
+						printf("(1)val = 0x%x, lab->base = 0x%x\n", val, lab_addr);
+						val = (c->opcode[3] == '-') ? lab_addr - val: lab_addr + val;
+						printf("(2)val = 0x%x, lab->base = 0x%x\n", val, lab_addr);
+						c->opcode[1] = (uint8_t)val;
+						c->opcode[2] = (val >> 8);
+						if (val & 0xffff0000u)
+						{
+							g_error++;
+							fprintf(stderr, "overflow label\n");
 						}
 					}
 					free(c->symbol);
@@ -1172,11 +1185,18 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 
 			if ((len = inst_length[buf[j]]) != 0)
 			{
+				printf("\e[0;45m > \e[0mlen = %hhu\n", len);
+				register uint8_t	len2 = len;
+
 				while (len)
 				{
 					new_buf[z++] = buf[j];
 					if (--len == 0)
 						break;
+					j++;
+				}
+				if ((len2 == 2 && new_buf[z - len2] != 0xcbU) || len2 == 3)
+				{
 					j++;
 				}
 			}

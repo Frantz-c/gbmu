@@ -1,10 +1,10 @@
 %define	ELEMSIZ		4
 
-.memlock	block, 0xc000, end=0xc020
-.var1		var, block
-.var12		tab, block
-
-.bank	0,	0x150
-
-
-ld		(ff00h + STAT), A
+.bank	0, 0x150
+xor		A
+ld		A, STAT
+ld		B, 1
+add		A, B
+label:
+	jr		label
+	call	0x3434

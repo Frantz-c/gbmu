@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/06 11:38:18 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/07 13:30:08 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/08 09:57:30 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -248,6 +248,7 @@ struct	code_s
 			// if .byte, length = ((size & 0xffffff00) >> 8)
 	void			*symbol; // symbol   or  .bytes
 	struct code_s	*next;
+	uint32_t		addr;
 };
 
 struct	code_area_s

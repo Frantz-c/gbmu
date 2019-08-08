@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 22:10:25 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/08 08:18:14 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/08 08:45:04 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -149,25 +149,29 @@ int		replace_macro(char **param, vector_t *macro, int exception, char **mne)	// 
 			uint32_t	len;
 
 			puts("EXCEPTION");
-			if ((type = is_numeric(*param, &len)) != 0)
+			if ((type = is_numeric(s, &len)) != 0)
 			{
-				if (atou_type(*param, NULL, type) == 0xff00u)
+				if (atou_type(s, NULL, type) == 0xff00u)
 				{
-					printf("PARAM[%u] = '%c'\n", len, (*param)[len]);
-					if ((*param)[len] == '+')
+					printf("PARAM[%u] = '%c'\n", len, (*param)[len + 1]);
+					if (s[len] == '+')
 					{
 						/* suppression de la partie 0xff00+ */
-						char	*tmp = *param + len + 1;
+						char	*tmp = *param + len + 2;
+						printf("tmp = \"%s\"\n", tmp);
 						tmp = strdup(tmp);
 						free(*param);
 						*param = tmp;
+						s = *param;
+						parent = 0;
 						printf("\e[1;32mNEWPARAM = \e[0m\"%s\"\n", tmp);
 					}
-					else if ((*param)[len] == '\0')
+					else if (s[len] == '\0')
 					{
 						/* ld (ff00h)  -> ld (ff00h + 0) */
 						free(*param);
 						*param = strdup("0");
+						s = *param;
 					}
 					else
 						goto __no_exception;
@@ -346,6 +350,7 @@ param_t	get_type(char *param, value_t *n)
 			s += 2;
 		}
 		// (ff00+x)
+		/*
 		if (LOWER(*s) == 'f')
 		{
 			if (LOWER(s[1]) == 'f' && s[2] == '0' && s[3] == '0')
@@ -360,6 +365,14 @@ param_t	get_type(char *param, value_t *n)
 				}
 			}
 		}
+		*/
+		// (n) (nn)
+		if (is_numeric(s, &len))
+		{
+			if (n->value > 0xff)
+				return (ADDR16);
+			return (ADDR8);
+		}
 		if (num)
 			return (UNKNOWN);
 		// (rr)
@@ -373,13 +386,6 @@ param_t	get_type(char *param, value_t *n)
 			return (HL_ADDR);
 		if (LOWER(*s) == 's' && LOWER(s[1]) == 'p' && s[2] == '\0')
 			return (SP_ADDR);
-		// (n) (nn)
-		if (is_numeric(s, &len))
-		{
-			if (n->value > 0xff)
-				return (ADDR16);
-			return (ADDR8);
-		}
 		// (HL++?) (HLI) (HL--?) (HLD)
 		if (LOWER(*s) == 'h' && LOWER(s[1]) == 'l')
 		{
