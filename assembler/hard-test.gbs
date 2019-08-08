@@ -6,7 +6,7 @@
 #    By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+      #
 #                                                  #+#   #+    #+    #+#       #
 #    Created: 2019/08/06 10:48:21 by mhouppin     #+#   ##    ##    #+#        #
-#    Updated: 2019/08/06 14:00:15 by mhouppin    ###    #+. /#+    ###.fr      #
+#    Updated: 2019/08/08 14:50:42 by mhouppin    ###    #+. /#+    ###.fr      #
 #                                                          /                   #
 #                                                         /                    #
 # **************************************************************************** #
@@ -28,7 +28,9 @@ __ascii_load: ; A: char, E: vram offset
 		add		HL,		HL
 		add		HL,		HL
 		add		HL,		HL
-		add		H,		0x90
+		mov		A,		0x90
+		add		A,		H
+		mov		H,		A
 		push	HL
 		pop		BC
 		; BC = VRAM BG pointer
@@ -47,7 +49,7 @@ __ascii_load: ; A: char, E: vram offset
 
 	__ascii_load_loop:
 		mov		A,		[HL++]
-		mov		BC,		A
+		mov		[BC],	A
 		inc		BC
 		dec		E
 		jrnz	__ascii_load_loop
