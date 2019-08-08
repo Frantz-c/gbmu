@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/25 10:03:09 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/08 07:51:36 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/08 08:46:03 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -1317,7 +1317,6 @@ __jrz:
 	}
 	goto __done;
 
-__ldff: // === AU BOULOT ===
 __ld:
 __mov:
 	if (param[0] == NONE)
@@ -1960,6 +1959,37 @@ __mov:
 			error.p1 = INVAL_DST;
 			break ;
 	}
+	goto __done;
+
+__ldff:
+	if (param[0] == A)
+	{
+		if (param[1] == NONE)
+			error.p2 = MISSING_PARAM;
+		else if (param[1] != IMM8)
+			error.p2 = INVAL_SRC;
+		else
+		{
+			bin[0] = 0xF0u;
+			bin[1] = (uint8_t)val->value;
+		}
+	}
+	else if (param[0] == IMM8)
+	{
+		if (param[1] == NONE)
+			error.p2 = MISSING_PARAM;
+		else if (param[1] != A)
+			error.p2 = INVAL_SRC;
+		else
+		{
+			bin[0] = 0xE0u;
+			bin[1] = (uint8_t)val->value;
+		}
+	}
+	else if (param[0] == NONE)
+		error.p1 = MISSING_PARAM;
+	else
+		error.p1 = INVAL_DST;
 	goto __done;
 
 __ldd:
