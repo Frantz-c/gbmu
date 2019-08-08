@@ -1,5 +1,10 @@
 %define	ELEMSIZ		4
 
+.memlock	block, 0xc000, end=0xc020
+.var1		toto, block
+.var1		titi, block
+
+
 .bank	0, 0x150
 xor		A
 ld		A, STAT

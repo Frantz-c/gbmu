@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/25 10:03:09 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/08 08:46:03 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/08 19:13:18 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -793,91 +793,6 @@ __dec:
 		switch (param[0])
 		{
 			case A:
-				bin[0] = 0x3Cu;
-				break ;
-
-			case B:
-				bin[0] = 0x04u;
-				break ;
-
-			case C:
-				bin[0] = 0x0Cu;
-				break ;
-
-			case D:
-				bin[0] = 0x14u;
-				break ;
-
-			case E:
-				bin[0] = 0x1Cu;
-				break ;
-
-			case H:
-				bin[0] = 0x24u;
-				break ;
-
-			case L:
-				bin[0] = 0x2Cu;
-				break ;
-
-			case HL_ADDR:
-				bin[0] = 0x34u;
-				break ;
-
-			case BC:
-				bin[0] = 0x03u;
-				break ;
-
-			case DE:
-				bin[0] = 0x13u;
-				break ;
-
-			case HL:
-				bin[0] = 0x23u;
-				break ;
-
-			case SP:
-				bin[0] = 0x33u;
-				break ;
-
-			default:
-				error.p1 = INVAL_DST;
-				break ;
-		}
-	}
-	goto __done;
-
-__di:
-	if (param[0] != NONE)
-		error.p1 = TOO_MANY_PARAMS;
-	else
-		bin[0] = 0xF3u;
-	goto __done;
-
-__ei:
-	if (param[0] != NONE)
-		error.p1 = TOO_MANY_PARAMS;
-	else
-		bin[0] = 0xFBu;
-	goto __done;
-
-__halt:
-	if (param[0] != NONE)
-		error.p1 = TOO_MANY_PARAMS;
-	else
-		bin[0] = 0x76u;
-	goto __done;
-
-__inc:
-	if (param[0] == NONE)
-		error.p1 = MISSING_PARAM;
-	else if (param[1] != NONE)
-		error.p2 = TOO_MANY_PARAMS;
-	else
-	{
-		switch (param[0])
-		{
-			case A:
 				bin[0] = 0x3Du;
 				break ;
 
@@ -923,6 +838,91 @@ __inc:
 
 			case SP:
 				bin[0] = 0x3Bu;
+				break ;
+
+			default:
+				error.p1 = INVAL_DST;
+				break ;
+		}
+	}
+	goto __done;
+
+__di:
+	if (param[0] != NONE)
+		error.p1 = TOO_MANY_PARAMS;
+	else
+		bin[0] = 0xF3u;
+	goto __done;
+
+__ei:
+	if (param[0] != NONE)
+		error.p1 = TOO_MANY_PARAMS;
+	else
+		bin[0] = 0xFBu;
+	goto __done;
+
+__halt:
+	if (param[0] != NONE)
+		error.p1 = TOO_MANY_PARAMS;
+	else
+		bin[0] = 0x76u;
+	goto __done;
+
+__inc:
+	if (param[0] == NONE)
+		error.p1 = MISSING_PARAM;
+	else if (param[1] != NONE)
+		error.p2 = TOO_MANY_PARAMS;
+	else
+	{
+		switch (param[0])
+		{
+			case A:
+				bin[0] = 0x3Cu;
+				break ;
+
+			case B:
+				bin[0] = 0x04u;
+				break ;
+
+			case C:
+				bin[0] = 0x0Cu;
+				break ;
+
+			case D:
+				bin[0] = 0x14u;
+				break ;
+
+			case E:
+				bin[0] = 0x1Cu;
+				break ;
+
+			case H:
+				bin[0] = 0x24u;
+				break ;
+
+			case L:
+				bin[0] = 0x2Cu;
+				break ;
+
+			case HL_ADDR:
+				bin[0] = 0x34u;
+				break ;
+
+			case BC:
+				bin[0] = 0x03u;
+				break ;
+
+			case DE:
+				bin[0] = 0x13u;
+				break ;
+
+			case HL:
+				bin[0] = 0x23u;
+				break ;
+
+			case SP:
+				bin[0] = 0x33u;
 				break ;
 
 			default:

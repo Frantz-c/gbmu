@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/13 22:59:31 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/27 21:16:04 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/08 18:19:15 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -68,10 +68,11 @@ static int		duplicate_symbol(char *name, loc_sym_t *loc_symbol, vector_t *ext_sy
 static uint32_t	get_block_addr(char *block, vector_t *memblock, uint32_t size, uint32_t *index)
 {
 	uint32_t	var_addr;
+	memblock_t	*b = VEC_ELEM_FIRST(memblock_t, memblock);
 
-	for (uint32_t i = 0; i < memblock->nitems; i++)
+	for (uint32_t i = 0; i < memblock->nitems; i++, b++)
 	{
-		memblock_t	*b = (memblock_t *)(memblock->data + (i * sizeof(memblock_t)));
+		printf("\"%s\" == \"%s\" ?\n", b->name, block);
 		if (strcmp(b->name, block) == 0)
 		{
 			var_addr = b->end - b->space;
@@ -93,6 +94,7 @@ extern char	*assign_var_to_memory(loc_sym_t *loc_symbol, vector_t *ext_symbol, c
 	char		*name;
 	char		*blockname;
 
+	printf("\e[1;44m   >  \e[0m  blockname[0] = %s\n", VEC_ELEM_FIRST(memblock_t, loc_symbol->memblock)->name);
 	size = atou_inc_all(&s, &error);
 	if (error)
 		goto __error;
@@ -138,11 +140,7 @@ extern char	*assign_var_to_memory(loc_sym_t *loc_symbol, vector_t *ext_symbol, c
 	uint32_t	index = 0;
 	addr = get_block_addr(blockname, loc_symbol->memblock, size, &index);
 	if (addr == 0xffffffffu)
-	{
-		// verifier si le symbol est extern.
-		// si oui, conserver la valeur actuelle d'addr
 		goto __unknown_memblock;
-	}
 	if (addr == 0xfffffffeu)
 		goto __no_space;
 
@@ -178,7 +176,7 @@ __free_before_print_error:
 	goto __print_error;
 
 __error:
-	sprintf(data->buf, "unexpected character `%c`", *s);
+	sprintf(data->buf, "(#2) unexpected character `%c`", *s);
 __print_error:
 	print_error(data->filename, data->lineno, data->line, data->buf);
 __skip_line_and_ret:

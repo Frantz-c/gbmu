@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/12 23:05:07 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/07 16:52:12 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/08 16:36:49 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -374,7 +374,7 @@ extern uint32_t		atou_inc_all(char **s, int32_t *err)
 	*s = ft_strtoi(*s, &result, type);
 	return (result);
 }
-
+/*
 extern void		*get_file_contents(const char *path, uint32_t *length)
 {
 	void		*content;
@@ -411,4 +411,57 @@ extern void		*get_file_contents(const char *path, uint32_t *length)
 	fclose(f);
 	return (content);
 }
+*/
+static void		copy_without_comment(uint8_t **dst, uint32_t *len, uint8_t *buf)
+{
+	uint8_t		new[4096];
+	uint32_t	newl = 0;
 
+	while (*buf)
+	{
+		if (is_comment(*buf))
+			while (*buf != '\n') buf++;
+		else
+			new[newl++] = *buf;
+		buf++;
+	}
+	new[newl] = '\0';
+
+	*dst = realloc(*dst, *len + newl + 1);
+	memcpy(*dst + *len, new, newl + 1);
+	*len += newl;
+}
+
+extern void		*get_file_contents(const char *path, uint32_t *length)
+{
+	uint8_t		*content = NULL;
+	uint32_t	readl;
+	FILE		*f;
+	uint8_t		buf[4096];
+
+	f = fopen(path, "r");
+	if (f == NULL)
+		return (NULL);
+	fseek(f, 0, SEEK_END);
+	*length = (uint32_t)ftell(f);
+	rewind(f);
+	if (*length == 0)
+	{
+		fprintf(stderr, "Empty file\n");
+		return (NULL);
+	}
+	if (*length > FILE_MAX_LENGTH)
+	{
+		fprintf(stderr, "Too Heavy file\n");
+		return (NULL);
+	}
+	*length = 0;
+
+	while ((readl = fread(buf, 1, 4095, f)))
+	{
+		buf[readl] = '\0';
+		copy_without_comment(&content, length, buf);
+	}
+	fclose(f);
+	return (content);
+}

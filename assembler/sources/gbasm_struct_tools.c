@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 13:17:53 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/08 10:25:30 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/08 17:19:06 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -103,6 +103,9 @@ extern void			push_instruction(code_area_t *area, uint8_t bin[4], param_t p[2], 
 		//symbol
 		if (param == SYMBOL)
 		{
+			if (symbol[0] == '(')
+				memmove(symbol, symbol + 1, strlen(symbol));
+
 			area->cur->symbol = strdup(symbol);
 			int32_t	index;
 

@@ -58,7 +58,7 @@ extern char	*add_macro_without_param(char *name, vector_t *macro, char *s, data_
 	return (s);
 
 __unexpected_char:
-	sprintf(data->buf, "unexpected character `%c`", *s);
+	sprintf(data->buf, "(#5) unexpected character `%c`", *s);
 	goto __perror;
 __no_param:
 	sprintf(data->buf, "missing value macro `%s`", name);

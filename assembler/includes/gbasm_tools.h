@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 22:10:32 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/27 21:30:46 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/08 13:38:58 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -50,6 +50,7 @@ extern const uint8_t	to_lower_char[128];
 # define is_endl(c)			(ascii[(uint8_t)c] & 0x40)
 # define is_operator(c)		(ascii[(uint8_t)c] & 0x04)
 # define is_parent(c)		(ascii[(uint8_t)c] & 0x80)
+# define is_comment(c)		(c == ';' || c == '#')
 
 # define LOWER(x)			to_lower_char[(uint8_t)x]
 // is_operator = '+' || '*'

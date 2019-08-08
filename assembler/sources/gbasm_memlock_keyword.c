@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/10 19:00:27 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/25 08:16:45 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/08 18:15:03 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -34,6 +34,7 @@ extern char	*set_memlock_area(vector_t *memblock, char *s, data_t *data)
 	if (*s != ' ' && *s != '\t' && *s != ',')
 		goto __error;
 	name = strndup(name, s - name);
+	printf("NAME = \"%s\"\n", name);
 	while (*s == ' ' || *s == '\t') s++;
 	if (*s == ',') {
 		s++;
@@ -80,8 +81,10 @@ extern char	*set_memlock_area(vector_t *memblock, char *s, data_t *data)
 	if (*s != '\0' && *s != '\n')
 		goto __error;
 
-	memblock_t	new = {addr, end, end - addr, data->lineno, strdup(data->filename), name, NULL};
+	memblock_t	new = {addr, end, end - addr, data->lineno, name, strdup(data->filename), NULL};
+	printf("new.name = \"%s\"\n", new.name);
 	vector_push(memblock, (void*)&new);
+	printf("\e[1;44m   >  \e[0m  blockname[0] = %s\n", VEC_ELEM_FIRST(memblock_t, memblock)->name);
 
 	return (s);
 
@@ -95,7 +98,7 @@ __invalid_region2:
 	sprintf(data->buf, "in memory block %s, invalid end address (0x%hX)", s, (uint16_t)end);
 	goto __print_error;
 __error:
-	sprintf(data->buf, "unexpected character `%c`", *s);
+	sprintf(data->buf, "(#3) unexpected character `%c`", *s);
 __print_error:
 	print_error(data->filename, data->lineno, data->line, data->buf);
 	while (*s && *s != '\n') s++;

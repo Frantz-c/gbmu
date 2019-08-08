@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 22:10:25 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/08 08:45:04 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/08 17:28:51 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -119,10 +119,170 @@ __unexpected_char:
 	return (-1);
 }
 
-/*
-**	exception inutile ???
-*/
-int		replace_macro(char **param, vector_t *macro, int exception, char **mne)	// and delete spaces
+void	instruction_replace(char **inst, char **param1, char **param2)	// "ld (ff00h)" -> ldff, "ld HL, SP" -> ldhl, "(HL++?)" -> (HLI, "(HL--?)" -> (HLD
+{
+	uint8_t		parent[2] = {0, 0};
+	char		*p1 = *param1;
+	char		*p2 = *param2;
+
+	if (*param1 && *p1 == '(') {
+		parent[0]++;
+		p1++;
+	}
+	if (*param2 && *p2 == '(') {
+		parent[1]++;
+		p2++;
+	}
+
+	if (*param1 && *param2)
+	{
+		printf("\e[1;47m       \e[0mREPLACE %s %s, %s ??\n", *inst, *param1, *param2);
+		// remplacment of ld's alternative syntaxes
+		if (((*inst)[0] == 'l' && (*inst)[1] == 'd' && (*inst)[2] == '\0')
+			|| ((*inst)[0] == 'm' && (*inst)[1] == 'o' && (*inst)[2] == 'v' && (*inst)[3] == '\0'))
+		{
+			if (parent[0] == 1)
+			{
+				int			type;
+				uint32_t	len;
+
+
+				printf("\e[1;30;47mp1 = \"%s\"\n\e[0m", p1);
+				if ((type = is_numeric(p1, &len)) != 0)
+				{
+					if (atou_type(p1, NULL, type) == 0xff00u)
+					{
+						if (p1[len] == '+')
+						{
+							/* suppression de la partie 0xff00+ */
+							p1 = strdup(p1 + len + 1);
+							free(*param1);
+							*param1 = p1;
+						}
+						else if (p1[len] == '\0')
+						{
+							/* ld (ff00h)  -> ld (ff00h + 0) */
+							free(*param1);
+							*param1 = strdup("0");
+						}
+						else
+							goto __end;
+
+						free(*inst);
+						*inst = strdup("ldff");
+						goto __end;
+					}
+				puts("type = 0\n");
+				}
+			}
+			if (parent[1] == 1)
+			{
+				int			type;
+				uint32_t	len;
+
+
+				printf("\e[1;30;47mp1 = \"%s\"\n\e[0m", p2);
+				if ((type = is_numeric(p2, &len)) != 0)
+				{
+					if (atou_type(p2, NULL, type) == 0xff00u)
+					{
+						if (p2[len] == '+')
+						{
+							/* suppression de la partie 0xff00+ */
+							p2 = strdup(p2 + len + 1);
+							free(*param2);
+							*param2 = p2;
+						}
+						else if (p2[len] == '\0')
+						{
+							/* ld (ff00h)  -> ld (ff00h + 0) */
+							free(*param2);
+							*param2 = strdup("0");
+						}
+						else
+							goto __end;
+
+						free(*inst);
+						*inst = strdup("ldff");
+						goto __end;
+					}
+				}
+				puts("type = 0\n");
+			}
+
+			puts("N E X T");
+
+			if (LOWER((*param1)[0]) == 'h' && LOWER((*param1)[1]) == 'l' && LOWER((*param1)[2]) == '\0' 
+					&& LOWER((*param2)[0]) == 's' && LOWER((*param2)[1]) == 'p')
+			{
+				if ((*param2)[2] == '+')
+				{
+					memmove(*param2, *param2 + 2, strlen(*param2 + 1));
+				}
+				else if ((*param2)[2] == '\0')
+				{
+					free(*param2);
+					*param2 = strdup("0");
+				}
+				else
+					goto __end;
+
+				free(*inst);
+				*inst = strdup("ldhl");
+			}
+			else
+			{
+				printf("p1 = \"%s\"\n", p1);
+				printf("p2 = \"%s\"\n", p2);
+				if (parent[0])
+				{
+					puts("PARENT[0]");
+					if (LOWER(p1[0]) == 'h' && LOWER(p1[1]) == 'l')
+					{
+						if (p1[2] == '+' && (p1[3] == '\0' || (p1[3] == '+' && p1[4] == '\0')))
+						{
+							//HL++
+							free(*param1);
+							*param1 = strdup("(HLI");
+						}
+						else if (p1[2] == '-' && (p1[3] == '\0' || (p1[3] == '-' && p1[4] == '\0')))
+						{
+							//HL--
+							free(*param1);
+							*param1 = strdup("(HLD");
+						}
+					}
+				}
+				if (parent[1])
+				{
+					puts("PARENT[1]");
+					if (LOWER(p2[0]) == 'h' && LOWER(p2[1]) == 'l')
+					{
+						if (p2[2] == '+' && (p2[3] == '\0' || (p2[3] == '+' && p2[4] == '\0')))
+						{
+							//HL++
+							free(*param2);
+							*param2 = strdup("(HLI");
+						}
+						else if (p2[2] == '-' && (p2[3] == '\0' || (p2[3] == '-' && p2[4] == '\0')))
+						{
+							//HL--
+							free(*param2);
+							*param2 = strdup("(HLD");
+						}
+					}
+				}
+				printf("p1 = \"%s\"\n", *param1);
+				printf("p2 = \"%s\"\n", *param2);
+
+			}
+		}
+	}
+__end:
+	return;
+}
+
+int		replace_macro(char **param, vector_t *macro)	// and delete spaces
 {
 	char		*s = *param;
 	char		*start, *end;
@@ -134,58 +294,14 @@ int		replace_macro(char **param, vector_t *macro, int exception, char **mne)	// 
 	uint8_t		parent = 0;
 	uint8_t		count = 0;
 
-	if (*s == '[' || *s == '(') {
-		parent = 1;
-		s++;
-		while (is_space(*s)) s++;
-	}
-
-	// remplacment of ld's alternative syntaxes
-	if (exception)
+	if (*s == '(')
 	{
-		if (parent)
-		{
-			int			type;
-			uint32_t	len;
-
-			puts("EXCEPTION");
-			if ((type = is_numeric(s, &len)) != 0)
-			{
-				if (atou_type(s, NULL, type) == 0xff00u)
-				{
-					printf("PARAM[%u] = '%c'\n", len, (*param)[len + 1]);
-					if (s[len] == '+')
-					{
-						/* suppression de la partie 0xff00+ */
-						char	*tmp = *param + len + 2;
-						printf("tmp = \"%s\"\n", tmp);
-						tmp = strdup(tmp);
-						free(*param);
-						*param = tmp;
-						s = *param;
-						parent = 0;
-						printf("\e[1;32mNEWPARAM = \e[0m\"%s\"\n", tmp);
-					}
-					else if (s[len] == '\0')
-					{
-						/* ld (ff00h)  -> ld (ff00h + 0) */
-						free(*param);
-						*param = strdup("0");
-						s = *param;
-					}
-					else
-						goto __no_exception;
-
-					free(*mne);
-					*mne = strdup("ldff");
-				}
-			}
-		}
+		parent++;
+		s++;
 	}
-__no_exception:
 
 	// maybe a macro
-	while (!is_endl(*s) && *s != ']' && *s != ')' && count != 4)
+	while (!is_endl(*s) && *s != ')' && count != 4)
 	{
 		if (is_alpha(*s) || *s == '_')
 		{
@@ -199,7 +315,10 @@ __no_exception:
 			**	check if next character is valid (a +/- b * c + d)
 			*/
 			if (!is_space(*s) && !is_endl(*s) && !is_operator(*s) && *s != ']' && *s != ')')
+			{
+				puts("#0");
 				goto __unexpected_char;
+			}
 			if (is_operator(*s))
 			{
 				if ((count == 0 && *s == '*') || (count == 1 && *s != '*') || (count == 2 && *s != '+') || count == 3)
@@ -269,7 +388,10 @@ __no_exception:
 			while (is_alnum(*s)) s++;
 			end = s;
 			if (!is_space(*s) && !is_endl(*s) && !is_operator(*s) && *s != ']' && *s != ')')
+			{
+				puts("#1");
 				goto __unexpected_char;
+			}
 			if (is_operator(*s))
 			{
 				if ((count == 0 && *s == '*') || (count == 1 && *s != '*') || (count == 2 && *s != '+') || count == 3)
@@ -389,14 +511,12 @@ param_t	get_type(char *param, value_t *n)
 		// (HL++?) (HLI) (HL--?) (HLD)
 		if (LOWER(*s) == 'h' && LOWER(s[1]) == 'l')
 		{
-			if (s[2] == '+' && (s[3] == '\0' || (s[3] == '+' && s[4] == '\0')))
-				return (HLI);
+			printf("get_type()::s = \"%s\"\n", s);
 			if (LOWER(s[2]) == 'i' && s[3] == '\0')
 				return (HLI);
-			if (s[2] == '-' && (s[3] == '\0' || (s[3] == '-' && s[4] == '\0')))
-				return (HLD);
 			if (LOWER(s[2]) == 'd' && s[3] == '\0')
 				return (HLD);
+			return (UNKNOWN);
 		}
 		return (SYMBOL);
 	}
@@ -443,12 +563,12 @@ param_t	get_type(char *param, value_t *n)
 }
 
 
-int		calcul_param(char *param, value_t *n, int exception)
+int		calcul_param(char *param, value_t *n)
 {
 	int			parent = 0;
 	uint32_t	len;
-	uint32_t	base = 0;
-	uint32_t	result = 0;
+	int32_t		base = 0;
+	int32_t		result = 0;
 	uint8_t		minus = 0;
 	uint8_t		type;
 //	uint8_t		_signed = 0;
@@ -465,9 +585,10 @@ int		calcul_param(char *param, value_t *n, int exception)
 		n->is_signed = 1;
 		param++;
 	}
+
 	if ((type = is_numeric(param, NULL)))
 	{
-		base = atou_type(param, &len, type);
+		base = (int32_t)atou_type(param, &len, type);
 		param += len;
 	}
 	else if (n->is_signed == 1)
@@ -480,11 +601,16 @@ int		calcul_param(char *param, value_t *n, int exception)
 			goto __set_n_return;
 		param++;
 	}
+/*
 	if (n->is_signed)
 		goto __signed_error;
+*/
 	if (*param != '+' && *param != '-')
 		goto __operator_error;
-	if (n->is_signed == 0 && LOWER(param[-1]) == 'l' && LOWER(param[-2]) == 'h'
+/*
+**	(HL++), (HL+) : no more characters autorized
+*/
+   if (n->is_signed == 0 && parent && LOWER(param[-1]) == 'l' && LOWER(param[-2]) == 'h'
 			&& (param[1] == '\0' || (param[1] == *param && param[2] == '\0')))
 	{
 		n->value = 0;
@@ -499,7 +625,7 @@ int		calcul_param(char *param, value_t *n, int exception)
 //     ^
 	if ((type = is_numeric(param, NULL)))
 	{
-		result = atou_type(param, &len, type);
+		result = (int32_t)atou_type(param, &len, type);
 		param += len;
 	}
 	else
@@ -525,7 +651,7 @@ int		calcul_param(char *param, value_t *n, int exception)
 //         ^
 	if ((type = is_numeric(param, NULL)))
 	{
-		result *= atou_type(param, &len, type);
+		result *= (int32_t)atou_type(param, &len, type);
 		param += len;
 	}
 	else
@@ -544,7 +670,7 @@ int		calcul_param(char *param, value_t *n, int exception)
 //             ^
 	if ((type = is_numeric(param, NULL)))
 	{
-		result += atou_type(param, &len, type);
+		result += (int32_t)atou_type(param, &len, type);
 		param += len;
 	}
 	if (*param != '\0')
@@ -553,6 +679,7 @@ int		calcul_param(char *param, value_t *n, int exception)
 
 __set_n_return:
 	// ld (ff80h+x) exception
+	/*
 	if (parent && exception && base == 0xff00 && minus == 0)
 	{
 		base = 0;
@@ -571,25 +698,40 @@ __set_n_return:
 			fprintf(stderr, "value is to small\n");
 		return (0);
 	}
+	*/
+	// retourner l'erreur ?
+	printf("base = 0x%x(%i), complement = 0x%x(%i), ope = '%c'\n", 
+			base, base, result, result, first_operator ? *first_operator : 0);
 	if (minus)
 	{
-		if (result > base)
+		if (base - result < 0)
 		{
+			g_error++;
 			fprintf(stderr, "underflow\n");
-			exit(1);
 		}
-		result = base - result;
+		else if (base - result > 0xffff)
+		{
+			g_error++;
+			fprintf(stderr, "overflow\n");
+		}
+		result = (uint32_t)(base - result);
 	}
 	else
 	{
 		result = base + result;
-		if (result > 0xffff)
+		if (result < 0)
 		{
+			g_error++;
+			fprintf(stderr, "underflow\n");
+		}
+		else if (result > 0xffff)
+		{
+			g_error++;
 			fprintf(stderr, "overflow\n");
-			exit(1);
 		}
 	}
-	n->value = (result & 0xffff);
+	n->value = result;
+	// cut end of string ("a+b*c+d" -> "a")
 	if (first_operator) *first_operator = '\0';
 	return (0);
 
@@ -661,13 +803,9 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *ext_symbol, loc_sym_
 	char		*param1, *param2;
 	param_t		param[2] = {NONE, NONE};
 	value_t		val = {0, 0, 0};
-	int			exception = 0;
-//	char		*mne = inst;
 
 	str_to_lower(inst);
 	printf("MNEMONIC = \"%s\"\n", inst);
-	if (*inst == 'l' && inst[1] == 'd' && inst[2] == '\0')
-		exception = 1;
 	if (set_params(&param1, &param2, &s) == -1)
 	{
 		// error checked in set_params()
@@ -675,12 +813,14 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *ext_symbol, loc_sym_
 			goto __too_many_param;
 		goto __unexpected_char;
 	}
+	if (param1 && param2)
+		instruction_replace(&inst, &param1, &param2);	// "ld (ff00h)" -> ldff, "ld HL, SP" -> ldhl
 
 	if (param1)
 	{
-		if (macro && replace_macro(&param1, macro, exception, &inst) == -1) //without params only
+		if (macro && replace_macro(&param1, macro) == -1) //without params only
 			goto __error;
-		if (calcul_param(param1, &val, exception) == -1)
+		if (calcul_param(param1, &val) == -1)
 			goto __error;
 		param[0] = get_type(param1, &val); //default SYMBOL
 		printf("\e[0;33mPARAM1 after replace\e[0m = \"%s\" (%s)\n", param1, get_param_type(param[0]));
@@ -689,9 +829,9 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *ext_symbol, loc_sym_
 		{
 			value_t	tmp_val = {0, 0, 0};
 
-			if (macro && replace_macro(&param2, macro, exception, &inst) == -1)
+			if (macro && replace_macro(&param2, macro) == -1)
 				goto __error;
-			if (calcul_param(param2, &tmp_val, exception) == -1)
+			if (calcul_param(param2, &tmp_val) == -1)
 				goto __error;
 			param[1] = get_type(param2, &tmp_val); //default SYMBOL
 			printf("\e[0;33mPARAM2 after replace\e[0m = \"%s\" (%s)\n", param2, get_param_type(param[1]));

@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/08 11:15:11 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/08 18:41:05 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -59,6 +59,20 @@ void	*get_cartridge_header_code(void)
 	memcpy(buf + 52, &cartridge_info.title, 28);
 
 	return (buf);
+}
+
+void	check_undefined_symbols(vector_t *label)
+{
+	register label_t	*l = VEC_ELEM_FIRST(label_t, label);
+
+	for (uint32_t i = 0; i < label->nitems; i++, l++)
+	{
+		if (l->base_or_status == 0xffffffffu)
+		{
+			g_error++;
+			fprintf(stderr, "\e[1;31mundefined symbol \e[0m\"%s\"\n", l->name);
+		}
+	}
 }
 
 void	check_code_area_overflow(vector_t *area)
@@ -115,7 +129,7 @@ void		replace_internal_symbols(vector_t *area, loc_sym_t *local_symbol)
 						lab_addr -= c->addr;
 						val = (c->opcode[3] == '-') ? lab_addr - val : lab_addr + val;
 						printf("jr val = %i\n", val);
-						if ((uint32_t)val & 0xffffff00u)
+						if (val > 0x7f || val < -128)
 						{
 							g_error++;
 							fprintf(stderr, "too big jump\n");
@@ -171,7 +185,7 @@ static char	*get_include_filename(char **s, data_t *data)
 	return (name);
 
 __unexpected_char:
-	sprintf(data->buf, "unexpected character `%c`", **s);
+	sprintf(data->buf, "(#0) unexpected character `%c`", **s);
 	print_error(data->filename, data->lineno, data->line, data->buf);
 	fprintf(stderr, "\e[1;31m%u errors\e[0m\n", g_error);
 	return (NULL);
@@ -361,8 +375,12 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 	uint32_t	argc;
 	char		*search = NULL;
 
+	printf("\nPARSE \"%s\"\n\n", s);
 	if (!is_alpha(*s) && *s != '_')
+	{
+		puts("{|}[|]");
 		goto __unexpected_char;
+	}
 	s++;
 	while (is_alnum(*s) || *s == '_') s++;
 
@@ -373,12 +391,18 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 		char *end = s;
 		s++;
 		if (!is_space(*s) && !is_endl(*s))
+		{
+			puts("[]{}[]{}");
 			goto __unexpected_char;
+		}
 		add_label(strndup(name, end - name), area, ext_symbol, loc_symbol, data); //test if not mnemonic
 		return (s);
 	}
 	else if (!is_space(*s) && *s != '(' && !is_endl(*s))
+	{
+		puts("UNEXP |><|><|><|");
 		goto __unexpected_char;
+	}
 	/*
 	if (!is_endl(*s))
 		goto __add_instruction;
@@ -399,7 +423,10 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 			s++;
 			n_params = get_params(&s, macro_param);
 			if (n_params == 0xffu)
+			{
+				puts("UNEXP <>{}<>{}<>");
 				goto __unexpected_char;
+			}
 			if (n_params != argc)
 				goto __argc_error;
 			if (n_params)
@@ -452,7 +479,10 @@ __next:
 		return (s);
 	}
 	else if (*s == '(' && !is_space(s[-1]))
+	{
+		puts("UNEXP ><><><");
 		goto __unexpected_char;
+	}
 
 //__add_instruction:
 	printf("name = \"%s\"\n", search);
@@ -468,7 +498,7 @@ __argc_error:
 	
 
 __unexpected_char:
-	sprintf(data->buf, "unexpected character `%c`", *s);
+	sprintf(data->buf, "(#1) unexpected character `%c`", *s);
 	if (search) free(search);
 __print_error:
 	print_error(data->filename, data->lineno, data->line, data->buf);
@@ -498,6 +528,8 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 	while (*s)
 	{
 		SKIP_SPACES(s);
+		if (*s == '\0')
+			break;
 
 		if (*s == '\n')
 		{
@@ -1080,13 +1112,23 @@ void		assign_var_addr(vector_t *sym)
 
 uint8_t	inst_length[256] =
 {
-	1,3,1,1,1,1,2,1,3,1,1,1,1,1,2,1,1,3,1,1,1,1,2,1,2,1,1,1,1,1,2,1,2,3,1,1,1,1,
-	2,1,2,1,1,1,1,1,2,1,2,3,1,1,1,1,2,1,2,1,1,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,
-	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-	1,1,1,1,3,3,3,1,2,1,1,1,3,2,3,3,2,1,1,1,3,0,3,1,2,1,1,1,3,0,3,0,2,1,2,1,1,0,
-	0,1,2,1,2,1,3,0,0,0,2,1,2,1,1,1,0,1,2,1,2,1,3,1,0,0,2,1
+//	0,1,2,3,4,5,6,7,8,9,A,B,C,D,E,F
+	1,3,1,1,1,1,2,1,3,1,1,1,1,1,2,1,
+	1,3,1,1,1,1,2,1,4,1,1,1,1,1,2,1,
+	4,3,1,1,1,1,2,1,4,1,1,1,1,1,2,1,
+	4,3,1,1,1,1,2,1,4,1,1,1,1,1,2,1,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1,1,3,3,3,1,2,1,1,1,3,2,3,3,2,1,
+	1,1,3,0,3,1,2,1,1,1,3,0,3,0,2,1,
+	2,1,1,0,0,1,2,1,2,1,3,0,0,0,2,1,
+	2,1,1,1,0,1,2,1,2,1,3,1,0,0,2,1
 };
 
 void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code, char *files[])
@@ -1182,11 +1224,19 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 		for (uint32_t j = 0; j < code_length; j++)
 		{
 			register uint8_t	len;
+			register uint8_t	inc = 0;
 
 			if ((len = inst_length[buf[j]]) != 0)
 			{
+				if ((len == 2 && buf[j] != 0xcbU) || len == 3)
+					inc++;
+				else if (len == 4)
+				{
+					inc = 2;
+					len = 2;
+				}
+
 				printf("\e[0;45m > \e[0mlen = %hhu\n", len);
-				register uint8_t	len2 = len;
 
 				while (len)
 				{
@@ -1195,10 +1245,7 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 						break;
 					j++;
 				}
-				if ((len2 == 2 && new_buf[z - len2] != 0xcbU) || len2 == 3)
-				{
-					j++;
-				}
+				j += inc;
 			}
 		}
 
@@ -1364,7 +1411,7 @@ int		main(int argc, char *argv[])
 	/* end */
 
 
-	file[0]	= "test.gbs";
+	file[0]	= "hard-test.gbs";
 	file[1]	= NULL;
 	n_files = 1;
 
@@ -1395,6 +1442,7 @@ int		main(int argc, char *argv[])
 		vector_push(code_area, (void*)&area_elem);
 
 		parse_file(*p, code_area, macro, extern_symbol, &local_symbol, 0);
+		check_undefined_symbols(local_symbol.label);
 		check_code_area_overflow(code_area);
 		replace_internal_symbols(code_area, &local_symbol);
 		if (g_error)

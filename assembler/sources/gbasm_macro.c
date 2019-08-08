@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 16:48:47 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/20 21:24:25 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/08 18:17:50 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -93,7 +93,7 @@ __arg_expected:
 	return (s);
 
 __unexpected_char:
-	sprintf(data->buf, "unexpected character `%c`", *s);
+	sprintf(data->buf, "(#6) unexpected character `%c`", *s);
 	print_error(data->filename, data->lineno, data->line, data->buf);
 	skip_macro(&s, &data->lineno);
 	return (s);
@@ -135,7 +135,7 @@ extern char	*undef_macro(vector_t *macro, char *s, data_t *data)
  *	=========ERRORS=========
  */
 __unexpected_char:
-	sprintf(data->buf, "unexpected character `%c`", *s);
+	sprintf(data->buf, "(#7) unexpected character `%c`", *s);
 	print_error(data->filename, data->lineno, data->line, data->buf);
 	for (; *s != 0 && *s != '\n'; s++);
 	return (s);

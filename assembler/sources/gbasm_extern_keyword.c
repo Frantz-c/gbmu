@@ -31,7 +31,7 @@ __no_arg:
 	print_error(data->filename, data->lineno, data->line, "missing symbol name after .extern keyword");
 	return (s);
 __unexpected_char:
-	sprintf(data->buf, "unexpected character `%c`", *s);
+	sprintf(data->buf, "(#4) unexpected character `%c`", *s);
 __print_error:
 	print_error(data->filename, data->lineno, data->line, data->buf);
 	while (!is_endl(*s)) s++;

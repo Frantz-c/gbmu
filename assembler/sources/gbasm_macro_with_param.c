@@ -128,7 +128,7 @@ extern char	*add_macro_with_param(char *name_start, vector_t *macro, char *s, da
  */
 
 __unexpected_char:
-	sprintf(data->buf, "unexpected character `%c`", *s);
+	sprintf(data->buf, "(#6) unexpected character `%c`", *s);
 	goto __perror_and_exit;
 __empty_argument_x:
 	sprintf(data->buf, "argument %u is empty", cur + 1);
