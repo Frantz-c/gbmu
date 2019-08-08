@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 22:10:25 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/07 17:29:23 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/08 08:18:14 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -18,6 +18,9 @@
 #include "gbasm_error.h"
 #include "gbasm_get_bin_instruction.h"
 
+/*
+**	isolate operands without spaces inside. if value = "(toto + 1)", result is "(toto+1"
+*/
 int		set_params(char **param1, char **param2, char **s)
 {
 	uint8_t		parent = 0;
@@ -116,7 +119,10 @@ __unexpected_char:
 	return (-1);
 }
 
-int		replace_macro(char **param, vector_t *macro)	// and delete spaces
+/*
+**	exception inutile ???
+*/
+int		replace_macro(char **param, vector_t *macro, int exception, char **mne)	// and delete spaces
 {
 	char		*s = *param;
 	char		*start, *end;
@@ -133,6 +139,46 @@ int		replace_macro(char **param, vector_t *macro)	// and delete spaces
 		s++;
 		while (is_space(*s)) s++;
 	}
+
+	// remplacment of ld's alternative syntaxes
+	if (exception)
+	{
+		if (parent)
+		{
+			int			type;
+			uint32_t	len;
+
+			puts("EXCEPTION");
+			if ((type = is_numeric(*param, &len)) != 0)
+			{
+				if (atou_type(*param, NULL, type) == 0xff00u)
+				{
+					printf("PARAM[%u] = '%c'\n", len, (*param)[len]);
+					if ((*param)[len] == '+')
+					{
+						/* suppression de la partie 0xff00+ */
+						char	*tmp = *param + len + 1;
+						tmp = strdup(tmp);
+						free(*param);
+						*param = tmp;
+						printf("\e[1;32mNEWPARAM = \e[0m\"%s\"\n", tmp);
+					}
+					else if ((*param)[len] == '\0')
+					{
+						/* ld (ff00h)  -> ld (ff00h + 0) */
+						free(*param);
+						*param = strdup("0");
+					}
+					else
+						goto __no_exception;
+
+					free(*mne);
+					*mne = strdup("ldff");
+				}
+			}
+		}
+	}
+__no_exception:
 
 	// maybe a macro
 	while (!is_endl(*s) && *s != ']' && *s != ')' && count != 4)
@@ -391,7 +437,7 @@ param_t	get_type(char *param, value_t *n)
 }
 
 
-int		calcul_param(char *param, value_t *n, int is_ld)
+int		calcul_param(char *param, value_t *n, int exception)
 {
 	int			parent = 0;
 	uint32_t	len;
@@ -501,7 +547,7 @@ int		calcul_param(char *param, value_t *n, int is_ld)
 
 __set_n_return:
 	// ld (ff80h+x) exception
-	if (parent && is_ld && base == 0xff00 && minus == 0)
+	if (parent && exception && base == 0xff00 && minus == 0)
 	{
 		base = 0;
 		if (result > 0xff)
@@ -609,12 +655,13 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *ext_symbol, loc_sym_
 	char		*param1, *param2;
 	param_t		param[2] = {NONE, NONE};
 	value_t		val = {0, 0, 0};
-	int			is_ld = 0;
+	int			exception = 0;
+//	char		*mne = inst;
 
 	str_to_lower(inst);
 	printf("MNEMONIC = \"%s\"\n", inst);
 	if (*inst == 'l' && inst[1] == 'd' && inst[2] == '\0')
-		is_ld = 1;
+		exception = 1;
 	if (set_params(&param1, &param2, &s) == -1)
 	{
 		// error checked in set_params()
@@ -625,9 +672,9 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *ext_symbol, loc_sym_
 
 	if (param1)
 	{
-		if (macro && replace_macro(&param1, macro) == -1) //without params only
+		if (macro && replace_macro(&param1, macro, exception, &inst) == -1) //without params only
 			goto __error;
-		if (calcul_param(param1, &val, is_ld) == -1)
+		if (calcul_param(param1, &val, exception) == -1)
 			goto __error;
 		param[0] = get_type(param1, &val); //default SYMBOL
 		printf("\e[0;33mPARAM1 after replace\e[0m = \"%s\" (%s)\n", param1, get_param_type(param[0]));
@@ -636,9 +683,9 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *ext_symbol, loc_sym_
 		{
 			value_t	tmp_val = {0, 0, 0};
 
-			if (macro && replace_macro(&param2, macro) == -1)
+			if (macro && replace_macro(&param2, macro, exception, &inst) == -1)
 				goto __error;
-			if (calcul_param(param2, &tmp_val, is_ld) == -1)
+			if (calcul_param(param2, &tmp_val, exception) == -1)
 				goto __error;
 			param[1] = get_type(param2, &tmp_val); //default SYMBOL
 			printf("\e[0;33mPARAM2 after replace\e[0m = \"%s\" (%s)\n", param2, get_param_type(param[1]));

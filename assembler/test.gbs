@@ -7,10 +7,4 @@
 .bank	0,	0x150
 
 
-ld		A, 0xf0
-jrz		__loop
-ld		(ff00h+STAT), A
-ld		(var), A
-__loop:
-	xor		A
-	jr		__loop
+ld		(ff00h + STAT), A
