@@ -480,7 +480,7 @@ __next:
 
 //__add_instruction:
 	s = add_instruction(search, area, ext_symbol, loc_symbol, macro, s, data);
-	free(search);
+	//free(search);
 	return (s);
 
 __argc_error:
@@ -914,16 +914,12 @@ int		add_intern_symbols_bin(vector_t *sym, char *buf, uint32_t len, uint32_t fil
 					register all_sym_t	*p = VEC_ELEM(all_sym_t, sym, index);
 
 					if (strcmp(p->name, tmp.name) != 0 || p->type != tmp.type
-							|| p->data2 != tmp.data2 || strcmp(p->var_data->block, tmp.var_data->block) != 0)
+							|| p->data2 != tmp.data2 || memcmp(&p->var_data, &tmp.var_data, sizeof(void*)) != 0)
 					{
 						g_error++;
 						fprintf(stderr, "duplicate symbol %s (file %u, %u)\n", p->name, file_number, p->var_data->file_number);
-
-						free(tmp.var_data->block);
-						free(tmp.var_data->pos);
-						free(tmp.var_data);
-						free(tmp.name);
 					}
+					free(tmp.name);
 					goto __loop_end;
 				}
 				break;

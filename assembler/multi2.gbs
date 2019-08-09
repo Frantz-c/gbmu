@@ -1,5 +1,9 @@
-.extern		hp
-.extern		lvl
+.memlock	_block_, 0xc000, end=0xc020
+.var2		hp, _block_
+.var1		lvl, _block_
+
+;.extern		hp
+;.extern		lvl
 
 .bank		0, 0x190
 
