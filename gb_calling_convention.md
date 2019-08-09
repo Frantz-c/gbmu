@@ -47,7 +47,6 @@ Parameter transfer: C (value1), E (value2), HL (value3)
 > function_three (8-bit value1, 16-bit value2, 8-bit value3, 16-bit value4)
 
 Parameter transfer: C (value1), DE (value2), HL (value3), (SP + 2) (value4)
-containing value3 and value4)
 
 - Return value is stored in the accumulator (A), or the HighLow pointer
   (HL) if 16-bit sized.
