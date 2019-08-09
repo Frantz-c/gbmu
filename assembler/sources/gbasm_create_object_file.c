@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/27 19:25:27 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/09 12:00:48 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/09 12:24:22 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -278,7 +278,7 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 	{
 		if (area->size == 0)
 			continue;
-		printf("&code_area->addr = %p\n", &area->addr);
+		printf("WRITE TO .O ADDR 0x%x\n", area->addr);
 		if ((allocsize - i) < 16)
 		{
 			allocsize += 128;
@@ -396,6 +396,7 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 		header_size += len + (sizeof(uint32_t) * (2 + ext->quantity));
 	}
 
+	printf("end = 0x%x 0x%x 0x%x\n", code[i - 3], code[i-2], code[i-1]);
 	fwrite(code, sizeof(uint8_t), i, file);
 
 	rewind(file);

@@ -6,12 +6,15 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 12:49:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/09 12:47:20 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/09 13:03:48 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
 #include "vector.h"
+
+void		*_vector_at_mul(vector_t *vec, size_t index);
+void		*_vector_at_shl(vector_t *vec, size_t index);
 
 vector_t	*vector_init(size_t elemsize)
 {

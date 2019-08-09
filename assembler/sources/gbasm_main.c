@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/09 11:56:19 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/09 14:03:15 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -711,8 +711,7 @@ int			all_code_cmp(const void *a, const void *b)
 		return (1);
 	else if (aa->start < bb->start)
 		return (-1);
-	else
-		return (0);
+	return (0);
 }
 
 int			all_code_search(const void *b, const void *a)
@@ -724,8 +723,7 @@ int			all_code_search(const void *b, const void *a)
 		return (1);
 	if (aa->start < bb)
 		return (-1);
-	else
-		return (0);
+	return (0);
 }
 
 void		all_code_destroy(void *a)
@@ -1178,141 +1176,137 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 		while (fread(&code_start, sizeof(uint32_t), 1, file) == 1)
 		{
 
-		if (fread(&code_length, sizeof(uint32_t), 1, file) != 1)
-		{
-			printf("error code_length\n");
-			goto __error;
-		}
-		printf("code_start = 0x%x, code_length = %u\n", code_start, code_length);
-
-		if (length == 0)
-			buf = malloc(code_length);
-		else if (length < code_length)
-			buf = realloc(buf, code_length);
-
-		if ((ret = fread(buf, 1, code_length, file)) != code_length)
-		{
-		__error:
-			fprintf(stderr, "erreur chargement du code fichier %s (%u/%u)\n", files[i], ret, code_length);
-			exit(1);
-		}
-		printf("%x %x %x %x\n\n", buf[0], buf[1], buf[2], buf[3]);
-
-	
-		// replace all extern symbols with their value
-//		k = 0;
-		{
-			register all_ext_sym_t	*elem = VEC_ELEM_FIRST(all_ext_sym_t, ext_sym);
-
-			printf("ext_sym->nitems = %zu\n", ext_sym->nitems);
-			for (uint32_t j = 0; j < ext_sym->nitems; j++, elem++)
+			if (fread(&code_length, sizeof(uint32_t), 1, file) != 1)
 			{
+				printf("error code_length\n");
+				goto __error;
+			}
+			printf("code_start = 0x%x, code_length = %u\n", code_start, code_length);
 
-				printf("file_num = %u, i = %u\n", elem->file_number, i);
-				if (elem->file_number == i)
+			if (length == 0)
+				buf = malloc(code_length);
+			else if (length < code_length)
+				buf = realloc(buf, code_length);
+
+			if ((ret = fread(buf, 1, code_length, file)) != code_length)
+			{
+			__error:
+				fprintf(stderr, "erreur chargement du code fichier %s (%u/%u)\n", files[i], ret, code_length);
+				exit(1);
+			}
+		
+			// replace all extern symbols with their value
+	//		k = 0;
+			{
+				register all_ext_sym_t	*elem = VEC_ELEM_FIRST(all_ext_sym_t, ext_sym);
+
+				printf("ext_sym->nitems = %zu\n", ext_sym->nitems);
+				for (uint32_t j = 0; j < ext_sym->nitems; j++, elem++)
 				{
-					register ssize_t	index = vector_search(sym, (void*)&elem->name);
-					register all_sym_t	*p = VEC_ELEM(all_sym_t, sym, index);
 
-					for (uint32_t l = 0; l < elem->quantity; l++)
+					printf("file_num = %u, i = %u\n", elem->file_number, i);
+					if (elem->file_number == i)
 					{
-						uint8_t		*inst = buf + elem->pos[l] - 8;
-						uint8_t		symbol_size = inst_length[*inst];
-						
-						printf(">>>> repace at inst 0x%x\n", *inst);
+						register ssize_t	index = vector_search(sym, (void*)&elem->name);
+						register all_sym_t	*p = VEC_ELEM(all_sym_t, sym, index);
 
-						uint8_t		operation = inst[symbol_size];
-						inst++;
-						uint32_t	value = inst[0] | (inst[1] << 8);
-
-						printf("EXT SYM VALUE = 0x%x\n", p->data1);
-						if (operation == '-')
-							value -= p->data1;
-						else if (operation == '+')
-							value += p->data1;
-						else
-							value = p->data1;
-
-						if (symbol_size == 3)
+						for (uint32_t l = 0; l < elem->quantity; l++)
 						{
-							if (value > 0xffff)
-								fprintf(stderr, "OVERFLOW inst ????? file ?????\n");
+							uint8_t		*inst = buf + elem->pos[l] - 8;
+							uint8_t		symbol_size = inst_length[*inst];
+							
+							printf(">>>> repace at inst 0x%x\n", *inst);
 
-							inst[0] = (uint8_t)value;
-							inst[1] = (uint8_t)(value >> 8);
-							inst[2] = 0xdd;
+							uint8_t		operation = inst[symbol_size];
+							inst++;
+							uint32_t	value = inst[0] | (inst[1] << 8);
+
+							printf("EXT SYM VALUE = 0x%x\n", p->data1);
+							if (operation == '-')
+								value -= p->data1;
+							else if (operation == '+')
+								value += p->data1;
+							else
+								value = p->data1;
+
+							if (symbol_size == 3)
+							{
+								if (value > 0xffff)
+									fprintf(stderr, "OVERFLOW inst ????? file ?????\n");
+
+								inst[0] = (uint8_t)value;
+								inst[1] = (uint8_t)(value >> 8);
+								inst[2] = 0xdd;
+							}
+							else if (symbol_size == 2)
+							{
+								if (value > 0xff)
+									fprintf(stderr, "OVERFLOW inst ????? file ?????\n");
+
+								inst[0] = (uint8_t)value;
+								inst[1] = 0xdd;
+							}
+
 						}
-						else if (symbol_size == 2)
-						{
-							if (value > 0xff)
-								fprintf(stderr, "OVERFLOW inst ????? file ?????\n");
-
-							inst[0] = (uint8_t)value;
-							inst[1] = 0xdd;
-						}
-
 					}
 				}
 			}
-		}
 
-		// replace all extern symbols with their value
-//		k = 0;
-		{
-			register all_sym_t	*elem = VEC_ELEM_FIRST(all_sym_t, sym);
-
-			printf("int_sym->nitems = %zu\n", sym->nitems);
-			for (uint32_t j = 0; j < sym->nitems; j++, elem++)
+			// replace all extern symbols with their value
+	//		k = 0;
 			{
+				register all_sym_t	*elem = VEC_ELEM_FIRST(all_sym_t, sym);
 
-				if (elem->type == VAR && elem->var_data->file_number == i)
+				printf("int_sym->nitems = %zu\n", sym->nitems);
+				for (uint32_t j = 0; j < sym->nitems; j++, elem++)
 				{
-					register var_data_t	*var = elem->var_data;
-					printf("file_num = %u\n", var->file_number);
-					for (uint32_t l = 0; l < var->quantity; l++)
+
+					if (elem->type == VAR && elem->var_data->file_number == i)
 					{
-						printf("var_pos = %u\n", var->pos[l] - 8);
-						uint8_t		*inst = buf + var->pos[l] - 8;
-						uint8_t		symbol_size = inst_length[*inst];
-						
-						printf(">>>> repace at inst 0x%x\n", *inst);
-
-						uint8_t		operation = inst[symbol_size];
-						inst++;
-						uint32_t	value = inst[0] | (inst[1] << 8);
-
-						printf("VAR ADDR = 0x%x\n", elem->data1);
-						if (operation == '-')
-							value -= elem->data1;
-						else if (operation == '+')
-							value += elem->data1;
-						else
-							value = elem->data1;
-
-						if (symbol_size == 3)
+						register var_data_t	*var = elem->var_data;
+						printf("file_num = %u\n", var->file_number);
+						for (uint32_t l = 0; l < var->quantity; l++)
 						{
-							if (value > 0xffff)
-								fprintf(stderr, "OVERFLOW inst ????? file ?????\n");
+							printf("var_pos = %u\n", var->pos[l] - 8);
+							uint8_t		*inst = buf + var->pos[l] - 8;
+							uint8_t		symbol_size = inst_length[*inst];
+							
+							printf(">>>> repace at inst 0x%x\n", *inst);
 
-							inst[0] = (uint8_t)value;
-							inst[1] = (uint8_t)(value >> 8);
-							inst[2] = 0xdd;
+							uint8_t		operation = inst[symbol_size];
+							inst++;
+							uint32_t	value = inst[0] | (inst[1] << 8);
+
+							printf("VAR ADDR = 0x%x\n", elem->data1);
+							if (operation == '-')
+								value -= elem->data1;
+							else if (operation == '+')
+								value += elem->data1;
+							else
+								value = elem->data1;
+
+							if (symbol_size == 3)
+							{
+								if (value > 0xffff)
+									fprintf(stderr, "OVERFLOW inst ????? file ?????\n");
+
+								inst[0] = (uint8_t)value;
+								inst[1] = (uint8_t)(value >> 8);
+								inst[2] = 0xdd;
+							}
+							else if (symbol_size == 2)
+							{
+								if (value > 0xff)
+									fprintf(stderr, "OVERFLOW inst ????? file ?????\n");
+
+								inst[0] = (uint8_t)value;
+								inst[1] = 0xdd;
+							}
+
 						}
-						else if (symbol_size == 2)
-						{
-							if (value > 0xff)
-								fprintf(stderr, "OVERFLOW inst ????? file ?????\n");
-
-							inst[0] = (uint8_t)value;
-							inst[1] = 0xdd;
-						}
-
 					}
 				}
 			}
-		}
-		}
-		fclose(file);
 
 // cut info in code
 		uint8_t		*new_buf = malloc(header.code_length - 8);
@@ -1329,7 +1323,7 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 					inc++;
 				else if (len == 4)
 				{
-					inc = 2;
+					inc = 1;
 					len = 2;
 				}
 
@@ -1362,16 +1356,17 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 			}
 		}
 
-		all_code_t	new = {code_start, code_start + code_length, new_buf, i};
-		if (code->nitems == 0)
-			vector_push(code, (void*)&new);
-		else
-			VEC_SORTED_INSERT(code, code_start, new);
+		all_code_t	new = {code_start, code_start + z, new_buf, i};
+		vector_push(code, (void*)&new);
+		}
+		fclose(file);
 	}
 
 	all_code_t	new = {0x100, 0x150, NULL, -1};
 	new.code = get_cartridge_header_code();
-	VEC_SORTED_INSERT(code, code_start, new);
+	vector_push(code, (void*)&new);
+
+	vector_sort(code);
 
 	//check code overlap
 	register all_code_t		*elem = VEC_ELEM_FIRST(all_code_t, code);
@@ -1388,7 +1383,7 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 		printf("(%u) start = 0x%x\n", i, elem->start);
 		if (elem->start < end)
 		{
-			fprintf(stderr, "code overlap in 0x%x (previous code start), 0x%x (next code end)\n", elem->start, end);
+			fprintf(stderr, "code overlap in 0x%x (current code start), 0x%x (previous code end)\n", elem->start, end);
 			g_error++;
 		}
 		if ((elem->start > 0x100 && elem->start < 0x150) || (elem->end > 0x100 && elem->end < 0x150))
@@ -1445,6 +1440,7 @@ void		write_binary(vector_t *code, const char *filename)
 	register uint32_t	tmp = elem->start;
 	register uint32_t	end = elem->end;
 	
+	printf("WRITE 0x%x\n", elem->start);
 	while (tmp > 128)
 	{
 		fwrite(fill, 1, 128, file);
@@ -1456,6 +1452,7 @@ void		write_binary(vector_t *code, const char *filename)
 
 	for (uint32_t i = 1; i < code->nitems; i++, elem++)
 	{
+	printf("WRITE 0x%x\n", elem->start);
 		if (end < elem->start)
 		{
 			tmp = elem->start - end;
