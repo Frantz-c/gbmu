@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/09 14:03:15 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/09 16:54:34 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -395,6 +395,7 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 			puts("[]{}[]{}");
 			goto __unexpected_char;
 		}
+		printf("ADD_LABEL FROM LINE %u\n", data->lineno);
 		add_label(strndup(name, end - name), area, ext_symbol, loc_symbol, data); //test if not mnemonic
 		return (s);
 	}
@@ -963,7 +964,10 @@ int		add_extern_symbols_bin(vector_t *sym, char *buf, uint32_t len, uint32_t fil
 		i += sizeof(uint32_t);
 
 		if (tmp.type != VAR && tmp.type != LABEL)
+		{
+			puts("A DEBUGUER");
 			return (-1);
+		}
 
 		tmp.quantity = *(uint32_t*)(buf + i);
 		i += sizeof(uint32_t);
@@ -1012,6 +1016,7 @@ void	get_symbols(const char *filename, vector_t *sym, vector_t *ext_sym, uint32_
 		if (add_intern_symbols_bin(sym, buf, header.intern_symbols_length, file_number) == -1)
 		{
 			free(buf);
+			puts("#xxx");
 			// free(var)
 			goto __file_error;
 		}
@@ -1035,6 +1040,7 @@ void	get_symbols(const char *filename, vector_t *sym, vector_t *ext_sym, uint32_
 		if (add_extern_symbols_bin(ext_sym, buf, extern_length, file_number) == -1)
 		{
 			free(buf);
+			puts("#yyy");
 			// free(var)
 			goto __file_error;
 		}
@@ -1570,6 +1576,7 @@ int		main(int argc, char *argv[])
 		create_object_file(code_area, &local_symbol, extern_symbol, *p);
 
 		vector_reset(code_area);
+		vector_reset(extern_symbol);
 		vector_reset(local_symbol.label);
 		vector_reset(local_symbol.memblock);
 		vector_filter(macro, &macro_filter);
