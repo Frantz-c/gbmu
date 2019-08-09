@@ -1,3 +1,16 @@
+/* ************************************************************************** */
+/*                                                          LE - /            */
+/*                                                              /             */
+/*   memory_map.c                                     .::    .:/ .      .::   */
+/*                                                 +:+:+   +:    +:  +:+:+    */
+/*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
+/*                                                 #+#   #+    #+    #+#      */
+/*   Created: 2019/08/09 12:16:21 by mhouppin     #+#   ##    ##    #+#       */
+/*   Updated: 2019/08/09 12:16:22 by mhouppin    ###    #+. /#+    ###.fr     */
+/*                                                         /                  */
+/*                                                        /                   */
+/* ************************************************************************** */
+
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -82,7 +95,7 @@ void		load_cartridge_on_memory(uint8_t *mem)
 	uint8_t		*rom;
 
 	cartridge_size = (0x8000 << g_cart.rom_size);
-	g_cart.n_rom_banks = (g_cart.rom_size) ? (2 << g_cart.rom_size) : 0;
+	g_cart.n_rom_banks = (2 << g_cart.rom_size);
 
 	if (cartridge_size != g_cart.size)
 	{
