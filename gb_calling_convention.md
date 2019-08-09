@@ -9,8 +9,8 @@ Therefore, do not expect it to work on another emulator with this functionality.
 ## 2. Why a calling convention ?
 
 The objective of a calling convention is to allow developers to use functions that are
-not written by themselves. It is a sort of code uniformization. We create this calling
-convention with an aim: make our work usable by everyone who would like to dig in
+not written by themselves. It is a sort of code uniformization. We created this calling
+convention with an aim: make our work usable by anyone who would like to dig in
 Gameboy assembly development.
 
 ## 3. Rules
