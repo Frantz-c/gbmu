@@ -1,5 +1,7 @@
 ressources
 *.o
+*.gb
+*.gbo
 *.dSYM
 log_gbmul
 *.sav
@@ -7,4 +9,6 @@ log_gbmul
 project/gbmu_project
 Gbmu.app
 roms
+gbasm
+gbdis
 unit-test
