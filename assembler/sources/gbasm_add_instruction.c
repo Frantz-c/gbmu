@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 22:10:25 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/08 17:28:51 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/09 15:38:49 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -590,6 +590,8 @@ int		calcul_param(char *param, value_t *n)
 	{
 		base = (int32_t)atou_type(param, &len, type);
 		param += len;
+		if (n->is_signed)
+			base = 0 - base;
 	}
 	else if (n->is_signed == 1)
 		goto __label_syntax;
@@ -704,6 +706,7 @@ __set_n_return:
 			base, base, result, result, first_operator ? *first_operator : 0);
 	if (minus)
 	{
+		/*
 		if (base - result < 0)
 		{
 			g_error++;
@@ -715,11 +718,14 @@ __set_n_return:
 			fprintf(stderr, "overflow\n");
 		}
 		result = (uint32_t)(base - result);
+		*/
 	}
 	else
 	{
+		printf("base + result :::: %d + %d = %d\n", base, result, base + result);
 		result = base + result;
-		if (result < 0)
+		/*
+		if (result < -0x10000)
 		{
 			g_error++;
 			fprintf(stderr, "underflow\n");
@@ -729,6 +735,7 @@ __set_n_return:
 			g_error++;
 			fprintf(stderr, "overflow\n");
 		}
+		*/
 	}
 	n->value = result;
 	// cut end of string ("a+b*c+d" -> "a")
