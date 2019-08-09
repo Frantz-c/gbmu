@@ -1,6 +1,6 @@
 # Calling Convention
 
-## 1. Warnings
+## 1. Disclaimer
 
 This calling convention is **not** the official calling convention for gameboy assembly.
 It has been written to facilitate the use of the command creation on this software.
