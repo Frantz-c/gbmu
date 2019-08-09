@@ -6,10 +6,8 @@
 
 
 .bank	0, 0x150
-xor		A
-ld		A, STAT
-ld		B, 1
-add		A, B
-label:
-	jr		label
-	call	0x3434
+
+ld		A,		0x33
+ld		(toto), A
+ld		A,		(toto)
+ld		(titi), A

@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/27 19:25:27 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/08 11:38:12 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/09 09:36:41 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -232,6 +232,8 @@ void __attribute__((always_inline))
 //	(*code)[(*i)++] = (uint8_t)inst->size;
 	if (inst->size == 3)
 	{
+		printf("(var) \e[1;46m   >   \e[0minstruction \"0x%hhx\" => %u : {0x%x 0x%x 0x%x}\n",
+				inst->opcode[0], inst->size, inst->opcode[1], inst->opcode[2], inst->opcode[3]);
 		memcpy(*code + *i, inst->opcode, 4);
 		*i += 4;
 	}
@@ -271,7 +273,7 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 		fprintf(stderr, "No instructions on the file\n");
 		exit(1);
 	}
-	printf("\e[1;36mcode_area->nitems = %u\e[0m\n", code_area->nitems);
+	printf("\e[1;36mcode_area->nitems = %zu\e[0m\n", code_area->nitems);
 	for (code_area_t *area = VEC_ELEM_FIRST(code_area_t, code_area); j < code_area->nitems; j++, area++)
 	{
 		if (area->size == 0)

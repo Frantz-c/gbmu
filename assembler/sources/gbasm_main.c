@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/08 18:41:05 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/09 10:21:25 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -128,6 +128,7 @@ void		replace_internal_symbols(vector_t *area, loc_sym_t *local_symbol)
 						printf("val = %i, lab_addr = 0x%x, c->addr = 0x%x\n", val, lab_addr, c->addr);
 						lab_addr -= c->addr;
 						val = (c->opcode[3] == '-') ? lab_addr - val : lab_addr + val;
+						val -= 2;
 						printf("jr val = %i\n", val);
 						if (val > 0x7f || val < -128)
 						{
@@ -795,6 +796,23 @@ void		all_sym_destroy(void *a)
 	}
 }
 
+int			memblock2_cmp(const void *a, const void *b)
+{
+	register memblock2_t	*aa = (memblock2_t *)a;
+	register memblock2_t	*bb = (memblock2_t *)b;
+
+	return (strcmp(aa->name, bb->name));
+}
+
+int			memblock2_search(const void *b, const void *a)
+{
+	register memblock2_t	*aa = (memblock2_t *)a;
+	register char			*bb = *(char **)b;
+
+	printf("\e[0;33msearch\e[0m(%s, %s)\n", aa->name, bb);
+	return (strcmp(aa->name, bb));
+}
+
 const char	*get_type_str(uint32_t type)
 {
 	if (type == LABEL)
@@ -810,10 +828,11 @@ int		add_intern_symbols_bin(vector_t *sym, char *buf, uint32_t len, uint32_t fil
 {
 	all_sym_t		tmp;
 
-	for (uint32_t i = 0; i < len; i++)
+	for (uint32_t i = 0; i < len; )
 	{
 		register char	*name;
 		
+		printf("\e[1;35mNAME = \e[0;36m\"%s\"\e[0m\n", buf + i);
 		name = buf + i;
 		while (buf[i]) i++;
 		tmp.name = strndup(name, i);
@@ -1053,47 +1072,58 @@ void		assign_var_addr(vector_t *sym)
 	vector_t	*memblock;
 
 	memblock = vector_init(sizeof(memblock2_t));
-	memblock->search = &memblock_match;
-	memblock->compar = &memblock_cmp;
+	memblock->search = &memblock2_search;
+	memblock->compar = &memblock2_cmp;
 
-	for (uint32_t i = 0; i < sym->nitems; i++)
+	// add all memory blocks
 	{
-		register all_sym_t	*elem = VEC_ELEM(all_sym_t, sym, i);
+		register all_sym_t	*elem = VEC_ELEM_FIRST(all_sym_t, sym);
 
-		if (elem->type == MEMBLOCK)
+		for (uint32_t i = 0; i < sym->nitems; i++, elem++)
 		{
-			memblock2_t	new = {elem->data1, elem->data2, elem->data2 - elem->data1, 0, elem->name};
-			if (memblock->nitems == 0)
-				vector_push(memblock, (void*)&new);
-			else
-				VEC_SORTED_INSERT(memblock, elem->name, new);
+
+			if (elem->type == MEMBLOCK)
+			{
+				printf("memblock found ! (%s)\n", elem->name);
+				memblock2_t	new = {elem->data1, elem->data2, elem->data2 - elem->data1, 0, elem->name};
+				if (memblock->nitems == 0)
+					vector_push(memblock, (void*)&new);
+				else
+					VEC_SORTED_INSERT(memblock, elem->name, new);
+			}
+
 		}
 	}
 
-//	memblock->destroy = &memblock2_destroy;
-
-	for (uint32_t i = 0; i < sym->nitems; i++)
+	// add var in blocks
 	{
-		register all_sym_t	*elem = VEC_ELEM(all_sym_t, sym, i);
-		register ssize_t	index;
+		register all_sym_t	*elem = VEC_ELEM_FIRST(all_sym_t, sym);
 
-		if (elem->type == VAR)
+		for (uint32_t i = 0; i < sym->nitems; i++, elem++)
 		{
-			if ((index = vector_search(memblock, (void*)&elem->name)) != -1)
-			{
-				register memblock2_t	*block = VEC_ELEM(memblock2_t, memblock, index);
+			register ssize_t	index;
 
-				if (block->space < elem->data2)
+			if (elem->type == VAR)
+			{
+				printf("search variable %s in all memory blocks\n", elem->var_data->block);
+				if ((index = vector_search(memblock, (void*)&elem->var_data->block)) != -1)
 				{
-					fprintf(stderr, "too few space in %s memory block for variable %s\n", block->name, elem->name);
-					g_error++;
-				}
-				else
-				{
-					elem->data1 = block->end - block->space;
-					block->space -= elem->data2;
+					register memblock2_t	*block = VEC_ELEM(memblock2_t, memblock, index);
+
+					if (block->space < elem->data2)
+					{
+						fprintf(stderr, "too few space in %s memory block for variable %s\n", block->name, elem->name);
+						g_error++;
+					}
+					else
+					{
+						puts("variable found !");
+						elem->data1 = block->end - block->space;
+						block->space -= elem->data2;
+					}
 				}
 			}
+			
 		}
 	}
 
@@ -1137,7 +1167,7 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 	FILE			*file;
 	tmp_header_t	header;
 	uint32_t		length = 0;
-	uint32_t		k;
+//	uint32_t		k;
 	uint32_t		code_start, code_length;
 	uint32_t		ret = 0;
 
@@ -1160,7 +1190,7 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 		printf("code_start = 0x%x, code_length = %u\n", code_start, code_length);
 
 		if (length == 0)
-			buf = malloc(code_length);
+			buf = malloc(code_length );
 		else if (length < code_length)
 			buf = realloc(buf, code_length);
 
@@ -1172,53 +1202,121 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 		}
 		fclose(file);
 	
-		k = 0;
-		for (uint32_t j = 0; j < ext_sym->nitems; j++)
+		// replace all extern symbols with their value
+//		k = 0;
 		{
-			register all_ext_sym_t	*elem = VEC_ELEM(all_ext_sym_t, ext_sym, j);
+			register all_ext_sym_t	*elem = VEC_ELEM_FIRST(all_ext_sym_t, ext_sym);
 
-			if (elem->file_number == i)
+			printf("ext_sym->nitems = %zu\n", ext_sym->nitems);
+			for (uint32_t j = 0; j < ext_sym->nitems; j++, elem++)
 			{
-				for (uint32_t l = 0; l < elem->quantity; l++)
+
+				printf("file_num = %u, i = %u\n", elem->file_number, i);
+				if (elem->file_number == i)
 				{
-					uint8_t		*inst = buf + elem->pos[l];
-					uint8_t		symbol_size = inst_length[*inst];
-					int32_t		index;
-					
-					index = vector_search(sym, (void*)&elem->name);
+					register ssize_t	index = vector_search(sym, (void*)&elem->name);
 					register all_sym_t	*p = VEC_ELEM(all_sym_t, sym, index);
 
-					uint8_t		operation = inst[symbol_size];
-					inst++;
-					uint32_t	value = inst[0] | (inst[1] << 8);
-
-					if (operation == '-')
-						value -= p->data1;
-					else if (operation == '+')
-						value += p->data1;
-					if (symbol_size == 3)
+					for (uint32_t l = 0; l < elem->quantity; l++)
 					{
-						if (value > 0xffff)
-							fprintf(stderr, "OVERFLOW inst ????? file ?????\n");
+						uint8_t		*inst = buf + elem->pos[l] - 8;
+						uint8_t		symbol_size = inst_length[*inst];
+						
+						printf(">>>> repace at inst 0x%x\n", *inst);
 
-						inst[0] = (uint8_t)value;
-						inst[1] = (uint8_t)(value >> 8);
-						inst[2] = 0xdd;
+						uint8_t		operation = inst[symbol_size];
+						inst++;
+						uint32_t	value = inst[0] | (inst[1] << 8);
+
+						printf("EXT SYM VALUE = 0x%x\n", p->data1);
+						if (operation == '-')
+							value -= p->data1;
+						else if (operation == '+')
+							value += p->data1;
+						else
+							value = p->data1;
+
+						if (symbol_size == 3)
+						{
+							if (value > 0xffff)
+								fprintf(stderr, "OVERFLOW inst ????? file ?????\n");
+
+							inst[0] = (uint8_t)value;
+							inst[1] = (uint8_t)(value >> 8);
+							inst[2] = 0xdd;
+						}
+						else if (symbol_size == 2)
+						{
+							if (value > 0xff)
+								fprintf(stderr, "OVERFLOW inst ????? file ?????\n");
+
+							inst[0] = (uint8_t)value;
+							inst[1] = 0xdd;
+						}
+
 					}
-					else if (symbol_size == 2)
-					{
-						if (value > 0xff)
-							fprintf(stderr, "OVERFLOW inst ????? file ?????\n");
-
-						inst[0] = (uint8_t)value;
-						inst[1] = 0xdd;
-					}
-
 				}
 			}
 		}
 
-		uint8_t		*new_buf = malloc(header.code_length);
+		// replace all extern symbols with their value
+//		k = 0;
+		{
+			register all_sym_t	*elem = VEC_ELEM_FIRST(all_sym_t, sym);
+
+			printf("int_sym->nitems = %zu\n", sym->nitems);
+			for (uint32_t j = 0; j < sym->nitems; j++, elem++)
+			{
+
+				if (elem->type == VAR && elem->var_data->file_number == i)
+				{
+					register var_data_t	*var = elem->var_data;
+					printf("file_num = %u\n", var->file_number);
+					for (uint32_t l = 0; l < var->quantity; l++)
+					{
+						printf("var_pos = %u\n", var->pos[l] - 8);
+						uint8_t		*inst = buf + var->pos[l] - 8;
+						uint8_t		symbol_size = inst_length[*inst];
+						
+						printf(">>>> repace at inst 0x%x\n", *inst);
+
+						uint8_t		operation = inst[symbol_size];
+						inst++;
+						uint32_t	value = inst[0] | (inst[1] << 8);
+
+						printf("VAR ADDR = 0x%x\n", elem->data1);
+						if (operation == '-')
+							value -= elem->data1;
+						else if (operation == '+')
+							value += elem->data1;
+						else
+							value = elem->data1;
+
+						if (symbol_size == 3)
+						{
+							if (value > 0xffff)
+								fprintf(stderr, "OVERFLOW inst ????? file ?????\n");
+
+							inst[0] = (uint8_t)value;
+							inst[1] = (uint8_t)(value >> 8);
+							inst[2] = 0xdd;
+						}
+						else if (symbol_size == 2)
+						{
+							if (value > 0xff)
+								fprintf(stderr, "OVERFLOW inst ????? file ?????\n");
+
+							inst[0] = (uint8_t)value;
+							inst[1] = 0xdd;
+						}
+
+					}
+				}
+			}
+		}
+
+// cut info in code
+		uint8_t		*new_buf = malloc(header.code_length - 8);
 		uint32_t	z = 0;
 
 		for (uint32_t j = 0; j < code_length; j++)
@@ -1381,12 +1479,15 @@ void		write_binary(vector_t *code, const char *filename)
  */
 int		main(int argc, char *argv[])
 {
-	char			*file[3];
+	char			**file = argv + 1;
 	vector_t		*macro = NULL;
 	vector_t		*code_area = NULL;
 	vector_t		*extern_symbol = NULL;
 	loc_sym_t		local_symbol = {NULL, NULL};
-	uint32_t		n_files;
+//	uint32_t		n_files;
+
+	if (argc == 1)
+		return (1);
 
 	cartridge_info._0x00c3[0] = 0x00U;
 	cartridge_info._0x00c3[1] = 0xc3U;
@@ -1410,11 +1511,11 @@ int		main(int argc, char *argv[])
 	cartridge_info.complement_check = get_complement_check();
 	/* end */
 
-
+/*
 	file[0]	= "hard-test.gbs";
 	file[1]	= NULL;
 	n_files = 1;
-
+*/
 	macro = set_builtin_macro();
 	code_area = vector_init(sizeof(code_area_t));
 	code_area->compar = &area_cmp;
@@ -1486,6 +1587,15 @@ int		main(int argc, char *argv[])
 		{
 			get_symbols(file[i], sym, ext_sym, i);
 		}
+
+		all_extern_symbols_exist(sym, ext_sym, file);
+		if (g_error)
+			goto __end_compilation;
+
+		assign_var_addr(sym);
+		if (g_error)
+			goto __end_compilation;
+
 		puts("intern symbols");
 		for (uint32_t i = 0; i < sym->nitems; i++)
 		{
@@ -1500,14 +1610,6 @@ int		main(int argc, char *argv[])
 
 			printf("%s (%s) : quantity 0x%x\n", tmp->name, get_type_str(tmp->type), tmp->quantity);
 		}
-
-		all_extern_symbols_exist(sym, ext_sym, file);
-		if (g_error)
-			goto __end_compilation;
-
-		assign_var_addr(sym);
-		if (g_error)
-			goto __end_compilation;
 
 		get_code_with_replacement(sym, ext_sym, code, file);
 		if (g_error)

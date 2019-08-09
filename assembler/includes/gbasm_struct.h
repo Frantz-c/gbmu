@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/06 11:38:18 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/08 09:57:30 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/09 09:10:28 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -94,7 +94,7 @@ typedef struct	var_data_s
 	uint32_t	quantity;	
 	uint32_t	file_number;
 	char		*block;		
-	char		*pos;		
+	uint32_t	*pos;		
 	struct var_data_s	*next;
 }
 var_data_t;
@@ -115,6 +115,7 @@ typedef struct	all_ext_sym_s
 }
 all_ext_sym_t;
 
+// intern_symbols
 typedef struct	all_sym_s
 {
 	char		*name;

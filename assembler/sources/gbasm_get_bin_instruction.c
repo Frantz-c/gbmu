@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/25 10:03:09 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/08 19:13:18 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/09 09:45:17 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -1468,6 +1468,7 @@ __mov:
 					error.p2 = INVAL_SRC;
 					break ;
 			}
+			break ;
 
 		case BC_ADDR:
 			switch (param[1])
@@ -1493,6 +1494,7 @@ __mov:
 					error.p2 = INVAL_SRC;
 					break ;
 			}
+			break ;
 
 		case HLI:
 			switch (param[1])
@@ -1505,6 +1507,7 @@ __mov:
 					error.p2 = INVAL_SRC;
 					break ;
 			}
+			break ;
 
 		case HLD:
 			switch (param[1])
@@ -1517,6 +1520,7 @@ __mov:
 					error.p2 = INVAL_SRC;
 					break ;
 			}
+			break ;
 
 		case FF00_C:
 			switch (param[1])
@@ -1529,6 +1533,7 @@ __mov:
 					error.p2 = INVAL_SRC;
 					break ;
 			}
+			break ;
 
 		case FF00_IMM8:
 			switch (param[1])
@@ -1542,6 +1547,7 @@ __mov:
 					error.p2 = INVAL_SRC;
 					break ;
 			}
+			break ;
 
 		case A:
 			switch (param[1])

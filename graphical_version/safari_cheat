@@ -5,3 +5,7 @@
 
 rset 0xd8a1 1 0xb4 0xff -> pokemons dresseur adverse
 set 0xd8ca 0x63 -> level pkmn adverse
+lvl pkmn 2 -> 0xd8f6
+lvl pkmn 3 -> 0xd922
+lvl pkmn 4 -> 0xd94e
+

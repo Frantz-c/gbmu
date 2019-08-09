@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 13:17:53 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/08 17:19:06 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/09 09:40:28 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -59,6 +59,7 @@ extern void			push_instruction(code_area_t *area, uint8_t bin[4], param_t p[2], 
 //	uint8_t		opsize = 0;
 	code_t		*new;
 	
+	printf("\e[1;40m<><><>\e[0m ADD {0x%x,  0x%x 0x%x,  0x%x}\n", bin[0], bin[1], bin[2], bin[3]);
 	new = calloc(1, sizeof(code_t));
 	if (area->cur == NULL)
 	{
