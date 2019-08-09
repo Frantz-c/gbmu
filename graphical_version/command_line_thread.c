@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/03 09:33:12 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/20 22:36:39 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/09 14:42:44 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -795,6 +795,48 @@ __print:
 					}
 					else
 						puts("syntax error");
+				}
+				else if (strncmp(p, "do_null", 7) == 0 && non_alnum(p[7]))
+				{
+					uint8_t		*lvl = GET_REAL_ADDR(0xd8ca);
+					uint8_t		*hp = GET_REAL_ADDR(0xd8aa);
+					uint8_t		*hp2= GET_REAL_ADDR(0xd8cb);
+					uint8_t		*pkmn = GET_REAL_ADDR(0xd8ab);
+					uint8_t		*header = GET_REAL_ADDR(0xd8a2);
+					uint8_t		*pkmn_count = GET_REAL_ADDR(0xd8a1);
+					uint32_t	level;
+					uint32_t	health_point;
+					uint32_t	nb_pkmn;
+
+					if ((p = va_parse_u32(p + 7, 0, 3, &nb_pkmn, &level, &health_point)) == NULL)
+						goto __forest_end;
+					if (level == 0xffffffffu || level > 255)
+						level = 255;
+					if (health_point == 0xffffffffu || health_point > 999)
+						health_point = 0;
+					if (nb_pkmn == 0xffffffffu || nb_pkmn > 6)
+						nb_pkmn = 6;
+
+					*pkmn_count = 0;
+					for (uint32_t i = 0; i < nb_pkmn; i++, lvl += 44, hp += 44, hp2 += 44, pkmn += 44, header++)
+					{
+						uint8_t	val;
+
+						do {
+							val = (rand() % 0xbe) + 1;
+						}
+						while (is_missingno(val));
+						
+						*lvl = level;
+						*hp = health_point >> 8;
+						*(hp + 1) = health_point;
+						*hp2 = health_point >> 8;
+						*(hp2 + 1) = health_point;
+						*pkmn = val;
+						*header = val;
+						(*pkmn_count)++;
+					}
+					*header = 0xff;
 				}
 				else if (strncmp(p, "etat", 4) == 0 && non_alnum(p[4]))
 				{
