@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/05 01:56:39 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/08 13:17:58 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/09 15:42:24 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -121,8 +121,8 @@ switch_ram:
 		}
 		else
 		{
-			g_get_real_addr[0xA] = g_memmap.ram_banks[value & 0x0Fu];
-			g_get_real_addr[0xB] = g_memmap.ram_banks[value & 0x0Fu] + 0x1000;
+			g_get_real_addr[0xA] = g_memmap.extern_ram_banks[value & 0x0Fu];
+			g_get_real_addr[0xB] = g_memmap.extern_ram_banks[value & 0x0Fu] + 0x1000;
 		}
 	}
 }

@@ -6,6 +6,7 @@ ressources
 log_gbmul
 *.sav
 *.d
+.DS_Store
 project/gbmu_project
 Gbmu.app
 roms
