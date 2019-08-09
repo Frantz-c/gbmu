@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/27 19:25:27 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/09 11:35:54 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/09 12:00:48 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -286,9 +286,9 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 		}
 
 		// ([start_addr]) * 4, ([length]) * 4
-		*(uint32_t*)(code + i) = area->addr;
-		len_pos = i + 4;
-		i += 8;
+		memcpy(code + i, &area->addr, sizeof(uint32_t));
+		len_pos = i + sizeof(uint32_t);
+		i += sizeof(uint32_t) * 2;
 
 		for (register code_t *inst = area->data; inst; inst = inst->next)
 		{
@@ -323,7 +323,9 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 			}
 		}
 
-		*(uint32_t*)(code + len_pos) = (uint32_t)(i - (len_pos + 4));
+//		*(uint32_t*)(code + len_pos) = (uint32_t)(i - (len_pos + 4));
+		uint32_t	tmp = i - (len_pos + sizeof(uint32_t));
+		memcpy(code + len_pos, &tmp, sizeof(uint32_t));
 	}
 
 	// fonction a coder

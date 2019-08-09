@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/09 11:47:29 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/09 11:56:19 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -837,7 +837,7 @@ int		add_intern_symbols_bin(vector_t *sym, char *buf, uint32_t len, uint32_t fil
 		tmp.name = strndup(name, i);
 		i++;
 
-		tmp.type = *(uint32_t*)(buf + i);
+		memcpy(&tmp.type, (buf + i), sizeof(uint32_t));
 		i += sizeof(uint32_t);
 
 		switch (tmp.type)
