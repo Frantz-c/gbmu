@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/09 10:21:25 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/09 11:47:29 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -376,7 +376,6 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 	uint32_t	argc;
 	char		*search = NULL;
 
-	printf("\nPARSE \"%s\"\n\n", s);
 	if (!is_alpha(*s) && *s != '_')
 	{
 		puts("{|}[|]");
@@ -1167,7 +1166,6 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 	FILE			*file;
 	tmp_header_t	header;
 	uint32_t		length = 0;
-//	uint32_t		k;
 	uint32_t		code_start, code_length;
 	uint32_t		ret = 0;
 
@@ -1177,11 +1175,9 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 		fread(&header, sizeof(tmp_header_t), 1, file);
 		fseek(file, header.header_length + 12, SEEK_SET);
 
-		if (fread(&code_start, sizeof(uint32_t), 1, file) != 1)
+		while (fread(&code_start, sizeof(uint32_t), 1, file) == 1)
 		{
-			printf("error code_start\n");
-			goto __error;
-		}
+
 		if (fread(&code_length, sizeof(uint32_t), 1, file) != 1)
 		{
 			printf("error code_length\n");
@@ -1190,7 +1186,7 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 		printf("code_start = 0x%x, code_length = %u\n", code_start, code_length);
 
 		if (length == 0)
-			buf = malloc(code_length );
+			buf = malloc(code_length);
 		else if (length < code_length)
 			buf = realloc(buf, code_length);
 
@@ -1200,7 +1196,8 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 			fprintf(stderr, "erreur chargement du code fichier %s (%u/%u)\n", files[i], ret, code_length);
 			exit(1);
 		}
-		fclose(file);
+		printf("%x %x %x %x\n\n", buf[0], buf[1], buf[2], buf[3]);
+
 	
 		// replace all extern symbols with their value
 //		k = 0;
@@ -1314,12 +1311,14 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 				}
 			}
 		}
+		}
+		fclose(file);
 
 // cut info in code
 		uint8_t		*new_buf = malloc(header.code_length - 8);
 		uint32_t	z = 0;
 
-		for (uint32_t j = 0; j < code_length; j++)
+		for (uint32_t j = 0; j < code_length;)
 		{
 			register uint8_t	len;
 			register uint8_t	inc = 0;
@@ -1338,12 +1337,28 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 
 				while (len)
 				{
-					new_buf[z++] = buf[j];
+					new_buf[z++] = buf[j++];
 					if (--len == 0)
 						break;
-					j++;
+				//	j++;
 				}
 				j += inc;
+			}
+			else
+			{
+				if (buf[j] == 0xddu && buf[j+1] == 0xddu && buf[j+2] == 0xddu)
+				{
+					register uint32_t	l = (buf[j+3] << 8) | buf[j+4];
+					printf("l = %u\n", l);
+					j += 5;
+					memcpy(new_buf + z, buf + j, l);
+					j += l;
+					z += l;
+				}
+				else
+				{
+					puts("\e[0;41;1;37mGROS PROBLEME, ILLEGAL INSTRUCTION EN DEHORS DE .BYTE\e[0m");
+				}
 			}
 		}
 
@@ -1366,9 +1381,11 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 		fprintf(stderr, "cartridge header overlap\n");
 		g_error++;
 	}
+	printf("(0) start = 0x%x\n", elem->start);
 	elem++;
 	for (uint32_t i = 1; i < code->nitems; i++, elem++)
 	{
+		printf("(%u) start = 0x%x\n", i, elem->start);
 		if (elem->start < end)
 		{
 			fprintf(stderr, "code overlap in 0x%x (previous code start), 0x%x (next code end)\n", elem->start, end);

@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/27 19:25:27 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/09 09:36:41 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/09 11:35:54 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -287,12 +287,6 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 
 		// ([start_addr]) * 4, ([length]) * 4
 		*(uint32_t*)(code + i) = area->addr;
-		/*
-		code[i] = (uint8_t)(area->addr >> 24);
-		code[i + 1] = (uint8_t)(area->addr >> 16);
-		code[i + 2] = (uint8_t)(area->addr >> 8);
-		code[i + 3] = (uint8_t)area->addr;
-		*/
 		len_pos = i + 4;
 		i += 8;
 
@@ -308,8 +302,8 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 					code = realloc(code, allocsize);
 				}
 				code[i++] = 0xddu;
-				code[i++] = n_bytes >> 24;
-				code[i++] = n_bytes >> 16;
+				code[i++] = 0xddu;
+				code[i++] = 0xddu;
 				code[i++] = n_bytes >> 8;
 				code[i++] = (uint8_t)n_bytes;
 				memcpy(code + i, inst->symbol, n_bytes);
