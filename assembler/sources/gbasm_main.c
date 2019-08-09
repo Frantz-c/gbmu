@@ -91,7 +91,7 @@ void	check_code_area_overflow(vector_t *area)
 		if (end >= a->addr)
 		{
 			g_error++;
-			fprintf(stderr, "chevauchement zone memoire (end = 0x%x, start = 0x%x)\n", end, a->addr);
+			fprintf(stderr, "overlap (end = 0x%x, start = 0x%x)\n", end, a->addr);
 		}
 	}
 }
@@ -123,17 +123,15 @@ void		replace_internal_symbols(vector_t *area, loc_sym_t *local_symbol)
 						|| *c->opcode == JRC || *c->opcode == JRNC)
 					{
 						register int32_t	val = c->opcode[1] | (c->opcode[2] << 8);
-						register uint32_t	lab_addr = (int32_t)lab->base_or_status;
+						register int32_t	lab_addr = lab->base_or_status;
 
-						printf("val = %i, lab_addr = 0x%x, c->addr = 0x%x\n", val, lab_addr, c->addr);
-						lab_addr -= c->addr;
+						lab_addr -= (int32_t)c->addr;
 						val = (c->opcode[3] == '-') ? lab_addr - val : lab_addr + val;
 						val -= 2;
-						printf("jr val = %i\n", val);
 						if (val > 0x7f || val < -128)
 						{
 							g_error++;
-							fprintf(stderr, "too big jump\n");
+							fprintf(stderr, "too big jump (%d)\n", val);
 						}
 						c->opcode[1] = (uint8_t)val;
 						c->opcode[2] = 0;
@@ -145,15 +143,13 @@ void		replace_internal_symbols(vector_t *area, loc_sym_t *local_symbol)
 
 						if (lab_addr >= 0x8000)
 							lab_addr = (lab_addr % 0x4000) + 0x4000;
-						printf("(1)val = 0x%x, lab->base = 0x%x\n", val, lab_addr);
 						val = (c->opcode[3] == '-') ? lab_addr - val: lab_addr + val;
-						printf("(2)val = 0x%x, lab->base = 0x%x\n", val, lab_addr);
 						c->opcode[1] = (uint8_t)val;
 						c->opcode[2] = (val >> 8);
 						if (val & 0xffff0000u)
 						{
 							g_error++;
-							fprintf(stderr, "overflow label\n");
+							fprintf(stderr, "overflow label (0x%x)\n", val);
 						}
 					}
 					free(c->symbol);
@@ -378,7 +374,7 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 
 	if (!is_alpha(*s) && *s != '_')
 	{
-		puts("{|}[|]");
+		fprintf(stderr, "(#0) ");
 		goto __unexpected_char;
 	}
 	s++;
@@ -392,16 +388,15 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 		s++;
 		if (!is_space(*s) && !is_endl(*s))
 		{
-			puts("[]{}[]{}");
+			fprintf(stderr, "(#1) ");
 			goto __unexpected_char;
 		}
-		printf("ADD_LABEL FROM LINE %u\n", data->lineno);
 		add_label(strndup(name, end - name), area, ext_symbol, loc_symbol, data); //test if not mnemonic
 		return (s);
 	}
 	else if (!is_space(*s) && *s != '(' && !is_endl(*s))
 	{
-		puts("UNEXP |><|><|><|");
+		fprintf(stderr, "(#2) ");
 		goto __unexpected_char;
 	}
 	/*
@@ -410,7 +405,6 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 */
 	search = strndup(name, s - name);
 	while (is_space(*s)) s++;
-	printf("\e[1;44mvector_search(\"%s\")\e[0m\n", search);
 	if ((macro_index = (uint32_t)vector_search(macro, (void*)&search)) != 0xffffffffu)
 	{
 		char		*content_ptr = NULL;
@@ -418,14 +412,13 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 		content = VEC_ELEM(macro_t, macro, macro_index)->content;
 		argc = VEC_ELEM(macro_t, macro, macro_index)->argc;
 
-		puts("\e[1;44mREPLACE_MACRO\e[0m\n");
 		if (*s == '(')
 		{
 			s++;
 			n_params = get_params(&s, macro_param);
 			if (n_params == 0xffu)
 			{
-				puts("UNEXP <>{}<>{}<>");
+				fprintf(stderr, "(#3) ");
 				goto __unexpected_char;
 			}
 			if (n_params != argc)
@@ -481,12 +474,11 @@ __next:
 	}
 	else if (*s == '(' && !is_space(s[-1]))
 	{
-		puts("UNEXP ><><><");
+		fprintf(stderr, "(#5) ");
 		goto __unexpected_char;
 	}
 
 //__add_instruction:
-	printf("name = \"%s\"\n", search);
 	s = add_instruction(search, area, ext_symbol, loc_symbol, macro, s, data);
 	free(search);
 	return (s);
@@ -678,6 +670,7 @@ char	*get_object_name(const char *s)
 	{
 		if (end == s)
 		{
+			g_error++;
 			fprintf(stderr, "fichier sans extention !\n");
 			exit(1);
 		}
@@ -699,7 +692,6 @@ uint8_t	get_complement_check(void)
 		total += n[i];
 	}
 	total += 0x19u;
-	printf("total = %hhu, cpl = %hhu, result = %hhu\n\n", total, (uint8_t)(0x100u - total), (uint8_t)(total + (uint8_t)(0x100u - total)));
 	return ((uint8_t)(0x100u - total));
 }
 
@@ -830,11 +822,11 @@ int		add_intern_symbols_bin(vector_t *sym, char *buf, uint32_t len, uint32_t fil
 	{
 		register char	*name;
 		
-		printf("\e[1;35mNAME = \e[0;36m\"%s\"\e[0m\n", buf + i);
 		name = buf + i;
 		while (buf[i]) i++;
 		tmp.name = strndup(name, i);
 		i++;
+		printf("INTERN SYMBOL FOUND = %s\n", tmp.name);
 
 		memcpy(&tmp.type, (buf + i), sizeof(uint32_t));
 		i += sizeof(uint32_t);
@@ -843,7 +835,8 @@ int		add_intern_symbols_bin(vector_t *sym, char *buf, uint32_t len, uint32_t fil
 		{
 			case LABEL:
 			{
-				tmp.data1 = *(uint32_t*)(buf + i);
+//				tmp.data1 = *(uint32_t*)(buf + i);
+				memcpy(&tmp.data1, buf + i, sizeof(uint32_t));
 				i += sizeof(uint32_t);
 				tmp.data2 = 0;
 				tmp.var_data = NULL;
@@ -858,7 +851,8 @@ int		add_intern_symbols_bin(vector_t *sym, char *buf, uint32_t len, uint32_t fil
 			{
 				var_data_t	*var_data = malloc(sizeof(var_data_t));
 
-				var_data->quantity = *(uint32_t *)(buf + i);
+//				var_data->quantity = *(uint32_t *)(buf + i);
+				memcpy(&var_data->quantity, buf + i, sizeof(uint32_t));
 				i += sizeof(uint32_t);
 				var_data->pos = malloc(sizeof(uint32_t) * var_data->quantity);
 				memcpy(var_data->pos, buf + i, var_data->quantity * sizeof(uint32_t));
@@ -870,7 +864,8 @@ int		add_intern_symbols_bin(vector_t *sym, char *buf, uint32_t len, uint32_t fil
 				var_data->file_number = file_number;
 				var_data->next = NULL;
 
-				tmp.data2 = *(uint32_t*)(buf + i);
+//				tmp.data2 = *(uint32_t*)(buf + i);
+				memcpy(&tmp.data2, buf + i, sizeof(uint32_t));
 				i += sizeof(uint32_t);
 
 				tmp.data1 = 0;	// addr
@@ -934,7 +929,10 @@ int		add_intern_symbols_bin(vector_t *sym, char *buf, uint32_t len, uint32_t fil
 				break;
 			}
 			default:
+			{
+				puts(">>>>> UNKNOWN TYPE <<<<<");
 				return (-1);
+			}
 		}
 
 		if (sym->nitems == 0)
@@ -951,7 +949,7 @@ int		add_extern_symbols_bin(vector_t *sym, char *buf, uint32_t len, uint32_t fil
 {
 	all_ext_sym_t		tmp;
 
-	for (uint32_t i = 0; i < len; i++)
+	for (uint32_t i = 0; i < len; )
 	{
 		register char	*name;
 		
@@ -959,17 +957,20 @@ int		add_extern_symbols_bin(vector_t *sym, char *buf, uint32_t len, uint32_t fil
 		while (buf[i]) i++;
 		tmp.name = strndup(name, i);
 		i++;
+		printf("EXTERN SYMBOL FOUND = %s\n", tmp.name);
 
-		tmp.type = *(uint32_t*)(buf + i);
+//		tmp.type = *(uint32_t*)(buf + i);
+		memcpy(&tmp.type, buf + i, sizeof(uint32_t));
 		i += sizeof(uint32_t);
 
-		if (tmp.type != VAR && tmp.type != LABEL)
+		if ((tmp.type & 0xfu) != 1) //tmp.type != VAR && tmp.type != LABEL && tmp.type != VAR_OR_LABEL)
 		{
-			puts("A DEBUGUER");
+			printf("symbol criminel ==> \"%s\"\n", tmp.name);
 			return (-1);
 		}
 
-		tmp.quantity = *(uint32_t*)(buf + i);
+//		tmp.quantity = *(uint32_t*)(buf + i);
+		memcpy(&tmp.quantity, buf + i, sizeof(uint32_t));
 		i += sizeof(uint32_t);
 
 		tmp.pos = malloc(sizeof(uint32_t) * tmp.quantity);
@@ -1065,7 +1066,7 @@ void		all_extern_symbols_exist(vector_t *sym, vector_t *ext_sym, char *file[])
 		if (vector_search(sym, (void*)&elem->name) == -1)
 		{
 			g_error++;
-			fprintf(stderr, "undefined symbol %s\n", file[elem->file_number]);
+			fprintf(stderr, "undefined symbol %s (file %s)\n", elem->name, file[elem->file_number]);
 		}
 	}
 }
@@ -1120,7 +1121,7 @@ void		assign_var_addr(vector_t *sym)
 					}
 					else
 					{
-						puts("variable found !");
+						printf("variable %s found !\n", elem->name);
 						elem->data1 = block->end - block->space;
 						block->space -= elem->data2;
 					}
@@ -1227,11 +1228,11 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 							inst++;
 							uint32_t	value = inst[0] | (inst[1] << 8);
 
-							printf("EXT SYM VALUE = 0x%x\n", p->data1);
+							printf("EXT SYM VALUE : 0x%x %c %u\n", p->data1, operation, value);
 							if (operation == '-')
-								value -= p->data1;
+								value = p->data1 - value;
 							else if (operation == '+')
-								value += p->data1;
+								value = p->data1 + value;
 							else
 								value = p->data1;
 

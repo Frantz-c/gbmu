@@ -121,6 +121,7 @@ extern void			push_instruction(code_area_t *area, uint8_t bin[4], param_t p[2], 
 				else if ((index = vector_search(ext_symbol, (void*)&symbol)) == -1)
 				{
 					label_t	sym = {symbol, 0, NOT_DECLARED, data->lineno, data->filename};
+
 					size_t	index = vector_index(loc_symbol->label, (void*)&symbol);
 					vector_insert(loc_symbol->label, (void*)&sym, index);
 					printf("\e[1;33minsert label undeclared %s\n", sym.name);
@@ -129,8 +130,12 @@ extern void			push_instruction(code_area_t *area, uint8_t bin[4], param_t p[2], 
 				{
 					symbol_t	*sym = VEC_ELEM(symbol_t, ext_symbol, index);
 
+					free(symbol);
 					if (sym->type == UNUSED)
+					{
+						printf("\e[1;44m<><>\e[0msymbol %s unused -> var_or_label\n", sym->name);
 						sym->type = VAR_OR_LABEL;
+					}
 					else if (sym->type == MEMBLOCK)
 					{
 						fprintf(stderr, "can't use memory block as operand\n");

@@ -136,7 +136,7 @@ void	instruction_replace(char **inst, char **param1, char **param2)	// "ld (ff00
 
 	if (*param1 && *param2)
 	{
-		printf("\e[1;47m       \e[0mREPLACE %s %s, %s ??\n", *inst, *param1, *param2);
+		printf("\e[1;47m       \e[0mINSTRUCTION : %s %s, %s ??\n", *inst, *param1, *param2);
 		// remplacment of ld's alternative syntaxes
 		if (((*inst)[0] == 'l' && (*inst)[1] == 'd' && (*inst)[2] == '\0')
 			|| ((*inst)[0] == 'm' && (*inst)[1] == 'o' && (*inst)[2] == 'v' && (*inst)[3] == '\0'))
@@ -147,7 +147,6 @@ void	instruction_replace(char **inst, char **param1, char **param2)	// "ld (ff00
 				uint32_t	len;
 
 
-				printf("\e[1;30;47mp1 = \"%s\"\n\e[0m", p1);
 				if ((type = is_numeric(p1, &len)) != 0)
 				{
 					if (atou_type(p1, NULL, type) == 0xff00u)
@@ -172,7 +171,6 @@ void	instruction_replace(char **inst, char **param1, char **param2)	// "ld (ff00
 						*inst = strdup("ldff");
 						goto __end;
 					}
-				puts("type = 0\n");
 				}
 			}
 			if (parent[1] == 1)
@@ -181,7 +179,6 @@ void	instruction_replace(char **inst, char **param1, char **param2)	// "ld (ff00
 				uint32_t	len;
 
 
-				printf("\e[1;30;47mp1 = \"%s\"\n\e[0m", p2);
 				if ((type = is_numeric(p2, &len)) != 0)
 				{
 					if (atou_type(p2, NULL, type) == 0xff00u)
@@ -207,10 +204,8 @@ void	instruction_replace(char **inst, char **param1, char **param2)	// "ld (ff00
 						goto __end;
 					}
 				}
-				puts("type = 0\n");
 			}
 
-			puts("N E X T");
 
 			if (LOWER((*param1)[0]) == 'h' && LOWER((*param1)[1]) == 'l' && LOWER((*param1)[2]) == '\0' 
 					&& LOWER((*param2)[0]) == 's' && LOWER((*param2)[1]) == 'p')
@@ -232,11 +227,8 @@ void	instruction_replace(char **inst, char **param1, char **param2)	// "ld (ff00
 			}
 			else
 			{
-				printf("p1 = \"%s\"\n", p1);
-				printf("p2 = \"%s\"\n", p2);
 				if (parent[0])
 				{
-					puts("PARENT[0]");
 					if (LOWER(p1[0]) == 'h' && LOWER(p1[1]) == 'l')
 					{
 						if (p1[2] == '+' && (p1[3] == '\0' || (p1[3] == '+' && p1[4] == '\0')))
@@ -255,7 +247,6 @@ void	instruction_replace(char **inst, char **param1, char **param2)	// "ld (ff00
 				}
 				if (parent[1])
 				{
-					puts("PARENT[1]");
 					if (LOWER(p2[0]) == 'h' && LOWER(p2[1]) == 'l')
 					{
 						if (p2[2] == '+' && (p2[3] == '\0' || (p2[3] == '+' && p2[4] == '\0')))
@@ -272,9 +263,6 @@ void	instruction_replace(char **inst, char **param1, char **param2)	// "ld (ff00
 						}
 					}
 				}
-				printf("p1 = \"%s\"\n", *param1);
-				printf("p2 = \"%s\"\n", *param2);
-
 			}
 		}
 	}
@@ -310,7 +298,6 @@ int		replace_macro(char **param, vector_t *macro)	// and delete spaces
 			while (is_alnum(*s) || *s == '_') s++; // s = identifier's end
 			end = s;
 
-			printf("*s = '%c'\n", *s);
 			/*
 			**	check if next character is valid (a +/- b * c + d)
 			*/
@@ -722,7 +709,6 @@ __set_n_return:
 	}
 	else
 	{
-		printf("base + result :::: %d + %d = %d\n", base, result, base + result);
 		result = base + result;
 		/*
 		if (result < -0x10000)
@@ -744,22 +730,20 @@ __set_n_return:
 
 __error:
 	n->value = 0;
+	g_error++;
 	fprintf(stderr, "ERROR CALCUL\n");
 	return (-1);
 
 __label_syntax:
 	n->value = 0;
+	g_error++;
 	fprintf(stderr, "label must begin with [a-zA-Z_]\n");
 	return (-1);
 
 __operator_error:
 	n->value = 0;
+	g_error++;
 	fprintf(stderr, "bad operator\n");
-	return (-1);
-
-__signed_error:
-	n->value = 0;
-	fprintf(stderr, "signed error\n");
 	return (-1);
 }
 
@@ -830,7 +814,6 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *ext_symbol, loc_sym_
 		if (calcul_param(param1, &val) == -1)
 			goto __error;
 		param[0] = get_type(param1, &val); //default SYMBOL
-		printf("\e[0;33mPARAM1 after replace\e[0m = \"%s\" (%s)\n", param1, get_param_type(param[0]));
 
 		if (param2)
 		{
@@ -841,7 +824,6 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *ext_symbol, loc_sym_
 			if (calcul_param(param2, &tmp_val) == -1)
 				goto __error;
 			param[1] = get_type(param2, &tmp_val); //default SYMBOL
-			printf("\e[0;33mPARAM2 after replace\e[0m = \"%s\" (%s)\n", param2, get_param_type(param[1]));
 			if (param[0] < FF00_IMM8 && param[1] >= FF00_IMM8)
 				val = tmp_val;
 		}
@@ -857,14 +839,16 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *ext_symbol, loc_sym_
 	else
 		free(param1);
 
+	if (val.value)
+		val.sign = '+';
 
 	param_error_t	error;
 	uint8_t		bin[4] = {0, 0, 0, val.sign};
 
+	printf("\e[0;33m%s %s, %s  {0x%x, 0x%x, 0x%x, %u}\n", inst, get_param_type(param[0]), get_param_type(param[1]), bin[0], bin[1], bin[2], bin[3]);
 	error = get_bin_instruction(inst, param, &val, bin);
 	if (error.p1 || error.p2)
 	{
-		g_error++;
 		const char *errtable[OVERFLOW + 1] = {
 			"Missing parameter for instruction\n",
 			"Too many parameters for instruction\n",
@@ -872,10 +856,17 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *ext_symbol, loc_sym_
 			"Invalid source for instruction\n",
 			"Address overflow\n"
 		};
+		
 		if (error.p1)
-			fprintf(stderr, errtable[error.p1]);
-		else
-			fprintf(stderr, errtable[error.p2]);
+		{
+			sprintf(data->buf, "%s", errtable[error.p1]);
+			print_error(data->filename, data->lineno, data->line, data->buf);
+		}
+		if (error.p2)
+		{
+			sprintf(data->buf, "%s", errtable[error.p2]);
+			print_error(data->filename, data->lineno, data->line, data->buf);
+		}
 	}
 	else
 		push_instruction(VEC_ELEM(code_area_t, area, data->cur_area), bin, param, symbol, ext_symbol, loc_symbol, data);

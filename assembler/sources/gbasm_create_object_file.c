@@ -266,19 +266,15 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 	code = malloc(sizeof(uint8_t) * 128);
 	allocsize = 128;
 
-	printf("\e[1;31m(5)\e[0mcode_area->addr = %x\n", VEC_ELEM_FIRST(code_area_t, code_area)->addr);
-	printf("&code_area->addr = %p\n", &VEC_ELEM_FIRST(code_area_t, code_area)->addr);
 	if (code_area->nitems == 0)
 	{
 		fprintf(stderr, "No instructions on the file\n");
 		exit(1);
 	}
-	printf("\e[1;36mcode_area->nitems = %zu\e[0m\n", code_area->nitems);
 	for (code_area_t *area = VEC_ELEM_FIRST(code_area_t, code_area); j < code_area->nitems; j++, area++)
 	{
 		if (area->size == 0)
 			continue;
-		printf("WRITE TO .O ADDR 0x%x\n", area->addr);
 		if ((allocsize - i) < 16)
 		{
 			allocsize += 128;
@@ -396,7 +392,6 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 		header_size += len + (sizeof(uint32_t) * (2 + ext->quantity));
 	}
 
-	printf("end = 0x%x 0x%x 0x%x\n", code[i - 3], code[i-2], code[i-1]);
 	fwrite(code, sizeof(uint8_t), i, file);
 
 	rewind(file);
