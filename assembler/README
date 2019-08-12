@@ -1,0 +1,65 @@
+                              *-------------------*
+                              | GB Assembly usage |
+                              *-------------------*
+
+====================================================================================
+*)	PREPROCESSOR
+
+	1) simple macro syntax
+		%define identifier	value
+	2) multiline macro
+		%define identifier	value\
+							value2
+	3) multiparam macro
+		%define identifier(val)			add A, val
+		%define identifier(val1, val2)	add A,		val1\
+										ld	val2,	A
+	4) call a macro without param
+		identifier
+	5) call a macro with param
+		identifier(A, B)
+	6) delete a macro
+		%undef identifier
+	7) include a file
+		%include file_name
+	
+	info:
+		- identifier's and parameters pattern is [a-zA-Z_][0-9a-zA-Z_]*
+		- max parameter number is fixed to 10
+		- use of macro with parameters in the operands is forbidden
+		- recursive include protection is automatic
+
+
+====================================================================================
+*)	COMMENT
+
+	comments begin with ';' or '#' characters and finish at end of line
+
+
+====================================================================================
+*)	VARIABLE
+
+	1) memory lock
+		lock a memory region with the .memlock directive
+		.memlock	memory_region_name, start_addr, end=end_addr
+			or
+		.memlock	memory_region_name, start_addr, len=length
+
+	2) declare a variable
+		.var[size]	var_name, memory_region_name
+	
+	3) example
+		.memlock	mem, 0xc000, end=0xc010
+		.var2		var, mem
+		.var6		string, mem
+
+	
+====================================================================================
+*)	EXTERN SYMBOLS
+
+	1) declare an extern symbol
+		.extern		symbol_name
+	
+	info:
+		extern symbols are only VARIABLES or LABELS
+

@@ -18,6 +18,22 @@
 #include "gbasm_error.h"
 #include "gbasm_get_bin_instruction.h"
 
+
+/*
+	nouveau systeme de calcul:
+
+		autoriser toutes les operations.
+		pas de float
+		operation binaires
+
+		contrainte:	
+			pas d'operation prioritaire sur un symbol
+			exemple:
+				symbol * 2 + 3 * 5 -> interpretation -> symbol * (2 + 3 * 5)
+				
+*/
+
+
 /*
 **	isolate operands without spaces inside. if value = "(toto + 1)", result is "(toto+1"
 */
