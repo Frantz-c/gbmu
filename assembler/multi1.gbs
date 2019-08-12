@@ -1,6 +1,5 @@
-.memlock	_block_, 0xc000, end=0xc020
-.var2		hp, _block_
-.var1		lvl, _block_
+
+%include include.gbs
 
 .memlock	_save_, 0xa000, end=0xa020
 .var2		hp_save, _save_
