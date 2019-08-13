@@ -29,24 +29,24 @@ Gameboy assembly development.
 ### 3.2 Function calls
 
 - Parameters for function call are transmitted in this order:
+  - A (or HL if parameter is 16-bit sized);
   - C (or BC if the parameter is 16-bit sized);
   - E (or DE if parameter is 16-bit sized);
-  - L (or HL if parameter is 16-bit sized);
   
 - If more parameters are needed, they are transmitted to the stack.
 
 e.g.:
 > function_one (8-bit value1, 16-bit value2, 8-bit value3)
 
-Parameter transfer: C (value1), DE (value2), L (value3)
+Parameter transfer: A (value1), BC (value2), E (value3)
 
-> function_two (8-bit value1, 8-bit value2, 16-bit value3)
+> function_two (16-bit value1, 8-bit value2, 16-bit value3)
 
-Parameter transfer: C (value1), E (value2), HL (value3)
+Parameter transfer: HL (value1), C (value2), DE (value3)
 
-> function_three (8-bit value1, 16-bit value2, 8-bit value3, 16-bit value4)
+> function_three (8-bit value1, 8-bit value2, 16-bit value3, 16-bit value4)
 
-Parameter transfer: C (value1), DE (value2), HL (value3), (SP + 2) (value4)
+Parameter transfer: A (value1), C (value2), DE (value3), (SP + 2) (value4)
 
 - Return value is stored in the accumulator (A), or the HighLow pointer
   (HL) if 16-bit sized.
