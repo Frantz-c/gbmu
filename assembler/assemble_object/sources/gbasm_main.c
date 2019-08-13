@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/13 13:46:08 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/13 13:23:37 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -1657,7 +1657,6 @@ int		main(int argc, char *argv[])
 **
 **
 */
-/*
 set_vectors(&macro, &code_area, &local_symbol, &extern_symbol)
 {
 	*macro = set_builtin_macro();
@@ -1727,6 +1726,7 @@ int main(int argc, char *argv[])
 	cartridge_info._0x33 = 0x33U;
 
 
+	/* infos temporaires */
 	cartridge_info.start_addr[0] = 0x50u;
 	cartridge_info.start_addr[1] = 0x01u;
 	strncpy((char*)cartridge_info.title, "__TEST__\0\0\0", 11);
@@ -1741,6 +1741,7 @@ int main(int argc, char *argv[])
 	cartridge_info.destination = 1;			// All others
 	cartridge_info.mask_rom_version = 0;	// version du jeu
 	cartridge_info.complement_check = get_complement_check();
+	/* end */
 
 
 
@@ -1809,4 +1810,4 @@ int main(int argc, char *argv[])
 	}
 	return (0);
 }
-*/
+

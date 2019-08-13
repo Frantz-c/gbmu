@@ -1,3 +1,16 @@
+
+
+cartridge_info_section
+{
+	uint32_t	cartridge_info_length;
+
+	{
+		uint8_t		addr;	//0x0 - 0x50
+		uint8_t		info[];	//create translation table
+	}
+};
+
+
 header
 {
 	uint32_t	header_length;
