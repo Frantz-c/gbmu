@@ -6,7 +6,7 @@
 #    By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+      #
 #                                                  #+#   #+    #+    #+#       #
 #    Created: 2019/08/09 11:57:29 by mhouppin     #+#   ##    ##    #+#        #
-#    Updated: 2019/08/09 12:10:25 by mhouppin    ###    #+. /#+    ###.fr      #
+#    Updated: 2019/08/13 14:11:59 by mhouppin    ###    #+. /#+    ###.fr      #
 #                                                          /                   #
 #                                                         /                    #
 # **************************************************************************** #
@@ -19,7 +19,7 @@ DEPENDS	:= $(patsubst sources/%.c,objects/%.d,$(SOURCES))
 
 OPTIMIZE:= -O3 -march=native
 ERRORS	:= -Wall -Wextra -Werror
-DEBUG	:= -fsanitize=undefined -g3
+DEBUG	:= -g3
 
 all: $(NAME)
 
@@ -29,7 +29,7 @@ $(NAME): objects $(OBJECTS)
 objects:
 	mkdir -p $@
 
-objects/%.o: sources/%.c
+objects/%.o: sources/%.c Makefile
 	$(CC) $(OPTIMIZE) $(DEBUG) -c -MMD $(ERRORS) -I include $(shell sdl2-config --cflags) -o $@ $<
 
 -include $(DEPENDS)

@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/05 01:56:39 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/09 15:42:24 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/13 14:24:15 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -97,13 +97,13 @@ void	MBC5_swap(uint8_t address, uint8_t value)
 	else if (address < 0x30u)
 	{
 		g_memmap.cart_reg[1] = value;
-		goto switch_ram;
+		goto switch_rom;
 	}
 	else if (address < 0x40u)
 	{
 		g_memmap.cart_reg[2] = (value & 0x01u);
 
-switch_ram:
+switch_rom:
 		rom_bank_no = (uint32_t)(g_memmap.cart_reg[1]) | ((uint32_t)g_memmap.cart_reg[2] << 8);
 		rom_bank_no %= g_cart.n_rom_banks;
 		g_memmap.switch_rom = g_memmap.rom_banks[rom_bank_no];
@@ -114,6 +114,7 @@ switch_ram:
 	}
 	else if (address < 0x60u)
 	{
+		g_memmap.cart_reg[3] = (value & 0x0Fu);
 		if (g_cart.n_ram_banks == 0)
 		{
 			g_get_real_addr[0xA] = g_memmap.complete_block + 0xA000u;

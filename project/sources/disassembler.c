@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/08 10:53:03 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/08 15:51:24 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/13 11:26:59 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -253,32 +253,32 @@ const t_strconv	opcodes[] = {
 	{"ret  C\n", NONE}, //0xd8   alt="retc\n"
 	{"reti\n", NONE},
 	{"jp   C, *\n", ADDR16}, // alt="jpc   *\n"
-	{NULL, 0}, //unused
+	{"ILLEGAL\n", NONE}, //unused
 	{"call C, *\n", ADDR16}, // alt="callc   *\n"
-	{NULL, 0}, //unused
+	{"ILLEGAL", NONE}, //unused
 	{"sbc  A, *\n", IMM8},
 	{"rst  0x18\n", NONE},
 	{"ld   (0xff00+*), A\n", ADDR8}, //0xe0
 	{"pop  HL\n", NONE},
 	{"ld   (0xff00+C), A\n", NONE}, /**** 2 bytes ?????  */
-	{NULL, 0},
-	{NULL, 0},
+	{"ILLEGAL", NONE},
+	{"ILLEGAL", NONE},
 	{"push HL\n", NONE},
 	{"and  *\n", IMM8},
 	{"rst  0x20\n", NONE},
 	{"add  SP, *\n", IMM8}, //0xe8
 	{"jp   (HL)\n", NONE},
 	{"ld   (*), A\n", ADDR16},
-	{NULL, 0},
-	{NULL, 0},
-	{NULL, 0},
+	{"ILLEGAL", NONE},
+	{"ILLEGAL", NONE},
+	{"ILLEGAL", NONE},
 	{"xor  *\n", IMM8},
 	{"rst  0x28\n", NONE},
 	{"ld   A, (0xff00+*)\n", ADDR8}, //0xf0
 	{"pop  AF\n", NONE},
 	{"ld   A, (0xff00+C)\n", NONE}, /**** 2 bytes ?????  */
 	{"di\n", NONE},
-	{NULL, 0},
+	{"ILLEGAL", NONE},
 	{"push AF\n", NONE},
 	{"or   *\n", IMM8},
 	{"rst  0x30\n", NONE},
@@ -286,8 +286,8 @@ const t_strconv	opcodes[] = {
 	{"ld   SP, HL\n", NONE},
 	{"ld   A, (*)\n", ADDR16},
 	{"ei\n", NONE},
-	{NULL, 0},
-	{NULL, 0},
+	{"ILLEGAL", NONE},
+	{"ILLEGAL", NONE},
 	{"cp   *\n", IMM8}, // alt="cmp   *\n"
 	{"rst  0x38\n", NONE}
 };
@@ -641,11 +641,11 @@ char *fmt_strcpy(char *src, enum e_operand_type optype, void *bin)
 void	dump(uint8_t *address, uint8_t opcode, registers_t *regs)
 {
 	dprintf(1,
-			"\nPC = 0x%x\n"
+			"\nPC = 0x%x, SP = 0x%x\n"
 			"A = %3u(%2X)  B = %2X     C = %2X     D = %2X\n"
 			"E =  %2X      H = %2X     L = %2X     F = %2X\n"
 			"AF = %4X    BC = %4X  DE = %4X  HL = %4X\n",
-			regs->reg_pc,
+			regs->reg_pc, regs->reg_sp,
 			regs->reg_a, regs->reg_a, regs->reg_b, regs->reg_c, regs->reg_d,
 			regs->reg_e, regs->reg_h, regs->reg_l, regs->reg_f,
 			regs->reg_af, regs->reg_bc, regs->reg_de, regs->reg_hl

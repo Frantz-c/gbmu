@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/05 01:48:05 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/08 16:02:59 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/13 14:02:54 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -25,8 +25,6 @@ void	launch_dma(uint8_t value)
 		return ;
 
 	uint8_t *address = GET_REAL_ADDR((uint16_t)value << 8);
-	address = __builtin_assume_aligned(address, 32);
-	g_memmap.complete_block = __builtin_assume_aligned(g_memmap.complete_block, 32);
 	__builtin_memcpy(g_memmap.complete_block + 0xFE00u, address, 160);
 }
 
