@@ -1,6 +1,6 @@
-#include "../includes/std_includes.h"
-#include "../includes/gbasm_struct.h"
-#include "gbasm_tools.h"
+#include "std_includes.h"
+#include "struct.h"
+#include "tools.h"
 
 extern char		*copy_macro_content(char *dest, char *s, uint32_t *lineno)
 {

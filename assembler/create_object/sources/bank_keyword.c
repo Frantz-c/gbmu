@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                          LE - /            */
 /*                                                              /             */
-/*   gbasm_bank_keyword.c                             .::    .:/ .      .::   */
+/*   bank_keyword.c                                   .::    .:/ .      .::   */
 /*                                                 +:+:+   +:    +:  +:+:+    */
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
@@ -12,9 +12,9 @@
 /* ************************************************************************** */
 
 #include "std_includes.h"
-#include "gbasm_struct.h"
-#include "gbasm_tools.h"
-#include "gbasm_error.h"
+#include "struct.h"
+#include "tools.h"
+#include "error.h"
 
 static int	set_addr(char **s, uint32_t *addr, data_t *data)
 {

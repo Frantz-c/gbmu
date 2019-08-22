@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                          LE - /            */
 /*                                                              /             */
-/*   gbasm_add_label.c                                .::    .:/ .      .::   */
+/*   add_label.c                                      .::    .:/ .      .::   */
 /*                                                 +:+:+   +:    +:  +:+:+    */
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
@@ -12,10 +12,10 @@
 /* ************************************************************************** */
 
 #include "std_includes.h"
-#include "gbasm_struct.h"
-#include "gbasm_struct_tools.h"
-#include "gbasm_tools.h"
-#include "gbasm_error.h"
+#include "struct.h"
+#include "struct_tools.h"
+#include "tools.h"
+#include "error.h"
 
 void	add_label(char *name, vector_t *area, vector_t *ext_symbol, loc_sym_t *loc_symbol, data_t *data)
 {

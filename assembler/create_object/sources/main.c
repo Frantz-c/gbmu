@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                          LE - /            */
 /*                                                              /             */
-/*   gbasm_main.c                                     .::    .:/ .      .::   */
+/*   main.c                                           .::    .:/ .      .::   */
 /*                                                 +:+:+   +:    +:  +:+:+    */
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
@@ -12,14 +12,14 @@
 /* ************************************************************************** */
 
 #include "std_includes.h"
-#include "gbasm_tools.h"
-#include "gbasm_macro.h"
-#include "gbasm_keywords.h"
-#include "gbasm_callback.h"
-#include "gbasm_error.h"
-#include "gbasm_struct.h"
-#include "gbasm_instruction_or_label.h"
-#include "gbasm_create_object_file.h"
+#include "tools.h"
+#include "macro.h"
+#include "keywords.h"
+#include "callback.h"
+#include "error.h"
+#include "struct.h"
+#include "instruction_or_label.h"
+#include "create_object_file.h"
 
 #define BEG						do{
 #define END						}while(0)

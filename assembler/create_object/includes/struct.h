@@ -35,6 +35,7 @@
 #define JRC		0x38
 #define JRNC	0x30
 
+#define IDENTIFIER_MAX_LENGTH	64
 
 // object files generation
 typedef struct	intern_symbols_s
@@ -60,7 +61,21 @@ typedef struct	extern_symbols_s
 }
 extern_symbols_t;
 
-
+typedef struct	duplicate_s
+{
+	uint32_t	start_addr:1;
+	uint32_t	title:1;
+	uint32_t	game_code:1;
+	uint32_t	cgb_support:1;
+	uint32_t	maker_code:1;
+	uint32_t	sgb_support:1;
+	uint32_t	cart_type:1;
+	uint32_t	rom_size:1;
+	uint32_t	ram_size:1;
+	uint32_t	destination:1;
+	uint32_t	version:1;
+}
+duplicate_t;
 // assembly files
 typedef struct	cart_info_s
 {
@@ -72,12 +87,12 @@ typedef struct	cart_info_s
 	uint8_t		cgb_support;
 	uint8_t		maker_code[2];
 	uint8_t		sgb_support;
-	uint8_t		game_pack_type;
+	uint8_t		game_pack;
 	uint8_t		rom_size;
 	uint8_t		ram_size;
 	uint8_t		destination;
 	uint8_t		_0x33;	//0x33
-	uint8_t		mask_rom_version;
+	uint8_t		version;
 	uint8_t		complement_check;
 	uint8_t		check_sum[2];
 }

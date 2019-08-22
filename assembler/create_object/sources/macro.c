@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                          LE - /            */
 /*                                                              /             */
-/*   gbasm_macro.c                                    .::    .:/ .      .::   */
+/*   macro.c                                          .::    .:/ .      .::   */
 /*                                                 +:+:+   +:    +:  +:+:+    */
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
@@ -12,11 +12,11 @@
 /* ************************************************************************** */
 
 #include "std_includes.h"
-#include "gbasm_struct.h"
-#include "gbasm_macro_func.h"
-#include "gbasm_macro.h"
-#include "gbasm_error.h"
-#include "gbasm_tools.h"
+#include "struct.h"
+#include "macro_func.h"
+#include "macro.h"
+#include "error.h"
+#include "tools.h"
 
 extern char	*define_macro(vector_t *macro, char *s, data_t *data)
 {

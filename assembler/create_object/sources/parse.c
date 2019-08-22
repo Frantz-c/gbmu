@@ -11,6 +11,13 @@
 /*                                                        /                   */
 /* ************************************************************************** */
 
+typedef struct	arguments_s
+{
+	int32_t	type;
+	void	*value;
+}
+arguments_t;
+
 static char	*get_keyword(char *s)
 {
 	char	*start = s;
@@ -107,48 +114,144 @@ STATIC_DEBUG void			vector_print(vector_t *vec, char *name, void (*print)(const 
 	}\
 }
 
+
 #define KEYWORDS()	\
 {\
 	uint32_t	len;\
+	uint32_t	type;\
 \
-	if (strncmp(s + 1, "bank", 4) == 0 && !is_alnum(s[5]))\
-		s = bank_switch(area, s + 6, &data);\
-	else if (strncmp(s + 1, "byte", 4) == 0 && !is_alnum(s[5]))\
-		s = add_bytes(area, s + 6, &data);\
-	else if (strncmp(s + 1, "memlock", 7) == 0 && !is_alnum(s[8]))\
-		s = set_memlock_area(loc_symbol->memblock, s + 9, &data);\
-	else if (strncmp(s + 1, "var", 3) == 0 && is_numeric(s + 4, &len) && is_space(s[len + 4]))\
-		s = assign_var_to_memory(loc_symbol, ext_symbol, s + 4, &data);\
-	else if (strncmp(s + 1, "extern", 6) == 0 && !is_alnum(s[7]))\
-		s = set_extern_symbol(ext_symbol, s + 8, &data);\
-	else if (strncmp(s + 1, "program_start", 13) == 0 && !is_alnum(s[14]))\
-		s = set_program_start(s + 14);\
-	else if (strncmp(s + 1, "game_title", 10) == 0 && !is_alnum(s[11]))\
-		s = set_game_title(s + 11);\
-	else if (strncmp(s + 1, "game_code", 9) == 0 && !is_alnum(s[10]))\
-		s = set_game_code(s + 10);\
-	else if (strncmp(s + 1, "cgb_support", 11) == 0 && !is_alnum(s[12]))\
-		s = set_cgb_support(s + 12);\
-	else if (strncmp(s + 1, "maker_code", 10) == 0 && !is_alnum(s[11]))\
-		s = set_maker_code(s + 11);\
-	else if (strncmp(s + 1, "sgb_support", 11) == 0 && !is_alnum(s[12]))\
-		s = set_sgb_support(s + 12);\
-	else if (strncmp(s + 1, "rom_size", 8) == 0 && !is_alnum(s[9]))\
-		s = set_rom_size(s + 9);\
-	else if (strncmp(s + 1, "ram_size", 8) == 0 && !is_alnum(s[9]))\
-		s = set_ram_size(s + 9);\
-	else if (strncmp(s + 1, "code_dest", 9) == 0 && !is_alnum(s[10]))\
-		s = set_code_dest(s + 10);\
-	else if (strncmp(s + 1, "version", 7) == 0 && !is_alnum(s[8]))\
-		s = set_version(s + 8);\
+	if (strcmp(keyword, "bank") == 0)\
+		s = bank_switch(area, &args, &data);\
+	else if (strcmp(keyword, "byte") == 0)\
+		s = add_bytes(area, &args, &data);\
+	else if (strcmp(keyword, "memlock") == 0)\
+		s = set_memlock_area(loc_symbol->memblock, &args, &data);\
+	else if (strncmp(keyword, "var", 3) == 0 && (type = is_numeric(keyword + 3, &len)) && is_space(keyword[len + 3]))\
+		s = assign_var_to_memory(loc_symbol, ext_symbol, atou_type(keyword + 3, NULL, type), &args, &data);\
+	else if (strcmp(keyword, "extern") == 0)\
+		s = set_extern_symbol(ext_symbol, &args, &data);\
+	else if (strncmp(keyword, "program_start", 13) == 0)\
+		s = set_program_start(&args, &data);\
+	else if (strncmp(keyword, "game_title", 10) == 0)\
+		s = set_game_title(&args, &data);\
+	else if (strncmp(keyword, "game_code", 9) == 0)\
+		s = set_game_code(&args, &data);\
+	else if (strncmp(keyword, "cgb_support", 11) == 0)\
+		s = set_cgb_support(&args, &data);\
+	else if (strncmp(keyword, "maker_code", 10) == 0)\
+		s = set_maker_code(&args, &data);\
+	else if (strncmp(keyword, "sgb_support", 11) == 0)\
+		s = set_sgb_support(&args, &data);\
+	else if (strncmp(keyword, "cart_type", 11) == 0)\
+		s = set_cartridge_type(&args, &data);\
+	else if (strncmp(keyword, "rom_size", 8) == 0)\
+		s = set_rom_size(&args, &data);\
+	else if (strncmp(keyword, "ram_size", 8) == 0)\
+		s = set_ram_size(&args, &data);\
+	else if (strncmp(keyword, "destination", 11) == 0)\
+		s = set_code_dest(&args, &data);\
+	else if (strncmp(keyword, "version", 7) == 0)\
+		s = set_version(&args, &data);\
 	else\
 	{\
-		char *keyword = get_keyword(data.line);\
-		sprintf(data.buf, "unknown keyword `%s`", keyword);\
-		free(keyword);\
+		sprintf(data.buf, "unknown keyword `.%s`", keyword);\
 		print_error(data.filename, data.lineno, data.line, data.buf);\
-		while (!is_endl(*s)) s++;\
 	}\
+}
+
+
+char	*get_keywords_and_arguments(char **s, args_t *arguments[4], data_t *data)
+{
+	char	*keyword = NULL;
+	char	*arg_start;
+
+	(*s)++;
+	if (!is_alpha(**s))
+		goto __unexpected_char;
+	// keyword = keyword start
+	keyword = (*s)++;
+
+	while (is_alnum(**s)) (*s)++;
+	keyword = strndup(keyword, *s - keyword);
+
+	uint8_t i;
+	for (i = 0; ; )
+	{
+		uint32_t	len;
+		int32_t		type;
+		uint8_t		minus = 0;
+
+		while (is_space(**s)) (*s)++;
+		if (**s == '-')
+		{
+			minus++;
+			(*s)++;
+		}
+
+		if ((type = is_numeric(*s, &len)) != 0)
+		{
+			if (minus)
+				goto __signed_not_expected;
+			args[i].type = 'I';
+			args[i].value = malloc(sizeof(uint32_t));
+			*(uint8_t*)(args[i].value) = atou_type(*s, &len, type);
+			*s += len;
+		}
+		else if (**s == '"')
+		{
+			arg_start = ++(*s);
+			while (!is_endl(**s) && **s != '"')
+			{
+				if (**s < ' ' || **s > '_')
+					goto __not_gameboy_ascii;
+				(*s)++;
+			}
+			if (**s != '"')
+				goto __unexpected_char;
+			if (*s - arg_start > IDENTIFIER_MAX_LENGTH)
+				goto __too_long_argument;
+			args[i].type = '"';
+			args[i].value = (void*)strndup(arg_start, *s - arg_start);
+			(*s)++;
+		}
+		else
+			goto __unexpected_char;
+
+		while (is_space(**s)) (*s)++;
+		if (is_endl(**s))
+			break;
+		if (++i == 4)
+			goto __too_many_arguments;
+		if (**s != ',')
+			goto __unexpected_char;
+		(*s)++;
+	}
+	arguments[i] = NULL;
+	return (keyword);
+
+__too_many_arguments:
+	sprintf(data->buf, "too many arguments");
+	goto __print_error_and_free_all;
+__signed_not_expected:
+	sprintf(data->buf, "signed numbers forbidden in keywords arguments");
+	goto __print_error_and_free_all;
+__not_gameboy_ascii:
+	sprintf(data->buf, "not gameboy ascii character `%c`", **s);
+	goto __print_error_and_free_all;
+__too_long_argument:
+	sprintf(data->buf, "too long argument (argument %u)", i + 1);
+	goto __print_error_and_free_all;
+__unexpected_char:
+	sprintf(data->buf, "unexpected character `%c`", **s);
+
+__print_error_and_free_all:
+	if (keyword)
+		free(keyword);
+	for (uint8_t i = 0; args[i].value; i++)
+		free(args[i].value);
+	print_error(data->filename, data->lineno, data->line, data->buf);
+	while (!is_endl(**s)) (*s)++;
+	return (NULL);
 }
 
 static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_t *ext_symbol, loc_sym_t *loc_symbol, uint32_t cur_area)
@@ -186,9 +289,16 @@ static void		parse_file(char *filename, vector_t *area, vector_t *macro, vector_
 
 
 		if (*s == '%')
+		{
 			PREPROCESSOR_DIRECTIVES();
+		}
 		else if (*s == '.')
+		{
+			arguments_t	args[4] = {{0, NULL}};
+			char	*keyword = get_keywords_and_arguments(&s, &args, &data);
+
 			KEYWORDS();
+		}
 		else
 			s = parse_instruction(s, area, ext_symbol, loc_symbol, macro, &data);
 	}

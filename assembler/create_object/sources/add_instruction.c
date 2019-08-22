@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                          LE - /            */
 /*                                                              /             */
-/*   gbasm_add_instruction.c                          .::    .:/ .      .::   */
+/*   add_instruction.c                                .::    .:/ .      .::   */
 /*                                                 +:+:+   +:    +:  +:+:+    */
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
@@ -12,19 +12,15 @@
 /* ************************************************************************** */
 
 #include "std_includes.h"
-#include "gbasm_struct.h"
-#include "gbasm_struct_tools.h"
-#include "gbasm_tools.h"
-#include "gbasm_error.h"
-#include "gbasm_get_bin_instruction.h"
+#include "struct.h"
+#include "struct_tools.h"
+#include "tools.h"
+#include "error.h"
+#include "get_bin_instruction.h"
 
 
 /*
 	nouveau systeme de calcul:
-
-		autoriser toutes les operations.
-		pas de float
-		operation binaires
 
 		contrainte:	
 			pas d'operation prioritaire sur un symbol

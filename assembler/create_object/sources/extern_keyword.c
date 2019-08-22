@@ -1,8 +1,8 @@
 #include "std_includes.h"
-#include "gbasm_struct.h"
-#include "gbasm_tools.h"
-#include "gbasm_error.h"
-#include "gbasm_keywords.h"
+#include "struct.h"
+#include "tools.h"
+#include "error.h"
+#include "keywords.h"
 
 extern char	*set_extern_symbol(vector_t *symbol, char *s, data_t *data)
 {

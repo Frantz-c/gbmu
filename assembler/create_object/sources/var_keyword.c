@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                          LE - /            */
 /*                                                              /             */
-/*   gbasm_var_keyword.c                              .::    .:/ .      .::   */
+/*   var_keyword.c                                    .::    .:/ .      .::   */
 /*                                                 +:+:+   +:    +:  +:+:+    */
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
@@ -12,11 +12,11 @@
 /* ************************************************************************** */
 
 #include "std_includes.h"
-#include "gbasm_tools.h"
-#include "gbasm_struct_tools.h"
-#include "gbasm_struct.h"
-#include "gbasm_error.h"
-#include "gbasm_callback.h"
+#include "tools.h"
+#include "struct_tools.h"
+#include "struct.h"
+#include "error.h"
+#include "callback.h"
 
 enum symbol_name
 {

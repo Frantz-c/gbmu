@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                          LE - /            */
 /*                                                              /             */
-/*   gbasm_error.c                                    .::    .:/ .      .::   */
+/*   error.c                                          .::    .:/ .      .::   */
 /*                                                 +:+:+   +:    +:  +:+:+    */
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
@@ -12,7 +12,7 @@
 /* ************************************************************************** */
 
 #include "std_includes.h"
-#include "gbasm_error.h"
+#include "error.h"
 
 extern void			print_warning(char *filename, uint32_t lineno, char *line, char *error)
 {

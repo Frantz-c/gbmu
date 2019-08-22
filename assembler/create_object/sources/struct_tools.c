@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                          LE - /            */
 /*                                                              /             */
-/*   gbasm_struct_tools.c                             .::    .:/ .      .::   */
+/*   struct_tools.c                                   .::    .:/ .      .::   */
 /*                                                 +:+:+   +:    +:  +:+:+    */
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
@@ -12,8 +12,8 @@
 /* ************************************************************************** */
 
 #include "std_includes.h"
-#include "gbasm_struct.h"
-#include "gbasm_tools.h"
+#include "struct.h"
+#include "tools.h"
 
 #define BYTE_ALLOC_SIZE		8
 

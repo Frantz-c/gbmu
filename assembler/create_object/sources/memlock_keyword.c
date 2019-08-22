@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                          LE - /            */
 /*                                                              /             */
-/*   gbasm_memlock.c                                  .::    .:/ .      .::   */
+/*   memlock.c                                        .::    .:/ .      .::   */
 /*                                                 +:+:+   +:    +:  +:+:+    */
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
@@ -12,10 +12,10 @@
 /* ************************************************************************** */
 
 #include "std_includes.h"
-#include "gbasm_struct.h"
-#include "gbasm_tools.h"
-#include "gbasm_error.h"
-#include "gbasm_keywords.h"
+#include "struct.h"
+#include "tools.h"
+#include "error.h"
+#include "keywords.h"
 
 extern char	*set_memlock_area(vector_t *memblock, char *s, data_t *data)
 {

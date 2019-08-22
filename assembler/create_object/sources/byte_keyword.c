@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                          LE - /            */
 /*                                                              /             */
-/*   gbasm_byte_keyword.c                             .::    .:/ .      .::   */
+/*   byte_keyword.c                                   .::    .:/ .      .::   */
 /*                                                 +:+:+   +:    +:  +:+:+    */
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
@@ -12,11 +12,11 @@
 /* ************************************************************************** */
 
 #include "std_includes.h"
-#include "gbasm_struct.h"
-#include "gbasm_tools.h"
-#include "gbasm_struct_tools.h"
-#include "gbasm_macro_func.h"
-#include "gbasm_error.h"
+#include "struct.h"
+#include "tools.h"
+#include "struct_tools.h"
+#include "macro_func.h"
+#include "error.h"
 
 extern char		*add_bytes(vector_t *area, char *s, data_t *data)
 {

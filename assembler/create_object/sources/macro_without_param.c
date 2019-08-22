@@ -1,5 +1,5 @@
 /*
-**					gbasm_macro_without_param.c
+**					macro_without_param.c
 **		``````````````````````````````````````````````````
 **
 **		add macro without parameters in defines_t struct
@@ -28,9 +28,9 @@
 
 
 #include "../includes/std_includes.h"
-#include "gbasm_struct.h"
-#include "gbasm_macro_func.h"
-#include "gbasm_error.h"
+#include "struct.h"
+#include "macro_func.h"
+#include "error.h"
 
 extern char	*add_macro_without_param(char *name, vector_t *macro, char *s, data_t *data)
 {

@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                          LE - /            */
 /*                                                              /             */
-/*   gbasm_create_object_file.c                       .::    .:/ .      .::   */
+/*   create_object_file.c                             .::    .:/ .      .::   */
 /*                                                 +:+:+   +:    +:  +:+:+    */
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
@@ -12,9 +12,9 @@
 /* ************************************************************************** */
 
 #include "std_includes.h"
-#include "gbasm_struct.h"
-#include "gbasm_tools.h"
-#include "gbasm_struct_tools.h"
+#include "struct.h"
+#include "tools.h"
+#include "struct_tools.h"
 
 int		intern_cmp(const void *a, const void *b)
 {

@@ -1,5 +1,5 @@
 /*
-**					gbasm_macro_with_param.c
+**					macro_with_param.c
 **		``````````````````````````````````````````````````
 **
 **		add macro with parameters in defines_t struct
@@ -28,10 +28,10 @@
 
 
 #include "../includes/std_includes.h"
-#include "gbasm_struct.h"
-#include "gbasm_macro_func.h"
-#include "gbasm_error.h"
-#include "gbasm_tools.h"
+#include "struct.h"
+#include "macro_func.h"
+#include "error.h"
+#include "tools.h"
 
 static int		string_replace(char *content, char *replace, char number)
 {

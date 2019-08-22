@@ -1,7 +1,7 @@
 /* ************************************************************************** */
 /*                                                          LE - /            */
 /*                                                              /             */
-/*   gbasm_get_bin_instruction.c                      .::    .:/ .      .::   */
+/*   get_bin_instruction.c                            .::    .:/ .      .::   */
 /*                                                 +:+:+   +:    +:  +:+:+    */
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
@@ -12,9 +12,9 @@
 /* ************************************************************************** */
 
 #include "std_includes.h"
-#include "gbasm_struct.h"
-#include "gbasm_tools.h"
-#include "gbasm_error.h"
+#include "struct.h"
+#include "tools.h"
+#include "error.h"
 
 static ssize_t		instruction_search(const instruction_t inst[72], char *tofind)
 {
