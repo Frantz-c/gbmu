@@ -21,133 +21,14 @@
 #include "instruction_or_label.h"
 #include "create_object_file.h"
 
-#define BEG						do{
-#define END						}while(0)
-#define	SKIP_SPACES(ptr)		BEG while (is_space(*(ptr))) (ptr)++; END
-
-#define CHECK_ERROR_DIRECTIVE(n)	\
-	if (!is_space(s[n]))\
-	{\
-		s += n;\
-		while (!is_endl(*s)) s++;\
-		print_directive_arg_error(get_keyword(data.line), &data);\
-		continue;\
-	}
-
-#define CHECK_ERROR_KEYWORD(n)	\
-	if (!is_space(s[n]))\
-	{\
-		s += n;\
-		while (!is_endl(*s)) s++;\
-		print_keyword_arg_error(get_keyword(data.line), &data);\
-		continue;\
-	}
-
+#define	SKIP_SPACES(ptr)		{while (is_space(*(ptr))) (ptr)++;}
 
 uint32_t		g_error;
 uint32_t		g_warning;
 cart_info_t		cartridge_info;
 char			*includes_list[128] = {NULL};
 char			*base;
-
-void	check_undefined_symbols(vector_t *label)
-{
-	register label_t	*l = VEC_ELEM_FIRST(label_t, label);
-
-	for (uint32_t i = 0; i < label->nitems; i++, l++)
-	{
-		if (l->base_or_status == 0xffffffffu)
-		{
-			g_error++;
-			fprintf(stderr, "\e[1;31mundefined symbol \e[0m\"%s\"\n", l->name);
-		}
-	}
-}
-
-void	check_code_area_overflow(vector_t *area)
-{
-	register code_area_t	*a;
-	register uint32_t	end;
-	
-	if (area->nitems == 0)
-		return;
-	a = (code_area_t *)area->data;
-	end = a->addr + a->size;
-	a++;
-
-	for (uint32_t i = 1; i < area->nitems; i++, a++)
-	{
-		if (end >= a->addr)
-		{
-			g_error++;
-			fprintf(stderr, "overlap (end = 0x%x, start = 0x%x)\n", end, a->addr);
-		}
-	}
-}
-
-/*
- *	replace labels only
- */
-void		replace_internal_symbols(vector_t *area, loc_sym_t *local_symbol)
-{
-	register code_area_t	*a;
-
-	a = (code_area_t *)area->data;
-	for (uint32_t i = 0; i < area->nitems; i++, a++)
-	{
-		register code_t	*c = a->data;
-		for (; c; c = c->next)
-		{
-			if (c->symbol && (c->size & 0xffffff00u) == 0)
-			{
-				// remplacement + calcul
-				register ssize_t	index;
-
-				if ((index = vector_search(local_symbol->label, (void*)&c->symbol)) != -1)
-				{
-					register label_t	*lab = VEC_ELEM(label_t, local_symbol->label, index);
-
-
-					if (*c->opcode == JR || *c->opcode == JRZ || *c->opcode == JRNZ
-						|| *c->opcode == JRC || *c->opcode == JRNC)
-					{
-						register int32_t	val = c->opcode[1] | (c->opcode[2] << 8);
-						register int32_t	lab_addr = lab->base_or_status;
-
-						lab_addr -= (int32_t)c->addr;
-						val = (c->opcode[3] == '-') ? lab_addr - val : lab_addr + val;
-						val -= 2;
-						if (val > 0x7f || val < -128)
-						{
-							g_error++;
-							fprintf(stderr, "too big jump (%d)\n", val);
-						}
-						c->opcode[1] = (uint8_t)val;
-						c->opcode[2] = 0;
-					}
-					else
-					{
-						register uint32_t	lab_addr = lab->base_or_status;
-						register uint32_t	val = c->opcode[1] | (c->opcode[2] << 8);
-
-						if (lab_addr >= 0x8000)
-							lab_addr = (lab_addr % 0x4000) + 0x4000;
-						val = (c->opcode[3] == '-') ? lab_addr - val: lab_addr + val;
-						c->opcode[1] = (uint8_t)val;
-						c->opcode[2] = (val >> 8);
-						if (val & 0xffff0000u)
-						{
-							g_error++;
-							fprintf(stderr, "overflow label (0x%x)\n", val);
-						}
-					}
-					free(c->symbol);
-					c->symbol = NULL;
-				}
-			}
-		}
-	}
-}
+uint32_t		base_length;
 
 void		print_directive_arg_error(char *keyword, data_t *data)
 {
@@ -157,78 +38,17 @@ void		print_directive_arg_error(char *keyword, data_t *data)
 	fprintf(stderr, "\e[1;31m%u errors\e[0m\n", g_error);
 }
 
-// prendre en charge les doubles quotes
-// ajouter le chemin du fichier passé en argument
-static char	*get_include_filename(char **s, data_t *data)
-{
-	char	*name;
-
-	while (is_space(**s)) (*s)++;
-	name = *s;
-	while (!is_space(**s) && !is_endl(**s)) (*s)++;
-	name = strndup(name, *s - name);
-	while (is_space(**s)) (*s)++;
-	if (!is_endl(**s))
-		goto __unexpected_char;
-	return (name);
-
-__unexpected_char:
-	sprintf(data->buf, "(#0) unexpected character `%c`", **s);
-	print_error(data->filename, data->lineno, data->line, data->buf);
-	fprintf(stderr, "\e[1;31m%u errors\e[0m\n", g_error);
-	return (NULL);
-}
-
-STATIC_DEBUG void			area_print(const void *a)
-{
-	code_area_t	*area = (code_area_t *)a;
-
-	printf("addr = 0x%04x\n", area->addr);
-	if (area->data)
-	{
-		for (code_t *c = area->data; c; c = c->next)
-		{
-			if (c->size & 0xffffff00u)
-			{
-				uint8_t		*bytes = (uint8_t*)c->symbol;
-				uint32_t	size = (c->size & 0xffffff00u) >> 8;
-				for (uint8_t i = 0; i < size; i++)
-				{
-					if (i % 8 == 7)
-						puts("");
-					if (i == 0)
-						printf("\tbytes[%u] : 0x%hhx", size, bytes[i]);
-					else
-						printf(", 0x%hhx", bytes[i]);
-				}
-			}
-			else
-			{
-				uint8_t	size = c->size;
-				printf("\t");
-				for (uint8_t i = 0; i < size; i++)
-				{
-					printf("0x%hhX, ", c->opcode[i]);
-				}
-			}
-			printf("\n");
-		}
-	}
-	else
-		printf("\tno data\n");
-}
-
-
 
 #define	DIR_SEPARATOR	'/'
-char	*get_file_path(const char *start)
+static char	*get_file_path(const char *start)
 {
 	const char *end = start + strlen(start + 1);
 
 	while (end >= start && *end != DIR_SEPARATOR) end++;
 	if (end < start)
 		return (NULL);
-	return (strndup(start, (end - start) + 1));
+	base_length = (end - start) + 1;
+	return (strndup(start, base_length));
 }
 
 
@@ -286,6 +106,8 @@ vector_t	*set_builtin_macro(void)
 	return (macro);
 }
 
+#undef	ADD_MACRO
+
 void __attribute__((always_inline))
 	set_vectors(&macro, &code_area, &local_symbol, &extern_symbol)
 {
@@ -329,20 +151,26 @@ int		main(int argc, char *argv[])
 	g_error = 0;
 	g_warning = 0;
 
-	// lexe/parse .gbs file
-	parse_file(argv[1], code_area, macro, extern_symbol, &local_symbol, 0);
+	// lexe/parse source file (parse.c)
+	if (parse_file(argv[1], code_area, macro, extern_symbol, &local_symbol, 0) == -1)
+	{
+		fprintf(stderr, "cannot open %s\n", argv[1]);
+		return (1);
+	}
 
-	// check loaded data
+	// check readed data (check_readed_data.c)
 	check_undefined_symbols(local_symbol.label);
 	check_code_area_overflow(code_area);
-	replace_internal_symbols(code_area, &local_symbol);
+
+	// ----------------- (replace_internal_labels.c)
+	replace_internal_labels(code_area, &local_symbol);
 	if (g_error)
 	{
 		fprintf(stderr, "\e[1;31m%u errors\e[0m\n", g_error);
 		goto __free_all;
 	}
 
-	// generate .gbo file
+	// ----------------- (create_object_file.c)
 	create_object_file(code_area, &local_symbol, extern_symbol, argv[0]);
 
 __free_all:

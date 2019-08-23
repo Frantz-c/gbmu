@@ -14,6 +14,8 @@
 #include "std_includes.h"
 #include "error.h"
 
+#define MAX_ERROR	20
+
 extern void			print_warning(char *filename, uint32_t lineno, char *line, char *error)
 {
 	char	*p = line;
@@ -36,11 +38,11 @@ extern void			print_warning(char *filename, uint32_t lineno, char *line, char *e
 }
 
 /*
- *	format d'erreur:
- *
- *		in file "myfile.gs":	l-231: Bad token '$'
- *			> %include "file$"
- */
+**	format d'erreur:
+**
+**		in file "myfile.gbs":	l-231: Bad token '$'
+**			> %include "file$"
+*/
 extern void			print_error(char *filename, uint32_t lineno, char *line, char *error)
 {
 	char	*p = line;
@@ -60,4 +62,7 @@ extern void			print_error(char *filename, uint32_t lineno, char *line, char *err
 		lineno, error,
 		(int)(p - line), line
 	);
+
+	if (g_error == MAX_ERROR)
+		exit(g_error);
 }
