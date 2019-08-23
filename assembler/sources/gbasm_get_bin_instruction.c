@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/25 10:03:09 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/09 09:45:17 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/23 23:20:47 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -16,7 +16,7 @@
 #include "gbasm_tools.h"
 #include "gbasm_error.h"
 
-static ssize_t		instruction_search(const instruction_t inst[72], char *tofind)
+static uint32_t		instruction_search(const instruction_t inst[72], char *tofind)
 {
 	uint32_t	left, right, middle;
 	int			side;

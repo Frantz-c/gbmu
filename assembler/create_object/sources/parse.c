@@ -6,15 +6,24 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/13 14:04:54 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/13 15:20:30 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/23 23:32:14 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
+// if !INTEGER_TYPE: STRING_TYPE
+#define INTEGER_TYPE	0x1
+#define STRING_TYPE		0x2
+#define BYTE_KEYWORD	0x4
+#define ID_STRING_TYPE	0x8		// [a-zA-Z_][a-zA-Z0-9_]*
+#define GB_STRING_TYPE	0x10	// gameboy ascii string (>= ' ' && <= '_')
+#define DB_QUOTE_STRING	0x20	// "string"
+#define	STRING_TYPE		0x40	// a9, "***", ...
+
 typedef struct	arguments_s
 {
-	int32_t	type;
-	void	*value;
+	uint32_t	type;		// > 0xff  -> .byte
+	void		*value;
 }
 arguments_t;
 
@@ -200,6 +209,7 @@ __missing_double_quotes:
 	return (NULL);
 __unexpected_char_endl:
 	print_error(data->filename, data->lineno, data->line, "unexpected character at end of string");
+	return (NULL)
 __unexpected_char:
 	sprintf(data->buf, "(#0) unexpected character `%c`", **s);
 __print_error:
@@ -207,8 +217,11 @@ __print_error:
 	return (NULL);
 }
 
+/*
+**	refaire le systeme de types
+*/
 static __attribute__((always_inline))
-uint32_t	get_keywords_and_arguments(char **keyword_start, char **s, args_t args[4], data_t *data)
+uint32_t	get_keywords_and_arguments(char **keyword_start, char **s, args_t args[4], data_t *data, vector_t *area)
 {
 	char		*arg_start;
 	uint32_t	length;
@@ -220,6 +233,78 @@ uint32_t	get_keywords_and_arguments(char **keyword_start, char **s, args_t args[
 
 	while (is_alnum(**s)) (*s)++;
 	length = *s - *keyword_start;
+
+	// .byte : creer une fonction
+	if (length == 4 && strncmp(*keyword_start, "byte", length))
+	{
+		uint32_t	byte;
+		int32_t		type;
+		uint32_t	len;
+		uint32_t	n_bytes = 0;
+
+		while (1)
+		{
+			while (is_space(**s)) (*s)++;
+			if (is_endl(**s))
+				break;
+			if ((len = is_numeric(*s, NULL)) == 0)
+				goto __unexpected_char;
+			byte = atou_type(*s, &len, type);
+			if (byte > 0xffu)
+			{
+				sprintf(data->buf, "overflow (%.*s): value truncated", len, *s);
+				print_warning(data->filename, data->lineno, data->line, data->buf);
+			}
+			*s += len;
+			if (n_bytes > 0xffffffu)
+				goto __too_many_bytes;
+
+			push_byte(VEC_ELEM(code_area_t, area, data->cur_area), byte & 0xffu);
+
+			while (is_space(**s)) (*s)++;
+			if (**s == '\\')
+			{
+				(*s)++;
+				// skip spaces after backslash
+				while (1)
+				{
+					if (**s == '\n') {
+						(*s)++;
+						break;
+					}
+					if (**s == '\0')
+						goto __break_break;
+					if (!is_space(**s))
+						goto __unexpected_char2;
+					(*s)++;
+				}
+			}
+			else if (**s == ',')
+				(*s)++;
+			else if (is_endl(**s)) {
+			__break_break:
+				break;
+			}
+		}
+		if (n_bytes == 0)
+			print_warning(data->filename, data->lineno, data->line, "0 bytes specified");
+		else
+			VEC_ELEM(code_area_t, area, data->cur_area)->cur->size <<= 8;
+
+		args[0].type = BYTE_KEYWORD;
+		return (0);
+
+	__too_many_bytes:
+		print_error(data->filename, data->lineno, data->line, "more than 0xffffff bytes");
+		return (0);
+	__unexpected_char2:
+		sprintf(data->buf, "unexpected character `%c`", **s);
+		print_error(data->filename, data->lineno, data->line, data->buf);
+		skip_macro(s, &data->lineno);
+		return (0);
+
+	}
+	// .byte end
 
 	uint8_t i;
 	for (i = 0; ; )
@@ -239,7 +324,7 @@ uint32_t	get_keywords_and_arguments(char **keyword_start, char **s, args_t args[
 		{
 			if (minus)
 				goto __signed_not_expected;
-			args[i].type = 'I';
+			args[i].type = INTEGER_TYPE;
 			args[i].value = malloc(sizeof(uint32_t));
 			*(uint8_t*)(args[i].value) = atou_type(*s, &len, type);
 			*s += len;
@@ -257,12 +342,15 @@ uint32_t	get_keywords_and_arguments(char **keyword_start, char **s, args_t args[
 				goto __unexpected_char;
 			if (*s - arg_start > IDENTIFIER_MAX_LENGTH)
 				goto __too_long_argument;
-			args[i].type = '"';
+			args[i].type = STRING_TYPE;
 			args[i].value = (void*)strndup(arg_start, *s - arg_start);
 			(*s)++;
 		}
 		else
-			goto __unexpected_char;
+		{
+			// no double quotes string
+		}
+		//goto __unexpected_char;
 
 		while (is_space(**s)) (*s)++;
 		if (is_endl(**s))
@@ -351,49 +439,55 @@ __print_error_and_free_all:
 __end_directive:\
 }
 
-
+// integrer le systeme de double syntax de chaines ("string", string) + ajout du type GB_STRING_TYPE
 #define KEYWORDS()	\
 {\
 	arguments_t	args[4] = {{0, NULL}};\
-	char		*keyword;\
+	char		*keyword = ++s;\
 	uint32_t	keyword_len;\
-	keyword_len = get_keywords_and_arguments(&keyword, &s, &args, &data);\
+\
+	if (!is_alnum(s[1])) {\
+		print_error(data->filename, data->lineno, data->line, "empty keyword");\
+		goto __end_keyword;\
+	}\
+\
+	keyword_len = get_keywords_and_arguments(&s, args, &data, area);\
+	if (keyword_len == 0 || args->type == BYTE_KEYWORD)\
+		goto __end_keyword;\
 \
 	uint32_t	len;\
 	uint32_t	type;\
 \
 	if (keyword_len == 4 && strncmp(keyword, "bank", keyword_len) == 0)\
-		bank_switch(area, &args, &data);\
-	else if (keyword_len == 4 && strncmp(keyword, "byte", keyword_len) == 0)\
-		add_bytes(area, &args, &data);\
+		bank_switch(area, args, &data);\
 	else if (keyword_len == 7 && strncmp(keyword, "memlock", keyword_len) == 0)\
-		set_memlock_area(loc_symbol->memblock, &args, &data);\
+		set_memlock_area(loc_symbol->memblock, args, &data);\
 	else if (strncmp(keyword, "var", 3) == 0 && (type = is_numeric(keyword + 3, &len)) && is_space(keyword[len + 3]))\
-		assign_var_to_memory(loc_symbol, ext_symbol, atou_type(keyword + 3, NULL, type), &args, &data);\
+		assign_var_to_memory(loc_symbol, ext_symbol, atou_type(keyword + 3, NULL, type), args, &data);\
 	else if (keyword_len == 6 && strncmp(keyword, "extern", keyword_len) == 0)\
-		set_extern_symbol(ext_symbol, &args, &data);\
+		set_extern_symbol(ext_symbol, args, &data);\
 	else if (keyword_len == 13 && strncmp(keyword, "program_start", keyword_len) == 0)\
-		set_program_start(&args, &data);\
+		set_program_start(args, &data);\
 	else if (keyword_len == 10 && strncmp(keyword, "game_title", keyword_len) == 0)\
-		set_game_title(&args, &data);\
+		set_game_title(args, &data);\
 	else if (keyword_len == 9 && strncmp(keyword, "game_code", keyword_len) == 0)\
-		set_game_code(&args, &data);\
+		set_game_code(args, &data);\
 	else if (keyword_len == 11 && strncmp(keyword, "cgb_support", keyword_len) == 0)\
-		set_cgb_support(&args, &data);\
+		set_cgb_support(args, &data);\
 	else if (keyword_len == 10 && strncmp(keyword, "maker_code", keyword_len) == 0)\
-		set_maker_code(&args, &data);\
+		set_maker_code(args, &data);\
 	else if (keyword_len == 11 && strncmp(keyword, "sgb_support", keyword_len) == 0)\
-		set_sgb_support(&args, &data);\
+		set_sgb_support(args, &data);\
 	else if (keyword_len == 9 && strncmp(keyword, "cart_type", keyword_len) == 0)\
-		set_cartridge_type(&args, &data);\
+		set_cartridge_type(args, &data);\
 	else if (keyword_len == 8 && strncmp(keyword, "rom_size", keyword_len) == 0)\
-		set_rom_size(&args, &data);\
+		set_rom_size(args, &data);\
 	else if (keyword_len == 8 && strncmp(keyword, "ram_size", keyword_len) == 0)\
-		set_ram_size(&args, &data);\
+		set_ram_size(args, &data);\
 	else if (keyword_len == 11 && strncmp(keyword, "destination", keyword_len) == 0)\
-		set_code_dest(&args, &data);\
+		set_code_dest(args, &data);\
 	else if (keyword_len == 7 && strncmp(keyword, "version", keyword_len) == 0)\
-		set_version(&args, &data);\
+		set_version(args, &data);\
 	else\
 	{\
 		sprintf(data.buf, "unknown keyword `.%.*s`", keyword_len, keyword);\
@@ -443,6 +537,10 @@ static int		parse_file(char *filename, vector_t *area, vector_t *macro, vector_t
 			** (parse_instruction.c)
 			*/
 			s = parse_instruction(s, area, ext_symbol, loc_symbol, macro, &data);
+
+__end_keyword:
+__end_directive:
+		continue;
 	}
 	
 	/* degug start */

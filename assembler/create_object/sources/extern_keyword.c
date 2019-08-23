@@ -4,36 +4,28 @@
 #include "error.h"
 #include "keywords.h"
 
-extern char	*set_extern_symbol(vector_t *symbol, char *s, data_t *data)
+extern char	*set_extern_symbol(vector_t *symbol, arguments_t args[4], data_t *data)
 {
 	char *name = NULL;
 
-	while (is_space(*s)) s++;
-	if (is_endl(*s))
-		goto __no_arg;
-	
-	if (!is_alpha(*s) && *s != '_')
-		goto __unexpected_char;
-	name = s;
-	while (is_alnum(*s) || *s == '_') s++;
-	name = strndup(name, s - name);
-	while (is_space(*s)) s++;
-	if (!is_endl(*s))
+	if (args->value == NULL)
+		goto __too_few_arguments;
+	if (args[1].value != NULL)
+		goto __too_many_arguments;
+	if ((args->type & STRING_TYPE))
 	{
-		free(name);
-		goto __unexpected_char;
+		if ((args->type & ID_STRING_TYPE) == 0)
+			goto __not_well_formated_string;
+		name = strdup((char *)args->value);
 	}
+	else
+		goto __wrong_type;
+
 	symbol_t	new = {name, 0, data->lineno, strdup(data->filename)};
 	vector_push(symbol, (void*)&new);
-	return (s);
+	return;
 	
-__no_arg:
-	print_error(data->filename, data->lineno, data->line, "missing symbol name after .extern keyword");
-	return (s);
-__unexpected_char:
-	sprintf(data->buf, "(#4) unexpected character `%c`", *s);
 __print_error:
 	print_error(data->filename, data->lineno, data->line, data->buf);
-	while (!is_endl(*s)) s++;
-	return (s);
+	return;
 }

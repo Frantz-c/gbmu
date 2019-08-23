@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/12 13:43:03 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/13 12:03:20 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/23 22:40:41 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -202,6 +202,7 @@ void	call_create_object(char *obj, char *src)
 	if (process == 0)
 	{
 		execl("gbasm_create_object", obj, src, NULL);
+		fprintf(stderr, "can't find ./gbasm_create_object");
 		exit(1);
 	}
 }
@@ -221,6 +222,7 @@ void	call_assemble_objects(char **obj, char *exe)
 	if ((process = fork()) == 0)
 	{
 		execv("gbasm_assemble_objects", argv);
+		fprintf(stderr, "can't find ./gbasm_assemble_objects");
 		exit(1);
 	}
 

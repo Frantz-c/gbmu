@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/13 15:16:48 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/23 18:47:28 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -21,6 +21,7 @@
 #include "instruction_or_label.h"
 #include "create_object_file.h"
 
+#define	DIR_SEPARATOR	'/'
 #define	SKIP_SPACES(ptr)		{while (is_space(*(ptr))) (ptr)++;}
 
 uint32_t		g_error;
@@ -39,7 +40,6 @@ void		print_directive_arg_error(char *keyword, data_t *data)
 }
 
 
-#define	DIR_SEPARATOR	'/'
 static char	*get_file_path(const char *start)
 {
 	const char *end = start + strlen(start + 1);
