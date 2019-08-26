@@ -1,7 +1,21 @@
-#ifndef GBASM_STRUCT_TOOLS_H
-# define GBASM_STRUCT_TOOLS_H
+/* ************************************************************************** */
+/*                                                          LE - /            */
+/*                                                              /             */
+/*   struct_tools.h                                   .::    .:/ .      .::   */
+/*                                                 +:+:+   +:    +:  +:+:+    */
+/*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
+/*                                                 #+#   #+    #+    #+#      */
+/*   Created: 2019/08/26 16:57:45 by fcordon      #+#   ##    ##    #+#       */
+/*   Updated: 2019/08/26 17:53:18 by fcordon     ###    #+. /#+    ###.fr     */
+/*                                                         /                  */
+/*                                                        /                   */
+/* ************************************************************************** */
 
-# include "std_includes.h"
+#ifndef STRUCT_TOOLS_H
+# define STRUCT_TOOLS_H
+
+# include "struct.h"
+# include "vector.h"
 
 int32_t		variables_match_name(const vector_t *memblock, const char *s, int32_t *block_i);
 int32_t		memblock_match_name(const vector_t *memblock, const char *s);

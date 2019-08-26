@@ -29,11 +29,11 @@ extern void	set_extern_symbol(vector_t *symbol, arguments_t args[4], data_t *dat
 /* ||||||||||||||||||||||||||||||||||||||||||*\
 ** ================ errors ==================**
 \* ||||||||||||||||||||||||||||||||||||||||||*/
-	register const char *const	error_msg;
+	register const char	*error_msg;
 __not_well_formated_arg1:
 	error_msg = "argument 1 format must be [a-zA-Z_][a-zA-Z0-9_]*";
 	goto __print_error;
-__wrong_type_arg1:
+__wrong_type:
 	error_msg = "argument 1 must be a string: .extern identifier";
 	goto __print_error;
 __too_few_arguments:

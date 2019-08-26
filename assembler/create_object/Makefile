@@ -6,12 +6,12 @@
 #    By: mhouppin <marvin@le-101.fr>                +:+   +:    +:    +:+      #
 #                                                  #+#   #+    #+    #+#       #
 #    Created: 2019/02/25 16:43:57 by mhouppin     #+#   ##    ##    #+#        #
-#    Updated: 2019/08/09 12:58:59 by fcordon     ###    #+. /#+    ###.fr      #
+#    Updated: 2019/08/26 16:56:54 by fcordon     ###    #+. /#+    ###.fr      #
 #                                                          /                   #
 #                                                         /                    #
 # **************************************************************************** #
 
-NAME      = create_object
+NAME      = ../gbasm_create_object
 SHELL     = bash
 OBJ_DIR   = objects
 SRC_DIR   = sources

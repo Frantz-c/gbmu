@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/10 19:00:27 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/23 22:04:32 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/26 18:52:15 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -20,7 +20,6 @@
 extern void	set_memlock_area(vector_t *memblock, arguments_t args[4], data_t *data)
 {
 	uint32_t	addr;
-	int			error;
 	uint32_t	end;
 	char		*name = NULL;
 
@@ -62,7 +61,7 @@ extern void	set_memlock_area(vector_t *memblock, arguments_t args[4], data_t *da
 /* ||||||||||||||||||||||||||||||||||||||||||*\
 ** ================ errors ==================**
 \* ||||||||||||||||||||||||||||||||||||||||||*/
-	register const char *const	error_msg;
+	register const char	*error_msg;
 __not_well_formated_arg1:
 	error_msg = "argument 1 format must be [a-zA-Z_][a-zA-Z0-9_]*";
 	goto __print_error;
@@ -90,8 +89,8 @@ __invalid_region:
 	error_msg = data->buf;
 	goto __print_error;
 __invalid_region2:
-	sprintf(data->buf, "in memory block %s, invalid end address (0x%hX)", s, (uint16_t)end);
-	error_msg = data->buf;
+	sprintf(data->buf, "in memory block %s, invalid end address (0x%hX)", name, (uint16_t)end);
+	error_msg = (const char *)data->buf;
 	goto __print_error;
 __print_error:
 	print_error(data->filename, data->lineno, data->line, error_msg);

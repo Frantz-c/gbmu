@@ -1,22 +1,28 @@
 /* ************************************************************************** */
 /*                                                          LE - /            */
 /*                                                              /             */
-/*   gbasm_error.h                                    .::    .:/ .      .::   */
+/*   calcul_param.h                                   .::    .:/ .      .::   */
 /*                                                 +:+:+   +:    +:  +:+:+    */
-/*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
+/*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
-/*   Created: 2019/07/12 13:19:39 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/26 18:08:49 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Created: 2019/08/26 17:49:44 by fcordon      #+#   ##    ##    #+#       */
+/*   Updated: 2019/08/26 17:50:36 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
-#ifndef GBASM_ERROR_H
-# define GBASM_ERROR_H
+#ifndef CALCUL_PARAM_H
+# define CALCUL_PARAM_H
 
-# include "std_includes.h"
+typedef struct	calc_elem_s
+{
+	int32_t		val;		// value or operator
+	int32_t		lvl;
+}
+calc_elem_t;
 
-void			print_warning(char *filename, uint32_t lineno, char *line, const char *error);
-void			print_error(char *filename, uint32_t lineno, char *line, const char *error);
+#define PARENT_VALUE	2
+
+extern uint32_t	calcul_param(char *p, value_t *val);
 
 #endif

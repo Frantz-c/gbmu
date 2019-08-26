@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/12 23:05:07 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/08 16:36:49 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/26 17:56:59 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -291,12 +291,12 @@ static uint32_t		ft_strtoi_binary(char **s, uint8_t prefix)
 
 
 
-extern uint32_t		atou_type(char *s, uint32_t *len, uint8_t type)
+extern uint32_t		atou_type(const char *s, uint32_t *len, uint8_t type)
 {
 	uint32_t	result;
 	uint8_t		prefix = 0;
 //	uint8_t		_signed = 0;
-	char		*p = s;
+	const char	*p = s;
 /*	
 	if (*s == '-') {
 		_signed++;

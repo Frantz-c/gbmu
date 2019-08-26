@@ -1,8 +1,21 @@
+/* ************************************************************************** */
+/*                                                          LE - /            */
+/*                                                              /             */
+/*   replace_internal_labels.c                        .::    .:/ .      .::   */
+/*                                                 +:+:+   +:    +:  +:+:+    */
+/*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
+/*                                                 #+#   #+    #+    #+#      */
+/*   Created: 2019/08/26 19:27:12 by fcordon      #+#   ##    ##    #+#       */
+/*   Updated: 2019/08/26 19:27:17 by fcordon     ###    #+. /#+    ###.fr     */
+/*                                                         /                  */
+/*                                                        /                   */
+/* ************************************************************************** */
+
 
 /*
  *	replace labels only
  */
-void		replace_internal_labels(vector_t *area, loc_sym_t *local_symbol)
+extern void		replace_internal_labels(vector_t *area, loc_sym_t *local_symbol)
 {
 	register code_area_t	*a;
 

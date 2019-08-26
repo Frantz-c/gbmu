@@ -1,22 +1,19 @@
 /* ************************************************************************** */
 /*                                                          LE - /            */
 /*                                                              /             */
-/*   gbasm_error.h                                    .::    .:/ .      .::   */
+/*   replace_internal_labels.h                        .::    .:/ .      .::   */
 /*                                                 +:+:+   +:    +:  +:+:+    */
-/*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
+/*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
-/*   Created: 2019/07/12 13:19:39 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/26 18:08:49 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Created: 2019/08/26 19:26:27 by fcordon      #+#   ##    ##    #+#       */
+/*   Updated: 2019/08/26 19:27:04 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
-#ifndef GBASM_ERROR_H
-# define GBASM_ERROR_H
+#ifndef REPLACE_INTERNAL_LABELS_H
+# define REPLACE_INTERNAL_LABELS_H
 
-# include "std_includes.h"
-
-void			print_warning(char *filename, uint32_t lineno, char *line, const char *error);
-void			print_error(char *filename, uint32_t lineno, char *line, const char *error);
+void		replace_internal_labels(vector_t *area, loc_sym_t *local_symbol);
 
 #endif

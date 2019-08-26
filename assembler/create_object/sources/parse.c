@@ -6,29 +6,15 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/13 14:04:54 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/23 23:32:14 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/26 19:34:20 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
-// if !INTEGER_TYPE: STRING_TYPE
-#define INTEGER_TYPE	0x1
-#define STRING_TYPE		0x2
-#define BYTE_KEYWORD	0x4
-#define ID_STRING_TYPE	0x8		// [a-zA-Z_][a-zA-Z0-9_]*
-#define GB_STRING_TYPE	0x10	// gameboy ascii string (>= ' ' && <= '_')
-#define DB_QUOTE_STRING	0x20	// "string"
-#define	STRING_TYPE		0x40	// a9, "***", ...
-
-typedef struct	arguments_s
-{
-	uint32_t	type;		// > 0xff  -> .byte
-	void		*value;
-}
-arguments_t;
-
-
-
+#include "std_includes.h"
+#include "macro_func.h"
+#include "macro.h"
+#include "keywords.h"
 
 
 /* ###################################
@@ -131,7 +117,16 @@ STATIC_DEBUG void			vector_print(vector_t *vec, char *name, void (*print)(const 
 ** #######################################
 */
 
-
+static int	__attribute__((always_inline))
+file_included(const char *file)
+{
+	for (uint32_t i = 0; included_list[i]; i++)
+	{
+		if (strcmp(included_list[i], file) == 0)
+			return (1);
+	}
+	return (0);
+}
 
 
 // prendre en charge les doubles quotes
@@ -139,7 +134,7 @@ STATIC_DEBUG void			vector_print(vector_t *vec, char *name, void (*print)(const 
 static char	*get_include_filename(char **s, data_t *data)
 {
 	char			*fullname;
-	char			*name;
+//	char			*name;
 	uint32_t		i = base_length;
 	const uint32_t	max_length = base_length + 512; // include argument max length = 512
 
@@ -155,13 +150,13 @@ static char	*get_include_filename(char **s, data_t *data)
 				if (is_endl(**s))
 					goto __unexpected_char_endl;
 				if (**s == 't')
-					name[i++] = '\t';
+					fullname[i++] = '\t';
 				else
-					name[i++] = **s;
+					fullname[i++] = **s;
 			}
 			else
-				name[i++] = **s;
-			if (i == max_len)
+				fullname[i++] = **s;
+			if (i == max_length)
 				goto __too_long_file_name;
 			(*s)++;
 		}
@@ -184,19 +179,20 @@ static char	*get_include_filename(char **s, data_t *data)
 					goto __unexpected_char_endl;
 			}
 
-			if (i == max_len)
+			if (i == max_length)
 				goto __too_long_file_name;
-			name[i++] = **s;
+			fullname[i++] = **s;
 
 			(*s)++;
 		}
 	}
-	if (i == 0)
+	if (i == base_length)
 		goto __empty_file_name;
 	while (is_space(**s)) (*s)++;
 	if (!is_endl(**s))
 		goto __unexpected_char;
-	return (strndup(name, i));
+	fullname[i] = 0;
+	return (fullname);
 
 __empty_file_name:
 	print_error(data->filename, data->lineno, data->line, "empty file name");
@@ -209,11 +205,12 @@ __missing_double_quotes:
 	return (NULL);
 __unexpected_char_endl:
 	print_error(data->filename, data->lineno, data->line, "unexpected character at end of string");
-	return (NULL)
+	return (NULL);
 __unexpected_char:
 	sprintf(data->buf, "(#0) unexpected character `%c`", **s);
 __print_error:
 	print_error(data->filename, data->lineno, data->line, data->buf);
+	free(fullname);
 	return (NULL);
 }
 
@@ -221,7 +218,7 @@ __print_error:
 **	refaire le systeme de types
 */
 static __attribute__((always_inline))
-uint32_t	get_keywords_and_arguments(char **keyword_start, char **s, args_t args[4], data_t *data, vector_t *area)
+uint32_t	get_keywords_and_arguments(char **keyword_start, char **s, arguments_t args[4], data_t *data, vector_t *area)
 {
 	char		*arg_start;
 	uint32_t	length;
@@ -247,7 +244,7 @@ uint32_t	get_keywords_and_arguments(char **keyword_start, char **s, args_t args[
 			while (is_space(**s)) (*s)++;
 			if (is_endl(**s))
 				break;
-			if ((len = is_numeric(*s, NULL)) == 0)
+			if ((type = is_numeric(*s, NULL)) == 0)
 				goto __unexpected_char;
 			byte = atou_type(*s, &len, type);
 			if (byte > 0xffu)
@@ -424,7 +421,7 @@ __print_error_and_free_all:
 ** /!\ end_word = pointer after the spaces
 */
 #define	PREPROCESSOR_DIRECTIVES()	\
-{\
+do{\
 	register char	*end_word = ++s;\
 	while (!is_endl(*end_word) && !is_space(*end_word))\
 		end_word++;\
@@ -468,18 +465,17 @@ __print_error_and_free_all:
 		print_error(data.filename, data.lineno, data.line, data.buf);\
 		while (!is_endl(*s)) s++;\
 	}\
-__end_directive:\
-}
+}while(0)\
 
 // integrer le systeme de double syntax de chaines ("string", string) + ajout du type GB_STRING_TYPE
 #define KEYWORDS()	\
-{\
+do {\
 	arguments_t	args[4] = {{0, NULL}};\
 	char		*keyword = ++s;\
 	uint32_t	keyword_len;\
 \
 	if (!is_alnum(s[1])) {\
-		print_error(data->filename, data->lineno, data->line, "empty keyword");\
+		print_error(data.filename, data.lineno, data.line, "empty keyword");\
 		goto __end_keyword;\
 	}\
 \
@@ -525,10 +521,10 @@ __end_directive:\
 		sprintf(data.buf, "unknown keyword `.%.*s`", keyword_len, keyword);\
 		print_error(data.filename, data.lineno, data.line, data.buf);\
 	}\
-}
+}while(0)\
 
 
-static int		parse_file(char *filename, vector_t *area, vector_t *macro, vector_t *ext_symbol, loc_sym_t *loc_symbol, uint32_t cur_area)
+extern int		parse_file(char *filename, vector_t *area, vector_t *macro, vector_t *ext_symbol, loc_sym_t *loc_symbol, uint32_t cur_area)
 {
 	data_t		data;
 	char		*s, *content_start;
@@ -544,10 +540,11 @@ static int		parse_file(char *filename, vector_t *area, vector_t *macro, vector_t
 	data.lineno = 1;
 	data.cur_area = cur_area;
 
+	included_list[included_index++] = filename;
+
 	while (*s)
 	{
-		SKIP_SPACES(s);
-
+		while (is_space(*s)) s++;
 
 		if (*s == '\0')
 			break;
@@ -585,5 +582,6 @@ __end_directive:
 	/* debug end */
 
 	free(content_start);
+	included_list[--included_index] = NULL;
 	return (0);
 }

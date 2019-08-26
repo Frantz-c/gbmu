@@ -1,20 +1,48 @@
 /* ************************************************************************** */
 /*                                                          LE - /            */
 /*                                                              /             */
-/*   gbasm_struct.h                                   .::    .:/ .      .::   */
+/*   struct.h                                         .::    .:/ .      .::   */
 /*                                                 +:+:+   +:    +:  +:+:+    */
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/06 11:38:18 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/13 15:19:05 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/26 18:12:20 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
-#ifndef GBASM_STRUCT_H
-# define GBASM_STRUCT_H
+#ifndef STRUCT_H
+# define STRUCT_H
 
-# include "std_includes.h"
+
+typedef enum	param_e
+{
+	UNKNOWN,NONE,A,B,C,D,E,F,H,L,AF,BC,DE,HL,SP,_NZ_,_Z_,_NC_,_C_,
+	HLI,HLD,SP_ADDR,HL_ADDR,BC_ADDR,DE_ADDR,AF_ADDR,FF00_C,
+	SP_IMM8,FF00_IMM8,IMM8,ADDR8,IMM16,ADDR16,SYMBOL
+}
+param_t;
+
+typedef enum	insn_err_e
+{
+	ENONE, MISSING_PARAM, TOO_MANY_PARAMS, INVAL_DST, INVAL_SRC, OVERFLOW
+}
+insn_err_t;
+
+// if !INTEGER_TYPE: STRING_TYPE
+#define INTEGER_TYPE	0x1
+#define STRING_TYPE		0x2
+#define BYTE_KEYWORD	0x4
+#define ID_STRING_TYPE	0x8		// [a-zA-Z_][a-zA-Z0-9_]*
+#define GB_STRING_TYPE	0x10	// gameboy ascii string (>= ' ' && <= '_')
+#define DB_QUOTE_STRING	0x20	// "string"
+
+typedef struct	arguments_s
+{
+	uint32_t	type;		// > 0xff  -> .byte
+	void		*value;
+}
+arguments_t;
 
 # define STATIC_DEBUG		static
 # define EXTERN_DEBUG		extern
@@ -63,8 +91,8 @@ extern_symbols_t;
 
 typedef struct	duplicate_s
 {
-	uint32_t	start_addr:1;
-	uint32_t	title:1;
+	uint32_t	program_start:1;
+	uint32_t	game_title:1;
 	uint32_t	game_code:1;
 	uint32_t	cgb_support:1;
 	uint32_t	maker_code:1;
@@ -122,13 +150,12 @@ loc_sym_t;
 typedef struct	value_s
 {
 	uint32_t	value;
-	uint16_t	is_signed;
 	uint8_t		sign;
 }
 value_t;
 
 
-struct	macro_s
+typedef struct	macro_s
 {
 	char		*name;
 	char		*content;
@@ -137,7 +164,7 @@ struct	macro_s
 }
 macro_t;
 
-struct	symbol_s
+typedef struct	symbol_s
 {
 	char		*name;
 	uint32_t	type;
@@ -146,7 +173,7 @@ struct	symbol_s
 }
 symbol_t;
 
-struct	label_s
+typedef struct	label_s
 {
 	char		*name;
 	uint32_t	pos;
@@ -156,7 +183,7 @@ struct	label_s
 }
 label_t;
 
-struct	code_s
+typedef struct	code_s
 {
 	uint8_t			opcode[4];	// opcode + value(2) + sign
 			// sign = '+', '-' ou '\0'
@@ -169,7 +196,7 @@ struct	code_s
 }
 code_t;
 
-struct	code_area_s
+typedef struct	code_area_s
 {
 	uint32_t		addr;
 	uint32_t		size;
@@ -178,7 +205,7 @@ struct	code_area_s
 }
 code_area_t;
 
-struct	memblock_s
+typedef struct	memblock_s
 {
 	uint32_t	start;
 	uint32_t	end;
@@ -190,7 +217,7 @@ struct	memblock_s
 }
 memblock_t;
 
-struct	variable_s
+typedef struct	variable_s
 {
 	char		*name;
 	uint32_t	addr;	// extern memblocks not allowed
@@ -200,7 +227,7 @@ struct	variable_s
 }
 variable_t;
 
-struct	data_s
+typedef struct	data_s
 {
 //	char		*s;
 	char		*line;

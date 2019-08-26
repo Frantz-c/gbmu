@@ -130,10 +130,11 @@ extern char	*add_macro_with_param(char *name_start, vector_t *macro, char *s, da
 __unexpected_char:
 	sprintf(data->buf, "(#6) unexpected character `%c`", *s);
 	goto __perror_and_exit;
+	/*
 __empty_argument_x:
 	sprintf(data->buf, "argument %u is empty", cur + 1);
 	goto __perror_and_exit;
-
+*/
 __too_many_parameters:
 	sprintf(data->buf, "too many parameters declared in macro `%s`", name_start);
 	goto __perror_and_exit;

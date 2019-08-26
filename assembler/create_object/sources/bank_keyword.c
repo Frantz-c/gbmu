@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/12 16:22:40 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/23 21:51:33 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/26 17:47:44 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -64,7 +64,7 @@ extern void	bank_switch(vector_t *area, arguments_t args[4], data_t *data)
 /* ||||||||||||||||||||||||||||||||||||||||||*\
 ** ================ errors ==================**
 \* ||||||||||||||||||||||||||||||||||||||||||*/
-	register const char	*const	error_msg;
+	register const char	*error_msg;
 __wrong_type_arg1:
 	error_msg = "argument 1 must be an integer: .bank number[, offset]?";
 	goto __print_error;
@@ -79,7 +79,7 @@ __too_many_arguments:
 	goto __print_error;
 __addr_already_used:
 	sprintf(data->buf, "address 0x%x already used", addr);
-	error_msg = data->buf;
+	error_msg = (const char *)data->buf;
 __print_error:
 	print_error(data->filename, data->lineno, data->line, error_msg);
 }

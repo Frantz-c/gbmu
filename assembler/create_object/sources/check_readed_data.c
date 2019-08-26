@@ -1,5 +1,19 @@
+/* ************************************************************************** */
+/*                                                          LE - /            */
+/*                                                              /             */
+/*   check_readed_data.c                              .::    .:/ .      .::   */
+/*                                                 +:+:+   +:    +:  +:+:+    */
+/*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
+/*                                                 #+#   #+    #+    #+#      */
+/*   Created: 2019/08/26 18:33:33 by fcordon      #+#   ##    ##    #+#       */
+/*   Updated: 2019/08/26 19:25:29 by fcordon     ###    #+. /#+    ###.fr     */
+/*                                                         /                  */
+/*                                                        /                   */
+/* ************************************************************************** */
 
-void	check_undefined_symbols(vector_t *label)
+#include "std_includes.h"
+
+extern void	check_undefined_symbols(vector_t *label)
 {
 	register label_t	*l = VEC_ELEM_FIRST(label_t, label);
 
@@ -13,7 +27,7 @@ void	check_undefined_symbols(vector_t *label)
 	}
 }
 
-void	check_code_area_overflow(vector_t *area)
+extern void	check_code_area_overflow(vector_t *area)
 {
 	register code_area_t	*a;
 	register uint32_t	end;

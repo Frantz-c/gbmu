@@ -1,22 +1,19 @@
 /* ************************************************************************** */
 /*                                                          LE - /            */
 /*                                                              /             */
-/*   gbasm_error.h                                    .::    .:/ .      .::   */
+/*   parse.h                                          .::    .:/ .      .::   */
 /*                                                 +:+:+   +:    +:  +:+:+    */
-/*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
+/*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
-/*   Created: 2019/07/12 13:19:39 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/26 18:08:49 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Created: 2019/08/26 19:23:18 by fcordon      #+#   ##    ##    #+#       */
+/*   Updated: 2019/08/26 19:24:02 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
-#ifndef GBASM_ERROR_H
-# define GBASM_ERROR_H
+#ifndef PARSE_H
+# define PARSE_H
 
-# include "std_includes.h"
-
-void			print_warning(char *filename, uint32_t lineno, char *line, const char *error);
-void			print_error(char *filename, uint32_t lineno, char *line, const char *error);
+extern int		parse_file(char *filename, vector_t *area, vector_t *macro, vector_t *ext_symbol, loc_sym_t *loc_symbol, uint32_t cur_area);
 
 #endif

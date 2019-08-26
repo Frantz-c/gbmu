@@ -6,13 +6,14 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/23 22:24:16 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/23 22:38:58 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/26 19:37:07 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
+#include "std_includes.h"
 
-void __attribute_((always_inline))
+static void __attribute__((always_inline))
 to_lower_string(char *s)
 {
 	while (*s)
@@ -21,23 +22,20 @@ to_lower_string(char *s)
 		s++;
 	}
 }
-
+/*
 uint8_t	count_args(arguments_t *args[])
 {
 	uint8_t	len = 0;
 	while (args[len].value) len++;
 	return (len);
 }
-
-#define	ONLY_ONE_ARGUMENT(args)	(args[0].value != NULL && args[1].value == NULL)
+*/
+//#define	ONLY_ONE_ARGUMENT(args)	(args[0].value != NULL && args[1].value == NULL)
 
 // .program_start 0x150
-void	set_program_start(arguments_t *args[], data_t *data)
+void	set_program_start(arguments_t args[], data_t *data)
 {
-	int32_t		type;
-	uint32_t	len;
 	uint32_t	val;
-	uint8_t		neg;
 
 	if (duplicate.program_start)
 	{
@@ -64,10 +62,12 @@ void	set_program_start(arguments_t *args[], data_t *data)
 	__too_few_arguments:
 	__too_many_arguments:
 	__wrong_type:
+	__overflow:
+	return;
 }
 
 // .game_title "GHOST_RECO"
-void	set_game_title(arguments_t *args[], data_t *data)
+void	set_game_title(arguments_t args[], data_t *data)
 {
 	if (duplicate.game_title)
 	{
@@ -91,7 +91,7 @@ void	set_game_title(arguments_t *args[], data_t *data)
 	if (len > 10)
 		goto __too_many_characters;
 
-	register char	*dst = &cartridge.title;
+	register char	*dst = (char*)cartridge.title;
 	memcpy(dst, src, len);
 	bzero(dst + len, 11 - len);
 	return;
@@ -101,9 +101,10 @@ void	set_game_title(arguments_t *args[], data_t *data)
 	__too_many_arguments:
 	__wrong_type:
 	__too_many_characters:
+	return;
 }
 
-char	*set_game_code(arguments_t *args[], data_t *data)
+void	set_game_code(arguments_t args[], data_t *data)
 {
 	if (duplicate.game_code)
 	{
@@ -126,7 +127,7 @@ char	*set_game_code(arguments_t *args[], data_t *data)
 	if (len > 4)
 		goto __too_many_characters;
 
-	register char	*dst = &cartridge.game_code;
+	register char	*dst = (char*)cartridge.game_code;
 	memcpy(dst, src, len);
 	bzero(dst + len, 4 - len);
 	return;
@@ -136,20 +137,21 @@ char	*set_game_code(arguments_t *args[], data_t *data)
 	__too_many_arguments:
 	__wrong_type:
 	__too_many_characters:
+	return;
 }
 
 #define CGB_EXCLU	0xC0u
 #define CGB_COMP	0x80u
 #define CGB_INCOMP	0x00u
 
-char	*set_cgb_support(arguments_t *args[], data_t *data)
+void	set_cgb_support(arguments_t args[], data_t *data)
 {
 	if (duplicate.cgb_support)
 	{
 		print_warning(data->filename, data->lineno, data->line,
 						"duplicate keyword .cgb_support");
 	}
-	duplicate.support = 1;
+	duplicate.cgb_support = 1;
 
 	if (args[1].value)
 		goto __too_many_arguments;
@@ -180,9 +182,10 @@ char	*set_cgb_support(arguments_t *args[], data_t *data)
 	__too_few_arguments:
 	__too_many_arguments:
 	__unknown_value:
+	return;
 }
 
-char	*set_maker_code(arguments_t *args[], data_t *data)
+void	set_maker_code(arguments_t args[], data_t *data)
 {
 	if (duplicate.maker_code)
 	{
@@ -205,7 +208,7 @@ char	*set_maker_code(arguments_t *args[], data_t *data)
 	if (len > 2)
 		goto __too_many_characters;
 
-	register char	*dst = &cartridge.game_code;
+	register char	*dst = (char*)cartridge.game_code;
 	dst[0] = src[0];
 	dst[1] = src[1];
 	return;
@@ -215,12 +218,13 @@ char	*set_maker_code(arguments_t *args[], data_t *data)
 	__too_many_arguments:
 	__too_many_characters:
 	__wrong_type:
+	return;
 }
 
 #define UNUSES_SGB_FUNC	0x00u
 #define USES_SGB_FUNC	0x03u
 
-char	*set_sgb_support(arguments_t *args[], data_t *data)
+void	set_sgb_support(arguments_t args[], data_t *data)
 {
 	if (duplicate.sgb_support)
 	{
@@ -256,6 +260,7 @@ char	*set_sgb_support(arguments_t *args[], data_t *data)
 	__too_few_arguments:
 	__too_many_arguments:
 	__unknown_value:
+	return;
 }
 
 #define	SRAM		1
@@ -263,12 +268,11 @@ char	*set_sgb_support(arguments_t *args[], data_t *data)
 #define RUMBLE		4
 #define RTC			8
 
-uint16_t	get_mbc_options(char *s)
+static uint16_t	get_mbc_options(char *s)
 {
 	uint8_t	o = 0;
 	uint8_t	i;
 	uint8_t	test = 0;
-	uint8_t has_battery = 0;
 
 	if (!is_space(*s) && *s != '_')
 		return (0x8000u);
@@ -293,7 +297,7 @@ uint16_t	get_mbc_options(char *s)
 			o |= BATTERY;
 			if (test & BATTERY)
 				return (0x4000u);
-			test |= battery;
+			test |= BATTERY;
 			s += 7;
 		}
 		else if (strncmp(s, "rtc", 3) == 0 &&
@@ -318,7 +322,7 @@ uint16_t	get_mbc_options(char *s)
 	return (o);
 }
 
-void	set_cartridge_type(arguments_t *args[], data_t *data)
+void	set_cartridge_type(arguments_t args[], data_t *data)
 {
 	if (duplicate.cart_type)
 	{
@@ -333,6 +337,8 @@ void	set_cartridge_type(arguments_t *args[], data_t *data)
 		goto __too_few_arguments;
 	if (args->type & STRING_TYPE)
 	{
+		register uint8_t opt;
+
 		to_lower_string((char *)args->value);
 		char *arg = (char *)args->value;
 		cartridge.game_pack = 0;
@@ -344,7 +350,7 @@ void	set_cartridge_type(arguments_t *args[], data_t *data)
 				arg++;
 			if (*arg == 0)
 				goto __error_mbc;
-			opt = get_mbc_options(arg + 1, &n_opt);
+			opt = get_mbc_options(arg + 1);
 
 			if (opt & 0x8000)
 				goto __separator_error;
@@ -360,11 +366,8 @@ void	set_cartridge_type(arguments_t *args[], data_t *data)
 			else
 				goto __error_rom;
 		}
-		else if (strncmp(arg, "mbc") == 0)
+		else if (strncmp(arg, "mbc", 3) == 0)
 		{
-			register uint8_t opt;
-			register uint8_t n_opt;
-
 			arg += 3;
 			if (*arg == '-')
 				arg++;
@@ -455,11 +458,16 @@ void	set_cartridge_type(arguments_t *args[], data_t *data)
 	__too_few_arguments:
 	__too_many_arguments:
 	__unknown_value:
+	__invalid_option:
+	__too_many_options:
+	__separator_error:
+	__error_rom:
 	__error_mbc:
 	__error_mbc1:
 	__error_mbc2:
 	__error_mbc3:
 	__error_mbc5:
+	return;
 }
 
 /*
@@ -476,7 +484,7 @@ void	set_cartridge_type(arguments_t *args[], data_t *data)
 53h - 1.2MBytes (80 banks)
 54h - 1.5MBytes (96 banks)
 */
-char	*set_rom_size(arguments_t *args[], data_t *data)
+void	set_rom_size(arguments_t args[], data_t *data)
 {
 	if (duplicate.rom_size)
 	{
@@ -496,7 +504,7 @@ char	*set_rom_size(arguments_t *args[], data_t *data)
 
 		{
 			register int32_t	type;
-			register uint32_t	len;
+			uint32_t			len;
 
 			if (!(type = is_numeric(unit, &len)))
 				goto __unexpected_char;
@@ -564,14 +572,23 @@ char	*set_rom_size(arguments_t *args[], data_t *data)
 	}
 	else
 	{
-		register uint32_t	value = *(uint32_t *)arg->value;
+		register uint32_t	value = *(uint32_t *)args->value;
 		if (value > 8)
 			goto __invalid_size;
 		cartridge.rom_size = value;
 	}
+	return;
+
+__too_few_arguments:
+__too_many_arguments:
+__unexpected_char:
+__missing_unit:
+__invalid_size:
+__unknown_unit:
+	return;
 }
 
-char	*set_ram_size(arguments_t *args[], data_t *data)
+void	set_ram_size(arguments_t args[], data_t *data)
 {
 	if (duplicate.ram_size)
 	{
@@ -598,7 +615,7 @@ char	*set_ram_size(arguments_t *args[], data_t *data)
 
 		{
 			register int32_t	type;
-			register uint32_t	len;
+			uint32_t			len;
 
 			if (!(type = is_numeric(unit, &len)))
 				goto __unexpected_char;
@@ -629,18 +646,26 @@ char	*set_ram_size(arguments_t *args[], data_t *data)
 	}
 	else
 	{
-		register uint32_t	value = *(uint32_t *)arg->value;
+		register uint32_t	value = *(uint32_t *)args->value;
 
 		if (value == 1 || value > 4)
 			goto __invalid_size;
 		cartridge.ram_size = value;
 	}
+	return;
+
+__too_few_arguments:
+__too_many_arguments:
+__unexpected_char:
+__missing_unit:
+__invalid_size:
+	return;
 }
 
 #define	JAPAN	0x0u
 #define	OTHER	0x1u
 
-char	*set_code_dest(arguments_t *args[], data_t *data)
+void	set_code_dest(arguments_t args[], data_t *data)
 {
 	if (duplicate.destination)
 	{
@@ -676,9 +701,10 @@ char	*set_code_dest(arguments_t *args[], data_t *data)
 	__too_few_arguments:
 	__too_many_arguments:
 	__unknown_value:
+	return;
 }
 
-void	version(arguments_t *args[], data_t *data)
+void	version(arguments_t args[], data_t *data)
 {
 	if (duplicate.version)
 	{
@@ -698,5 +724,11 @@ void	version(arguments_t *args[], data_t *data)
 	if (value & 0xffffff00u)
 		goto __overflow;
 	cartridge.version = value;
+	return;
+
+__too_many_arguments:
+__too_few_arguments:
+__error_type:
+__overflow:
 	return;
 }

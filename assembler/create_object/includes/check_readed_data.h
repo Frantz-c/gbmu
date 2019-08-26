@@ -1,22 +1,21 @@
 /* ************************************************************************** */
 /*                                                          LE - /            */
 /*                                                              /             */
-/*   gbasm_error.h                                    .::    .:/ .      .::   */
+/*   check_readed_data.h                              .::    .:/ .      .::   */
 /*                                                 +:+:+   +:    +:  +:+:+    */
-/*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
+/*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
-/*   Created: 2019/07/12 13:19:39 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/26 18:08:49 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Created: 2019/08/26 19:24:43 by fcordon      #+#   ##    ##    #+#       */
+/*   Updated: 2019/08/26 19:25:19 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
-#ifndef GBASM_ERROR_H
-# define GBASM_ERROR_H
+#ifndef CHECK_READED_DATA_H
+# define CHECK_READED_DATA_H
 
-# include "std_includes.h"
+void	check_undefined_symbols(vector_t *label);
+void	check_code_area_overflow(vector_t *area);
 
-void			print_warning(char *filename, uint32_t lineno, char *line, const char *error);
-void			print_error(char *filename, uint32_t lineno, char *line, const char *error);
 
 #endif

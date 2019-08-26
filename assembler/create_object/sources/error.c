@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/12 12:47:39 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/07/13 19:07:30 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/26 17:48:12 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -16,7 +16,7 @@
 
 #define MAX_ERROR	20
 
-extern void			print_warning(char *filename, uint32_t lineno, char *line, char *error)
+extern void			print_warning(char *filename, uint32_t lineno, char *line, const char *error)
 {
 	char	*p = line;
 
@@ -43,7 +43,7 @@ extern void			print_warning(char *filename, uint32_t lineno, char *line, char *e
 **		in file "myfile.gbs":	l-231: Bad token '$'
 **			> %include "file$"
 */
-extern void			print_error(char *filename, uint32_t lineno, char *line, char *error)
+extern void			print_error(char *filename, uint32_t lineno, char *line, const char *error)
 {
 	char	*p = line;
 

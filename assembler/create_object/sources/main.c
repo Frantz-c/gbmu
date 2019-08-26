@@ -6,28 +6,31 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/23 18:47:28 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/26 19:27:38 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
 #include "std_includes.h"
-#include "tools.h"
 #include "macro.h"
 #include "keywords.h"
 #include "callback.h"
 #include "error.h"
-#include "struct.h"
 #include "instruction_or_label.h"
 #include "create_object_file.h"
+#include "parse.h"
+#include "check_readed_data.h"
+#include "replace_internal_labels.h"
 
 #define	DIR_SEPARATOR	'/'
 #define	SKIP_SPACES(ptr)		{while (is_space(*(ptr))) (ptr)++;}
 
 uint32_t		g_error;
 uint32_t		g_warning;
-cart_info_t		cartridge_info;
-char			*includes_list[128] = {NULL};
+cart_info_t		cartridge;
+duplicate_t		duplicate = {0,0,0,0,0,0,0,0,0,0,0};
+char			*included_list[128] = {NULL};
+uint32_t		included_index = 0;
 char			*base;
 uint32_t		base_length;
 
@@ -109,7 +112,7 @@ vector_t	*set_builtin_macro(void)
 #undef	ADD_MACRO
 
 void __attribute__((always_inline))
-	set_vectors(&macro, &code_area, &local_symbol, &extern_symbol)
+set_vectors(vector_t **macro, vector_t **code_area, loc_sym_t *local_symbol, vector_t **extern_symbol)
 {
 	*macro = set_builtin_macro();
 	*code_area = vector_init(sizeof(code_area_t));
