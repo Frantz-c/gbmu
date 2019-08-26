@@ -80,7 +80,7 @@ static char	*replace_content(char *content, uint32_t argc, char *param[10])
 }
 
 #define IS_LABEL	0xffu
-
+/*
 typedef struct	lex_param_s
 {
 	uint32_t	len;		// string length
@@ -88,6 +88,76 @@ typedef struct	lex_param_s
 	char		*str;		// string pointer
 }
 lex_param_t;
+*/
+char	*replace_if_macro_without_param(char *s, const uint32_t len, vector_t *macro, data_t *data)
+{
+	const char	char_backup = s[len];
+
+	s[len] = '\0';
+	ssize_t	index = vector_search(macro, (void*)&s);
+
+	if (index == -1)
+	{
+		s[len] = char_backup;
+		return (strndup(s, len));
+	}
+
+	register macro_t	*m = VEC_ELEM(macro_t, macro, index);
+	if (m->argc != 0)
+	{
+		print_error(data->filename, data->lineno, data->line, "can't use macro with parameters as argument");
+		return (NULL);
+	}
+
+	register char	*p = m->content;
+
+	// verify macro content validity
+	if (LOWER(*p) >= 'a' && LOWER(*p) <= 'f')
+	{
+		uint32_t	len;
+
+		if (is_numeric(p, &len) == 0 || is_alnum(p[len]) || p[len] == '_')
+		{
+			p += len;
+			goto __string;
+		}
+	}
+	if (is_alpha(*p) || *p == '_')
+	{
+		p++;
+	__string:
+		while (!is_space(*p) && !is_end(*p) && *p != ',')
+		{
+			if (!is_alnum(*p) && *p != '_')
+				goto __unexpected_char;
+			p++;
+		}
+	}
+	else if (is_digit(*p))
+	{
+		uint32_t	len;
+
+		if (is_numeric(p, &len) == 0)
+			goto __error_syntax_digit;
+		p += len;
+	}
+	else
+		goto __unexpected_char;
+
+	if (*p != '\0')
+		goto __unexpected_char;
+
+	return (strdup(m->content));
+
+	register char	*error_msg;
+__unexpected_char:
+	sprintf(data->buf, "in macro `%s` content, unexpected character `%c`", m->name, *p);
+__print_error_fmt:
+	error_msg = data->buf;
+__print_error:
+	print_error(data->filename, data->lineno, data->line, error_msg);
+	return (NULL);
+}
 
 int	__attribute__((always_inline))
 set_mnemonic_and_params(char **s, char **mnemonic, char **param1, char **param2, uint8_t *n_params, data_t *data)
@@ -96,14 +166,17 @@ set_mnemonic_and_params(char **s, char **mnemonic, char **param1, char **param2,
 	char	*start;
 	int		type;
 
+	// empty label
 	if (**s == ':')
 	{
 		(*s)++;
 		goto __empty_label;
 	}
-	if (is_digit(**s))
+	// invalid first character
+	if (!is_alpha(**s) && **s != '_')
 		goto __unexpected_char;
 
+	// set mnemonic
 	start = *s;
 	if (is_space(**s) && !is_endl(**s))
 	{
@@ -149,6 +222,7 @@ set_mnemonic_and_params(char **s, char **mnemonic, char **param1, char **param2,
 		if (is_alpha(*start) || *start == '_')
 		{
 			(*s)++;
+		__string:
 			while (!is_space(**s) && !is_end(**s) && **s != ',')
 			{
 				if (!is_alnum(**s) && **s != '_')
@@ -158,17 +232,26 @@ set_mnemonic_and_params(char **s, char **mnemonic, char **param1, char **param2,
 		}
 		else if (is_digit(*start))
 		{
+			uint32_t	len;
+
 			if (is_numeric(start, &len) == 0)
-				goto __unexpected_char;
+				goto __error_syntax_digit;
+			*s += len;
 		}
 		else
 			goto __unexpected_char;
 
-		// dup param or dup macro: create a function
-		if (i == 0)
-			param1 = strndup(start, *s - start);
-		else
-			param2 = strndup(start, *s - start);
+		// dup param or dup macro content
+		{
+			register char	*param = replace_if_macro_without_param(start, *s - start, macro);
+
+			if (param == NULL)
+				goto __free_all;
+			if (i == 0)
+				param1 = param;
+			else
+				param2 = param;
+		}
 		while (is_space(**s)) (*s)++;
 		// verify last character
 		if (**s == ',')
