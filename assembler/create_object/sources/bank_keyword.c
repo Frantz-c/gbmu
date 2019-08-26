@@ -26,11 +26,15 @@ extern void	bank_switch(vector_t *area, arguments_t args[4], data_t *data)
 		goto __too_few_arguments;
 	if (args[2].value != NULL)	// more than 2 arguments
 		goto __too_many_arguments;
+	if (args[1].type & STRING_TYPE)
+		goto __wrong_type_arg1;
 
 
 	addr = *(uint32_t*)(args->value) * 0x4000u;
 	if (args[1].value) // 2 arguments
 	{
+		if (args[1].type == STRING_TYPE)
+			goto __wrong_type_arg2;
 		register uint32_t	offset = *(uint32_t*)(args[1].value);
 
 		if ((addr % 0x4000u) + offset > 0x4000u)
@@ -38,18 +42,6 @@ extern void	bank_switch(vector_t *area, arguments_t args[4], data_t *data)
 		addr += offset;
 	}
 
-/*
-	if	(addr == 0 &&
-			(
-				vector_size(area) == 1
-				|| VEC_ELEM(code_area_t, area, 0)->data == NULL
-			)
-		)
-	{
-			data->cur_area = 0;
-		return;
-	}
-*/
 
 	// check if addr is already used
 	// if any, print an error if no empty
@@ -69,13 +61,25 @@ extern void	bank_switch(vector_t *area, arguments_t args[4], data_t *data)
 	return;
 
 
+/* ||||||||||||||||||||||||||||||||||||||||||*\
+** ================ errors ==================**
+\* ||||||||||||||||||||||||||||||||||||||||||*/
+	register const char	*const	error_msg;
+__wrong_type_arg1:
+	error_msg = "argument 1 must be an integer: .bank number[, offset]?";
+	goto __print_error;
+__wrong_type_arg2:
+	error_msg = "argument 2 must be an integer: .bank number[, offset]?";
+	goto __print_error;
 __too_few_arguments:
-	print_error(data->filename, data->lineno, data->line, "too few arguments (1 or 2 expected)");
-	return;
+	error_msg = "too few arguments: .bank number[, offset]?";
+	goto __print_error;
 __too_many_arguments:
-	print_error(data->filename, data->lineno, data->line, "too many arguments (1 or 2 expected)");
-	return;
+	error_msg = "too many arguments: .bank number[, offset]?";
+	goto __print_error;
 __addr_already_used:
 	sprintf(data->buf, "address 0x%x already used", addr);
-	print_error(data->filename, data->lineno, data->line, data->buf);
+	error_msg = data->buf;
+__print_error:
+	print_error(data->filename, data->lineno, data->line, error_msg);
 }

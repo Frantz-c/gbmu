@@ -24,15 +24,18 @@ extern void	set_memlock_area(vector_t *memblock, arguments_t args[4], data_t *da
 	uint32_t	end;
 	char		*name = NULL;
 
-	if (args->value == NULL || args[1].value == NULL || args[2].value == NULL)
+	if (args[0].value == NULL || args[1].value == NULL || args[2].value == NULL)
 		goto __too_few_arguments;
 	if (args[3].value != NULL)
 		goto __too_many_arguments;
-	if (args->type != STRING_TYPE)
+
+	if ((args[0].type & STRING_TYPE) == 0)
 		goto __wrong_type_arg1;
-	if (args[1].type != INTEGER_TYPE)
+	if ((args[0].type & ID_STRING_TYPE) == 0)
+		goto __not_well_formated_arg1;
+	if ((args[1].type & INTEGER_TYPE) == 0)
 		goto __wrong_type_arg2;
-	if (args[2].type != INTEGER_TYPE)
+	if ((args[2].type & INTEGER_TYPE) == 0)
 		goto __wrong_type_arg3;
 
 //	ARGUMENT 1 -> (string) name
@@ -51,31 +54,46 @@ extern void	set_memlock_area(vector_t *memblock, arguments_t args[4], data_t *da
 		goto __invalid_region2;
 
 	memblock_t	new = {addr, end, end - addr, data->lineno, name, strdup(data->filename), NULL};
-	printf("new.name = \"%s\"\n", new.name);
 	vector_push(memblock, (void*)&new);
-	printf("\e[1;44m   >  \e[0m  blockname[0] = %s\n", VEC_ELEM_FIRST(memblock_t, memblock)->name);
 
 	return;
 
 
-
+/* ||||||||||||||||||||||||||||||||||||||||||*\
+** ================ errors ==================**
+\* ||||||||||||||||||||||||||||||||||||||||||*/
+	register const char *const	error_msg;
+__not_well_formated_arg1:
+	error_msg = "argument 1 format must be [a-zA-Z_][a-zA-Z0-9_]*";
+	goto __print_error;
+__wrong_type_arg1:
+	error_msg = "argument 1 must be a string: .memlock name, start_addr, end_addr";
+	goto __print_error;
+__wrong_type_arg2:
+	error_msg = "argument 2 must be an integer: .memlock name, start_addr, end_addr";
+	goto __print_error;
+__wrong_type_arg3:
+	error_msg = "argument 3 must be an integer: .memlock name, start_addr, end_addr";
+	goto __print_error;
 __too_few_arguments:
-	print_error(data->filename, data->lineno, data->line, "too few arguments (3 expected)");
-	return;
+	error_msg = "too few arguments: .memlock name, start_addr, end_addr";
+	goto __print_error;
 __too_many_arguments:
-	print_error(data->filename, data->lineno, data->line, "too many arguments (3 expected)");
-	return;
+	error_msg = "too many arguments: .memlock name, start_addr, end_addr";
+	goto __print_error;
 __too_little_end:
 	sprintf(data->buf, "in memory block %s, end < start", name);
+	error_msg = data->buf;
 	goto __print_error;
 __invalid_region:
 	sprintf(data->buf, "in memory block %s, invalid start address (0x%hX)", name, (uint16_t)addr);
+	error_msg = data->buf;
 	goto __print_error;
 __invalid_region2:
 	sprintf(data->buf, "in memory block %s, invalid end address (0x%hX)", s, (uint16_t)end);
+	error_msg = data->buf;
 	goto __print_error;
 __print_error:
-	print_error(data->filename, data->lineno, data->line, data->buf);
+	print_error(data->filename, data->lineno, data->line, error_msg);
 	if (name) free(name);
-	return (s);
 }

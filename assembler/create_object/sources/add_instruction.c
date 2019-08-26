@@ -851,6 +851,7 @@ char	*add_instruction(char *inst, vector_t *area, vector_t *ext_symbol, loc_sym_
 	else
 		free(param1);
 
+	// NAZO...
 	if (val.value)
 		val.sign = '+';
 

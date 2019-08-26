@@ -306,8 +306,8 @@ uint32_t	get_keywords_and_arguments(char **keyword_start, char **s, args_t args[
 	}
 	// .byte end
 
-	uint8_t i;
-	for (i = 0; ; )
+	uint8_t i = 0;
+	while (1)
 	{
 		uint32_t	len;
 		int32_t		type;
@@ -329,26 +329,58 @@ uint32_t	get_keywords_and_arguments(char **keyword_start, char **s, args_t args[
 			*(uint8_t*)(args[i].value) = atou_type(*s, &len, type);
 			*s += len;
 		}
-		else if (**s == '"')
+		else if (**s == '"') // indirect string (ex: "string space")
 		{
+			args[i].type = (GB_STRING_TYPE | DB_QUOTE_STRING | STRING_TYPE | ID_STRING_TYPE);
+
 			arg_start = ++(*s);
+			if (!is_alpha(**s) && **s != '_')
+				args[i].type &= ~(ID_STRING_TYPE);
+
 			while (!is_endl(**s) && **s != '"')
 			{
+				if (**s == '\\')
+					(*s)++;
 				if (**s < ' ' || **s > '_')
-					goto __not_gameboy_ascii;
+					args[i].type &= ~(GB_STRING_TYPE);
+				if (!is_alnum(**s) && **s != '_')
+					args[i].type &= ~(ID_STRING_TYPE);
 				(*s)++;
 			}
+
 			if (**s != '"')
 				goto __unexpected_char;
 			if (*s - arg_start > IDENTIFIER_MAX_LENGTH)
 				goto __too_long_argument;
-			args[i].type = STRING_TYPE;
 			args[i].value = (void*)strndup(arg_start, *s - arg_start);
 			(*s)++;
 		}
-		else
+		else // direct string (ex: string\ space)
 		{
-			// no double quotes string
+			args[i].type = (GB_STRING_TYPE | STRING_TYPE | ID_STRING_TYPE);
+
+			arg_start = ++(*s);
+			if (!is_alpha(**s) && **s != '_')
+				args[i].type &= ~(ID_STRING_TYPE);
+
+			while (!is_endl(**s))
+			{
+				if (**s == '\\')
+				{
+					(*s)++;
+					if (is_endl(**s)) break;
+				}
+				if (**s < ' ' || **s > '_')
+					args[i].type &= ~(GB_STRING_TYPE);
+				if (!is_alnum(**s) && **s != '_')
+					args[i].type &= ~(ID_STRING_TYPE);
+				(*s)++;
+			}
+
+			if (*s - arg_start > IDENTIFIER_MAX_LENGTH)
+				goto __too_long_argument;
+			args[i].value = (void*)strndup(arg_start, *s - arg_start);
+			(*s)++;
 		}
 		//goto __unexpected_char;
 
@@ -462,7 +494,7 @@ __end_directive:\
 		bank_switch(area, args, &data);\
 	else if (keyword_len == 7 && strncmp(keyword, "memlock", keyword_len) == 0)\
 		set_memlock_area(loc_symbol->memblock, args, &data);\
-	else if (strncmp(keyword, "var", 3) == 0 && (type = is_numeric(keyword + 3, &len)) && is_space(keyword[len + 3]))\
+	else if (strncmp(keyword, "var", 3) == 0 && (type = is_numeric(keyword + 3, &len)) && is_space(keyword[len + 3]) && len == (keyword_len - 3))\
 		assign_var_to_memory(loc_symbol, ext_symbol, atou_type(keyword + 3, NULL, type), args, &data);\
 	else if (keyword_len == 6 && strncmp(keyword, "extern", keyword_len) == 0)\
 		set_extern_symbol(ext_symbol, args, &data);\
