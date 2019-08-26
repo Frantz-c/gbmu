@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/13 14:04:54 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/26 19:34:20 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/26 19:41:27 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -218,7 +218,7 @@ __print_error:
 **	refaire le systeme de types
 */
 static __attribute__((always_inline))
-uint32_t	get_keywords_and_arguments(char **keyword_start, char **s, arguments_t args[4], data_t *data, vector_t *area)
+uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t args[4], data_t *data, vector_t *area)
 {
 	char		*arg_start;
 	uint32_t	length;
@@ -226,13 +226,13 @@ uint32_t	get_keywords_and_arguments(char **keyword_start, char **s, arguments_t 
 	(*s)++;
 	if (!is_alpha(**s))
 		goto __unexpected_char;
-	*keyword_start = (*s)++;
+	keyword_start = (*s)++;
 
 	while (is_alnum(**s)) (*s)++;
-	length = *s - *keyword_start;
+	length = *s - keyword_start;
 
 	// .byte : creer une fonction
-	if (length == 4 && strncmp(*keyword_start, "byte", length))
+	if (length == 4 && strncmp(keyword_start, "byte", length))
 	{
 		uint32_t	byte;
 		int32_t		type;
@@ -479,7 +479,7 @@ do {\
 		goto __end_keyword;\
 	}\
 \
-	keyword_len = get_keywords_and_arguments(&s, args, &data, area);\
+	keyword_len = get_keywords_and_arguments(keyword, &s, args, &data, area);\
 	if (keyword_len == 0 || args->type == BYTE_KEYWORD)\
 		goto __end_keyword;\
 \

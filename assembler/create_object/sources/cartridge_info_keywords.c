@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/23 22:24:16 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/26 19:37:07 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/26 19:45:41 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -704,7 +704,7 @@ void	set_code_dest(arguments_t args[], data_t *data)
 	return;
 }
 
-void	version(arguments_t args[], data_t *data)
+void	set_version(arguments_t args[], data_t *data)
 {
 	if (duplicate.version)
 	{

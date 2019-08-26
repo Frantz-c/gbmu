@@ -6,10 +6,12 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/13 14:05:50 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/26 16:55:34 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/26 19:46:40 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
+
+#include "std_includes.h"
 
 static uint8_t		get_params(char **s, char *param[10])
 {
