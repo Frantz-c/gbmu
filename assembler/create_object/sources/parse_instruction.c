@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/13 14:05:50 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/27 13:56:10 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/27 18:36:44 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -34,7 +34,7 @@ static void	instruction_replace(char **inst, char **param1, char **param2)	// "l
 	if (*param1 && *param2)
 	{
 		printf("\e[1;47m       \e[0mINSTRUCTION : %s %s, %s ??\n", *inst, *param1, *param2);
-		// remplacment of ld's alternative syntaxes
+		// remplacement of ld's alternative syntaxes
 		if (((*inst)[0] == 'l' && (*inst)[1] == 'd' && (*inst)[2] == '\0')
 			|| ((*inst)[0] == 'm' && (*inst)[1] == 'o' && (*inst)[2] == 'v' && (*inst)[3] == '\0'))
 		{
@@ -425,29 +425,39 @@ __print_error:
 char	*set_calcul_string(char **s, char *param, vector_t *macro, char parent, data_t *data)
 {
 	char		*ret = NULL;
-	char		*start = *s;
+	char		*start;// = *s;
 	uint32_t	retl = 0;
 	char		operator;
+	char		has_parent;
 	uint8_t		is_string;
 
 	while (1)
 	{
 		operator = *((*s)++);
 		while (is_space(**s)) (*s)++;
+		if (**s == '(')
+		{
+			has_parent = 1;
+			(*s)++;
+			while (is_space(**s)) (*s)++;
+		}
+		else
+			has_parent = 0;
+		start = *s;
 
 		// verify all characters
 		// is_string = 0;
-		if (LOWER(*start) >= 'a' && LOWER(*start) <= 'f')
+		if (LOWER(**s) >= 'a' && LOWER(**s) <= 'f')
 		{
-			uint32_t	len;
+			uint32_t	len = 0;
 
-			if (is_numeric(start, &len) == 0 || is_alnum(start[len]) || start[len] == '_')
+			if (is_numeric(*s, &len) == 0 || is_alnum((*s)[len]) || (*s)[len] == '_')
 			{
 				*s += len;
 				goto __string;
 			}
 		}
-		if (is_alpha(*start) || *start == '_')
+		else if (is_alpha(**s) || **s == '_')
 		{
 			(*s)++;
 		__string:
@@ -459,11 +469,11 @@ char	*set_calcul_string(char **s, char *param, vector_t *macro, char parent, dat
 				(*s)++;
 			}
 		}
-		else if (is_digit(*start))
+		else if (is_digit(**s))
 		{
 			uint32_t	len;
 
-			if (is_numeric(start, &len) == 0)
+			if (is_numeric(*s, &len) == 0)
 				goto __error_syntax_digit;
 			*s += len;
 		}
@@ -488,20 +498,30 @@ char	*set_calcul_string(char **s, char *param, vector_t *macro, char parent, dat
 		if (!ret)
 		{
 			retl = strlen(param);
-			ret = malloc(retl + (*s - new_param) + 1);
-			strncpy(ret, param, retl);
+			ret = malloc(retl + (*s - start) + 3);
+			strncpy(ret + parent, param, retl);
 		}
 		else
 		{
-			ret = realloc(ret, retl + (*s - new_param) + 1);
+			ret = realloc(ret, retl + (*s - start) + 3);
 		}
 		ret[retl++] = operator;
-		strncpy(ret + retl, new_param, (*s - new_param));
-		retl += (*s - start);
+		if (has_parent)
+			ret[retl++] = '(';
+		strncpy(ret + retl, new_param, (*s - start));
+		retl += (*s - start) + parent;
 		free(new_param);
 
 		// check next char
 		while (is_space(**s)) (*s)++;
+		if (**s == ')')
+		{
+			ret[retl++] = **s;
+			(*s)++;
+			while (is_space(**s)) (*s)++;
+		}
+
+
 		// if it's an operator, continue
 		if (**s == '+' || **s == '-' || **s == '*' || **s == '/'
 				|| **s == '&' || **s == '|' || **s == '^'
@@ -516,6 +536,7 @@ char	*set_calcul_string(char **s, char *param, vector_t *macro, char parent, dat
 			goto __unexpected_char;
 	}
 	ret[retl] = '\0';
+	printf("RET = \"%s\"", ret);
 	return (ret);
 
 	register const char	*error_msg;
@@ -549,7 +570,7 @@ set_mnemonic_and_params(char **s, char **mnemonic, char **param1, char **param2,
 
 	// set mnemonic
 	start = *s;
-	if (is_space(**s) && !is_endl(**s))
+	while (!is_space(**s) && !is_endl(**s))
 	{
 		if (**s == ':') // label
 		{
@@ -563,7 +584,6 @@ set_mnemonic_and_params(char **s, char **mnemonic, char **param1, char **param2,
 		(*s)++; //check wrong characters ??
 	}
 	*mnemonic = strndup(start, *s - start);
-
 
 
 	while (i < 2)	// loop in each parameter
@@ -622,6 +642,7 @@ set_mnemonic_and_params(char **s, char **mnemonic, char **param1, char **param2,
 		// dup param or dup macro content
 		{
 			register char	*param = replace_if_macro_without_param(start, *s - start, macro, data);
+			printf("param = %s\n", param);
 
 			if (param == NULL)
 				goto __free_all;
@@ -642,6 +663,7 @@ set_mnemonic_and_params(char **s, char **mnemonic, char **param1, char **param2,
 		if (**s == ',')
 		{
 			(*s)++;
+			i++;
 			continue;
 		}
 		else if (is_endl(**s))
@@ -920,6 +942,7 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 			return (s);
 	}
 
+	printf("\n%s %s, %s\n", mnemonic, param1, param2);
 	if (n_params == 3)
 		goto __too_many_parameters;
 
@@ -941,6 +964,7 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 	*/
 	param_t		param[2] = {NONE, NONE};	//enum ?
 	value_t		val = {0, 0};
+	printf("%s %s, %s (%u, %u)\n", mnemonic, param1, param2, param[0], param[1]);
 
 	str_to_lower(mnemonic);
 	if (n_params == 2)
@@ -949,14 +973,20 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 	if (param1)
 	{
 		if (calcul_param(param1, &val) == 0xffffffffu)
+		{
+			puts("calcul_param(param1) ERROR");
 			goto __free_and_ret;
+		}
 		param[0] = get_param_type(param1, &val);
 
 		if (param2)
 		{
 			value_t	tmp_val = {0, 0};
 			if (calcul_param(param2, &tmp_val) == 0xffffffffu)
+			{
+				puts("calcul_param(param2) ERROR");
 				goto __free_and_ret;
+			}
 			param[1] = get_param_type(param2, &tmp_val);
 
 			if (param[0] < FF00_IMM8 && param[1] >= FF00_IMM8)
@@ -977,15 +1007,16 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 	param_error_t	error;
 	uint8_t			bin[4] = {0, 0, 0, val.sign};
 
+	printf("%s %s, %s (%u, %u)\n", mnemonic, param1, param2, param[0], param[1]);
 	error = get_bin_instruction(mnemonic, param, &val, bin);
 	if (error.p1 || error.p2)
 	{
 		const char *errtable[OVERFLOW + 1] = {
-			"Missing parameter for instruction\n",
-			"Too many parameters for instruction\n",
-			"Invalid destination for instruction\n",
-			"Invalid source for instruction\n",
-			"Address overflow\n"
+			"Missing parameter for instruction",
+			"Too many parameters for instruction",
+			"Invalid destination for instruction",
+			"Invalid source for instruction",
+			"Address overflow"
 		};
 		
 		if (error.p1)
@@ -1007,7 +1038,7 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 
 	/* ERRORS */
 __too_many_parameters:
-	fprintf(stderr, "TOO MANY PARAM");
+	fprintf(stderr, "TOO MANY PARAM\n");
 __free_and_ret:
 	if (mnemonic)
 		free(mnemonic);

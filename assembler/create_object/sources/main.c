@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/26 19:27:38 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/27 14:46:25 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -160,6 +160,8 @@ int		main(int argc, char *argv[])
 		fprintf(stderr, "cannot open %s\n", argv[1]);
 		return (1);
 	}
+	puts("EXIT");
+	exit(0);
 
 	// check readed data (check_readed_data.c)
 	check_undefined_symbols(local_symbol.label);
@@ -172,7 +174,7 @@ int		main(int argc, char *argv[])
 		fprintf(stderr, "\e[1;31m%u errors\e[0m\n", g_error);
 		goto __free_all;
 	}
-
+	
 	// ----------------- (create_object_file.c)
 	create_object_file(code_area, &local_symbol, extern_symbol, argv[0]);
 

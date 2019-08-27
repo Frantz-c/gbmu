@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/13 14:04:54 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/26 19:41:27 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/27 14:46:11 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -15,6 +15,7 @@
 #include "macro_func.h"
 #include "macro.h"
 #include "keywords.h"
+#include "parse_instruction.h"
 
 
 /* ###################################

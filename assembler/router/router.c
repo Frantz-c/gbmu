@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/12 13:43:03 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/26 13:17:50 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/27 15:30:28 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -197,6 +197,7 @@ uint32_t	count_tab(char *tab[])
 void	call_create_object(char *obj, char *src)
 {
 	int		process;
+	int		status;
 
 	process = fork();
 	if (process == 0)
@@ -205,8 +206,9 @@ void	call_create_object(char *obj, char *src)
 		fprintf(stderr, "can't find ./gbasm_create_object");
 		exit(1);
 	}
-	else
-		wait(NULL);
+	wait(&status);
+	if (WIFSIGNALED(status))
+		printf("CHILD TERMINATED WITH SIGNAL %u\n", WTERMSIG(status));
 }
 
 // argv = exe, obj...
@@ -215,6 +217,7 @@ void	call_assemble_objects(char **obj, char *exe)
 	int			process;
 	char		**argv = malloc((count_tab(obj) + 2) * sizeof(char *));
 	uint32_t	i;
+	int			status;
 
 	argv[0] = exe;
 	for (i = 0; obj[i]; i++)
@@ -227,8 +230,9 @@ void	call_assemble_objects(char **obj, char *exe)
 		fprintf(stderr, "can't find ./gbasm_assemble_objects");
 		exit(1);
 	}
-	else
-		wait(NULL);
+	wait(&status);
+	if (WIFSIGNALED(status))
+		printf("CHILD TERMINATED WITH SIGNAL %u\n", WTERMSIG(status));
 
 	free(argv);
 }

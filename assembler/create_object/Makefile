@@ -6,7 +6,7 @@
 #    By: mhouppin <marvin@le-101.fr>                +:+   +:    +:    +:+      #
 #                                                  #+#   #+    #+    #+#       #
 #    Created: 2019/02/25 16:43:57 by mhouppin     #+#   ##    ##    #+#        #
-#    Updated: 2019/08/26 16:56:54 by fcordon     ###    #+. /#+    ###.fr      #
+#    Updated: 2019/08/27 15:20:33 by fcordon     ###    #+. /#+    ###.fr      #
 #                                                          /                   #
 #                                                         /                    #
 # **************************************************************************** #
@@ -19,7 +19,7 @@ INC_DIR   = includes:../vector
 SOURCES  := $(wildcard ${SRC_DIR}/*.c)
 OBJECTS  := $(patsubst ${SRC_DIR}/%.c,${OBJ_DIR}/%.o,${SOURCES})
 DEPENDS  := $(patsubst ${SRC_DIR}/%.c,${OBJ_DIR}/%.d,${SOURCES})
-CFLAGS   ?= -Wextra -Wall -g3
+CFLAGS   ?= -Wextra -Wall -g3 #-fsanitize=address
 CINC     := -I $(subst :, -I ,${INC_DIR})
 CC       ?= gcc-9
 

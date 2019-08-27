@@ -6,7 +6,7 @@
 /*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/26 15:36:50 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/27 13:55:34 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/27 14:56:09 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -107,7 +107,10 @@ static calc_elem_t	*get_calc(const char *s, uint32_t *n_elem)
 			case '>': case '<':
 			{
 				if (s[1] != s[0])
+				{
+					fprintf(stderr, "ERROR 0x0");
 					exit(1);
+				}
 				if ((lvl & 0x1u) == 0)
 				{
 					calc[i-1].lvl++;
@@ -238,6 +241,14 @@ extern uint32_t	calcul_param(char *p, value_t *val)
 	{
 		while (is_alnum(*p) || *p == '_') p++;
 		val->sign = *p;
+
+		if (is_endl(p[1]))
+		{
+			val->sign = '+';
+			val->value = 0;
+			return (0);
+		}
+
 		*(p++) = '\0';
 		calc = get_calc(p, &n_elem);
 		if (n_elem == 0)

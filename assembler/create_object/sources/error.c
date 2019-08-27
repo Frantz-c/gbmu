@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/12 12:47:39 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/26 17:48:12 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/27 14:35:28 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -64,5 +64,8 @@ extern void			print_error(char *filename, uint32_t lineno, char *line, const cha
 	);
 
 	if (g_error == MAX_ERROR)
+	{
+		fprintf(stderr, "too many errors emitted (%u)\n", g_error);
 		exit(g_error);
+	}
 }

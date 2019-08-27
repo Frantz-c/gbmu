@@ -1,13 +1,1 @@
-%define	ELEMSIZ		4
-
-.memlock	block, 0xc000, end=0xc020
-.var1		toto, block
-.var1		titi, block
-
-
-.bank	0, 0x150
-
-ld		A,		0x33
-ld		(toto), A
-ld		A,		(toto)
-ld		(titi), A
+ld	A, 0x20 + (12 * 2)
