@@ -6,12 +6,176 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/13 14:05:50 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/26 19:46:40 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/27 13:56:10 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
 #include "std_includes.h"
+#include "instruction_or_label.h"
+#include "get_bin_instruction.h"
+#include "calcul_param.h"
+
+static void	instruction_replace(char **inst, char **param1, char **param2)	// "ld (ff00h)" -> ldff, "ld HL, SP" -> ldhl, "(HL++?)" -> (HLI, "(HL--?)" -> (HLD
+{
+	uint8_t		parent[2] = {0, 0};
+	char		*p1 = *param1;
+	char		*p2 = *param2;
+
+	if (*param1 && *p1 == '(') {
+		parent[0]++;
+		p1++;
+	}
+	if (*param2 && *p2 == '(') {
+		parent[1]++;
+		p2++;
+	}
+
+	if (*param1 && *param2)
+	{
+		printf("\e[1;47m       \e[0mINSTRUCTION : %s %s, %s ??\n", *inst, *param1, *param2);
+		// remplacment of ld's alternative syntaxes
+		if (((*inst)[0] == 'l' && (*inst)[1] == 'd' && (*inst)[2] == '\0')
+			|| ((*inst)[0] == 'm' && (*inst)[1] == 'o' && (*inst)[2] == 'v' && (*inst)[3] == '\0'))
+		{
+			if (parent[0] == 1)
+			{
+				int			type;
+				uint32_t	len;
+
+
+				if ((type = is_numeric(p1, &len)) != 0)
+				{
+					if (atou_type(p1, NULL, type) == 0xff00u)
+					{
+						if (p1[len] == '+')
+						{
+							/* suppression de la partie 0xff00+ */
+							p1 = strdup(p1 + len + 1);
+							free(*param1);
+							*param1 = p1;
+						}
+						else if (p1[len] == '\0')
+						{
+							/* ld (ff00h)  -> ld (ff00h + 0) */
+							free(*param1);
+							*param1 = strdup("0");
+						}
+						else
+							goto __end;
+
+						free(*inst);
+						*inst = strdup("ldff");
+						goto __end;
+					}
+				}
+			}
+			if (parent[1] == 1)
+			{
+				int			type;
+				uint32_t	len;
+
+
+				if ((type = is_numeric(p2, &len)) != 0)
+				{
+					if (atou_type(p2, NULL, type) == 0xff00u)
+					{
+						if (p2[len] == '+')
+						{
+							/* suppression de la partie 0xff00+ */
+							p2 = strdup(p2 + len + 1);
+							free(*param2);
+							*param2 = p2;
+						}
+						else if (p2[len] == '\0')
+						{
+							/* ld (ff00h)  -> ld (ff00h + 0) */
+							free(*param2);
+							*param2 = strdup("0");
+						}
+						else
+							goto __end;
+
+						free(*inst);
+						*inst = strdup("ldff");
+						goto __end;
+					}
+				}
+			}
+
+
+			if (LOWER((*param1)[0]) == 'h' && LOWER((*param1)[1]) == 'l' && LOWER((*param1)[2]) == '\0' 
+					&& LOWER((*param2)[0]) == 's' && LOWER((*param2)[1]) == 'p')
+			{
+				if ((*param2)[2] == '+')
+				{
+					memmove(*param2, *param2 + 2, strlen(*param2 + 1));
+				}
+				else if ((*param2)[2] == '\0')
+				{
+					free(*param2);
+					*param2 = strdup("0");
+				}
+				else
+					goto __end;
+
+				free(*inst);
+				*inst = strdup("ldhl");
+			}
+			else
+			{
+				if (parent[0])
+				{
+					if (LOWER(p1[0]) == 'h' && LOWER(p1[1]) == 'l')
+					{
+						if (p1[2] == '+' && (p1[3] == '\0' || (p1[3] == '+' && p1[4] == '\0')))
+						{
+							//HL++
+							free(*param1);
+							*param1 = strdup("(HLI");
+						}
+						else if (p1[2] == '-' && (p1[3] == '\0' || (p1[3] == '-' && p1[4] == '\0')))
+						{
+							//HL--
+							free(*param1);
+							*param1 = strdup("(HLD");
+						}
+					}
+				}
+				if (parent[1])
+				{
+					if (LOWER(p2[0]) == 'h' && LOWER(p2[1]) == 'l')
+					{
+						if (p2[2] == '+' && (p2[3] == '\0' || (p2[3] == '+' && p2[4] == '\0')))
+						{
+							//HL++
+							free(*param2);
+							*param2 = strdup("(HLI");
+						}
+						else if (p2[2] == '-' && (p2[3] == '\0' || (p2[3] == '-' && p2[4] == '\0')))
+						{
+							//HL--
+							free(*param2);
+							*param2 = strdup("(HLD");
+						}
+					}
+				}
+			}
+		}
+	}
+__end:
+	return;
+}
+
+static macro_t			*get_macro(vector_t *macro, char *name)
+{
+	ssize_t	index = vector_search(macro, (void*)&name);
+
+	if (index == -1)
+		return (NULL);
+
+	return(VEC_ELEM(macro_t, macro, index));
+}
 
 static uint8_t		get_params(char **s, char *param[10])
 {
@@ -49,6 +213,35 @@ static uint8_t		get_params(char **s, char *param[10])
 		}
 	}
 	return (nparam);
+}
+
+static char	*replace_content2(macro_t *macro, char *param[10])
+{
+	char		*new = NULL;
+	int32_t		diff = 0;
+	uint32_t	len[10];
+	char		*pos;
+	char		*content = macro->content;
+
+	for (uint32_t i = 0; i != macro->argc; i++)
+	{
+		len[i] = strlen(param[i]);
+		diff += len[i] - 2;
+	}
+
+	new = malloc(strlen(content) + diff + 1);
+	new[0] = '\0';
+	pos = content;
+	while ((pos = strchr(content, '#')))
+	{
+		register uint8_t	i = pos[1] - '0';
+
+		strncat(new, content, pos - content);
+		strncat(new, param[i], len[i]);
+		content = pos + 2;
+	}
+	strcat(new, content);
+	return (new);
 }
 
 static char	*replace_content(char *content, uint32_t argc, char *param[10])
@@ -141,7 +334,10 @@ __string_or_symbol_forbidden:
 	goto __print_error_fmt;
 __error_macro_with_param:
 	error_msg = "can't use macro with parameters as argument";
-	goto print_error;
+	goto __print_error;
+__error_syntax_digit:
+	error_msg = "error digit";
+	goto __print_error;
 __unexpected_char:
 	sprintf(data->buf, "in macro `%s` content, unexpected character `%c`", m->name, *p);
 __print_error_fmt:
@@ -186,7 +382,7 @@ char	*replace_if_macro_without_param(char *s, const uint32_t len, vector_t *macr
 	{
 		p++;
 	__string:
-		while (!is_space(*p) && !is_end(*p) && *p != ',')
+		while (!is_space(*p) && !is_endl(*p) && *p != ',')
 		{
 			if (!is_alnum(*p) && *p != '_')
 				goto __unexpected_char;
@@ -213,7 +409,10 @@ char	*replace_if_macro_without_param(char *s, const uint32_t len, vector_t *macr
 	register const char	*error_msg;
 __error_macro_with_param:
 	error_msg = "can't use macro with parameters as argument";
-	goto print_error;
+	goto __print_error;
+__error_syntax_digit:
+	error_msg = "error digit";
+	goto __print_error;
 __unexpected_char:
 	sprintf(data->buf, "in macro `%s` content, unexpected character `%c`", m->name, *p);
 __print_error_fmt:
@@ -223,7 +422,7 @@ __print_error:
 	return (NULL);
 }
 
-char	*set_calcul_string(char **s, char *param, vector_t *macro, char parent)
+char	*set_calcul_string(char **s, char *param, vector_t *macro, char parent, data_t *data)
 {
 	char		*ret = NULL;
 	char		*start = *s;
@@ -253,7 +452,7 @@ char	*set_calcul_string(char **s, char *param, vector_t *macro, char parent)
 			(*s)++;
 		__string:
 			is_string = 1;
-			while (!is_space(**s) && !is_end(**s) && **s != ',')
+			while (!is_space(**s) && !is_endl(**s) && **s != ',')
 			{
 				if (!is_alnum(**s) && **s != '_')
 					goto __unexpected_char;
@@ -275,7 +474,7 @@ char	*set_calcul_string(char **s, char *param, vector_t *macro, char parent)
 		// dup param or dup macro content
 		register char	*new_param;
 		if (is_string)
-			new_param = replace_macro_without_param(start, *s - start, macro);
+			new_param = replace_macro_without_param(start, *s - start, macro, data);
 		else
 			new_param = strndup(start, *s - start);
 
@@ -306,7 +505,7 @@ char	*set_calcul_string(char **s, char *param, vector_t *macro, char parent)
 		// if it's an operator, continue
 		if (**s == '+' || **s == '-' || **s == '*' || **s == '/'
 				|| **s == '&' || **s == '|' || **s == '^'
-				|| ((s[0] == '<' || s[0] == '>') && s[1] == s[0]))
+				|| ((**s == '<' || **s == '>') && (*s)[1] == (*s)[0]))
 		{
 			if (**s == '<' || **s == '>')
 				(*s)++;
@@ -318,14 +517,24 @@ char	*set_calcul_string(char **s, char *param, vector_t *macro, char parent)
 	}
 	ret[retl] = '\0';
 	return (ret);
+
+	register const char	*error_msg;
+__error_syntax_digit:
+	error_msg = "error digit";
+__unexpected_char:
+	sprintf(data->buf, "unexpected character `%c`", **s);
+__print_error_fmt:
+	error_msg = (const char *)data->buf;
+__print_error:
+	print_error(data->filename, data->lineno, data->line, error_msg);
+	return (NULL);
 }
 
 int	__attribute__((always_inline))
-set_mnemonic_and_params(char **s, char **mnemonic, char **param1, char **param2, uint8_t *n_params, data_t *data)
+set_mnemonic_and_params(char **s, char **mnemonic, char **param1, char **param2, uint8_t *n_params, data_t *data, vector_t *macro)
 {
 	uint8_t	i = 0;
 	char	*start;
-	int		type;
 	char	parent = 0;
 
 	// empty label
@@ -391,7 +600,7 @@ set_mnemonic_and_params(char **s, char **mnemonic, char **param1, char **param2,
 		{
 			(*s)++;
 		__string:
-			while (!is_space(**s) && !is_end(**s) && **s != ',' && **s != parent)
+			while (!is_space(**s) && !is_endl(**s) && **s != ',' && **s != parent)
 			{
 				if (!is_alnum(**s) && **s != '_')
 					goto __unexpected_char;
@@ -412,14 +621,14 @@ set_mnemonic_and_params(char **s, char **mnemonic, char **param1, char **param2,
 
 		// dup param or dup macro content
 		{
-			register char	*param = replace_if_macro_without_param(start, *s - start, macro);
+			register char	*param = replace_if_macro_without_param(start, *s - start, macro, data);
 
 			if (param == NULL)
 				goto __free_all;
 			if (i == 0)
-				param1 = param;
+				*param1 = param;
 			else
-				param2 = param;
+				*param2 = param;
 
 			if (parent && **s == parent)
 			{
@@ -439,19 +648,19 @@ set_mnemonic_and_params(char **s, char **mnemonic, char **param1, char **param2,
 			break;
 		else if (**s == '+' || **s == '-' || **s == '*' || **s == '/'
 				|| **s == '&' || **s == '|' || **s == '^'
-				|| ((s[0] == '<' || s[0] == '>') && s[1] == s[0]))
+				|| ((**s == '<' || **s == '>') && (*s)[1] == (*s)[0]))
 		{
-			if (**s == '>' || *&*s == '<')
+			if (**s == '>' || **s == '<')
 				(*s)++;
 			if (i == 0)
 			{
-				param1 = set_calcul_string(s, param1, macro, parent);
+				*param1 = set_calcul_string(s, *param1, macro, parent, data);
 				if (param1 == NULL)
 					goto __free_all;
 			}
 			else
 			{
-				param2 = set_calcul_string(s, param2, macro, parent);
+				*param2 = set_calcul_string(s, *param2, macro, parent, data);
 				if (param2 == NULL)
 					goto __free_all;
 			}
@@ -464,19 +673,29 @@ set_mnemonic_and_params(char **s, char **mnemonic, char **param1, char **param2,
 		parent = 0;
 		i++;
 	}
-	*n_param = i + 1;	// if n_params == 3: too_many_arguments
+	*n_params = i + 1;	// if n_params == 3: too_many_arguments
 	return (0);
 
+	register const char	*error_msg;
 /* ERRORS */
+__error_syntax_digit:
+	error_msg = "error digit";
+	goto __print_error;
+__empty_label:
+	error_msg = "empty label";
+	goto __print_error;
 __missing_parent:
 	print_error(data->filename, data->lineno, data->line, "missing parent at end of expression");
-	goto __free_all;
+	goto __print_error;
 __incomplete_param:
 	print_error(data->filename, data->lineno, data->line, "empty parameter");
-	goto __free_all;
+	goto __print_error;
 __unexpected_char:
 	sprintf(data->buf, "unexpected character `%c`", **s);
-	print_error(data->filename, data->lineno, data->line, data->buf);
+__print_error_fmt:
+	error_msg = data->buf;
+__print_error:
+	print_error(data->filename, data->lineno, data->line, error_msg);
 
 __free_all:
 	if (mnemonic) free(mnemonic);
@@ -508,23 +727,6 @@ param_t	get_param_type(char *param, value_t *n)
 			num = 1;
 			s += 2;
 		}
-		// (ff00+x)
-		/*
-		if (LOWER(*s) == 'f')
-		{
-			if (LOWER(s[1]) == 'f' && s[2] == '0' && s[3] == '0')
-			{
-				if ((!num && LOWER(s[4]) == 'h' && s[5] == '+') || (num && s[4] == '+'))
-				{
-					while (*s != '+') s++;
-					s++;
-					if (LOWER(*s) == 'c' && s[1] == '\0')
-						return (FF00_C);
-					return (FF00_IMM8);
-				}
-			}
-		}
-		*/
 		// (n) (nn)
 		if (is_numeric(s, &len))
 		{
@@ -575,13 +777,7 @@ param_t	get_param_type(char *param, value_t *n)
 			return (HL);
 		if (LOWER(*s) == 's' && LOWER(s[1]) == 'p' && s[2] == '\0')
 			return (SP);
-		if (n->is_signed && *s == '-' && is_numeric(s + 1, &len))
-		{
-			if ((int32_t)n->value > 0x7f || (int32_t)n->value < -0x80)
-				return (IMM16);
-			return (IMM8);
-		}
-		else if (is_numeric(s, &len))
+		if (is_numeric(s, NULL))
 		{
 			if (n->value > 0xff)
 				return (IMM16);
@@ -599,6 +795,97 @@ param_t	get_param_type(char *param, value_t *n)
 	return (SYMBOL);
 }
 
+char	*replace_macro(char **s, vector_t *macro, data_t *data)
+{
+	char		*p = *s;
+	char		*param[10] = {NULL};
+	uint32_t	n_params = 0;
+	char		*content;
+	char		*end;
+	macro_t		*m;
+
+	if (!is_alpha(*p) && *p != '_')
+		return (NULL);
+	p++;
+	while (is_alnum(*p) || *p == '_') p++;
+	end = p;
+	if (*p == '(')
+	{
+		p++;
+		while (is_space(*p)) p++;
+		if (*p == ')')
+		{
+			p++;
+			goto __no_arguments;
+		}
+		*end = 0;
+		m = get_macro(macro, *s);
+		*end = '(';
+		if (m == NULL)
+			return (NULL);
+
+		content = m->content;
+		n_params = get_params(&p, param);
+
+		if (*p != ')')
+			goto __unexpected_char;
+		p++;
+		while (is_space(*p)) p++;
+		if (!is_endl(*p))
+			goto __unexpected_char;
+
+		if (n_params == 0xffu)
+			goto __undefined_macro_param_error;
+		if (n_params != m->argc)
+			goto __argc_error;
+		if (n_params > 10)
+			goto __too_many_params; // inutile ?
+		content = replace_content2(m, param);
+		*s = p;
+		return (content);
+	}
+
+	__no_arguments:
+	while (is_space(*p)) p++;
+	if (!is_endl(*p))
+		return (NULL);
+
+	char	tmp = *end;
+	*end = 0;
+	m = get_macro(macro, *s);
+	*end = tmp;
+	if (m == NULL)
+		return (NULL);
+	if (m->argc)
+		goto __params_expected;
+	*s = p;
+	return (strdup(m->content));
+
+
+	const char	*error_msg;
+__unexpected_char:
+	sprintf(data->buf, "unexpected character `%c`", *p);
+	goto __print_error_fmt;
+__undefined_macro_param_error:
+	error_msg = "undefined macro arguments error";
+	goto __print_error;
+__params_expected:
+	sprintf(data->buf, "too few arguments (%u expected, 0 given)", m->argc);
+	goto __print_error_fmt;
+__too_many_params:
+	sprintf(data->buf, "too many arguments (%u expected, %u given)", m->argc, n_params);
+	goto __print_error_fmt;
+__argc_error:
+	*end = 0;
+	sprintf(data->buf, "wrong number of arguments in macro %s", *s);
+	*end = '(';
+	goto __print_error;
+__print_error_fmt:
+	error_msg = (const char *)data->buf;
+__print_error:
+	print_error(data->filename, data->lineno, data->line, error_msg);
+	return (NULL);
+}
 
 char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t *loc_symbol, vector_t *macro, data_t *data)
 {
@@ -609,8 +896,7 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 	char		*replacement;
 
 	// replace line if it's a macro w/wo params
-	if (replace_macro(&s, macro, &replacement, data) == -1);	// return NULL if no macro
-		return (s);
+	replacement = replace_macro(&s, macro, data);	// return NULL if no macro
 
 	// lexer (check spaces, comma, ...). cut the string
 	/* example:
@@ -623,11 +909,14 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 	*/
 	if (replacement) {
 		char	*p = replacement;
-		if (set_mnemonic_and_params(&p, &mnemonic, &param1, &param2, &n_params, data) == -1)
+		if (set_mnemonic_and_params(&p, &mnemonic, &param1, &param2, &n_params, data, macro) == -1)
+		{
+			free(replacement);
 			return (s);
+		}
 	}
 	else {
-		if (set_mnemonic_and_params(&s, &mnemonic, &param1, &param2, &n_params, data) == -1);
+		if (set_mnemonic_and_params(&s, &mnemonic, &param1, &param2, &n_params, data, macro) == -1)
 			return (s);
 	}
 
@@ -635,7 +924,7 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 		goto __too_many_parameters;
 
 	// if it's a label, add it and return
-	if (n_param == IS_LABEL)
+	if (n_params == IS_LABEL)
 	{
 		add_label(mnemonic, area, ext_symbol, loc_symbol, data);
 		return (s);
@@ -651,23 +940,23 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 	**   val = {0, 15, 0} ?
 	*/
 	param_t		param[2] = {NONE, NONE};	//enum ?
-	value_t		val = {0, 0, 0};
-//======= char *mnemonic, char *param1, char *param2
+	value_t		val = {0, 0};
+
 	str_to_lower(mnemonic);
 	if (n_params == 2)
 		instruction_replace(&mnemonic, &param1, &param2);	// "ld (ff00h)" -> ldff, "ld HL, SP" -> ldhl
 	
 	if (param1)
 	{
-		if (calcul_param(param1, &val) == -1)
-			goto __free_all;
+		if (calcul_param(param1, &val) == 0xffffffffu)
+			goto __free_and_ret;
 		param[0] = get_param_type(param1, &val);
 
 		if (param2)
 		{
-			value_t	tmp_val = {0, 0, 0};
-			if (calcul_param(param2, &tmp_val) == -1)
-				goto __free_all;
+			value_t	tmp_val = {0, 0};
+			if (calcul_param(param2, &tmp_val) == 0xffffffffu)
+				goto __free_and_ret;
 			param[1] = get_param_type(param2, &tmp_val);
 
 			if (param[0] < FF00_IMM8 && param[1] >= FF00_IMM8)
@@ -688,7 +977,7 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 	param_error_t	error;
 	uint8_t			bin[4] = {0, 0, 0, val.sign};
 
-	error = get_bin_instruction(inst, param, &val, bin);
+	error = get_bin_instruction(mnemonic, param, &val, bin);
 	if (error.p1 || error.p2)
 	{
 		const char *errtable[OVERFLOW + 1] = {
@@ -717,143 +1006,10 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 	return (s);
 
 	/* ERRORS */
+__too_many_parameters:
+	fprintf(stderr, "TOO MANY PARAM");
 __free_and_ret:
 	if (mnemonic)
 		free(mnemonic);
 	return (s);
 }
-/*
-char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t *loc_symbol, vector_t *macro, data_t *data)
-{
-	char		*name = s;
-	uint32_t	macro_index = 0xffffffffu;
-	char		*macro_param[10] = {NULL};
-	uint8_t		n_params = 0;
-	char		*content;
-	uint32_t	argc;
-	char		*search = NULL;
-
-	if (!is_alpha(*s) && *s != '_')
-	{
-		fprintf(stderr, "(#0) ");
-		goto __unexpected_char;
-	}
-	s++;
-	while (is_alnum(*s) || *s == '_') s++;
-
-	// LABEL
-	if (*s == ':')
-	{
-		// start = name
-		char *end = s;
-		s++;
-		if (!is_space(*s) && !is_endl(*s))
-		{
-			fprintf(stderr, "(#1) ");
-			goto __unexpected_char;
-		}
-		add_label(strndup(name, end - name), area, ext_symbol, loc_symbol, data); //test if not mnemonic
-		return (s);
-	}
-	else if (!is_space(*s) && *s != '(' && !is_endl(*s))
-	{
-		fprintf(stderr, "(#2) ");
-		goto __unexpected_char;
-	}
-
-	search = strndup(name, s - name);
-	while (is_space(*s)) s++;
-	if ((macro_index = (uint32_t)vector_search(macro, (void*)&search)) != 0xffffffffu)
-	{
-		char		*content_ptr = NULL;
-		data_t		new_data;
-		content = VEC_ELEM(macro_t, macro, macro_index)->content;
-		argc = VEC_ELEM(macro_t, macro, macro_index)->argc;
-
-		if (*s == '(')
-		{
-			s++;
-			n_params = get_params(&s, macro_param);
-			if (n_params == 0xffu)
-			{
-				fprintf(stderr, "(#3) ");
-				goto __unexpected_char;
-			}
-			if (n_params != argc)
-				goto __argc_error;
-			if (n_params)
-			{
-				content = replace_content(content, argc, macro_param);
-				content_ptr = content;
-			}
-			for (uint8_t i = 0; macro_param[i]; i++)
-				free(macro_param[i]);
-		}
-		char	*tmp = content;
-		while (!is_space(*tmp) && !is_endl(*tmp)) tmp++;
-		if (!is_endl(*tmp))
-		{
-			while (is_space(*tmp)) tmp++;
-			if (!is_endl(*tmp))
-				goto __next;
-		}
-		
-		name = (argc) ? content : strdup(content);
-		s = add_instruction(name, area, ext_symbol, loc_symbol, macro, s, data);
-		free(name);
-		return (s);
-
-		
-__next:
-		new_data.filename = malloc(strlen(data->filename) + strlen(name) + 10);
-		sprintf(new_data.filename, "%s in macro %s", data->filename, name);
-		new_data.line = content;
-		new_data.lineno = 1;
-		new_data.cur_area = data->cur_area;
-
-
-		for (;;)
-		{
-			char *inst = content;
-			while (!is_space(*content) && !is_endl(*content)) content++;
-			inst = strndup(inst, content - inst);
-			content = add_instruction(inst, area, ext_symbol, loc_symbol, NULL, content, &new_data);
-			free(inst);
-			if (*content == '\0')
-				break;
-			content += 1;
-			new_data.line = content;
-			new_data.lineno++;
-		}
-		if (content_ptr) free(content_ptr);
-		free(new_data.filename);
-		free(search);
-		return (s);
-	}
-	else if (*s == '(' && !is_space(s[-1]))
-	{
-		fprintf(stderr, "(#5) ");
-		goto __unexpected_char;
-	}
-
-//__add_instruction:
-	s = add_instruction(search, area, ext_symbol, loc_symbol, macro, s, data);
-	//free(search);
-	return (s);
-
-__argc_error:
-	for (uint8_t i = 0; macro_param[i]; i++)
-		free(macro_param[i]);
-	sprintf(data->buf, "arguments expected: %hhu, %u given", (uint8_t)argc, n_params);
-	goto __print_error;
-	
-
-__unexpected_char:
-	sprintf(data->buf, "(#1) unexpected character `%c`", *s);
-	if (search) free(search);
-__print_error:
-	print_error(data->filename, data->lineno, data->line, data->buf);
-	while (!is_endl(*s)) s++;
-	return (s);
-}
-*/

@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/13 22:59:31 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/08 18:19:15 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/27 14:00:11 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -65,7 +65,7 @@ __print_error:
 	return (-1);	
 }
 
-static uint32_t	get_block_addr(char *block, vector_t *memblock, uint32_t size, uint32_t *index)
+static uint32_t	get_block_addr(const char *block, vector_t *memblock, uint32_t size, uint32_t *index)
 {
 	uint32_t	var_addr;
 	memblock_t	*b = VEC_ELEM_FIRST(memblock_t, memblock);
@@ -143,7 +143,7 @@ extern void	assign_var_to_memory(loc_sym_t *loc_symbol, vector_t *ext_symbol, ui
 /* ||||||||||||||||||||||||||||||||||||||||||*\
 ** ================ errors ==================**
 \* ||||||||||||||||||||||||||||||||||||||||||*/
-	register const char *const	error_msg;
+	register const char	*error_msg;
 __null_size:
 	error_msg = "variable size cannot be 0";
 	goto __print_error;
@@ -172,7 +172,7 @@ __unknown_memblock:
 	sprintf(data->buf, "unknown memblock `%s`", blockname);
 
 __print_error_buffer:
-	error_msg = data->buf;
+	error_msg = (const char *)data->buf;
 __print_error:
 	print_error(data->filename, data->lineno, data->line, error_msg);
 }

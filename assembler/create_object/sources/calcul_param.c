@@ -6,7 +6,7 @@
 /*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/26 15:36:50 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/26 17:57:27 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/27 13:55:34 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -225,7 +225,7 @@ extern uint32_t	calcul_param(char *p, value_t *val)
 		if (n_elem == 0)
 		{
 			free(calc);
-			return (-1);
+			return (0xffffffffu);
 		}
 		if (n_elem == 1)
 		{
@@ -243,7 +243,7 @@ extern uint32_t	calcul_param(char *p, value_t *val)
 		if (n_elem == 0)
 		{
 			free(calc);
-			return (-1);
+			return (0xffffffffu);
 		}
 		else if (n_elem == 1)
 		{

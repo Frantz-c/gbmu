@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/12 23:05:07 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/26 17:56:59 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/27 13:59:19 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -176,7 +176,7 @@ static uint32_t __attribute__((always_inline))	get_base_value(char c)
 	return (c - '0');
 }
 */
-static char		*ft_strtoi(char *s, uint32_t *value, int32_t type)
+static const char		*ft_strtoi(const char *s, uint32_t *value, int32_t type)
 {
 	uint32_t	n = 0;
 
@@ -217,7 +217,7 @@ static char		*ft_strtoi(char *s, uint32_t *value, int32_t type)
 	return (s);
 }
 
-static uint32_t		ft_strtoi_decimal(char **s)
+static uint32_t		ft_strtoi_decimal(const char **s)
 {
 	uint32_t	n = 0;
 
@@ -232,7 +232,7 @@ static uint32_t		ft_strtoi_decimal(char **s)
 	return (n);
 }
 
-static uint32_t		ft_strtoi_octal(char **s)
+static uint32_t		ft_strtoi_octal(const char **s)
 {
 	uint32_t	n = 0;
 
@@ -247,7 +247,7 @@ static uint32_t		ft_strtoi_octal(char **s)
 	return (n);
 }
 
-static uint32_t		ft_strtoi_hexa(char **s, uint8_t prefix)
+static uint32_t		ft_strtoi_hexa(const char **s, uint8_t prefix)
 {
 	uint32_t	n = 0;
 
@@ -268,7 +268,7 @@ static uint32_t		ft_strtoi_hexa(char **s, uint8_t prefix)
 	return (n);
 }
 
-static uint32_t		ft_strtoi_binary(char **s, uint8_t prefix)
+static uint32_t		ft_strtoi_binary(const char **s, uint8_t prefix)
 {
 	uint32_t	n = 0;
 
@@ -371,7 +371,7 @@ extern uint32_t		atou_inc_all(char **s, int32_t *err)
 	}
 	if (err)
 		*err = 0;
-	*s = ft_strtoi(*s, &result, type);
+	*s = (char *)ft_strtoi(*s, &result, type);
 	return (result);
 }
 /*
