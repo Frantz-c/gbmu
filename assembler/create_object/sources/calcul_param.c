@@ -6,7 +6,7 @@
 /*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/26 15:36:50 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/27 14:56:09 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/27 19:21:24 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -216,7 +216,7 @@ static int32_t	execute_calcul(calc_elem_t *calc, uint32_t n_elem)
 	return (calc[0].val);
 }
 
-extern uint32_t	calcul_param(char *p, value_t *val)
+extern uint32_t	calcul_param(char *p, value_t *val, data_t *data, uint8_t param_number)
 {
 	calc_elem_t	*calc = NULL;
 	uint32_t	len;
@@ -225,17 +225,19 @@ extern uint32_t	calcul_param(char *p, value_t *val)
 	if (is_numeric(p, &len) && !is_alnum(p[len]) && p[len] != '_' && p[len] != 0)
 	{
 		calc = get_calc(p, &n_elem);
+		val->sign = '+';
+
 		if (n_elem == 0)
-		{
-			free(calc);
-			return (0xffffffffu);
-		}
+			goto __impossible_error;
 		if (n_elem == 1)
-		{
 			val->value = (uint32_t)calc->val;
-			goto __ret_0;
-		}
-		val->value = (uint32_t)execute_calcul(calc, n_elem);
+		else
+			val->value = (uint32_t)execute_calcul(calc, n_elem);
+
+		if (calc->val > 0xffff)
+			goto __overflow;
+		if (calc->val < -0x8000)
+			goto __underflow;
 	}
 	else
 	{
@@ -251,20 +253,38 @@ extern uint32_t	calcul_param(char *p, value_t *val)
 
 		*(p++) = '\0';
 		calc = get_calc(p, &n_elem);
+
 		if (n_elem == 0)
-		{
-			free(calc);
-			return (0xffffffffu);
-		}
+			goto __impossible_error;
 		else if (n_elem == 1)
-		{
 			val->value = (uint32_t)calc->val;
-			goto __ret_0;
-		}
-		val->value = execute_calcul(calc, n_elem);
+		else
+			val->value = execute_calcul(calc, n_elem);
+
+		if (calc->val > 0xffff)
+			goto __overflow;
+		if (calc->val < -0x8000)
+			goto __underflow;
 	}
 
 __ret_0:
 	free(calc);
 	return (0);
+
+
+	const char	*error_msg;
+__impossible_error:
+	sprintf(data->buf, "impossible error argument %u", param_number);
+	goto __print_error_fmt;
+__overflow:
+	sprintf(data->buf, "overflow argument %u (value is %u (0x%x))", param_number, val->value, val->value);
+	goto __print_error_fmt;
+__underflow:
+	sprintf(data->buf, "underflow argument %u (value is %i (-0x%x))", param_number, (int32_t)val->value, -((int32_t)val->value));
+__print_error_fmt:
+	error_msg = (const char *)data->buf;
+__print_error:
+	print_error(data->filename, data->lineno, data->line, error_msg);
+	free(calc);
+	return (0xffffffffu);
 }

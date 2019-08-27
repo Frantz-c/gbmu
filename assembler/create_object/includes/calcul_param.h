@@ -6,7 +6,7 @@
 /*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/26 17:49:44 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/26 17:50:36 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/27 19:18:21 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -23,6 +23,6 @@ calc_elem_t;
 
 #define PARENT_VALUE	2
 
-extern uint32_t	calcul_param(char *p, value_t *val);
+uint32_t	calcul_param(char *p, value_t *val, data_t *data, uint8_t param_number);
 
 #endif

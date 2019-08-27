@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/13 14:05:50 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/27 18:36:44 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/27 19:18:50 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -686,8 +686,15 @@ set_mnemonic_and_params(char **s, char **mnemonic, char **param1, char **param2,
 				if (param2 == NULL)
 					goto __free_all;
 			}
-			if (parent && **s != parent)
-				goto __missing_parent;
+			if (parent)
+			{	
+				if (**s != parent)
+					goto __missing_parent;
+				else
+					(*s)++;
+			}
+			if (is_endl(**s))
+				break;
 		}
 		else
 			goto __unexpected_char;
@@ -942,7 +949,7 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 			return (s);
 	}
 
-	printf("\n%s %s, %s\n", mnemonic, param1, param2);
+	printf("\n%s %s, %s  ::: %u\n", mnemonic, param1, param2, n_params);
 	if (n_params == 3)
 		goto __too_many_parameters;
 
@@ -972,7 +979,7 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 	
 	if (param1)
 	{
-		if (calcul_param(param1, &val) == 0xffffffffu)
+		if (calcul_param(param1, &val, data, 1) == 0xffffffffu)
 		{
 			puts("calcul_param(param1) ERROR");
 			goto __free_and_ret;
@@ -982,7 +989,7 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 		if (param2)
 		{
 			value_t	tmp_val = {0, 0};
-			if (calcul_param(param2, &tmp_val) == 0xffffffffu)
+			if (calcul_param(param2, &tmp_val, data, 2) == 0xffffffffu)
 			{
 				puts("calcul_param(param2) ERROR");
 				goto __free_and_ret;
@@ -993,6 +1000,7 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 				val = tmp_val;
 		}
 	}
+	printf("value = %u\n", val.value);
 
 	char	*symbol = param2;
 	if (param[0] == SYMBOL)
