@@ -6,7 +6,7 @@
 /*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/26 15:36:50 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/27 19:21:24 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/28 23:02:18 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -21,6 +21,7 @@ static calc_elem_t	*get_calc(const char *s, uint32_t *n_elem)
 	int32_t		n;
 	int32_t		lvl = 0;
 	uint8_t		minus;
+	uint8_t		not;
 	
 	*n_elem = 0;
 
@@ -38,6 +39,14 @@ static calc_elem_t	*get_calc(const char *s, uint32_t *n_elem)
 
 
 // get number
+		if (*s == '~')
+		{
+			s++;
+			not = 1;
+		}
+		else
+			not = 0;
+
 		if (*s == '-')
 		{
 			minus = 1;
@@ -54,24 +63,10 @@ static calc_elem_t	*get_calc(const char *s, uint32_t *n_elem)
 				goto __error_not_digit;
 			n = (int32_t)atou_type(s, &len, type);
 			if (minus) n = -n;
+			if (not) n = ~n;
 			s += len;
+			printf("\e[1;32mpush_value(%i);\n\e[0m", n);
 		}
-
-/*
-		if (!is_digit(*s))
-			goto __error_not_digit;
-
-		register uint32_t	tmp = 0;
-		tmp = *(s++) - 48;
-		while (is_digit(*s)) {
-			tmp *= 10;
-			tmp += *(s++) - 48;
-		}
-		if (minus)
-			n = (int32_t)(~tmp + 1);
-		else
-			n = (int32_t)tmp;
-*/
 
 // add number
 		if ((i & 0x7) == 0)
@@ -95,7 +90,7 @@ static calc_elem_t	*get_calc(const char *s, uint32_t *n_elem)
 // get operator
 		switch (*s)
 		{
-			case '*': case '/': case '%': case '|': case '&': case '^':
+			case '*': case '/': case '%': case '|': case '&': case '^': case '>': case '<':
 			{
 				if ((lvl & 0x1u) == 0 && lvl >= prev_lvl)
 				{
@@ -104,24 +99,10 @@ static calc_elem_t	*get_calc(const char *s, uint32_t *n_elem)
 				}
 				break;
 			}
-			case '>': case '<':
+			case '+': case '-':
 			{
-				if (s[1] != s[0])
-				{
-					fprintf(stderr, "ERROR 0x0");
-					exit(1);
-				}
-				if ((lvl & 0x1u) == 0)
-				{
-					calc[i-1].lvl++;
-					lvl++;
-				}
-				s++;
-				break;
-			}
-			case '+':
-			case '-':
 				lvl &= ~0x1u;
+			}
 			case '\0':
 				break;
 			default:
@@ -219,11 +200,13 @@ static int32_t	execute_calcul(calc_elem_t *calc, uint32_t n_elem)
 extern uint32_t	calcul_param(char *p, value_t *val, data_t *data, uint8_t param_number)
 {
 	calc_elem_t	*calc = NULL;
-	uint32_t	len;
+//	uint32_t	len;
 	uint32_t	n_elem;
 
-	if (is_numeric(p, &len) && !is_alnum(p[len]) && p[len] != '_' && p[len] != 0)
+	if (*p == '[') p++;
+	if (*p == '~' || *p == '(' || is_numeric_len(p, NULL))
 	{
+		printf("get_calc(\"%s\");\n", p);
 		calc = get_calc(p, &n_elem);
 		val->sign = '+';
 
@@ -252,6 +235,7 @@ extern uint32_t	calcul_param(char *p, value_t *val, data_t *data, uint8_t param_
 		}
 
 		*(p++) = '\0';
+		printf("(2) get_calc(\"%s\");\n", p);
 		calc = get_calc(p, &n_elem);
 
 		if (n_elem == 0)

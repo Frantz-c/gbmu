@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/12 23:05:07 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/27 13:59:19 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/28 21:18:28 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -18,16 +18,16 @@ const uint32_t	ascii[256] = {
 	0x40,0,0,0,0,0,0,0,0,2, //0
 	0x40,0,0,0,0,0,0,0,0,0, //10
 	0,0,0,0,0,0,0,0,0,0, //20
-	0,0,2,0,0,0,0,0,0,0, //30
-	0x80,0x80,4,4,0,4,0,0,1,1, //40
+	0,0,2,0,0,0,0,4,4,0, //30
+	0x80,0x80,4,4,0,4,0,4,1,1, //40
 	1,1,1,1,1,1,1,1,0,0, //50
-	0,0,0,0,0,0x18,0x18,0x18,0x18,0x18, //60
+	4,0,4,0,0,0x18,0x18,0x18,0x18,0x18, //60
 	0x18,0x18,0x18,0x18,0x18,0x18,0x18,0x18,0x18,0x18, //70
 	0x18,0x18,0x18,0x18,0x18,0x18,0x18,0x18,0x18,0x18, //80
-	0x18,0x80,0,0x80,0,0,0,0x28,0x28,0x28, //90
+	0x18,0x80,0,0x80,4,0,0,0x28,0x28,0x28, //90
 	0x28,0x28,0x28,0x28,0x28,0x28,0x28,0x28,0x28,0x28, //100
 	0x28,0x28,0x28,0x28,0x28,0x28,0x28,0x28,0x28,0x28, //110
-	0x28,0x28,0x28,0,0,0,0,0,0,0 //120
+	0x28,0x28,0x28,0,4,0,0,0,0,0 //120
 };
 
 const uint8_t	to_lower_char[128] = {
@@ -54,6 +54,212 @@ extern void __attribute__((always_inline))		str_to_lower(char *s)
 		s++;
 	}
 }
+
+extern uint8_t	is_numeric_len(const char *s, uint32_t *len)
+{
+	const char	*p = s;
+
+	if (*s == '0' && LOWER(s[1]) == 'x')
+	{
+		s += 2;
+		if (!is_digit(*s) && (LOWER(*s) < 'a' || LOWER(*s) > 'f'))
+			goto __not_numeric;
+		s++;
+		while (is_digit(*s) || (LOWER(*s) >= 'a' && LOWER(*s) <= 'f'))
+			s++;
+	}
+	else if (*s == '0')
+	{
+		s++;
+		while (*s >= '0' && *s <= '7')
+			s++;
+	}
+	else if (is_digit(*s))
+	{
+		s++;
+		while (is_digit(*s))
+			s++;
+	}
+	else
+		goto __not_numeric;
+
+	if (len)
+		*len = (uint32_t)(s - p);
+	return (1);
+
+__not_numeric:
+	if (len)
+		*len = 0;
+	return (0);
+}
+
+extern uint8_t	is_numeric_inc(char **s)
+{
+	char	*p;
+
+	if (**s == '0' && LOWER((*s)[1]) == 'x')
+	{
+		p = *s + 2;
+		if (!is_digit(*p) && (LOWER(*p) < 'a' || LOWER(*p) > 'f'))
+			return (0);
+		p++;
+		while (is_digit(*p) || (LOWER(*p) >= 'a' && LOWER(*p) <= 'f'))
+			p++;
+	}
+	else if (**s == '0')
+	{
+		p = *s + 1;
+		while (*p >= '0' && *p <= '7')
+			p++;
+	}
+	else if (is_digit(**s))
+	{
+		p = *s + 1;
+		while (is_digit(*p))
+			p++;
+	}
+	else
+		return (0);
+
+	*s = p;
+	return (1);
+}
+
+extern uint32_t	atou_len(const char *s, uint32_t *len)
+{
+	const char	*p = s;
+	uint32_t	n;
+
+	if (*s == '0' && LOWER(s[1]) == 'x')
+	{
+		s += 2;
+		if (is_digit(*s))
+			n = *s - '0';
+		else if (LOWER(*s) >= 'a' && LOWER(*s) <= 'f')
+			n = LOWER(*s) - 87;
+		else
+			goto __ret_0;
+		while (1)
+		{
+			s++;
+			if (is_digit(*s))
+				n = (n << 4) | (*s - '0');
+			else if (LOWER(*s) >= 'a' && LOWER(*s) <= 'f')
+				n = (n << 4) | (LOWER(*s) - 87) ;
+			else
+				break;
+		}
+	}
+	else if (*s == '0')
+	{
+		if (*s >= '0' && *s <= '7')
+			n = *s - '0';
+		else
+			goto __ret_0;
+		while (1)
+		{
+			s++;
+			if (*s >= '0' && *s <= '7')
+				n = (n << 3) | (*s - '0');
+			else
+				break;
+		}
+	}
+	else if (is_digit(*s))
+	{
+		if (is_digit(*s))
+			n = *s - '0';
+		else
+			goto __ret_0;
+		while (1)
+		{
+			s++;
+			if (is_digit(*s))
+				n = (n * 10) + (*s - '0');
+			else
+				break;
+		}
+	}
+	else
+		goto __ret_0;
+
+	if (len)
+		*len = (uint32_t)(s - p);
+	return (n);
+
+__ret_0:
+	if (len)
+		*len = 0;
+	return (0);
+}
+
+extern uint32_t	atou_inc(char **s)
+{
+	char	*p;
+	uint32_t	n;
+
+	if (**s == '0' && LOWER((*s)[1]) == 'x')
+	{
+		p = *s + 2;
+		if (is_digit(*p))
+			n = *p - '0';
+		else if (LOWER(*p) >= 'a' && LOWER(*p) <= 'f')
+			n = LOWER(*p) - 87;
+		else
+			goto __ret_0;
+		while (1)
+		{
+			p++;
+			if (is_digit(*p))
+				n = (n << 4) | (*p - '0');
+			else if (LOWER(*p) >= 'a' && LOWER(*p) <= 'f')
+				n = (n << 4) | (LOWER(*p) - 87) ;
+			else
+				break;
+		}
+	}
+	else if (**s == '0')
+	{
+		if (**s >= '0' && **s <= '7')
+			n = **s - '0';
+		else
+			goto __ret_0;
+		p = *s + 1;
+		while (1)
+		{
+			if (*p >= '0' && *p <= '7')
+				n = (n << 3) | (*p - '0');
+			else
+				break;
+			p++;
+		}
+	}
+	else if (is_digit(**s))
+	{
+		if (is_digit(**s))
+			n = **s - '0';
+		else
+			goto __ret_0;
+		p = *s + 1;
+		while (1)
+		{
+			if (is_digit(*p))
+				n = (n * 10) + (*p - '0');
+			else
+				break;
+			p++;
+		}
+	}
+	else
+		goto __ret_0;
+
+	*s = p;
+	return (n);
+
+__ret_0:
+	return (0);
+}
+
 
 extern uint8_t		is_numeric(const char *s, uint32_t *len)
 {
@@ -374,44 +580,7 @@ extern uint32_t		atou_inc_all(char **s, int32_t *err)
 	*s = (char *)ft_strtoi(*s, &result, type);
 	return (result);
 }
-/*
-extern void		*get_file_contents(const char *path, uint32_t *length)
-{
-	void		*content;
-	FILE		*f;
 
-	f = fopen(path, "r");
-	if (f == NULL)
-		return (NULL);
-	fseek(f, 0, SEEK_END);
-	*length = (uint32_t)ftell(f);
-	rewind(f);
-	if (*length == 0)
-	{
-		fprintf(stderr, "Empty file\n");
-		return (NULL);
-	}
-	if (*length > FILE_MAX_LENGTH)
-	{
-		fprintf(stderr, "Too Heavy file\n");
-		return (NULL);
-	}
-	content = valloc(*length + 1);
-	if (content == NULL)
-	{
-		perror("allocation failed");
-		return (NULL);
-	}
-	if (fread(content, 1, *length, f) != *length)
-	{
-		perror("read failed");
-		free(content);
-		return (NULL);
-	}
-	fclose(f);
-	return (content);
-}
-*/
 static void		copy_without_comment(uint8_t **dst, uint32_t *len, uint8_t *buf)
 {
 	uint8_t		new[4096];

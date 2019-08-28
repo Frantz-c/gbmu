@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 22:10:32 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/26 17:57:09 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/28 19:59:02 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -16,6 +16,11 @@
 
 # include "std_includes.h"
 # include "struct.h"
+
+uint8_t		is_numeric_len(const char *s, uint32_t *len);
+uint8_t		is_numeric_inc(char **s);
+uint32_t	atou_len(const char *s, uint32_t *len);
+uint32_t	atou_inc(char **s);
 
 uint32_t	atou_all(char *s, int32_t *err);
 uint32_t	atou_inc_all(char **s, int32_t *err);
@@ -48,11 +53,11 @@ extern const uint8_t	to_lower_char[128];
 # define is_space(c)		(ascii[(uint8_t)c] & 0x02)
 # define is_alnum(c)		(ascii[(uint8_t)c] & 0x09)
 # define is_endl(c)			(ascii[(uint8_t)c] & 0x40)
-# define is_operator(c)		(ascii[(uint8_t)c] & 0x04)
+# define is_operator(c)		(ascii[(uint8_t)c] & 0x04)	// + - / % * ^ | & <(<) >(>)
 # define is_parent(c)		(ascii[(uint8_t)c] & 0x80)
 # define is_comment(c)		(c == ';' || c == '#')
 
-# define LOWER(x)			to_lower_char[(uint8_t)x]
+# define LOWER(x)			to_lower_char[((x) & 0x7f)]
 // is_operator = '+' || '*'
 
 # define VEC_SORTED_INSERT(_vector, _string, _new)	\

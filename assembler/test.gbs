@@ -1,1 +1,7 @@
-ld	A, 0x20000 + (12 * 2)
+%define	LCDC_ON		0x80
+%define LCDC_ADDR2	0x01
+%define LCDC_TRUC	0x04
+
+ld	A, ~LCDC_TRUC | LCDC_ON | LCDC_ADDR2
+ld	[ff00h+LCDC], A
+ld	B, ((1 + 1) << 3)

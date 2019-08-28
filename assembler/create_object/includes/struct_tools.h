@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/26 16:57:45 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/26 17:53:18 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/28 16:25:56 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -16,6 +16,8 @@
 
 # include "struct.h"
 # include "vector.h"
+
+macro_t			*get_macro(vector_t *macro, char *name);
 
 int32_t		variables_match_name(const vector_t *memblock, const char *s, int32_t *block_i);
 int32_t		memblock_match_name(const vector_t *memblock, const char *s);

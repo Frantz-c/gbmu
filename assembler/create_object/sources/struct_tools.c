@@ -6,17 +6,25 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 13:17:53 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/09 09:40:28 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/28 16:26:12 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
 #include "std_includes.h"
-#include "struct.h"
 #include "tools.h"
 
 #define BYTE_ALLOC_SIZE		8
 
+extern macro_t			*get_macro(vector_t *macro, char *name)
+{
+	ssize_t	index = vector_search(macro, (void*)&name);
+
+	if (index == -1)
+		return (NULL);
+
+	return(VEC_ELEM(macro_t, macro, index));
+}
 
 extern int32_t		variables_match_name(const vector_t *memblock, const char *s, int32_t *block_i)
 {
