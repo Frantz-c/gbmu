@@ -104,6 +104,42 @@ vector_t	*set_builtin_macro(void)
 	ADD_MACRO("SVBK", "0x70", macro);
 	ADD_MACRO("IF", "0x0F", macro);
 	ADD_MACRO("IE", "0xFF", macro);
+	//==============================
+	ADD_MACRO("_P1", "0xff00+0", macro);
+	ADD_MACRO("_SB", "0xff00+1", macro);
+	ADD_MACRO("_SC", "0xff00+2", macro);
+	ADD_MACRO("_DIV", "0xff00+4", macro);
+	ADD_MACRO("_TIMA", "0xff00+5", macro);
+	ADD_MACRO("_TMA", "0xff00+6", macro);
+	ADD_MACRO("_TAC", "0xff00+7", macro);
+	ADD_MACRO("_LCDC", "0xff00+0x40", macro);
+	ADD_MACRO("_STAT", "0xff00+0x41", macro);
+	ADD_MACRO("_SCY", "0xff00+0x42", macro);
+	ADD_MACRO("_SCX", "0xff00+0x43", macro);
+	ADD_MACRO("_LY", "0xff00+0x44", macro);
+	ADD_MACRO("_LYC", "0xff00+0x45", macro);
+	ADD_MACRO("_DMA", "0xff00+0x46", macro);
+	ADD_MACRO("_BGP", "0xff00+0x47", macro);
+	ADD_MACRO("_OBP0", "0xff00+0x48", macro);
+	ADD_MACRO("_OBP1", "0xff00+0x49", macro);
+	ADD_MACRO("_WY", "0xff00+0x4A", macro);
+	ADD_MACRO("_WX", "0xff00+0x4B", macro);
+	ADD_MACRO("_KEY1", "0xff00+0x4D", macro);
+	ADD_MACRO("_VBK", "0xff00+0x4F", macro);
+	ADD_MACRO("_HDMA1", "0xff00+0x51", macro);
+	ADD_MACRO("_HDMA2", "0xff00+0x52", macro);
+	ADD_MACRO("_HDMA3", "0xff00+0x53", macro);
+	ADD_MACRO("_HDMA4", "0xff00+0x54", macro);
+	ADD_MACRO("_HDMA5", "0xff00+0x55", macro);
+	ADD_MACRO("_RP", "0xff00+0x56", macro);
+	ADD_MACRO("_BCPS", "0xff00+0x68", macro);
+	ADD_MACRO("_BCPD", "0xff00+0x69", macro);
+	ADD_MACRO("_OCPS", "0xff00+0x6A", macro);
+	ADD_MACRO("_OCPD", "0xff00+0x6B", macro);
+	ADD_MACRO("_SVBK", "0xff00+0x70", macro);
+	ADD_MACRO("_IF", "0xff00+0x0F", macro);
+	ADD_MACRO("_IE", "0xff00+0xFF", macro);
+
 	vector_sort(macro);
 
 	return (macro);

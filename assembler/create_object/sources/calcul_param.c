@@ -63,7 +63,7 @@ static calc_elem_t	*get_calc(const char *s, uint32_t *n_elem)
 				goto __error_not_digit;
 			n = (int32_t)atou_type(s, &len, type);
 			if (minus) n = -n;
-			if (not) n = ~n;
+			if (not) n = (uint16_t)~n | (n & 0xffff0000u);
 			s += len;
 			printf("\e[1;32mpush_value(%i);\n\e[0m", n);
 		}
