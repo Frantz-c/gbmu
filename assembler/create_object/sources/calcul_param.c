@@ -6,7 +6,7 @@
 /*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/26 15:36:50 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/28 23:02:18 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/29 16:52:44 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -65,7 +65,6 @@ static calc_elem_t	*get_calc(const char *s, uint32_t *n_elem)
 			if (minus) n = -n;
 			if (not) n = (uint16_t)~n | (n & 0xffff0000u);
 			s += len;
-			printf("\e[1;32mpush_value(%i);\n\e[0m", n);
 		}
 
 // add number

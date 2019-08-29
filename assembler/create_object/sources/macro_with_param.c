@@ -45,7 +45,7 @@ static int		string_replace(char *content, char *replace, char number)
 		if	(strncmp(chr, replace, replace_length) == 0
 				&& replace_length <= strlen(chr)
 				&& (chr == content || (!is_alnum(chr[-1]) && chr[-1] != '_'))
-				&&	(!is_alnum(chr[replace_length]) && chr[replace_length] != '_')
+				&& (!is_alnum(chr[replace_length]) && chr[replace_length] != '_')
 			)
 		{
 			if (replace_length > 2)
@@ -64,41 +64,16 @@ static int		string_replace(char *content, char *replace, char number)
 }
 
 // name_start = "macro(x,y) toto_x_y", name = "(x,y) toto_x_y", s = " toto_x_y"
-extern char	*add_macro_with_param(char *name_start, vector_t *macro, char *s, data_t *data, char *name)
+extern char	*add_macro_with_param(char *name, vector_t *macro, char *s, data_t *data, char *param[], uint8_t argc)
 {
-	uint32_t	cur = 0;
-	char		*pos[11] = {NULL};
 	char		*content;
-
-	*name = '\0';
-	if (vector_search(macro, (void*)&name_start) != -1)
-		goto __macro_already_defined;
-
-	name++;
-	while (is_space(*name)) name++;
-	while (1)
-	{
-		pos[cur++] = name;
-		while (is_alnum(*name) || *name == '_') name++;
-
-		if (*name == ')') {
-			*name = '\0';
-			break;
-		}
-		*(name++) = '\0';
-		while (*name == ',' || is_space(*name)) name++;
-		if (*name == ')') {
-			*name = '\0';
-			break;
-		}
-		if (cur == 10)
-			goto __too_many_parameters;
-	}
-
-	uint32_t	count = cur;
 	uint32_t	length;
 
+	if (vector_search(macro, (void*)&name) != -1)
+		goto __macro_already_defined;
+
 	while (is_space(*s)) s++;
+
 	length = get_macro_content_length(s);
 	if (length & 0x80000000u)
 	{
@@ -109,17 +84,17 @@ extern char	*add_macro_with_param(char *name_start, vector_t *macro, char *s, da
 	s = copy_macro_content(content, s, &data->lineno);
 
 /*	/!\ vérifier les doublons dans les parametres /!\	*/
-	while (cur--)
+	for (uint8_t i = 0; i < argc; i++)
 	{
-		if (string_replace(content, pos[cur], cur + '0') == 0)
+		if (string_replace(content, param[i], i + '0') == 0)
 		{
-			sprintf(data->buf, "unused argument %s", pos[cur]);
+			sprintf(data->buf, "unused argument %s", param[i]);
 			print_warning(data->filename, data->lineno, data->line, data->buf);
 		}
 	}
 
-	size_t	index = vector_index(macro, &name_start);
-	macro_t	new = {name_start, content, count, 1};
+	size_t	index = vector_index(macro, (void*)&name);
+	macro_t	new = {name, content, argc, 1};
 	vector_insert(macro, (void*)&new, index);
 	return (s);
 
@@ -128,22 +103,16 @@ extern char	*add_macro_with_param(char *name_start, vector_t *macro, char *s, da
  */
 
 __unexpected_char:
-	sprintf(data->buf, "(#6) unexpected character `%c`", *s);
+	sprintf(data->buf, "unexpected character `%c`", *s);
 	goto __perror_and_exit;
-	/*
-__empty_argument_x:
-	sprintf(data->buf, "argument %u is empty", cur + 1);
-	goto __perror_and_exit;
-*/
 __too_many_parameters:
-	sprintf(data->buf, "too many parameters declared in macro `%s`", name_start);
+	sprintf(data->buf, "too many parameters declared in macro `%s`", name);
 	goto __perror_and_exit;
-
 __macro_already_defined:
-	sprintf(data->buf, "macro `%s` already defined", name_start);
+	sprintf(data->buf, "macro `%s` already defined", name);
 __perror_and_exit:
 	print_error(data->filename, data->lineno, data->line, data->buf);
-	free(name_start);
+	free(name);
 	skip_macro(&s, &data->lineno);
 	return (s);
 }
