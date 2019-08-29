@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/23 22:24:16 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/29 16:06:30 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/29 19:01:51 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -629,6 +629,7 @@ void	set_ram_size(arguments_t args[], data_t *data)
 		{
 			switch (value)
 			{
+				case 0: cartridge.ram_size = 0; break;
 				case 8: cartridge.ram_size = 2; break;
 				case 32: cartridge.ram_size = 3; break;
 				case 128: cartridge.ram_size = 4; break;
