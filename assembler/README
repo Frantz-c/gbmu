@@ -96,9 +96,9 @@
 		.cgb_support	code_number
 
 		values are:
-			- "cgb_exclusive"		or	0xC0
-			- "cgb_compatible"		or	0x80
-			- "cgb_incompatible"	or	0x00
+			- "exclusive"		or	0xC0
+			- "compatible"		or	0x80
+			- "incompatible"	or	0x00
 	
 	5) maker code
 		use .maker_code to save a maker code

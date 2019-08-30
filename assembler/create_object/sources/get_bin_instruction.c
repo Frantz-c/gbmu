@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/25 10:03:09 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/09 09:45:17 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/30 15:12:34 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -16,13 +16,15 @@
 #include "tools.h"
 #include "error.h"
 
-static ssize_t		instruction_search(const instruction_t inst[72], char *tofind)
+#define	N_MNEMONICS	73
+
+static ssize_t		instruction_search(const instruction_t inst[N_MNEMONICS], char *tofind)
 {
 	uint32_t	left, right, middle;
 	int			side;
 
 	left = 0;
-	right = 72;
+	right = N_MNEMONICS;
 	while (left < right)
 	{
 		middle = (left + right) / 2;
@@ -44,7 +46,7 @@ static ssize_t		instruction_search(const instruction_t inst[72], char *tofind)
 
 extern param_error_t	get_bin_instruction(char *mnemonic, param_t param[2], value_t *val, uint8_t bin[4])
 {
-	static const instruction_t	inst[72] = {
+	static const instruction_t	inst[N_MNEMONICS] = {
 		{"adc", &&__adc},		{"add", &&__add},		{"and", &&__and},		{"bit", &&__bit},
 		{"call", &&__call},		{"callc", &&__callc},	{"callnc", &&__callnc}, {"callnz", &&__callnz},
 		{"callz", &&__callz},	{"ccf", &&__ccf},		{"cmp", &&__cmp},		{"cp", &&__cp},
@@ -53,16 +55,17 @@ extern param_error_t	get_bin_instruction(char *mnemonic, param_t param[2], value
 		{"jpc", &&__jpc},		{"jpnc", &&__jpnc},		{"jpnz", &&__jpnz},		{"jpz", &&__jpz},
 		{"jr", &&__jr},			{"jrc", &&__jrc},		{"jrnc", &&__jrnc},		{"jrnz", &&__jrnz},
 		{"jrz", &&__jrz},		{"ld", &&__ld},			{"ldd", &&__ldd},		{"ldff", &&__ldff},
-		{"ldhl", &&__ldhl},		{"ldi", &&__ldi},		{"mov", &&__mov},		{"nop", &&__nop},
-		{"not", &&__not},		{"or", &&__or},			{"pop", &&__pop},		{"push", &&__push},
-		{"res", &&__res},		{"reset", &&__reset},	{"ret", &&__ret},		{"retc", &&__retc},
-		{"reti", &&__reti},		{"retnc", &&__retnc},	{"retnz", &&__retnz},	{"retz", &&__retz},
-		{"rl", &&__rl},			{"rla", &&__rla},		{"rlc", &&__rlc},		{"rlca", &&__rlca},
-		{"rr", &&__rr},			{"rra", &&__rra},		{"rrc", &&__rrc},		{"rrca", &&__rrca},
-		{"rst", &&__rst},		{"sar", &&__sar},		{"sbb", &&__sbb},		{"sbc", &&__sbc},
-		{"scf", &&__scf},		{"set", &&__set},		{"shl", &&__shl},		{"shr", &&__shr},
-		{"sla", &&__sla},		{"sra", &&__sra},		{"srl", &&__srl},		{"stop", &&__stop},
-		{"sub", &&__sub},		{"swap", &&__swap},		{"testb", &&__testb},	{"xor", &&__xor}
+		{"ldh", &&__ldff},		{"ldhl", &&__ldhl},		{"ldi", &&__ldi},		{"mov", &&__mov},
+		{"nop", &&__nop},		{"not", &&__not},		{"or", &&__or},			{"pop", &&__pop},
+		{"push", &&__push},		{"res", &&__res},		{"reset", &&__reset},	{"ret", &&__ret},
+		{"retc", &&__retc},		{"reti", &&__reti},		{"retnc", &&__retnc},	{"retnz", &&__retnz},
+		{"retz", &&__retz},		{"rl", &&__rl},			{"rla", &&__rla},		{"rlc", &&__rlc},
+		{"rlca", &&__rlca},		{"rr", &&__rr},			{"rra", &&__rra},		{"rrc", &&__rrc},
+		{"rrca", &&__rrca},		{"rst", &&__rst},		{"sar", &&__sar},		{"sbb", &&__sbb},
+		{"sbc", &&__sbc},		{"scf", &&__scf},		{"set", &&__set},		{"shl", &&__shl},
+		{"shr", &&__shr},		{"sla", &&__sla},		{"sra", &&__sra},		{"srl", &&__srl},
+		{"stop", &&__stop},		{"sub", &&__sub},		{"swap", &&__swap},		{"testb", &&__testb},
+		{"xor", &&__xor}
 	};
 	uint32_t		index;
 	param_error_t	error = {0, 0}; // error.p1, error.p2
@@ -71,8 +74,8 @@ extern param_error_t	get_bin_instruction(char *mnemonic, param_t param[2], value
 	if (index == 0xffffffffu)
 	{
 		puts("__PROBLEM__");
-		error.p1 = 0xffffffffu;
-		error.p2 = 0xffffffffu;
+		error.p1 = UNKNOWN_INSTRUCTION;
+		error.p2 = 0;
 		return (error);
 	}
 	
@@ -480,17 +483,18 @@ __call:
 			break ;
 
 		case _Z_:
-		case _NZ_:
-		case _C_:
-		case _NC_:
-			if (param[0] == _Z_)
 				bin[0] = 0xCCu;
-			else if (param[0] == _NZ_)
+				goto __call_check_param2;
+		case _NZ_:
 				bin[0] = 0xC4u;
-			else if (param[0] == _C_)
+				goto __call_check_param2;
+		case _C_: case C:
 				bin[0] = 0xDCu;
-			else
+				goto __call_check_param2;
+		case _NC_:
 				bin[0] = 0xD4u;
+
+	__call_check_param2:
 			switch (param[1])
 			{
 				case NONE:
@@ -973,17 +977,18 @@ __jp:
 			break ;
 
 		case _Z_:
+			bin[0] = 0xCAu;
+			goto __jp_check_param2;
 		case _NZ_:
-		case _C_:
+			bin[0] = 0xC2u;
+			goto __jp_check_param2;
+		case _C_: case C:
+			bin[0] = 0xDAu;
+			goto __jp_check_param2;
 		case _NC_:
-			if (param[0] == _Z_)
-				bin[0] = 0xCAu;
-			else if (param[0] == _NZ_)
-				bin[0] = 0xC2u;
-			else if (param[0] == _C_)
-				bin[0] = 0xDAu;
-			else
-				bin[0] = 0xD2u;
+			bin[0] = 0xD2u;
+
+		__jp_check_param2:
 			switch (param[1])
 			{
 				case NONE:
@@ -1165,17 +1170,18 @@ __jr:
 			break ;
 
 		case _Z_:
+			bin[0] = 0x28u;
+			goto __jr_check_param2;
 		case _NZ_:
-		case _C_:
+			bin[0] = 0x20u;
+			goto __jr_check_param2;
+		case _C_: case C:
+			bin[0] = 0x38u;
+			goto __jr_check_param2;
 		case _NC_:
-			if (param[0] == _Z_)
-				bin[0] = 0x28u;
-			else if (param[0] == _NZ_)
-				bin[0] = 0x20u;
-			else if (param[0] == _C_)
-				bin[0] = 0x38u;
-			else
-				bin[0] = 0x30u;
+			bin[0] = 0x30u;
+
+	__jr_check_param2:
 			switch (param[1])
 			{
 				case NONE:
@@ -1972,7 +1978,7 @@ __ldff:
 	{
 		if (param[1] == NONE)
 			error.p2 = MISSING_PARAM;
-		else if (param[1] != IMM8)
+		else if (param[1] != IMM8 && param[1] != ADDR8)
 			error.p2 = INVAL_SRC;
 		else
 		{
@@ -1980,7 +1986,7 @@ __ldff:
 			bin[1] = (uint8_t)val->value;
 		}
 	}
-	else if (param[0] == IMM8)
+	else if (param[0] == IMM8 || param[0] == ADDR8)
 	{
 		if (param[1] == NONE)
 			error.p2 = MISSING_PARAM;
@@ -2286,7 +2292,7 @@ __ret:
 				bin[0] = 0xC9u;
 				break ;
 
-			case _C_:
+			case _C_: case C:
 				bin[0] = 0xD8u;
 				break ;
 
@@ -2704,7 +2710,7 @@ __scf:
 	if (param[0] != NONE)
 		error.p1 = TOO_MANY_PARAMS;
 	else
-		bin[0] = 0x3u;
+		bin[0] = 0x37u;
 	goto __done;
 
 __set:

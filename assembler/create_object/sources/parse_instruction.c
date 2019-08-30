@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/13 14:05:50 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/29 16:52:10 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/30 14:51:35 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -160,7 +160,7 @@ static void	instruction_replace(char **inst, char **param1, char **param2)	// "l
 			{
 				if ((*param2)[2] == '+')
 				{
-					memmove(*param2, *param2 + 2, strlen(*param2 + 1));
+					memmove(*param2, *param2 + 3, strlen(*param2 + 2));
 				}
 				else if ((*param2)[2] == '\0')
 				{
@@ -172,8 +172,11 @@ static void	instruction_replace(char **inst, char **param1, char **param2)	// "l
 
 				free(*inst);
 				*inst = strdup("ldhl");
+				free(*param1);
+				*param1 = strdup("SP");
 			}
-			else
+			/*
+			else // inutile ?
 			{
 				if (parent[0])
 				{
@@ -183,13 +186,13 @@ static void	instruction_replace(char **inst, char **param1, char **param2)	// "l
 						{
 							//HL++
 							free(*param1);
-							*param1 = strdup("(HLI");
+							*param1 = strdup("[HLI");
 						}
 						else if (p1[2] == '-' && (p1[3] == '\0' || (p1[3] == '-' && p1[4] == '\0')))
 						{
 							//HL--
 							free(*param1);
-							*param1 = strdup("(HLD");
+							*param1 = strdup("[HLD");
 						}
 					}
 				}
@@ -201,17 +204,17 @@ static void	instruction_replace(char **inst, char **param1, char **param2)	// "l
 						{
 							//HL++
 							free(*param2);
-							*param2 = strdup("(HLI");
+							*param2 = strdup("[HLI");
 						}
 						else if (p2[2] == '-' && (p2[3] == '\0' || (p2[3] == '-' && p2[4] == '\0')))
 						{
 							//HL--
 							free(*param2);
-							*param2 = strdup("(HLD");
+							*param2 = strdup("[HLD");
 						}
 					}
 				}
-			}
+			} */
 		}
 	}
 __end:
@@ -450,6 +453,33 @@ set_mnemonic_and_params(char **s, char **mnemonic, char **param1, char **param2,
 
 			if (is_alpha(*start) || *start == '_')
 			{
+				if (is_addr && !not && !neg
+						&& LOWER(*start) == 'h' && LOWER(start[1]) == 'l'
+						&& (start[2] == '+' || start[2] == '-'))
+				{
+					register char	*tmp = start + 3;
+					register char	sign = start[2];
+
+					printf("\e[0;41;1;37m(0)tmp = \"%.20s\"\e[0m\n", tmp);
+					if (tmp[0] == tmp[-1])
+						tmp++;
+					while (is_space(*tmp)) tmp++;
+					if (*tmp == ']')
+					{
+						is_addr = 0;
+						tmp++;
+						while (is_space(*tmp)) tmp++;
+						if (is_endl(*tmp) || *tmp == ',')
+						{
+							if (*tmp == ',') tmp++;
+							param_len = 4;
+							param_buf = (sign == '-') ? strndup("[HLD", param_len) : strndup("[HLI", param_len);
+							printf("\e[0;41;1;37m(1)tmp = \"%.20s\"\e[0m\n", tmp);
+							*s = tmp;
+							goto __next_param;
+						}
+					}
+				}
 				is_string = 1;
 				(*s)++;
 				while (is_alnum(**s) || **s == '_')
@@ -680,6 +710,9 @@ param_t	get_param_type(char *param, value_t *n)
 		// (C)
 		if (LOWER(*s) == 'c' && s[1] == '\0')
 			return (FF00_C);
+		if (LOWER(*s) == 'f' && LOWER(s[1]) == 'f' && s[2] == '0' && s[3] == '0'
+				&& (s[4] == 0 || (s[4] == 'h' && s[5] == '0')))
+			return (FF00_IMM8);
 		// (n) (nn)
 		if (is_digit(*s) || *s == '(' || *s == '~' || *s == '-')
 		{
@@ -727,7 +760,18 @@ param_t	get_param_type(char *param, value_t *n)
 			return (HL);
 		if (LOWER(*s) == 's' && LOWER(s[1]) == 'p' && s[2] == '\0')
 			return (SP);
-		if (is_digit(*s) || *s == '(' || *s == '~' || *s == '-')
+		if (LOWER(*s) == 'n')
+		{
+			if (LOWER(s[1]) == 'z' && s[2] == '\0')
+				return (_NZ_);
+			if (LOWER(s[1]) == 'c' && s[2] == '\0')
+				return (_NC_);
+		}
+		else if (LOWER(*s) == 'z' && s[1] == '\0')
+			return (_Z_);
+		else if (LOWER(*s) == 'c' && s[1] == '\0')
+			return (_C_);
+		else if (is_digit(*s) || *s == '(' || *s == '~' || *s == '-')
 		{
 			if (n->value > 0xff)
 				return (IMM16);
@@ -868,6 +912,7 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 		if (set_mnemonic_and_params(&s, &mnemonic, &param1, &param2, &n_params, data, macro) == -1)
 			return (s);
 	}
+	printf("set_mnemonic_and_params() -> \e[0;36m%s %s, %s\e[0m\n", mnemonic, param1, param2);
 
 	if (n_params == 3)
 		goto __too_many_parameters;
@@ -945,6 +990,12 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 			"Address overflow"
 		};
 		
+		if (error.p1 == UNKNOWN_INSTRUCTION)
+		{
+			sprintf(data->buf, "unknown instruction %s", mnemonic);
+			print_error(data->filename, data->lineno, data->line, data->buf);
+			goto __free_and_ret;
+		}
 		if (error.p1)
 		{
 			sprintf(data->buf, "%s", errtable[error.p1]);

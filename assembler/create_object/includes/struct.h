@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/06 11:38:18 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/26 18:12:20 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/30 14:32:06 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -14,6 +14,7 @@
 #ifndef STRUCT_H
 # define STRUCT_H
 
+# define UNKNOWN_INSTRUCTION	0xffffffffu
 
 typedef enum	param_e
 {

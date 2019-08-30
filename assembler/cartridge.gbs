@@ -1,0 +1,36 @@
+# **************************************************************************** #
+#                                                           LE - /             #
+#                                                               /              #
+#    cartridge.gbs                                    .::    .:/ .      .::    #
+#                                                  +:+:+   +:    +:  +:+:+     #
+#    By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+      #
+#                                                  #+#   #+    #+    #+#       #
+#    Created: 2019/08/30 18:11:19 by fcordon      #+#   ##    ##    #+#        #
+#    Updated: 2019/08/30 18:11:33 by fcordon     ###    #+. /#+    ###.fr      #
+#                                                          /                   #
+#                                                         /                    #
+# **************************************************************************** #
+
+.program_start	0x150
+.game_title		"INST TEST"
+.game_code		"CODE"
+.cgb_support	"incompatible"
+.sgb_support	"supported"
+.maker_code		"12"
+.cart_type		"mbc1_sram_battery"
+.rom_size		"8 banks"
+.ram_size		"1 bank"
+.destination	"other"
+.version		0
+
+.program_start	0x150
+.game_title		"INST TEST"
+.game_code		"CODE"
+.cgb_support	"incompatible"
+.sgb_support	"supported"
+.maker_code		"12"
+.cart_type		"mbc1_sram_battery"
+.rom_size		"8 banks"
+.ram_size		"1 bank"
+.destination	"other"
+.version		0

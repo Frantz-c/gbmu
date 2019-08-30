@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/23 22:24:16 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/29 19:01:51 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/30 17:59:14 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -23,7 +23,6 @@ to_lower_string(char *s)
 	}
 }
 
-// .program_start 0x150
 void	set_program_start(arguments_t args[], data_t *data)
 {
 	uint32_t	val;
@@ -42,7 +41,6 @@ void	set_program_start(arguments_t args[], data_t *data)
 	if (args->type != INTEGER_TYPE)
 		goto __wrong_type;
 
-	printf("VALUE = %u\n", *(uint32_t*)(args->value));
 	val = *(uint32_t*)(args->value);
 	if (val & 0xffff0000)
 		goto __overflow;
@@ -51,14 +49,26 @@ void	set_program_start(arguments_t args[], data_t *data)
 	cartridge.start_addr[0] = val & 0xffu;
 	return;
 
+	{
+		const char	*error;
 	__too_few_arguments:
+		error = "argument 1 expected";
+		goto __print_error;
 	__too_many_arguments:
+		error = "only one argument is expected";
+		goto __print_error;
 	__wrong_type:
+		error = "argument 1 should be an integer";
+		goto __print_error;
 	__overflow:
+		sprintf(data->buf, "argument 1 overflow (value is 0x%x, max is 0xffff)", val);
+		error = (const char *)data->buf;
+	__print_error:
+		print_error(data->filename, data->lineno, data->line, error);
+	}
 	return;
 }
 
-// .game_title "GHOST_RECO"
 void	set_game_title(arguments_t args[], data_t *data)
 {
 	if (duplicate.game_title)
@@ -80,7 +90,7 @@ void	set_game_title(arguments_t args[], data_t *data)
 
 	register char		*src = (char *)args->value;
 	register uint32_t	len = strlen(src);
-	if (len > 10)
+	if (len > 11)
 		goto __too_many_characters;
 
 	register char	*dst = (char*)cartridge.title;
@@ -88,11 +98,25 @@ void	set_game_title(arguments_t args[], data_t *data)
 	bzero(dst + len, 11 - len);
 	return;
 
-	__not_well_formated_string:
-	__too_few_arguments:
-	__too_many_arguments:
-	__wrong_type:
-	__too_many_characters:
+	{
+		const char	*error;
+		__not_well_formated_string:
+			error = "argument 1 not well formated. expected characters are ascii 32 - 95";
+			goto __print_error;
+		__too_few_arguments:
+			error = "argument 1 expected";
+			goto __print_error;
+		__too_many_arguments:
+			error = "only one argument is expected";
+			goto __print_error;
+		__wrong_type:
+			error = "argument 1 should be a string (ascii 32 - 95)";
+			goto __print_error;
+		__too_many_characters:
+			error = "argument 1 max length is 11 characters";
+		__print_error:
+			print_error(data->filename, data->lineno, data->line, error);
+	}
 	return;
 }
 
@@ -124,12 +148,25 @@ void	set_game_code(arguments_t args[], data_t *data)
 	bzero(dst + len, 4 - len);
 	return;
 
-	__not_well_formated_string:
-	__too_few_arguments:
-	__too_many_arguments:
-	__wrong_type:
-	__too_many_characters:
-	return;
+	{
+		const char	*error;
+		__not_well_formated_string:
+			error = "argument 1 not well formated. expected characters are ascii 32 - 95";
+			goto __print_error;
+		__too_few_arguments:
+			error = "argument 1 expected";
+			goto __print_error;
+		__too_many_arguments:
+			error = "only one argument is expected";
+			goto __print_error;
+		__wrong_type:
+			error = "argument 1 should be a string (ascii 32 - 95)";
+			goto __print_error;
+		__too_many_characters:
+			error = "argument 1 max length is 4 characters";
+		__print_error:
+			print_error(data->filename, data->lineno, data->line, error);
+	}
 }
 
 #define CGB_EXCLU	0xC0u
@@ -152,11 +189,11 @@ void	set_cgb_support(arguments_t args[], data_t *data)
 	if (args->type & STRING_TYPE)
 	{
 		to_lower_string((char *)args->value);
-		if (strcmp((char *)args->value, "cgb_exclusive"))
+		if (strcmp((char *)args->value, "exclusive"))
 			cartridge.cgb_support = CGB_EXCLU;
-		else if (strcmp((char *)args->value, "cgb_compatible"))
+		else if (strcmp((char *)args->value, "compatible"))
 			cartridge.cgb_support = CGB_COMP;
-		else if (strcmp((char *)args->value, "cgb_incompatible"))
+		else if (strcmp((char *)args->value, "incompatible"))
 			cartridge.cgb_support = CGB_INCOMP;
 		else
 			goto __unknown_value;
@@ -169,12 +206,21 @@ void	set_cgb_support(arguments_t args[], data_t *data)
 			goto __unknown_value;
 		cartridge.cgb_support = value;
 	}
-	return ;
-
-	__too_few_arguments:
-	__too_many_arguments:
-	__unknown_value:
 	return;
+
+	{
+		const char	*error;
+		__too_few_arguments:
+			error = "argument 1 expected";
+			goto __print_error;
+		__too_many_arguments:
+			error = "only one argument is expected";
+			goto __print_error;
+		__unknown_value:
+			error = "forbidden value for argument 1";
+		__print_error:
+			print_error(data->filename, data->lineno, data->line, error);
+	}
 }
 
 void	set_maker_code(arguments_t args[], data_t *data)
@@ -205,12 +251,25 @@ void	set_maker_code(arguments_t args[], data_t *data)
 	dst[1] = src[1];
 	return;
 
-	__not_well_formated_string:
-	__too_few_arguments:
-	__too_many_arguments:
-	__too_many_characters:
-	__wrong_type:
-	return;
+	{
+		const char	*error;
+		__not_well_formated_string:
+			error = "argument 1 not well formated. expected characters are ascii 32 - 95";
+			goto __print_error;
+		__too_few_arguments:
+			error = "argument 1 expected";
+			goto __print_error;
+		__too_many_arguments:
+			error = "only one argument is expected";
+			goto __print_error;
+		__wrong_type:
+			error = "argument 1 should be a string (ascii 32 - 95)";
+			goto __print_error;
+		__too_many_characters:
+			error = "argument 1 max length is 2 characters";
+		__print_error:
+			print_error(data->filename, data->lineno, data->line, error);
+	}
 }
 
 #define UNUSES_SGB_FUNC	0x00u
@@ -249,10 +308,19 @@ void	set_sgb_support(arguments_t args[], data_t *data)
 	}
 	return;
 
-	__too_few_arguments:
-	__too_many_arguments:
-	__unknown_value:
-	return;
+	{
+		const char	*error;
+		__too_few_arguments:
+			error = "argument 1 expected";
+			goto __print_error;
+		__too_many_arguments:
+			error = "only one argument is expected";
+			goto __print_error;
+		__unknown_value:
+			error = "forbidden value for argument 1";
+		__print_error:
+			print_error(data->filename, data->lineno, data->line, error);
+	}
 }
 
 #define	SRAM		1
@@ -447,19 +515,47 @@ void	set_cartridge_type(arguments_t args[], data_t *data)
 	}
 	return;
 
-	__too_few_arguments:
-	__too_many_arguments:
-	__unknown_value:
-	__invalid_option:
-	__too_many_options:
-	__separator_error:
-	__error_rom:
-	__error_mbc:
-	__error_mbc1:
-	__error_mbc2:
-	__error_mbc3:
-	__error_mbc5:
-	return;
+
+	{
+		const char	*error;
+		__too_few_arguments:
+			error = "argument 1 expected";
+			goto __print_error;
+		__too_many_arguments:
+			error = "only one argument is expected";
+			goto __print_error;
+		__invalid_option:
+			error = "invalid option. available options are battery, sram, rumble, rtc";
+			goto __print_error;
+		__too_many_options:
+			error = "too many options";
+			goto __print_error;
+		__separator_error:
+			error = "separator error";
+			goto __print_error;
+		__error_rom:
+			error = "invalid options for rom";
+			goto __print_error;
+		__error_mbc:
+			error = "invalid syntax for mbc";
+			goto __print_error;
+		__error_mbc1:
+			error = "invalid options for mbc-1";
+			goto __print_error;
+		__error_mbc2:
+			error = "invalid options for mbc-2";
+			goto __print_error;
+		__error_mbc3:
+			error = "invalid options for mbc-3";
+			goto __print_error;
+		__error_mbc5:
+			error = "invalid options for mbc-5";
+			goto __print_error;
+		__unknown_value:
+			error = "forbidden value for argument 1";
+		__print_error:
+			print_error(data->filename, data->lineno, data->line, error);
+	}
 }
 
 /*
@@ -478,6 +574,9 @@ void	set_cartridge_type(arguments_t args[], data_t *data)
 */
 void	set_rom_size(arguments_t args[], data_t *data)
 {
+	char		*unit = (char *)args->value;
+	uint32_t	value;
+
 	if (duplicate.rom_size)
 	{
 		print_warning(data->filename, data->lineno, data->line,
@@ -491,21 +590,12 @@ void	set_rom_size(arguments_t args[], data_t *data)
 		goto __too_few_arguments;
 	if (args->type & STRING_TYPE)
 	{
-		register char	*unit = (char *)args->value;
-		uint32_t		value;
-
-		{
-			register int32_t	type;
-			uint32_t			len;
-
-			if (!(type = is_numeric(unit, &len)))
-				goto __unexpected_char;
-			value = atou_type(unit, &len, type);
-			unit += len;
-			while (is_space(*unit)) unit++;
-			if (*unit == 0)
-				goto __missing_unit;
-		}
+		if (!(is_numeric_len(unit, NULL)))
+			goto __unexpected_char;
+		value = atou_inc(&unit);
+		while (is_space(*unit)) unit++;
+		if (*unit == 0)
+			goto __missing_unit;
 
 		to_lower_string(unit);
 		if (unit[0] == 'k'
@@ -571,17 +661,38 @@ void	set_rom_size(arguments_t args[], data_t *data)
 	}
 	return;
 
-__too_few_arguments:
-__too_many_arguments:
-__unexpected_char:
-__missing_unit:
-__invalid_size:
-__unknown_unit:
-	return;
+
+	{
+		const char	*error;
+		__too_few_arguments:
+			error = "argument 1 expected";
+			goto __print_error;
+		__too_many_arguments:
+			error = "only one argument is expected";
+			goto __print_error;
+		__missing_unit:
+			error = "missing unit";
+			goto __print_error;
+		__unknown_unit:
+			sprintf(data->buf, "unknown unit `%s`", unit);
+			goto __print_error_fmt;
+		__invalid_size:
+			error = "forbidden value for argument 1";
+			goto __print_error;
+		__unexpected_char:
+			sprintf(data->buf, "unexpected character `%c`", *unit);
+		__print_error_fmt:
+			error = data->buf;
+		__print_error:
+			print_error(data->filename, data->lineno, data->line, error);
+	}
 }
 
 void	set_ram_size(arguments_t args[], data_t *data)
 {
+	char		*unit = (char *)args->value;
+	uint32_t	value;
+
 	if (duplicate.ram_size)
 	{
 		print_warning(data->filename, data->lineno, data->line,
@@ -595,9 +706,6 @@ void	set_ram_size(arguments_t args[], data_t *data)
 		goto __too_few_arguments;
 	if (args->type & STRING_TYPE)
 	{
-		register char	*unit = (char *)args->value;
-		uint32_t		value;
-
 		if (strcmp(unit, "none") == 0)
 		{
 			cartridge.ram_size = 0;
@@ -605,18 +713,12 @@ void	set_ram_size(arguments_t args[], data_t *data)
 		}
 
 
-		{
-			register int32_t	type;
-			uint32_t			len;
-
-			if (!(type = is_numeric(unit, &len)))
-				goto __unexpected_char;
-			value = atou_type(unit, &len, type);
-			unit += len;
-			while (is_space(*unit)) unit++;
-			if (*unit == 0)
-				goto __missing_unit;
-		}
+		if (!is_numeric_len(unit, NULL))
+			goto __unexpected_char;
+		value = atou_inc(&unit);
+		while (is_space(*unit)) unit++;
+		if (*unit == 0)
+			goto __missing_unit;
 
 		to_lower_string(unit);
 		if (unit[0] == 'k'
@@ -647,12 +749,27 @@ void	set_ram_size(arguments_t args[], data_t *data)
 	}
 	return;
 
-__too_few_arguments:
-__too_many_arguments:
-__unexpected_char:
-__missing_unit:
-__invalid_size:
-	return;
+
+	{
+		const char	*error;
+		__too_few_arguments:
+			error = "argument 1 expected";
+			goto __print_error;
+		__too_many_arguments:
+			error = "only one argument is expected";
+			goto __print_error;
+		__missing_unit:
+			error = "missing unit";
+			goto __print_error;
+		__invalid_size:
+			error = "forbidden value for argument 1";
+			goto __print_error;
+		__unexpected_char:
+			sprintf(data->buf, "unexpected char `%c`", *unit);
+			error = data->buf;
+		__print_error:
+			print_error(data->filename, data->lineno, data->line, error);
+	}
 }
 
 #define	JAPAN	0x0u
@@ -691,14 +808,26 @@ void	set_code_dest(arguments_t args[], data_t *data)
 	}
 	return;
 
-	__too_few_arguments:
-	__too_many_arguments:
-	__unknown_value:
-	return;
+
+	{
+		const char	*error;
+		__too_few_arguments:
+			error = "argument 1 expected";
+			goto __print_error;
+		__too_many_arguments:
+			error = "only one argument is expected";
+			goto __print_error;
+		__unknown_value:
+			error = "forbidden value for argument 1";
+		__print_error:
+			print_error(data->filename, data->lineno, data->line, error);
+	}
 }
 
 void	set_version(arguments_t args[], data_t *data)
 {
+	uint32_t	value;
+
 	if (duplicate.version)
 	{
 		print_warning(data->filename, data->lineno, data->line,
@@ -710,18 +839,30 @@ void	set_version(arguments_t args[], data_t *data)
 		goto __too_many_arguments;
 	if (args[0].value == NULL)
 		goto __too_few_arguments;
-	if (args->type & STRING_TYPE)
+	if (args[0].type & STRING_TYPE)
 		goto __error_type;
 
-	register uint32_t	value = *(uint32_t*)args->value;
+	value = *(uint32_t *)(args->value);
 	if (value & 0xffffff00u)
 		goto __overflow;
 	cartridge.version = value;
 	return;
 
-__too_many_arguments:
-__too_few_arguments:
-__error_type:
-__overflow:
-	return;
+	{
+		const char	*error;
+		__too_few_arguments:
+			error = "argument 1 expected";
+			goto __print_error;
+		__too_many_arguments:
+			error = "only one argument is expected";
+			goto __print_error;
+		__error_type:
+			error = "argument 1 should be an integer";
+			goto __print_error;
+		__overflow:
+			sprintf(data->buf, "argument 1 overflow. (value is 0x%x, max is 0xff)", value);
+			error = (const char *)data->buf;
+		__print_error:
+			print_error(data->filename, data->lineno, data->line, error);
+	}
 }

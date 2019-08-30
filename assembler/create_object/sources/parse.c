@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/13 14:04:54 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/29 16:39:15 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/30 18:08:48 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -247,8 +247,9 @@ uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t a
 	while (is_alnum(**s) || **s == '_') (*s)++;
 	length = *s - keyword_start;
 
+	printf("keyword_start = %p, *s = %p, length = %u\n", keyword_start, *s, length);
 	// .byte : creer une fonction
-	if (length == 4 && strncmp(keyword_start, "byte", length))
+	if (length == 4 && strncmp(keyword_start, "byte", length) == 0)
 	{
 		uint32_t	byte;
 		int32_t		type;
@@ -322,7 +323,6 @@ uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t a
 	uint8_t i = 0;
 	while (1)
 	{
-		int32_t		value;
 		uint8_t		minus = 0;
 
 		while (is_space(**s)) (*s)++;
@@ -332,13 +332,13 @@ uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t a
 			(*s)++;
 		}
 
-		if ((value = atou_inc(s)) != 0)
+		if (is_numeric_len(*s, NULL) != 0)
 		{
 			if (minus)
 				goto __signed_not_expected;
 			args[i].type = INTEGER_TYPE;
 			args[i].value = malloc(sizeof(uint32_t));
-			*(uint32_t*)(args[i].value) = value;
+			*(uint32_t*)(args[i].value) = atou_inc(s);
 		}
 		else if (**s == '"') // indirect string (ex: "string space")
 		{
@@ -498,6 +498,7 @@ do {\
 \
 	uint32_t	len;\
 	uint32_t	type;\
+	printf("keyword = \"%.*s\"\n", keyword_len, keyword);\
 \
 	if (keyword_len == 4 && strncmp(keyword, "bank", keyword_len) == 0)\
 		bank_switch(area, args, &data);\
