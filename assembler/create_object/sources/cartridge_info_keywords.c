@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/23 22:24:16 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/26 19:45:41 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/29 19:01:51 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -22,15 +22,6 @@ to_lower_string(char *s)
 		s++;
 	}
 }
-/*
-uint8_t	count_args(arguments_t *args[])
-{
-	uint8_t	len = 0;
-	while (args[len].value) len++;
-	return (len);
-}
-*/
-//#define	ONLY_ONE_ARGUMENT(args)	(args[0].value != NULL && args[1].value == NULL)
 
 // .program_start 0x150
 void	set_program_start(arguments_t args[], data_t *data)
@@ -51,6 +42,7 @@ void	set_program_start(arguments_t args[], data_t *data)
 	if (args->type != INTEGER_TYPE)
 		goto __wrong_type;
 
+	printf("VALUE = %u\n", *(uint32_t*)(args->value));
 	val = *(uint32_t*)(args->value);
 	if (val & 0xffff0000)
 		goto __overflow;
@@ -208,7 +200,7 @@ void	set_maker_code(arguments_t args[], data_t *data)
 	if (len > 2)
 		goto __too_many_characters;
 
-	register char	*dst = (char*)cartridge.game_code;
+	register char	*dst = (char*)cartridge.maker_code;
 	dst[0] = src[0];
 	dst[1] = src[1];
 	return;
@@ -637,6 +629,7 @@ void	set_ram_size(arguments_t args[], data_t *data)
 		{
 			switch (value)
 			{
+				case 0: cartridge.ram_size = 0; break;
 				case 8: cartridge.ram_size = 2; break;
 				case 32: cartridge.ram_size = 3; break;
 				case 128: cartridge.ram_size = 4; break;

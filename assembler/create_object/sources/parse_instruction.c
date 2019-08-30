@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/13 14:05:50 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/28 23:05:23 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/29 16:52:10 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -15,6 +15,48 @@
 #include "instruction_or_label.h"
 #include "get_bin_instruction.h"
 #include "calcul_param.h"
+
+STATIC_DEBUG const char		*get_param_type_str(enum param_e p)
+{
+	switch (p)
+	{
+		case UNKNOWN: return ("UNKNOWN");
+		case NONE: return ("NONE");
+		case A: return ("A");
+		case B: return ("B");
+		case C: return ("C");
+		case D: return ("D");
+		case E: return ("E");
+		case F: return ("F");
+		case H: return ("H");
+		case L: return ("L");
+		case AF: return ("AF");
+		case BC: return ("BC");
+		case DE: return ("DE");
+		case HL: return ("HL");
+		case SP: return ("SP");
+		case _NZ_: return ("_NZ_");
+		case _Z_: return ("_Z_");
+		case _NC_: return ("_NC_");
+		case _C_: return ("_C_");
+		case HLI: return ("HLI");
+		case HLD: return ("HLD");
+		case SP_ADDR: return ("SP_ADDR");
+		case HL_ADDR: return ("HL_ADDR");
+		case BC_ADDR: return ("BC_ADDR");
+		case DE_ADDR: return ("DE_ADDR");
+		case AF_ADDR: return ("AF_ADDR");
+		case FF00_C: return ("FF00_C");
+		case FF00_IMM8: return ("FF00_IMM8");
+		case SP_IMM8: return ("SP_IMM8");
+		case IMM8: return ("IMM8");
+		case ADDR8: return ("ADDR8");
+		case IMM16: return ("IMM16");
+		case ADDR16: return ("ADDR16");
+		case SYMBOL: return ("SYMBOL");
+	}
+	return ("PARAM TYPE ERROR");
+}
 
 
 /* a recoder !!!! en 2 fonctions */
@@ -183,7 +225,7 @@ static uint8_t		get_params(char **s, char *param[10])
 
 	for (;;)
 	{
-		while (is_space(**s)) s++;
+		while (is_space(**s)) (*s)++;
 		start = *s;
 		while (**s != ',' && !is_endl(**s) && **s != ')') (*s)++;
 		if (!is_endl(**s))
@@ -250,7 +292,6 @@ char	*replace_macro_without_param(char *s, const uint32_t len, vector_t *macro, 
 	const char	char_backup = s[len];
 
 	s[len] = '\0';
-	printf("search macro \"%s\"\n", s);
 	ssize_t	index = vector_search(macro, (void*)&s);
 	s[len] = char_backup;
 
@@ -295,11 +336,6 @@ char	*replace_macro_without_param(char *s, const uint32_t len, vector_t *macro, 
 
 
 	register const char	*error_msg;
-	/*
-__string_or_symbol_forbidden:
-	sprintf(data->buf, "in macro `%s` content, can't use non-numeric rvalue", m->name);
-	goto __print_error_fmt;
-	*/
 __error_macro_with_param:
 	error_msg = "can't use macro with parameters as argument";
 	goto __print_error;
@@ -540,7 +576,6 @@ set_mnemonic_and_params(char **s, char **mnemonic, char **param1, char **param2,
 				while (is_space(**s)) (*s)++;
 				is_addr = 0;
 			}
-			printf("param_buf = \"%.*s\"\n", (int)param_len, param_buf);
 
 
 
@@ -572,7 +607,6 @@ set_mnemonic_and_params(char **s, char **mnemonic, char **param1, char **param2,
 		}
 
 	__next_param:
-		printf("param %u = \"%s\"\n", i + 1, param_buf);
 		if (is_addr)
 			goto __expected_parent; // [ ]
 		param_buf[param_len] = 0;
@@ -635,8 +669,6 @@ param_t	get_param_type(char *param, value_t *n)
 {
 	char		*s = param;
 	int			parent = 0;
-	int			num = 0;
-	uint32_t	len;
 
 
 	// addr param
@@ -648,11 +680,6 @@ param_t	get_param_type(char *param, value_t *n)
 		// (C)
 		if (LOWER(*s) == 'c' && s[1] == '\0')
 			return (FF00_C);
-		if (*s == '0' && LOWER(s[1]) == 'x')
-		{
-			num = 1;
-			s += 2;
-		}
 		// (n) (nn)
 		if (is_digit(*s) || *s == '(' || *s == '~' || *s == '-')
 		{
@@ -660,8 +687,6 @@ param_t	get_param_type(char *param, value_t *n)
 				return (ADDR16);
 			return (ADDR8);
 		}
-		if (num)
-			return (UNKNOWN);
 		// (rr)
 		if (LOWER(*s) == 'a' && LOWER(s[1]) == 'f' && s[2] == '\0')
 			return (AF_ADDR);
@@ -676,7 +701,6 @@ param_t	get_param_type(char *param, value_t *n)
 		// (HL++?) (HLI) (HL--?) (HLD)
 		if (LOWER(*s) == 'h' && LOWER(s[1]) == 'l')
 		{
-			printf("get_type()::s = \"%s\"\n", s);
 			if (LOWER(s[2]) == 'i' && s[3] == '\0')
 				return (HLI);
 			if (LOWER(s[2]) == 'd' && s[3] == '\0')
@@ -818,7 +842,6 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 
 	// replace line if it's a macro w/wo params
 	replacement = replace_macro(&s, macro, data);	// return NULL if no macro
-
 	// lexer (check spaces, comma, ...). cut the string
 	/* example:
 	**   "ld A, B"
@@ -830,11 +853,16 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 	*/
 	if (replacement) {
 		char	*p = replacement;
+		char	*line = data->line;
+
+		data->line = replacement;
 		if (set_mnemonic_and_params(&p, &mnemonic, &param1, &param2, &n_params, data, macro) == -1)
 		{
 			free(replacement);
+			data->line = line;
 			return (s);
 		}
+		replacement = line;
 	}
 	else {
 		if (set_mnemonic_and_params(&s, &mnemonic, &param1, &param2, &n_params, data, macro) == -1)
@@ -866,7 +894,7 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 	str_to_lower(mnemonic);
 	if (n_params == 2)
 		instruction_replace(&mnemonic, &param1, &param2);	// "ld (ff00h)" -> ldff, "ld HL, SP" -> ldhl
-	printf("[1] \e[0;36m%s %s, %s\e[0m (%u, %u)\n", mnemonic, param1, param2, param[0], param[1]);
+	printf("\e[0;36m%s %s, %s\e[0m (%u, %u)\n", mnemonic, param1, param2, param[0], param[1]);
 	
 	if (param1)
 	{
@@ -891,7 +919,7 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 				val = tmp_val;
 		}
 	}
-	printf("value = %u\n", val.value);
+	printf("[2] \e[0;36m%s %s, %s\e[0m (%s, %s) :: \e[0;33mvalue = %u\e[0m\n", mnemonic, param1, param2, get_param_type_str(param[0]), get_param_type_str(param[1]), val.value);
 
 	char	*symbol = param2;
 	if (param[0] == SYMBOL)
@@ -906,7 +934,6 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 	param_error_t	error;
 	uint8_t			bin[4] = {0, 0, 0, val.sign};
 
-	printf("[2] \e[0;36m%s %s, %s\e[0m (%u, %u)\n", mnemonic, param1, param2, param[0], param[1]);
 	error = get_bin_instruction(mnemonic, param, &val, bin);
 	if (error.p1 || error.p2)
 	{
@@ -933,6 +960,10 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 	else
 		push_instruction(VEC_ELEM(code_area_t, area, data->cur_area), bin, param, symbol, ext_symbol, loc_symbol, data);
 
+	if (replacement) {
+		free(data->line);
+		data->line = replacement;
+	}
 	return (s);
 
 	/* ERRORS */
@@ -941,5 +972,9 @@ __too_many_parameters:
 __free_and_ret:
 	if (mnemonic)
 		free(mnemonic);
+	if (replacement) {
+		free(data->line);
+		data->line = replacement;
+	}
 	return (s);
 }

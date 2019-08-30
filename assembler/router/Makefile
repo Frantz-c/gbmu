@@ -6,10 +6,10 @@
 #    By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+      #
 #                                                  #+#   #+    #+    #+#       #
 #    Created: 2019/08/27 14:12:43 by fcordon      #+#   ##    ##    #+#        #
-#    Updated: 2019/08/27 14:13:29 by fcordon     ###    #+. /#+    ###.fr      #
+#    Updated: 2019/08/29 10:30:05 by fcordon     ###    #+. /#+    ###.fr      #
 #                                                          /                   #
 #                                                         /                    #
 # **************************************************************************** #
 
-all:
+all: router.c
 	gcc router.c -o ../gbasm_router

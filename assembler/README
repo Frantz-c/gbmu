@@ -11,21 +11,21 @@
 		%define identifier	value\
 							value2
 	3) multiparam macro
-		%define identifier(val)			add A, val
+		%define identifier(val)			add A,		val
 		%define identifier(val1, val2)	add A,		val1\
 										ld	val2,	A
 	4) call a macro without param
-		identifier
+		macro_name
 	5) call a macro with param
-		identifier(A, B)
+		macro_name(A, B)
 	6) delete a macro
-		%undef identifier
+		%undef macro_name
 	7) include a file
-		%include file_name
+		%include "file_name"
 	
 	info:
-		- identifier's and parameters pattern is [a-zA-Z_][0-9a-zA-Z_]*
-		- max parameter number is fixed to 10
+		- macro's name and parameters pattern is [a-zA-Z_][0-9a-zA-Z_]*
+		- max number of parameters is fixed to 10
 		- use of macro with parameters in the operands is forbidden
 		- recursive include protection is automatic
 
@@ -41,15 +41,13 @@
 
 	1) memory lock
 		lock a memory region with the .memlock directive
-		.memlock	memory_region_name, start_addr, end=end_addr
-			or
-		.memlock	memory_region_name, start_addr, len=length
+		.memlock	memory_region_name, start_addr, end_addr
 
 	2) declare a variable
 		.var[size]	var_name, memory_region_name
 	
 	3) example
-		.memlock	mem, 0xc000, end=0xc010
+		.memlock	mem, 0xc000, 0xc010
 		.var2		var, mem
 		.var6		string, mem
 
@@ -62,4 +60,111 @@
 	
 	info:
 		extern symbols are only VARIABLES or LABELS
+
+
+====================================================================================
+*)	BANK SWITCH
+
+	use bank keyword to select a memory address for the begin of your followed code
+	.bank	bank_number, offset
+
+	info:
+		offset can't be greater than 0x4000
+		bank_number * 0x4000 + offset must be lower than (bank_number + 1) * 0x4000
+
+
+====================================================================================
+*)	CARTRIDGE INFO
+
+	1) program start address
+		use program_start keyword to select the program entry point
+		.program_start	addr
+
+	2) game title
+		use .game_title keyword to save a game title
+		.game_title	"title"
+		the title is max 11 characters length
+	
+	3) game code
+		use .game_code to save a game code
+		.game_code "code"
+		the code is 4 characters length
+	
+	4) color gameboy support code
+		use .cgb_support to select the gameboy compatibility
+		.cgb_support	"code"
+		.cgb_support	code_number
+
+		values are:
+			- "cgb_exclusive"		or	0xC0
+			- "cgb_compatible"		or	0x80
+			- "cgb_incompatible"	or	0x00
+	
+	5) maker code
+		use .maker_code to save a maker code
+		.maker_code		"code"
+		the maker code is 2 characters length
+
+	6) super gameboy support
+		use .sgb_support to select the super gameboy support
+		.sgb_support	"code"
+		.sgb_support	code_number
+
+		values are:
+			- "supported"		or 0x03
+			- "not_supported"	or 0x00
+	
+	7) cartridge type
+		use .cart_type to select the cartridge type
+		.cart_type	"type"
+		.cart_type	"type_option(_option...)"
+		.cart_type	type_number
+
+		type values are:
+			"rom", "mbc-1", "mbc-2", "mbc-3", "mbc-5"
+		option values are:
+			"sram", "battery", "rtc", "rumble"
+	
+	8) rom size
+		use .rom_size to select the rom size
+		.rom_size	"size_str"
+		.rom_size	size_code
+
+		values are:
+			- "32 kbytes"	or	"0 banks"	or	0
+			- "64 kbytes"	or	"4 banks"	or	1
+			- "128 kbytes"	or	"8 banks"	or	2
+			- "256 kbytes"	or	"16 banks"	or	3
+			- "512 kbytes"	or	"32 banks"	or	4
+			- "1 mbytes"	or	"64 banks"	or	5
+			- "2 mbytes"	or	"128 banks"	or	6
+			- "4 mbytes"	or	"256 banks"	or	7
+			- "8 mbytes"	or	"512 banks"	or	8
+	
+	9) ram size
+		use .ram_size to select ram size
+		.ram_size	"size_str"
+		.ram_size	size_code
+
+		values are:
+			- "0 kbytes"	or	"0 banks"	or	0
+			- "8 kbytes"	or	"1 bank"	or	2
+			- "32 kbytes"	or	"4 banks"	or	3
+			- "128 kbytes"	or	"16 banks"	or	4
+
+	10) game destination
+		use .destination to select game country
+		.destination	"country"
+		.destination	country_code
+
+		values are:
+			- "japan"	or	0
+			- "other"	or	1
+	
+	11) version
+		use .version to select the version number
+		.version	number
+
+		number is 1 byte length
+
 

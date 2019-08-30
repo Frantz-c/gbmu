@@ -8,20 +8,18 @@ extern char		*copy_macro_content(char *dest, char *s, uint32_t *lineno)
 
 	for (; ; s++)
 	{
-		if (*s == '\n') {
+		if (is_endl(*s)) {
 			break;
 		}
 		else if (*s == '\\') {
 			bs_pos = s;
 			s++;
-			if (*s == ' ' || *s == '\t') s++;
+			if (is_space(*s)) s++;
 			if (*s == '\n')
 			{
 				*(dest++) = *(s++);
-				if (*s == ' ' || *s == '\t')
-				{
-					while (s[1] == ' ' || s[1] == '\t') s++;
-				}
+				if (is_space(*s))
+					while (is_space(s[1])) s++;
 				(*lineno)++;
 				continue;
 			}

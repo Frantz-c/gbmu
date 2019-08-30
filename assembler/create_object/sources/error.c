@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/12 12:47:39 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/27 14:35:28 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/29 16:53:46 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -19,18 +19,23 @@
 extern void			print_warning(char *filename, uint32_t lineno, char *line, const char *error)
 {
 	char	*p = line;
+	uint32_t	len;
 
 	g_warning++;
-	while (*p && *p != '\n') p++;
-	if (p - line > 70)
-		p = line + 70;
+	while (!is_endl(*p)) p++;
+	len = p - line;
+	if (len > 70)
+	{
+		p = line + (len - 70);
+		len = 70;
+	}
 
 	fprintf
 	(
 		stderr,
 		"\e[1;33m[WARNING]\e[0m \e[1min file \e[0;33m\"%s\"\e[0m\e[1m:\t"
 		"line %u: \e[0;33m%s\e[0m\n\t"
-		"\e[1;35m> \e[0m%.*s\n",
+		"\e[1;35m> \e[0m%.*s\n\n",
 		filename,
 		lineno, error,
 		(int)(p - line), line
@@ -45,27 +50,32 @@ extern void			print_warning(char *filename, uint32_t lineno, char *line, const c
 */
 extern void			print_error(char *filename, uint32_t lineno, char *line, const char *error)
 {
-	char	*p = line;
+	char		*p = line;
+	uint32_t	len;
 
 	g_error++;
-	while (*p && *p != '\n') p++;
-	if (p - line > 70)
-		p = line + 70;
+	while (!is_endl(*p)) p++;
+	len = p - line;
+	if (len > 70)
+	{
+		p = line + (len - 70);
+		len = 70;
+	}
 
 	fprintf
 	(
 		stderr,
 		"\e[1;31m[ERROR]\e[0m \e[1min file \e[0;33m\"%s\"\e[0m\e[1m:\t"
 		"line %u: \e[0;31m%s\e[0m\n\t"
-		"\e[1;31m> \e[0m%.*s\n",
+		"\e[1;31m> \e[0m%.*s\n\n",
 		filename,
 		lineno, error,
-		(int)(p - line), line
+		(int)(len), line
 	);
 
 	if (g_error == MAX_ERROR)
 	{
-		fprintf(stderr, "too many errors emitted (%u)\n", g_error);
+		fprintf(stderr, "\e[1;31mtoo many errors emitted\e[0m (%u)\n", g_error);
 		exit(g_error);
 	}
 }

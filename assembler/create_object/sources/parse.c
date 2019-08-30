@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/13 14:04:54 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/27 14:46:11 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/29 16:39:15 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -22,6 +22,22 @@
 ** ######### DEBUG FUNCTIONS #########
 ** ###################################
 */
+STATIC_DEBUG void			header_print(void)
+{
+	puts("==> cartridge:");
+	printf("start_addr  = 0x%hhx%hhx\n", cartridge.start_addr[1], cartridge.start_addr[0]);
+	printf("title       = \"%.11s\"\n", cartridge.title);
+	printf("game_code   = \"%.4s\"\n", cartridge.game_code);
+	printf("cgb_support = 0x%x\n", cartridge.cgb_support);
+	printf("maker_code  = \"%.2s\"\n", cartridge.maker_code);
+	printf("sgb_support = 0x%x\n", cartridge.sgb_support);
+	printf("game_pack   = 0x%x\n", cartridge.game_pack);
+	printf("rom_size    = 0x%x\n", cartridge.rom_size);
+	printf("ram_size    = 0x%x\n", cartridge.ram_size);
+	printf("destination = 0x%x\n", cartridge.destination);
+	printf("version     = 0x%x\n\n", cartridge.version);
+}
+
 STATIC_DEBUG void			area_print(const void *a)
 {
 	code_area_t	*area = (code_area_t *)a;
@@ -224,12 +240,11 @@ uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t a
 	char		*arg_start;
 	uint32_t	length;
 
-	(*s)++;
 	if (!is_alpha(**s))
 		goto __unexpected_char;
 	keyword_start = (*s)++;
 
-	while (is_alnum(**s)) (*s)++;
+	while (is_alnum(**s) || **s == '_') (*s)++;
 	length = *s - keyword_start;
 
 	// .byte : creer une fonction
@@ -307,8 +322,7 @@ uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t a
 	uint8_t i = 0;
 	while (1)
 	{
-		uint32_t	len;
-		int32_t		type;
+		int32_t		value;
 		uint8_t		minus = 0;
 
 		while (is_space(**s)) (*s)++;
@@ -318,14 +332,13 @@ uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t a
 			(*s)++;
 		}
 
-		if ((type = is_numeric(*s, &len)) != 0)
+		if ((value = atou_inc(s)) != 0)
 		{
 			if (minus)
 				goto __signed_not_expected;
 			args[i].type = INTEGER_TYPE;
 			args[i].value = malloc(sizeof(uint32_t));
-			*(uint8_t*)(args[i].value) = atou_type(*s, &len, type);
-			*s += len;
+			*(uint32_t*)(args[i].value) = value;
 		}
 		else if (**s == '"') // indirect string (ex: "string space")
 		{
@@ -357,7 +370,7 @@ uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t a
 		{
 			args[i].type = (GB_STRING_TYPE | STRING_TYPE | ID_STRING_TYPE);
 
-			arg_start = ++(*s);
+			arg_start = *s;
 			if (!is_alpha(**s) && **s != '_')
 				args[i].type &= ~(ID_STRING_TYPE);
 
@@ -378,14 +391,13 @@ uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t a
 			if (*s - arg_start > IDENTIFIER_MAX_LENGTH)
 				goto __too_long_argument;
 			args[i].value = (void*)strndup(arg_start, *s - arg_start);
-			(*s)++;
 		}
-		//goto __unexpected_char;
 
 		while (is_space(**s)) (*s)++;
+		i++;
 		if (is_endl(**s))
 			break;
-		if (++i == 4)
+		if (i == 4)
 			goto __too_many_arguments;
 		if (**s != ',')
 			goto __unexpected_char;
@@ -475,7 +487,7 @@ do {\
 	char		*keyword = ++s;\
 	uint32_t	keyword_len;\
 \
-	if (!is_alnum(s[1])) {\
+	if (!is_alnum(*s)) {\
 		print_error(data.filename, data.lineno, data.line, "empty keyword");\
 		goto __end_keyword;\
 	}\
@@ -580,6 +592,7 @@ __end_directive:
 	vector_print(ext_symbol, "extern symbol", &symbol_print);
 	vector_print(loc_symbol->label, "label", &label_print);
 	vector_print(loc_symbol->memblock, "block", &memblock_print);
+	header_print();
 	/* debug end */
 
 	free(content_start);
