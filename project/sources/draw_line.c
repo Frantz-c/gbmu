@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/05 07:56:44 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/06 14:32:22 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/30 14:22:35 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -239,6 +239,9 @@ void	draw_line(oam_t *oam, int line)
 	}
 
 	qsort((object_t *)oam->obj, offset, sizeof(object_t), &cmp_prior);
+
+	for (size_t i = 0; i < 160; i++)
+		g_pixels[160 * line + i] = 0xFFFFFFul;
 
 	if (!g_cart.cgb_mode)
 		draw_dmg_line((object_t *)oam->obj, offset, (uint8_t)line);
