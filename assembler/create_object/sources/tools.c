@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/12 23:05:07 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/30 14:59:51 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/30 20:27:41 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -260,6 +260,7 @@ __ret_0:
 	return (0);
 }
 
+/* unused */
 
 extern uint8_t		is_numeric(const char *s, uint32_t *len)
 {
@@ -374,14 +375,7 @@ static char __attribute__((always_inline))		*left_trim(char *s, int32_t *type)
 	}
 	return (s);
 }
-/*
-static uint32_t __attribute__((always_inline))	get_base_value(char c)
-{
-	if (LOWER(c) >= 'a' && LOWER(c) <= 'f')
-		return (c - 87);
-	return (c - '0');
-}
-*/
+
 static const char		*ft_strtoi(const char *s, uint32_t *value, int32_t type)
 {
 	uint32_t	n = 0;
@@ -580,6 +574,9 @@ extern uint32_t		atou_inc_all(char **s, int32_t *err)
 	*s = (char *)ft_strtoi(*s, &result, type);
 	return (result);
 }
+
+
+/* get file contents */
 
 static void		copy_without_comment(uint8_t **dst, uint32_t *len, uint8_t *buf, int *comment)
 {

@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/13 14:04:54 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/30 18:08:48 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/30 20:34:51 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -247,12 +247,10 @@ uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t a
 	while (is_alnum(**s) || **s == '_') (*s)++;
 	length = *s - keyword_start;
 
-	printf("keyword_start = %p, *s = %p, length = %u\n", keyword_start, *s, length);
 	// .byte : creer une fonction
 	if (length == 4 && strncmp(keyword_start, "byte", length) == 0)
 	{
 		uint32_t	byte;
-		int32_t		type;
 		uint32_t	len;
 		uint32_t	n_bytes = 0;
 
@@ -261,9 +259,9 @@ uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t a
 			while (is_space(**s)) (*s)++;
 			if (is_endl(**s))
 				break;
-			if ((type = is_numeric(*s, NULL)) == 0)
+			if (is_numeric_len(*s, NULL) == 0)
 				goto __unexpected_char;
-			byte = atou_type(*s, &len, type);
+			byte = atou_len(*s, &len);
 			if (byte > 0xffu)
 			{
 				sprintf(data->buf, "overflow (%.*s): value truncated", len, *s);
@@ -316,7 +314,6 @@ uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t a
 		print_error(data->filename, data->lineno, data->line, data->buf);
 		skip_macro(s, &data->lineno);
 		return (0);
-
 	}
 	// .byte end
 

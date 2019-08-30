@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/13 14:05:50 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/30 14:51:35 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/30 20:37:09 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -453,6 +453,7 @@ set_mnemonic_and_params(char **s, char **mnemonic, char **param1, char **param2,
 
 			if (is_alpha(*start) || *start == '_')
 			{
+				// replace hl+ and hl- with hli or hld
 				if (is_addr && !not && !neg
 						&& LOWER(*start) == 'h' && LOWER(start[1]) == 'l'
 						&& (start[2] == '+' || start[2] == '-'))
@@ -460,7 +461,6 @@ set_mnemonic_and_params(char **s, char **mnemonic, char **param1, char **param2,
 					register char	*tmp = start + 3;
 					register char	sign = start[2];
 
-					printf("\e[0;41;1;37m(0)tmp = \"%.20s\"\e[0m\n", tmp);
 					if (tmp[0] == tmp[-1])
 						tmp++;
 					while (is_space(*tmp)) tmp++;
@@ -474,7 +474,6 @@ set_mnemonic_and_params(char **s, char **mnemonic, char **param1, char **param2,
 							if (*tmp == ',') tmp++;
 							param_len = 4;
 							param_buf = (sign == '-') ? strndup("[HLD", param_len) : strndup("[HLI", param_len);
-							printf("\e[0;41;1;37m(1)tmp = \"%.20s\"\e[0m\n", tmp);
 							*s = tmp;
 							goto __next_param;
 						}
