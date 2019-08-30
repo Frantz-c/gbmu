@@ -1,22 +1,3 @@
-%define	LCDC_ON		0x80
-%define LCDC_ADDR2	0x01
-%define LCDC_TRUC	0x04
-%define INSTRUCTION(a, b)	call [a | b]
-%define	macro1(    a  ,    b)	ld A, a*a+b
-
-.program_start	0x150
-.game_title		"FRANTZ"
-.game_code		"AAAA"
-.cgb_support	cgb_exclusive
-.sgb_support	supported
-.maker_code		"[]"
-.cart_type		mbc-5
-.rom_size		"64 kbytes"
-.ram_size		"32 kbytes"
-.version		1
-
-INSTRUCTION(0xff00, 0xc0)
-ld	A, (~LCDC_TRUC & 0xff) | LCDC_ON | LCDC_ADDR2
-ld	[ff00h+LCDC], A
-ld	B, ((1 + 1) << 3)
-
+%define __42__					42
+%define PLUS_1(n)				n + 1
+%define _42_PLUS_N_PLUS_1(n)	__42__ + PLUS_1(n)

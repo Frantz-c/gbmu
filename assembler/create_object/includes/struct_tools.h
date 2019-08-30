@@ -18,6 +18,8 @@
 # include "vector.h"
 
 macro_t			*get_macro(vector_t *macro, char *name);
+uint8_t			get_params(char **s, char *param[10]);
+char			*replace_content(macro_t *macro, char *param[10]);
 
 int32_t		variables_match_name(const vector_t *memblock, const char *s, int32_t *block_i);
 int32_t		memblock_match_name(const vector_t *memblock, const char *s);

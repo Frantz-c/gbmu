@@ -26,6 +26,73 @@ extern macro_t			*get_macro(vector_t *macro, char *name)
 	return(VEC_ELEM(macro_t, macro, index));
 }
 
+extern uint8_t		get_params(char **s, char *param[10])
+{
+	char	*start;
+	uint8_t	nparam = 0;
+
+	for (;;)
+	{
+		while (is_space(**s)) (*s)++;
+		start = *s;
+		while (**s != ',' && !is_endl(**s) && **s != ')') (*s)++;
+		if (!is_endl(**s))
+		{
+			char	*end = *s;
+
+			if (nparam == 10)
+				return (0xffu); // too many params
+			if (end == start)
+				return (0xffu); // empty param
+			while (is_space(end[-1])) {
+				end--;
+				if (end == start)
+					return (0xffu); // empty param
+			}
+			param[nparam++] = strndup(start, end - start);
+			if (**s == ')')
+				break;
+			(*s)++;
+		}
+		if (is_endl(**s))
+		{
+			while (nparam)
+				free(param[--nparam]); // missing ')'
+			return (0xffu);
+		}
+	}
+	return (nparam);
+}
+
+extern char	*replace_content(macro_t *macro, char *param[10])
+{
+	char		*new = NULL;
+	int32_t		diff = 0;
+	uint32_t	len[10];
+	char		*pos;
+	char		*content = macro->content;
+
+	for (uint32_t i = 0; i != macro->argc; i++)
+	{
+		len[i] = strlen(param[i]);
+		diff += len[i] - 2;
+	}
+
+	new = malloc(strlen(content) + diff + 1);
+	new[0] = '\0';
+	pos = content;
+	while ((pos = strchr(content, '#')))
+	{
+		register uint8_t	i = pos[1] - '0';
+
+		strncat(new, content, pos - content);
+		strncat(new, param[i], len[i]);
+		content = pos + 2;
+	}
+	strcat(new, content);
+	return (new);
+}
+
 extern int32_t		variables_match_name(const vector_t *memblock, const char *s, int32_t *block_i)
 {
 	register uint32_t	end = memblock->nitems * sizeof(memblock_t);
