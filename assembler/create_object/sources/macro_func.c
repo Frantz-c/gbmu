@@ -8,10 +8,10 @@ extern char		*copy_macro_content(char *dest, char *s, uint32_t *lineno)
 
 	for (; ; s++)
 	{
-		if (is_endl(*s)) {
+		if (is_endl(*s))
 			break;
-		}
-		else if (*s == '\\') {
+		if (*s == '\\')
+		{
 			bs_pos = s;
 			s++;
 			if (is_space(*s)) s++;
@@ -27,6 +27,11 @@ extern char		*copy_macro_content(char *dest, char *s, uint32_t *lineno)
 			s = bs_pos;
 			continue;
 		}
+		if (is_space(*s))
+		{
+			while (is_space(s[1])) s++;
+			*(dest++) = ' ';
+		}
 		else
 			*(dest++) = *s;
 	}
@@ -41,10 +46,9 @@ extern uint32_t	get_macro_content_length(char *s)
 
 	for (; ; s++, count++)
 	{
-		if (is_endl(*s)) {
+		if (is_endl(*s))
 			break;
-		}
-		else if (*s == '\\')
+		if (*s == '\\')
 		{
 			bs_pos = s;
 			s++;
@@ -76,7 +80,7 @@ extern void	skip_macro(char **s, uint32_t *lineno)
 
 	for (; ; (*s)++)
 	{
-		if (**s == '\n' || **s == '\0')
+		if (is_endl(**s))
 		{
 			break;
 		}

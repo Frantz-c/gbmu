@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/23 22:24:16 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/30 17:59:14 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/31 22:55:24 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -27,12 +27,11 @@ void	set_program_start(arguments_t args[], data_t *data)
 {
 	uint32_t	val;
 
-	if (duplicate.program_start)
+	if (cart_info.member.program_start)
 	{
 		print_warning(data->filename, data->lineno, data->line,
 						"duplicate keyword .program_start");
 	}
-	duplicate.program_start = 1;
 
 	if (args[1].value)
 		goto __too_many_arguments;
@@ -45,8 +44,9 @@ void	set_program_start(arguments_t args[], data_t *data)
 	if (val & 0xffff0000)
 		goto __overflow;
 	
-	cartridge.start_addr[1] = (val & 0xff00u) >> 8;
-	cartridge.start_addr[0] = val & 0xffu;
+	cartridge.program_start[1] = (val & 0xff00u) >> 8;
+	cartridge.program_start[0] = val & 0xffu;
+	cart_info.member.program_start = 1;
 	return;
 
 	{
@@ -71,12 +71,11 @@ void	set_program_start(arguments_t args[], data_t *data)
 
 void	set_game_title(arguments_t args[], data_t *data)
 {
-	if (duplicate.game_title)
+	if (cart_info.member.game_title)
 	{
 		print_warning(data->filename, data->lineno, data->line,
 						"duplicate keyword .game_title");
 	}
-	duplicate.game_title = 1;
 
 
 	if (args[1].value)
@@ -93,9 +92,10 @@ void	set_game_title(arguments_t args[], data_t *data)
 	if (len > 11)
 		goto __too_many_characters;
 
-	register char	*dst = (char*)cartridge.title;
+	register char	*dst = (char*)cartridge.game_title;
 	memcpy(dst, src, len);
 	bzero(dst + len, 11 - len);
+	cart_info.member.game_title = 1;
 	return;
 
 	{
@@ -122,12 +122,11 @@ void	set_game_title(arguments_t args[], data_t *data)
 
 void	set_game_code(arguments_t args[], data_t *data)
 {
-	if (duplicate.game_code)
+	if (cart_info.member.game_code)
 	{
 		print_warning(data->filename, data->lineno, data->line,
 						"duplicate keyword .game_code");
 	}
-	duplicate.game_code = 1;
 
 	if (args[1].value)
 		goto __too_many_arguments;
@@ -146,6 +145,7 @@ void	set_game_code(arguments_t args[], data_t *data)
 	register char	*dst = (char*)cartridge.game_code;
 	memcpy(dst, src, len);
 	bzero(dst + len, 4 - len);
+	cart_info.member.game_code = 1;
 	return;
 
 	{
@@ -175,12 +175,11 @@ void	set_game_code(arguments_t args[], data_t *data)
 
 void	set_cgb_support(arguments_t args[], data_t *data)
 {
-	if (duplicate.cgb_support)
+	if (cart_info.member.cgb_support)
 	{
 		print_warning(data->filename, data->lineno, data->line,
 						"duplicate keyword .cgb_support");
 	}
-	duplicate.cgb_support = 1;
 
 	if (args[1].value)
 		goto __too_many_arguments;
@@ -206,6 +205,7 @@ void	set_cgb_support(arguments_t args[], data_t *data)
 			goto __unknown_value;
 		cartridge.cgb_support = value;
 	}
+	cart_info.member.cgb_support = 1;
 	return;
 
 	{
@@ -225,12 +225,11 @@ void	set_cgb_support(arguments_t args[], data_t *data)
 
 void	set_maker_code(arguments_t args[], data_t *data)
 {
-	if (duplicate.maker_code)
+	if (cart_info.member.maker_code)
 	{
 		print_warning(data->filename, data->lineno, data->line,
 						"duplicate keyword .maker_code");
 	}
-	duplicate.maker_code = 1;
 
 	if (args[1].value)
 		goto __too_many_arguments;
@@ -249,6 +248,7 @@ void	set_maker_code(arguments_t args[], data_t *data)
 	register char	*dst = (char*)cartridge.maker_code;
 	dst[0] = src[0];
 	dst[1] = src[1];
+	cart_info.member.maker_code = 1;
 	return;
 
 	{
@@ -277,20 +277,20 @@ void	set_maker_code(arguments_t args[], data_t *data)
 
 void	set_sgb_support(arguments_t args[], data_t *data)
 {
-	if (duplicate.sgb_support)
+	if (cart_info.member.sgb_support)
 	{
 		print_warning(data->filename, data->lineno, data->line,
-						"duplicate keyword .sgb_support");
+						"cart_info.member keyword .sgb_support");
 	}
-	duplicate.sgb_support = 1;
 
 	if (args[1].value)
 		goto __too_many_arguments;
 	if (args[0].value == NULL)
 		goto __too_few_arguments;
-	if (args->type & STRING_TYPE)
+	if (args[0].type & STRING_TYPE)
 	{
 		to_lower_string((char *)args->value);
+		printf("value = \"%s\"\n", (char*)args->value);
 		if (strcmp((char *)args->value, "supported") == 0)
 			cartridge.sgb_support = USES_SGB_FUNC;
 		else if (strcmp((char *)args->value, "not_supported") == 0)
@@ -306,6 +306,7 @@ void	set_sgb_support(arguments_t args[], data_t *data)
 			goto __unknown_value;
 		cartridge.sgb_support = value;
 	}
+	cart_info.member.sgb_support = 1;
 	return;
 
 	{
@@ -384,12 +385,11 @@ static uint16_t	get_mbc_options(char *s)
 
 void	set_cartridge_type(arguments_t args[], data_t *data)
 {
-	if (duplicate.cart_type)
+	if (cart_info.member.cart_type)
 	{
 		print_warning(data->filename, data->lineno, data->line,
 						"duplicate keyword .cart_type");
 	}
-	duplicate.cart_type = 1;
 
 	if (args[1].value)
 		goto __too_many_arguments;
@@ -401,7 +401,7 @@ void	set_cartridge_type(arguments_t args[], data_t *data)
 
 		to_lower_string((char *)args->value);
 		char *arg = (char *)args->value;
-		cartridge.game_pack = 0;
+		cartridge.cart_type = 0;
 
 		if (strncmp(arg, "rom", 3) == 0)
 		{
@@ -418,11 +418,11 @@ void	set_cartridge_type(arguments_t args[], data_t *data)
 				goto __invalid_option;
 
 			if (opt == 0)
-				cartridge.game_pack = 0u;
+				cartridge.cart_type = 0u;
 			else if (opt == SRAM)
-				cartridge.game_pack = 8u;
+				cartridge.cart_type = 8u;
 			else if (opt & (SRAM | BATTERY))
-				cartridge.game_pack = 9u;
+				cartridge.cart_type = 9u;
 			else
 				goto __error_rom;
 		}
@@ -447,11 +447,11 @@ void	set_cartridge_type(arguments_t args[], data_t *data)
 				case '1':
 				{
 					if (opt == 0)
-						cartridge.game_pack = 1u;
+						cartridge.cart_type = 1u;
 					else if (opt == (BATTERY | SRAM))
-						cartridge.game_pack = 3u;
+						cartridge.cart_type = 3u;
 					else if (opt == SRAM)
-						cartridge.game_pack = 2u;
+						cartridge.cart_type = 2u;
 					else
 						goto __error_mbc1;
 					return;
@@ -459,24 +459,24 @@ void	set_cartridge_type(arguments_t args[], data_t *data)
 				case '2':
 				{
 					if (opt == 0)
-						cartridge.game_pack = 5u;
+						cartridge.cart_type = 5u;
 					else if (opt == BATTERY)
-						cartridge.game_pack = 6u;
+						cartridge.cart_type = 6u;
 					else
 						goto __error_mbc2;
 				}
 				case '3':
 				{
 					if (opt == 0)
-						cartridge.game_pack = 0x11u;
+						cartridge.cart_type = 0x11u;
 					else if (opt == (RTC | BATTERY))
-						cartridge.game_pack = 0xfu;
+						cartridge.cart_type = 0xfu;
 					else if (opt == (RTC | BATTERY | SRAM))
-						cartridge.game_pack = 0x10u;
+						cartridge.cart_type = 0x10u;
 					else if (opt == (BATTERY | SRAM))
-						cartridge.game_pack = 0x13u;
+						cartridge.cart_type = 0x13u;
 					else if (opt == SRAM)
-						cartridge.game_pack = 0x12u;
+						cartridge.cart_type = 0x12u;
 					else
 						goto __error_mbc3;
 				}
@@ -486,11 +486,11 @@ void	set_cartridge_type(arguments_t args[], data_t *data)
 						goto __error_mbc5;
 					opt &= 0x3u;
 					if (opt == 0)
-						cartridge.game_pack = 0x19u;
+						cartridge.cart_type = 0x19u;
 					else if (opt == (BATTERY | SRAM))
-						cartridge.game_pack = 0x1Au;
+						cartridge.cart_type = 0x1Au;
 					else if (opt == SRAM)
-						cartridge.game_pack = 0x1Bu;
+						cartridge.cart_type = 0x1Bu;
 					else
 						goto __error_mbc5;
 				}
@@ -511,8 +511,9 @@ void	set_cartridge_type(arguments_t args[], data_t *data)
 		{
 			goto __unknown_value;
 		}
-		cartridge.game_pack = value;
+		cartridge.cart_type = value;
 	}
+	cart_info.member.cart_type = 1;
 	return;
 
 
@@ -577,12 +578,11 @@ void	set_rom_size(arguments_t args[], data_t *data)
 	char		*unit = (char *)args->value;
 	uint32_t	value;
 
-	if (duplicate.rom_size)
+	if (cart_info.member.rom_size)
 	{
 		print_warning(data->filename, data->lineno, data->line,
 						"duplicate keyword .rom_size");
 	}
-	duplicate.rom_size = 1;
 
 	if (args[1].value)
 		goto __too_many_arguments;
@@ -659,6 +659,7 @@ void	set_rom_size(arguments_t args[], data_t *data)
 			goto __invalid_size;
 		cartridge.rom_size = value;
 	}
+	cart_info.member.rom_size = 1;
 	return;
 
 
@@ -693,12 +694,11 @@ void	set_ram_size(arguments_t args[], data_t *data)
 	char		*unit = (char *)args->value;
 	uint32_t	value;
 
-	if (duplicate.ram_size)
+	if (cart_info.member.ram_size)
 	{
 		print_warning(data->filename, data->lineno, data->line,
-						"duplicate keyword .ram_size");
+						"duolicate keyword .ram_size");
 	}
-	duplicate.ram_size = 1;
 
 	if (args[1].value)
 		goto __too_many_arguments;
@@ -747,6 +747,7 @@ void	set_ram_size(arguments_t args[], data_t *data)
 			goto __invalid_size;
 		cartridge.ram_size = value;
 	}
+	cart_info.member.ram_size = 1;
 	return;
 
 
@@ -777,12 +778,11 @@ void	set_ram_size(arguments_t args[], data_t *data)
 
 void	set_code_dest(arguments_t args[], data_t *data)
 {
-	if (duplicate.destination)
+	if (cart_info.member.destination)
 	{
 		print_warning(data->filename, data->lineno, data->line,
 						"duplicate keyword .destination");
 	}
-	duplicate.destination = 1;
 
 	if (args[1].value)
 		goto __too_many_arguments;
@@ -806,6 +806,7 @@ void	set_code_dest(arguments_t args[], data_t *data)
 			goto __unknown_value;
 		cartridge.destination = value;
 	}
+	cart_info.member.destination = 1;
 	return;
 
 
@@ -828,12 +829,11 @@ void	set_version(arguments_t args[], data_t *data)
 {
 	uint32_t	value;
 
-	if (duplicate.version)
+	if (cart_info.member.version)
 	{
 		print_warning(data->filename, data->lineno, data->line,
 						"duplicate keyword .version");
 	}
-	duplicate.version = 1;
 
 	if (args[1].value)
 		goto __too_many_arguments;
@@ -846,6 +846,7 @@ void	set_version(arguments_t args[], data_t *data)
 	if (value & 0xffffff00u)
 		goto __overflow;
 	cartridge.version = value;
+	cart_info.member.version = 1;
 	return;
 
 	{

@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/27 19:25:27 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/09 12:24:22 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/31 23:05:33 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -110,28 +110,14 @@ void __attribute__((always_inline))
 		*code = realloc(*code, *allocsize);
 	}
 
-/*
-**	jr.size = 3 ?
-*/
-//	(*code)[(*i)++] = (uint8_t)inst->size;
-	if (inst->size == 3)
-	{
-		printf("\e[1;46m   >   \e[0minstruction \"0x%hhx\" => %u\n", inst->opcode[0], inst->size);
-		memcpy(*code + *i, inst->opcode, 4);
-		*i += 4;
-	}
-	else if (inst->size == 2)
-	{
-		printf("\e[1;46m   >   \e[0minstruction \"0x%hhx\" => %u\n", inst->opcode[0], inst->size);
-		memcpy(*code + *i, inst->opcode, 2);
-		*i += 2;
-		if (*inst->opcode != 0xcb)
-			(*code)[(*i)++] = 0;
-	}
-	else
-	{
-		(*code)[(*i)++] = inst->opcode[0];
-	}
+	// copy de l'opcode dans code[]
+	uint8_t	instruction_len = inst_length[inst->opcode[0]];
+
+	printf("\e[1;46m   >   \e[0minstruction \"0x%hhx\", size = %u\n", inst->opcode[0], instruction_len);
+	if (instruction_len > 1 && inst->opcode[0] != 0xCBu)
+		instruction_len++;
+	memcpy(*code + *i, inst->opcode, instruction_len);
+	*i += instruction_len;
 }
 
 void __attribute__((always_inline))
@@ -162,27 +148,15 @@ void __attribute__((always_inline))
 		elem->pos[elem->quantity++] = *i;
 	}
 
+
 	// copy de l'opcode dans code[]
-//	(*code)[(*i)++] = (uint8_t)inst->size;
-	if (inst->size == 3)
-	{
-		printf("\e[1;46m   >   \e[0minstruction \"0x%hhx\" => %u\n", inst->opcode[0], inst->size);
-		memcpy(*code + *i, inst->opcode, 4);
-		*i += 4;
-	}
-	else if (inst->size == 2)
-	{
-		printf("\e[1;46m   >   \e[0minstruction \"0x%hhx\" => %u\n", inst->opcode[0], inst->size);
-		memcpy(*code + *i, inst->opcode, 2);
-		*i += 2;
-		if (*inst->opcode != 0xcb)
-			(*code)[(*i)++] = inst->opcode[3];
-	}
-	else
-	{
-		fprintf(stderr, "forbidden size %u !\n", inst->size);
-		exit(1);
-	}
+	uint8_t	instruction_len = inst_length[inst->opcode[0]];
+
+	printf("\e[1;46m   >   \e[0minstruction \"0x%hhx\", size = %u\n", inst->opcode[0], instruction_len);
+	if (instruction_len > 1 && inst->opcode[0] != 0xCBu)
+		instruction_len++;
+	memcpy(*code + *i, inst->opcode, instruction_len);
+	*i += instruction_len;
 }
 
 void __attribute__((always_inline))
@@ -227,21 +201,69 @@ void __attribute__((always_inline))
 		exit(1);
 	}
 
-
 	// copy de l'opcode dans code[]
-//	(*code)[(*i)++] = (uint8_t)inst->size;
-	if (inst->size == 3)
+	uint8_t	instruction_len = inst_length[inst->opcode[0]];
+
+	printf("\e[1;46m   >   \e[0minstruction \"0x%hhx\", size = %u\n", inst->opcode[0], instruction_len);
+	if (instruction_len > 1 && inst->opcode[0] != 0xCBu)
+		instruction_len++;
+	memcpy(*code + *i, inst->opcode, instruction_len);
+	*i += instruction_len;
+}
+
+static void	set_cartridge_data(uint8_t cartridge_part[], uint8_t *cartridge_part_length)
+{
+	if (cart_info.all)
 	{
-		printf("(var) \e[1;46m   >   \e[0minstruction \"0x%hhx\" => %u : {0x%x 0x%x 0x%x}\n",
-				inst->opcode[0], inst->size, inst->opcode[1], inst->opcode[2], inst->opcode[3]);
-		memcpy(*code + *i, inst->opcode, 4);
-		*i += 4;
-	}
-	else
-	{
-		// if size == 2, error (jr var illegal)
-		fprintf(stderr, "forbidden size %u !\n", inst->size);
-		exit(1);
+		if (cart_info.member.program_start)
+		{
+			cartridge_part[0] = cartridge.program_start[0];
+			cartridge_part[1] = cartridge.program_start[1];
+			*cartridge_part_length = 2;
+		}
+		if (cart_info.member.game_title)
+		{
+			memcpy(cartridge_part + *cartridge_part_length, cartridge.game_title, 11);
+			*cartridge_part_length += 11;
+		}
+		if (cart_info.member.game_code)
+		{
+			memcpy(cartridge_part + *cartridge_part_length, cartridge.game_code, 4);
+			*cartridge_part_length += 4;
+		}
+		if (cart_info.member.cgb_support)
+		{
+			cartridge_part[(*cartridge_part_length)++] = cartridge.cgb_support;
+		}
+		if (cart_info.member.maker_code)
+		{
+			cartridge_part[(*cartridge_part_length)++] = cartridge.maker_code[0];
+			cartridge_part[(*cartridge_part_length)++] = cartridge.maker_code[1];
+		}
+		if (cart_info.member.sgb_support)
+		{
+			cartridge_part[(*cartridge_part_length)++] = cartridge.sgb_support;
+		}
+		if (cart_info.member.cart_type)
+		{
+			cartridge_part[(*cartridge_part_length)++] = cartridge.cart_type;
+		}
+		if (cart_info.member.rom_size)
+		{
+			cartridge_part[(*cartridge_part_length)++] = cartridge.rom_size;
+		}
+		if (cart_info.member.ram_size)
+		{
+			cartridge_part[(*cartridge_part_length)++] = cartridge.ram_size;
+		}
+		if (cart_info.member.destination)
+		{
+			cartridge_part[(*cartridge_part_length)++] = cartridge.destination;
+		}
+		if (cart_info.member.version)
+		{
+			cartridge_part[(*cartridge_part_length)++] = cartridge.version;
+		}
 	}
 }
 
@@ -253,6 +275,8 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 	uint32_t	j = 0;
 	uint32_t	len_pos = 0;
 	vector_t	*intern_, *extern_;
+	uint8_t		cartridge_part[25];
+	uint8_t		cartridge_part_length = 0;
 	
 	intern_ = vector_init(sizeof(intern_symbols_t));
 	intern_->compar = &intern_cmp;
@@ -268,9 +292,13 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 
 	if (code_area->nitems == 0)
 	{
-		fprintf(stderr, "No instructions on the file\n");
+		fprintf(stderr, "No instructions in the file\n");
 		exit(1);
 	}
+
+	set_cartridge_data(cartridge_part, &cartridge_part_length);
+
+
 	for (code_area_t *area = VEC_ELEM_FIRST(code_area_t, code_area); j < code_area->nitems; j++, area++)
 	{
 		if (area->size == 0)
@@ -335,14 +363,19 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 
 	// ecrire dans le fichier .o
 	FILE		*file = fopen(filename, "w+");
-	uint32_t	header_size = 0;
+	uint32_t	header_size = cartridge_part_length;
 	uint32_t	intern_size;
 
-	uint32_t	header[3] =
-	{
-		0, 0, i // header_size, extern_symbol size, code size
-	};
-	fwrite(header, sizeof(uint32_t), 3, file);
+	if (header_size)
+		header_size += 2; 
+	// header_size, cart_info_size, intern_symbol size, code size
+	uint32_t	header[4] = {0, header_size, 0, i};
+
+	fwrite(header, sizeof(uint32_t), 4, file);
+
+	fwrite(&cart_info.all, sizeof(uint16_t), 1, file);
+	if (cartridge_part_length)
+		fwrite(cartridge_part, 1, cartridge_part_length, file);
 
 	j = 0;
 	for (intern_symbols_t *in = (intern_symbols_t *)intern_->data; j < intern_->nitems; j++, in++)
@@ -396,6 +429,7 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 
 	rewind(file);
 	fwrite(&header_size, sizeof(uint32_t), 1, file);
+	fseek(file, sizeof(uint32_t), SEEK_CUR);
 	fwrite(&intern_size, sizeof(uint32_t), 1, file);
 
 	fclose(file);

@@ -98,13 +98,14 @@ static char		*macro_replace(char *s, vector_t *macro)
 		{
 			uint32_t	content_length;
 
-			replacement = 1;
+			replacement++;
 			*s = c;
 			if (*s == '(')
 			{
 				s++;
 				if ((n_params = get_params(&s, param)) == 0xffu)
 					goto __error_macro_params;
+				s++; // *s = ')'...
 				
 				if (n_params != m->argc)
 					goto __error_n_params;
@@ -115,7 +116,6 @@ static char		*macro_replace(char *s, vector_t *macro)
 				strncpy(new + length, start, (name - start));
 				length += (name - start);
 				strncpy(new + length, new_content, content_length);
-				new[length += content_length] = '\0';
 				free(new_content);
 			}
 			else
@@ -131,15 +131,13 @@ static char		*macro_replace(char *s, vector_t *macro)
 		else
 			*s = c;
 	}
-	if (new && start != s)
+	if (start != s)
 	{
 		new = realloc(new, length + (s - start) + 1);
 		strncpy(new + length, start, s - start);
-		new[length + (s - start)] = '\0';
+		new[length += (s - start)] = '\0';
 		free(string_start);
 	}
-	else
-		free(new);
 
 	return (new ? new : string_start);
 

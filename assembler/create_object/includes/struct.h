@@ -3,10 +3,10 @@
 /*                                                              /             */
 /*   struct.h                                         .::    .:/ .      .::   */
 /*                                                 +:+:+   +:    +:  +:+:+    */
-/*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
+/*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
-/*   Created: 2019/08/06 11:38:18 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/30 14:32:06 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Created: 2019/08/31 19:36:13 by fcordon      #+#   ##    ##    #+#       */
+/*   Updated: 2019/08/31 19:56:41 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -90,33 +90,41 @@ typedef struct	extern_symbols_s
 }
 extern_symbols_t;
 
-typedef struct	duplicate_s
+typedef struct	cartridge_info_s
 {
-	uint32_t	program_start:1;
-	uint32_t	game_title:1;
-	uint32_t	game_code:1;
-	uint32_t	cgb_support:1;
-	uint32_t	maker_code:1;
-	uint32_t	sgb_support:1;
-	uint32_t	cart_type:1;
-	uint32_t	rom_size:1;
-	uint32_t	ram_size:1;
-	uint32_t	destination:1;
-	uint32_t	version:1;
+	uint16_t	program_start:1;
+	uint16_t	game_title:1;
+	uint16_t	game_code:1;
+	uint16_t	cgb_support:1;
+	uint16_t	maker_code:1;
+	uint16_t	sgb_support:1;
+	uint16_t	cart_type:1;
+	uint16_t	rom_size:1;
+	uint16_t	ram_size:1;
+	uint16_t	destination:1;
+	uint16_t	version:1;
 }
-duplicate_t;
+cartridge_info_t;
+
+typedef union	cart_info_u
+{
+	uint16_t			all;
+	cartridge_info_t	member;
+}
+cart_info_t;
+
 // assembly files
-typedef struct	cart_info_s
+typedef struct	cart_data_s
 {
 	uint8_t		_0x00c3[2];
-	uint8_t		start_addr[2];
+	uint8_t		program_start[2];
 	// logo position
-	uint8_t		title[11];
+	uint8_t		game_title[11];
 	uint8_t		game_code[4];
 	uint8_t		cgb_support;
 	uint8_t		maker_code[2];
 	uint8_t		sgb_support;
-	uint8_t		game_pack;
+	uint8_t		cart_type;
 	uint8_t		rom_size;
 	uint8_t		ram_size;
 	uint8_t		destination;
@@ -125,7 +133,7 @@ typedef struct	cart_info_s
 	uint8_t		complement_check;
 	uint8_t		check_sum[2];
 }
-cart_info_t;
+cart_data_t;
 
 typedef struct	instruction_s
 {

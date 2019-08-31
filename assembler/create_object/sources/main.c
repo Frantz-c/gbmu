@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/27 14:46:25 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/31 21:41:11 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -27,12 +27,32 @@
 
 uint32_t		g_error;
 uint32_t		g_warning;
-cart_info_t		cartridge;
-duplicate_t		duplicate = {0,0,0,0,0,0,0,0,0,0,0};
+cart_data_t		cartridge = {{0}, {0}, {0}, {0}, 0, {0}, 0, 0, 0, 0, 0, 0, 0, 0, {0}};
+cart_info_t		cart_info;
 char			*included_list[128] = {NULL};
 uint32_t		included_index = 0;
 char			*base;
 uint32_t		base_length;
+uint8_t			inst_length[256] = {
+//	0,1,2,3,4,5,6,7,8,9,A,B,C,D,E,F
+	1,3,1,1,1,1,2,1,3,1,1,1,1,1,2,1,
+	1,3,1,1,1,1,2,1,2,1,1,1,1,1,2,1,
+	2,3,1,1,1,1,2,1,2,1,1,1,1,1,2,1,
+	2,3,1,1,1,1,2,1,2,1,1,1,1,1,2,1,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1,1,3,3,3,1,2,1,1,1,3,2,3,3,2,1,
+	1,1,3,0,3,1,2,1,1,1,3,0,3,0,2,1,
+	2,1,1,0,0,1,2,1,2,1,3,0,0,0,2,1,
+	2,1,1,1,0,1,2,1,2,1,3,1,0,0,2,1
+};
+
 
 void		print_directive_arg_error(char *keyword, data_t *data)
 {
@@ -189,6 +209,7 @@ int		main(int argc, char *argv[])
 	base = get_file_path(argv[1]);
 	g_error = 0;
 	g_warning = 0;
+	cart_info.all = 0;
 
 	// lexe/parse source file (parse.c)
 	if (parse_file(argv[1], code_area, macro, extern_symbol, &local_symbol, 0) == -1)
@@ -196,8 +217,6 @@ int		main(int argc, char *argv[])
 		fprintf(stderr, "cannot open %s\n", argv[1]);
 		return (1);
 	}
-	puts("EXIT");
-	exit(0);
 
 	// check readed data (check_readed_data.c)
 	check_undefined_symbols(local_symbol.label);
@@ -210,7 +229,10 @@ int		main(int argc, char *argv[])
 		fprintf(stderr, "\e[1;31m%u errors\e[0m\n", g_error);
 		goto __free_all;
 	}
-	
+/*	
+	puts("EXIT");
+	exit(0);
+*/
 	// ----------------- (create_object_file.c)
 	create_object_file(code_area, &local_symbol, extern_symbol, argv[0]);
 

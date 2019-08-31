@@ -1,18 +1,40 @@
 /* ************************************************************************** */
 /*                                                          LE - /            */
 /*                                                              /             */
-/*   gbasm_tools.c                                    .::    .:/ .      .::   */
+/*   tools.c                                          .::    .:/ .      .::   */
 /*                                                 +:+:+   +:    +:  +:+:+    */
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/12 23:05:07 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/08 16:36:49 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/28 18:51:41 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
-#include "std_includes.h"
-#include "gbasm_tools.h"
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+/*
+	ascii numbers functions:
+
+	uint8_t		is_numeric(char *string, uint32_t *length); //don't check sign
+	uint8_t		is_numeric_inc(char **string);
+		-> check if an ascii number is valide
+		-> valid syntax:	0xab, 0xAB, 0XAB, 0Xab,
+							171,
+							0253
+	
+	uint32_t	atou_len(char *string, uint32_t *length);
+	int32_t		atoi_len(char *string, uint32_t *length);
+		-> convert ascii number and write length
+	
+	uint32_t	atou_inc(char **string);
+	int32_t		atoi_inc(char **string);
+		-> convert ascii number and increment string
+*/
+
 
 const uint32_t	ascii[256] = {
 	0x40,0,0,0,0,0,0,0,0,2, //0
@@ -46,75 +68,233 @@ const uint8_t	to_lower_char[128] = {
 	120,121,122,123,124,125,126,127
 };
 
+#define LOWER(x)	to_lower_char[((x) & 0x7f)]
+# define is_digit(c)		(ascii[(uint8_t)c] & 0x01)
+# define is_alpha(c)		(ascii[(uint8_t)c] & 0x08)
+# define is_lower_alpha(c)	(ascii[(uint8_t)c] & 0x20)
+# define is_upper_alpha(c)	(ascii[(uint8_t)c] & 0x10)
+# define is_space(c)		(ascii[(uint8_t)c] & 0x02)
+# define is_alnum(c)		(ascii[(uint8_t)c] & 0x09)
+# define is_endl(c)			(ascii[(uint8_t)c] & 0x40)
+# define is_operator(c)		(ascii[(uint8_t)c] & 0x04)
+# define is_parent(c)		(ascii[(uint8_t)c] & 0x80)
+# define is_comment(c)		(c == ';' || c == '#')
+#define FILE_MAX_LENGTH		0xffff
+
 extern void __attribute__((always_inline))		str_to_lower(char *s)
 {
 	while (*s)
 	{
-		*s = to_lower_char[*s & 0x7f];
+		*s = to_lower_char[(*s & 0x7f)];
 		s++;
 	}
 }
 
-extern uint8_t		is_numeric(const char *s, uint32_t *len)
+extern uint8_t		is_numeric_len(const char *s, uint32_t *len)
 {
-	uint8_t		type = 0;
-//	uint8_t		_signed = 0;
 	const char	*p = s;
-/*
-	if (*s == '-') {
-		_signed = 1;
-		s++;
-	}
-*/
-	if (*s == '0' && (s[1] == 'x' || s[1] == 'X') &&
-		(is_digit(s[2]) || (to_lower_char[(uint8_t)s[2]] >= 'a' && to_lower_char[(uint8_t)s[2]] <= 'f')))
+
+	if (*s == '0' && LOWER(s[1]) == 'x')
 	{
-		type = HEXA_NUM;
 		s += 2;
-		while (is_digit(*s) || (to_lower_char[(uint8_t)*s] >= 'a' && to_lower_char[(uint8_t)*s] <= 'f'))
+		if (!is_digit(*s) && (LOWER(*s) < 'a' || LOWER(*s) > 'f'))
+			goto __not_numeric;
+		s++;
+		while (is_digit(*s) || (LOWER(*s) >= 'a' && LOWER(*s) <= 'f'))
 			s++;
 	}
-	else if (*s == '0' && s[1] >= '0' && s[1] <= '7')
+	else if (*s == '0')
 	{
-		type = OCTAL_NUM;
 		s++;
-		do {
+		while (*s >= '0' && *s <= '7')
 			s++;
-		} while (*s >= '0' && *s <= '7');
+	}
+	else if (is_digit(*s))
+	{
+		s++;
+		while (is_digit(*s))
+			s++;
+	}
+	else
+		goto __not_numeric;
+
+	if (len)
+		*len = (uint32_t)(s - p);
+	return (1);
+
+__not_numeric:
+	if (len)
+		*len = 0;
+	return (0);
+}
+
+extern uint8_t	is_numeric_inc(char **s)
+{
+	char	*p;
+
+	if (**s == '0' && LOWER((*s)[1]) == 'x')
+	{
+		p = *s + 2;
+		if (!is_digit(*p) && (LOWER(*p) < 'a' || LOWER(*p) > 'f'))
+			return (0);
+		p++;
+		while (is_digit(*p) || (LOWER(*p) >= 'a' && LOWER(*p) <= 'f'))
+			p++;
+	}
+	else if (**s == '0')
+	{
+		p = *s + 1;
+		while (*p >= '0' && *p <= '7')
+			p++;
+	}
+	else if (is_digit(**s))
+	{
+		p = *s + 1;
+		while (is_digit(*p))
+			p++;
+	}
+	else
+		return (0);
+
+	*s = p;
+	return (1);
+}
+
+extern uint32_t	atou_len(const char *s, uint32_t *len)
+{
+	const char	*p = s;
+	uint32_t	n;
+
+	if (*s == '0' && LOWER(s[1]) == 'x')
+	{
+		s += 2;
 		if (is_digit(*s))
-			goto __decimal;
-		if (to_lower_char[(uint8_t)*s] == 'h') {
-			type = HEXA_NUM;
+			n = *s - '0';
+		else if (LOWER(*s) >= 'a' && LOWER(*s) <= 'f')
+			n = LOWER(*s) - 87;
+		else
+			goto __ret_0;
+		while (1)
+		{
 			s++;
+			if (is_digit(*s))
+				n = (n << 4) | (*s - '0');
+			else if (LOWER(*s) >= 'a' && LOWER(*s) <= 'f')
+				n = (n << 4) | (LOWER(*s) - 87) ;
+			else
+				break;
+		}
+	}
+	else if (*s == '0')
+	{
+		if (*s >= '0' && *s <= '7')
+			n = *s - '0';
+		else
+			goto __ret_0;
+		while (1)
+		{
+			s++;
+			if (*s >= '0' && *s <= '7')
+				n = (n << 3) | (*s - '0');
+			else
+				break;
 		}
 	}
 	else if (is_digit(*s))
 	{
-__decimal:
-		type = DECIMAL_NUM;
-		s++;
-		while (is_digit(*s)) s++;
-		if ((*s >= 'a' && *s <= 'f') || (*s >= 'A' && *s <= 'F') || *s == 'h' || *s == 'H')
+		if (is_digit(*s))
+			n = *s - '0';
+		else
+			goto __ret_0;
+		while (1)
 		{
-		__hexadecimal:
-			type = HEXA_NUM;
-			while (is_digit(*s) || (LOWER(*s) >= 'a' && LOWER(*s) <= 'f')) s++;
-			if (LOWER(*s) == 'h') s++;
+			s++;
+			if (is_digit(*s))
+				n = (n * 10) + (*s - '0');
 			else
-			{
-				if (len) *len = 0;
-				return (0);
-			}
+				break;
 		}
 	}
-	else if ((*s >= 'a' && *s <= 'f') || (*s >= 'A' && *s <= 'F'))
-	{
-		goto __hexadecimal;
-	}
+	else
+		goto __ret_0;
 
-	if (len) *len = (uint32_t)(s - p);
-	return (type);
+	if (len)
+		*len = (uint32_t)(s - p);
+	return (n);
+
+__ret_0:
+	if (len)
+		*len = 0;
+	return (0);
 }
+
+extern uint32_t	atou_inc(char **s)
+{
+	char	*p;
+	uint32_t	n;
+
+	if (**s == '0' && LOWER((*s)[1]) == 'x')
+	{
+		p = *s + 2;
+		if (is_digit(*p))
+			n = *p - '0';
+		else if (LOWER(*p) >= 'a' && LOWER(*p) <= 'f')
+			n = LOWER(*p) - 87;
+		else
+			goto __ret_0;
+		while (1)
+		{
+			p++;
+			if (is_digit(*p))
+				n = (n << 4) | (*p - '0');
+			else if (LOWER(*p) >= 'a' && LOWER(*p) <= 'f')
+				n = (n << 4) | (LOWER(*p) - 87) ;
+			else
+				break;
+		}
+	}
+	else if (**s == '0')
+	{
+		if (**s >= '0' && **s <= '7')
+			n = **s - '0';
+		else
+			goto __ret_0;
+		p = *s + 1;
+		while (1)
+		{
+			if (*p >= '0' && *p <= '7')
+				n = (n << 3) | (*p - '0');
+			else
+				break;
+			p++;
+		}
+	}
+	else if (is_digit(**s))
+	{
+		if (is_digit(**s))
+			n = **s - '0';
+		else
+			goto __ret_0;
+		p = *s + 1;
+		while (1)
+		{
+			if (is_digit(*p))
+				n = (n * 10) + (*p - '0');
+			else
+				break;
+			p++;
+		}
+	}
+	else
+		goto __ret_0;
+
+	*s = p;
+	return (n);
+
+__ret_0:
+	return (0);
+}
+
 
 extern uint32_t		var_len(const char *s)
 {
@@ -139,7 +319,7 @@ extern uint32_t		alpha_len(const char *s)
 	while (is_alpha(*p)) p++;
 	return ((uint32_t)(p - s));
 }
-
+/*
 static char __attribute__((always_inline))		*left_trim(char *s, int32_t *type)
 {
 	while (*s == ' ' || *s == '\t')
@@ -168,15 +348,8 @@ static char __attribute__((always_inline))		*left_trim(char *s, int32_t *type)
 	}
 	return (s);
 }
-/*
-static uint32_t __attribute__((always_inline))	get_base_value(char c)
-{
-	if (LOWER(c) >= 'a' && LOWER(c) <= 'f')
-		return (c - 87);
-	return (c - '0');
-}
-*/
-static char		*ft_strtoi(char *s, uint32_t *value, int32_t type)
+
+static const char		*ft_strtoi(const char *s, uint32_t *value, int32_t type)
 {
 	uint32_t	n = 0;
 
@@ -217,7 +390,7 @@ static char		*ft_strtoi(char *s, uint32_t *value, int32_t type)
 	return (s);
 }
 
-static uint32_t		ft_strtoi_decimal(char **s)
+static uint32_t		ft_strtoi_decimal(const char **s)
 {
 	uint32_t	n = 0;
 
@@ -232,7 +405,7 @@ static uint32_t		ft_strtoi_decimal(char **s)
 	return (n);
 }
 
-static uint32_t		ft_strtoi_octal(char **s)
+static uint32_t		ft_strtoi_octal(const char **s)
 {
 	uint32_t	n = 0;
 
@@ -247,7 +420,7 @@ static uint32_t		ft_strtoi_octal(char **s)
 	return (n);
 }
 
-static uint32_t		ft_strtoi_hexa(char **s, uint8_t prefix)
+static uint32_t		ft_strtoi_hexa(const char **s, uint8_t prefix)
 {
 	uint32_t	n = 0;
 
@@ -268,7 +441,7 @@ static uint32_t		ft_strtoi_hexa(char **s, uint8_t prefix)
 	return (n);
 }
 
-static uint32_t		ft_strtoi_binary(char **s, uint8_t prefix)
+static uint32_t		ft_strtoi_binary(const char **s, uint8_t prefix)
 {
 	uint32_t	n = 0;
 
@@ -291,18 +464,18 @@ static uint32_t		ft_strtoi_binary(char **s, uint8_t prefix)
 
 
 
-extern uint32_t		atou_type(char *s, uint32_t *len, uint8_t type)
+extern uint32_t		atou_type(const char *s, uint32_t *len, uint8_t type)
 {
 	uint32_t	result;
 	uint8_t		prefix = 0;
 //	uint8_t		_signed = 0;
-	char		*p = s;
-/*	
+	const char	*p = s;
+*//*	
 	if (*s == '-') {
 		_signed++;
 		s++;
 	}
-*/
+*//*
 	if (type == HEXA_NUM)
 	{
 		if (*s == '0' && to_lower_char[(uint8_t)(s[1])] == 'x') {
@@ -371,9 +544,10 @@ extern uint32_t		atou_inc_all(char **s, int32_t *err)
 	}
 	if (err)
 		*err = 0;
-	*s = ft_strtoi(*s, &result, type);
+	*s = (char *)ft_strtoi(*s, &result, type);
 	return (result);
 }
+*/
 /*
 extern void		*get_file_contents(const char *path, uint32_t *length)
 {
@@ -464,4 +638,34 @@ extern void		*get_file_contents(const char *path, uint32_t *length)
 	}
 	fclose(f);
 	return (content);
+}
+
+int main(int argc, char *argv[])
+{
+	uint32_t	len;
+	uint32_t	ret;
+	char		*p;
+
+	if (argc < 2)
+		return (1);
+
+	argv++;
+	while (*argv)
+	{
+		ret = is_numeric_len(argv[0], &len);
+		printf("is_numeric(\"%s\") = %u (len = %u)\n", argv[0], ret, len);
+
+		p = argv[0];
+		ret = is_numeric_inc(&p);
+		printf("is_numeric_inc(\"%s\") = %u (string = \"%s\")\n", argv[0], ret, p);
+
+		ret = atou_len(argv[0], &len);
+		printf("atou_len(\"%s\") = %u (len = %u)\n", argv[0], ret, len);
+
+		p = argv[0];
+		ret = atou_inc(&p);
+		printf("atou_inc(\"%s\") = %u (string = \"%s\")\n", argv[0], ret, p);
+		argv++;
+	}
+	return (0);
 }

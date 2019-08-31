@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/10 18:47:38 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/26 19:20:54 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/08/31 21:19:26 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -25,10 +25,10 @@ extern uint32_t				g_error;
 extern uint32_t				g_warning;
 
 // cartridge data
-extern cart_info_t			cartridge;
+extern cart_data_t			cartridge;
 
 // verify if multiple access to a catrtidge_info member
-extern duplicate_t			duplicate;
+extern cart_info_t			cart_info;
 
 // automatique double include protection
 extern char					*included_list[128];
@@ -38,5 +38,6 @@ extern uint32_t				included_index;
 extern char					*base;
 extern uint32_t				base_length;
 
+extern uint8_t				inst_length[256];
 
 #endif

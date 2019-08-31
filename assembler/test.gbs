@@ -1,3 +1,4 @@
 %define __42__					42
-%define PLUS_1(n)				n + 1
-%define _42_PLUS_N_PLUS_1(n)	__42__ + PLUS_1(n)
+%define PLUS_1(n)				n    +		 1
+%define __2__					2
+%define _42_PLUS_N_PLUS_1(n)	__42__ + (PLUS_1(n)) << __2__
