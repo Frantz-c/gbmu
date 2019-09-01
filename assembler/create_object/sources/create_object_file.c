@@ -378,13 +378,14 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 		fwrite(cartridge_part, 1, cartridge_part_length, file);
 
 	j = 0;
+	intern_size = 0;
 	for (intern_symbols_t *in = (intern_symbols_t *)intern_->data; j < intern_->nitems; j++, in++)
 	{
 		uint32_t	len = strlen((const char*)in->name) + 1;
 
 		fwrite(in->name, 1, len, file);
 		fwrite(&in->type, sizeof(uint32_t), 1, file);
-		header_size += len + sizeof(uint32_t);
+		intern_size += len + sizeof(uint32_t);
 
 			printf("write: intern symbol \"%s\" (%u) : ", in->name, in->type);
 		if (in->type == VAR)
@@ -394,24 +395,24 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 			len = strlen((const char*)in->blockname) + 1;
 			fwrite(in->blockname, 1, len, file);
 			fwrite(&in->data2, sizeof(uint32_t), 1, file);
-			header_size += (sizeof(uint32_t) * (2 + in->data1)) + len;
+			intern_size += (sizeof(uint32_t) * (2 + in->data1)) + len;
 				printf("quantity = %u, ..., block = \"%s\", size = %u\n", in->data1, in->blockname, in->data2);
 		}
 		else if (in->type == LABEL)
 		{
 			fwrite(&in->data1, sizeof(uint32_t), 1, file);
-			header_size += sizeof(uint32_t);
+			intern_size += sizeof(uint32_t);
 				printf("addr = 0x%x\n", in->data1);
 		}
 		else //memblock
 		{
 			fwrite(&in->data1, sizeof(uint32_t), 1, file);
 			fwrite(&in->data2, sizeof(uint32_t), 1, file);
-			header_size += (sizeof(uint32_t) * 2);
+			intern_size += (sizeof(uint32_t) * 2);
 				printf("start = 0x%x, end = 0x%x\n", in->data1, in->data2);
 		}
 	}
-	intern_size = header_size;
+	header_size += intern_size;
 
 	j = 0;
 	for (extern_symbols_t *ext = (extern_symbols_t *)extern_->data; j < extern_->nitems; j++, ext++)

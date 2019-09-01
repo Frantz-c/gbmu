@@ -27,13 +27,13 @@
 
 uint32_t		g_error;
 uint32_t		g_warning;
-cart_data_t		cartridge = {{0}, {0}, {0}, {0}, 0, {0}, 0, 0, 0, 0, 0, 0, 0, 0, {0}};
+cart_data_t		cartridge = {{0},{0},{0},{0},0,{0},0,0,0,0,0,0,0,0,{0}};
 cart_info_t		cart_info;
 char			*included_list[128] = {NULL};
 uint32_t		included_index = 0;
 char			*base;
 uint32_t		base_length;
-uint8_t			inst_length[256] = {
+const uint8_t	inst_length[256] = {
 //	0,1,2,3,4,5,6,7,8,9,A,B,C,D,E,F
 	1,3,1,1,1,1,2,1,3,1,1,1,1,1,2,1,
 	1,3,1,1,1,1,2,1,2,1,1,1,1,1,2,1,
