@@ -6,3 +6,4 @@
 # include <ctype.h>
 # include "vector.h"
 # include "struct.h"
+# include "global.h"

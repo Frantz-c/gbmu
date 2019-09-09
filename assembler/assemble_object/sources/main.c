@@ -6,12 +6,16 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/31 20:42:08 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/09 20:22:44 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
 #include "std_includes.h"
+#include "assign_addr_to_var.h"
+#include "get_symbols_and_cartridge_info.h"
+#include "all_extern_symbols_exist.h"
+#include "callback.h"
 
 uint16_t	cart_info = 0;
 cart_data_t	cartridge = {{0x0, 0xC3},{0},{0},{0},0,{0},0,0,0,0,0,0x33,0,0,{0}};
@@ -64,38 +68,7 @@ uint8_t	get_complement_check(void)
 	total += 0x19u;
 	return ((uint8_t)(0x100u - total));
 }
-
-int			all_code_cmp(const void *a, const void *b)
-{
-	register all_code_t	*aa = (all_code_t *)a;
-	register all_code_t	*bb = (all_code_t *)b;
-
-	if (aa->start > bb->start)
-		return (1);
-	else if (aa->start < bb->start)
-		return (-1);
-	return (0);
-}
-
-int			all_code_search(const void *b, const void *a)
-{
-	register all_code_t	*aa = (all_code_t *)a;
-	register uint32_t	bb = *(uint32_t *)b;
-
-	if (aa->start > bb)
-		return (1);
-	if (aa->start < bb)
-		return (-1);
-	return (0);
-}
-
-void		all_code_destroy(void *a)
-{
-	register all_code_t	*aa = (all_code_t *)a;
-
-	free(aa->code);
-}
-
+/*
 int			all_ext_sym_cmp(const void *a, const void *b)
 {
 	register all_ext_sym_t	*aa = (all_ext_sym_t *)a;
@@ -155,23 +128,7 @@ void		all_sym_destroy(void *a)
 		free(aa->var_data);
 	}
 }
-
-int			memblock2_cmp(const void *a, const void *b)
-{
-	register memblock2_t	*aa = (memblock2_t *)a;
-	register memblock2_t	*bb = (memblock2_t *)b;
-
-	return (strcmp(aa->name, bb->name));
-}
-
-int			memblock2_search(const void *b, const void *a)
-{
-	register memblock2_t	*aa = (memblock2_t *)a;
-	register char			*bb = *(char **)b;
-
-	printf("\e[0;33msearch\e[0m(%s, %s)\n", aa->name, bb);
-	return (strcmp(aa->name, bb));
-}
+*/
 
 const char	*get_type_str(uint32_t type)
 {
@@ -180,446 +137,18 @@ const char	*get_type_str(uint32_t type)
 	if (type == VAR)
 		return ("variable");
 	if (type == MEMBLOCK)
-		return ("memblock");
+		return ("block");
 	return ("unknown");
 }
 
-int		add_intern_symbols_bin(vector_t *sym, char *buf, uint32_t len, uint32_t file_number)
-{
-	all_sym_t		tmp;
-
-	for (uint32_t i = 0; i < len; )
-	{
-		register char	*name;
-		
-		name = buf + i;
-		while (buf[i]) i++;
-		tmp.name = strndup(name, i);
-		i++;
-		printf("INTERN SYMBOL FOUND = %s\n", tmp.name);
-
-		memcpy(&tmp.type, (buf + i), sizeof(uint32_t));
-		i += sizeof(uint32_t);
-
-		switch (tmp.type)
-		{
-			case LABEL:
-			{
-//				tmp.data1 = *(uint32_t*)(buf + i);
-				memcpy(&tmp.data1, buf + i, sizeof(uint32_t));
-				i += sizeof(uint32_t);
-				tmp.data2 = 0;
-				tmp.var_data = NULL;
-				if (vector_search(sym, (void*)&tmp.name) != -1)
-				{
-					free(tmp.name);
-					goto __loop_end;
-				}
-				break;
-			}
-			case VAR:
-			{
-				var_data_t	*var_data = malloc(sizeof(var_data_t));
-
-//				var_data->quantity = *(uint32_t *)(buf + i);
-				memcpy(&var_data->quantity, buf + i, sizeof(uint32_t));
-				i += sizeof(uint32_t);
-				var_data->pos = malloc(sizeof(uint32_t) * var_data->quantity);
-				memcpy(var_data->pos, buf + i, var_data->quantity * sizeof(uint32_t));
-				i += (sizeof(uint32_t) * var_data->quantity);
-				name = buf + i;
-				while (buf[i]) i++;
-				var_data->block = strndup(name, i);
-				i++;
-				var_data->file_number = file_number;
-				var_data->next = NULL;
-
-//				tmp.data2 = *(uint32_t*)(buf + i);
-				memcpy(&tmp.data2, buf + i, sizeof(uint32_t));
-				i += sizeof(uint32_t);
-
-				tmp.data1 = 0;	// addr
-				tmp.var_data = var_data;
-
-				ssize_t	index;
-				if ((index = vector_search(sym, (void*)&tmp.name)) != -1)
-				{
-					register all_sym_t	*p = VEC_ELEM(all_sym_t, sym, index);
-
-					if (strcmp(p->name, tmp.name) != 0 || p->type != tmp.type
-							|| p->data2 != tmp.data2 || strcmp(p->var_data->block, tmp.var_data->block) != 0)
-					{
-						g_error++;
-						fprintf(stderr, "duplicate symbol %s (file %u, %u)\n", p->name, file_number, p->var_data->file_number);
-
-						free(tmp.var_data->block);
-						free(tmp.var_data->pos);
-						free(tmp.var_data);
-					}
-					free(tmp.name);
-					
-					//push var_data
-					
-					register var_data_t *v = p->var_data;
-					for (; v->next; v = v->next);
-					v->next = var_data;
-
-					goto __loop_end;
-				}
-				break;
-			}
-			case MEMBLOCK:
-			{
-				tmp.data1 = *(uint32_t*)(buf + i);
-				i += sizeof(uint32_t);
-
-				tmp.data2 = *(uint32_t*)(buf + i);
-				i += sizeof(uint32_t);
-
-				tmp.var_data = NULL;
-
-				ssize_t	index;
-				if ((index = vector_search(sym, (void*)&tmp.name)) != -1)
-				{
-					register all_sym_t	*p = VEC_ELEM(all_sym_t, sym, index);
-
-					if (strcmp(p->name, tmp.name) != 0 || p->type != tmp.type
-							|| p->data2 != tmp.data2 || memcmp(&p->var_data, &tmp.var_data, sizeof(void*)) != 0)
-					{
-						g_error++;
-						fprintf(stderr, "duplicate symbol %s (file %u, %u)\n", p->name, file_number, p->var_data->file_number);
-					}
-					free(tmp.name);
-					goto __loop_end;
-				}
-				break;
-			}
-			default:
-			{
-				puts(">>>>> UNKNOWN TYPE <<<<<");
-				return (-1);
-			}
-		}
-
-		if (sym->nitems == 0)
-			vector_push(sym, (void*)&tmp);
-		else
-			VEC_SORTED_INSERT(sym, tmp.name, tmp);
-__loop_end:
-		continue;
-	}
-	return (0);
-}
-
-int		add_extern_symbols_bin(vector_t *sym, char *buf, uint32_t len, uint32_t file_number)
-{
-	all_ext_sym_t		tmp;
-
-	for (uint32_t i = 0; i < len; )
-	{
-		register char	*name;
-		
-		name = buf + i;
-		while (buf[i]) i++;
-		tmp.name = strndup(name, i);
-		i++;
-		printf("EXTERN SYMBOL FOUND = %s\n", tmp.name);
-
-//		tmp.type = *(uint32_t*)(buf + i);
-		memcpy(&tmp.type, buf + i, sizeof(uint32_t));
-		i += sizeof(uint32_t);
-
-		if ((tmp.type & 0xfu) != 1) //tmp.type != VAR && tmp.type != LABEL && tmp.type != VAR_OR_LABEL)
-		{
-			printf("symbol criminel ==> \"%s\"\n", tmp.name);
-			return (-1);
-		}
-
-//		tmp.quantity = *(uint32_t*)(buf + i);
-		memcpy(&tmp.quantity, buf + i, sizeof(uint32_t));
-		i += sizeof(uint32_t);
-
-		tmp.pos = malloc(sizeof(uint32_t) * tmp.quantity);
-		memcpy(tmp.pos, buf + i, tmp.quantity * sizeof(uint32_t));
-		i += (sizeof(uint32_t) * tmp.quantity);
-
-		tmp.file_number = file_number;
-
-		if (sym->nitems == 0)
-			vector_push(sym, (void*)&tmp);
-		else
-			VEC_SORTED_INSERT(sym, tmp.name, tmp);
-	}
-	return (0);
-}
-
-
-void	get_cartridge_info(uint8_t *buf)
-{
-	uint16_t	info;
-	uint8_t		cart_type = 0;
-
-	memcpy(&info, buf, 2);
-	buf += 2;
-
-/*
-	c = a & b
-	c = c ^ b
-	a != c : error
-
-	a = cart_info;
-	b = info;
-*/
-	{
-		register uint16_t	c;
-
-		c = info & cart_info;
-		c = c ^ info;
-		if (c != cart_info)
-			goto __multiple_declaration;
-	}
-
-	if (info & PROGRAM_START)
-	{
-		memcpy(cartridge.program_start, buf, 2);
-		buf += 2;
-	}
-	if (info & GAME_TITLE)
-	{
-		memcpy(cartridge.game_title, buf, 11);
-		buf += 11;
-	}
-	if (info & GAME_CODE)
-	{
-		memcpy(cartridge.game_code, buf, 4);
-		buf += 4;
-	}
-	if (info & CGB_SUPPORT)
-	{
-		cartridge.cgb_support = *(buf++);
-	}
-	if (info & MAKER_CODE)
-	{
-		memcpy(cartridge.game_code, buf, 2);
-		buf += 2;
-	}
-	if (info & SGB_SUPPORT)
-	{
-		cartridge.sgb_support = *(buf++);
-	}
-	if (info & CART_TYPE)
-	{
-		cartridge.cart_type = *(buf++);
-	}
-	if (info & ROM_SIZE)
-	{
-		cartridge.rom_size = *(buf++);
-	}
-	if (info & RAM_SIZE)
-	{
-		cartridge.ram_size = *(buf++);
-	}
-	if (info & DESTINATION)
-	{
-		cartridge.destination = *(buf++);
-	}
-	if (info & VERSION)
-	{
-		cartridge.version = *(buf++);
-	}
-	return;
-
-	__multiple_declaration:
-	if ((info & PROGRAM_START) && (cart_info & PROGRAM_START))
-		fprintf(stderr, "duplicate program_start\n");
-	if ((info & GAME_TITLE) && (cart_info & GAME_TITLE))
-		fprintf(stderr, "duplicate game_title\n");
-	if ((info & GAME_CODE) && (cart_info & GAME_CODE))
-		fprintf(stderr, "duplicate game_code\n");
-	if ((info & CGB_SUPPORT) && (cart_info & CGB_SUPPORT))
-		fprintf(stderr, "duplicate cgb_support\n");
-	if ((info & MAKER_CODE) && (cart_info & MAKER_CODE))
-		fprintf(stderr, "duplicate cart_info\n");
-	if ((info & SGB_SUPPORT) && (cart_info & SGB_SUPPORT))
-		fprintf(stderr, "duplicate sgb_support\n");
-	if ((info & CART_TYPE) && (cart_info & CART_TYPE))
-		fprintf(stderr, "duplicate cart_type\n");
-	if ((info & ROM_SIZE) && (cart_info & ROM_SIZE))
-		fprintf(stderr, "duplicate rom_size\n");
-	if ((info & RAM_SIZE) && (cart_info & RAM_SIZE))
-		fprintf(stderr, "duplicate ram_size\n");
-	if ((info & DESTINATION) && (cart_info & DESTINATION))
-		fprintf(stderr, "duplicate destination\n");
-	if ((info & VERSION) && (cart_info & VERSION))
-		fprintf(stderr, "duplicate version\n");
-}
-
-/*
-**	
-**
-*/
-void	get_symbols_and_cartridge_info(const char *filename, vector_t *sym, vector_t *ext_sym, uint32_t file_number)
-{
-	tmp_header_t	header;
-	FILE			*file;
-	char			*buf = NULL;
-
-	if ((file = fopen(filename, "r")) == NULL)
-	{
-		fprintf(stderr, "cannot open `%s` file\n", filename);
-		g_error++;
-		return;
-	}
-
-	if (fread(&header, sizeof(tmp_header_t), 1, file) != 1)
-		goto __file_error;
-
-	if (header.header_length < header.intern_symbols_length + header.cart_info_length)
-		goto __file_error;
-	
-	if (header.cart_info_length)
-	{
-		buf = malloc(header.cart_info_length);
-		if (fread(buf, 1, header.cart_info_length, file) != header.cart_info_length)
-			goto __cart_info_len_error;
-		get_cartridge_info(buf);
-	}
-	if (header.intern_symbols_length != 0)
-	{
-		if (header.intern_symbols_length > header.cart_info_length)
-			buf = malloc(header.intern_symbols_length);
-		if (fread(buf, 1, header.intern_symbols_length, file) != header.intern_symbols_length)
-			goto __intern_symbols_len_error;
-		if (add_intern_symbols(sym, buf, header.intern_symbols_length, file_number) == -1)
-			goto __file_error;
-	}
-
-
-	register uint32_t	extern_length = 
-		header.header_length - (header.intern_symbols_length + header.cart_info_length);
-
-	if (extern_length != 0)
-	{
-		if (buf == NULL)
-			buf = malloc(extern_length);
-		else if (header.intern_symbols_length < extern_length)
-			buf = realloc(buf, extern_length);
-
-		if (fread(buf, 1, extern_length, file) != extern_length)
-			goto __extern_symbols_len_error;
-		if (add_extern_symbols_bin(ext_sym, buf, extern_length, file_number) == -1)
-			goto __file_error;
-	}
-
-	free(buf);
-	fclose(file);
-	return;
-
-__cart_info_length_error:
-__intern_symbols_len_error:
-__extern_symbols_len_error:
-__file_error:
-	fprintf(stderr, "object file not well formated\n");
-	g_error++;
-	free(buf);
-	fclose(file);
-	exit(1);
-}
-
-void		all_extern_symbols_exist(vector_t *sym, vector_t *ext_sym, char *file[])
-{
-	register all_ext_sym_t	*elem = VEC_ELEM_FIRST(all_ext_sym_t, ext_sym);
-
-	for (uint32_t i = 0; i < ext_sym->nitems; i++, elem++)
-	{
-		if (vector_search(sym, (void*)&elem->name) == -1)
-		{
-			g_error++;
-			fprintf(stderr, "assembler: undefined symbol %s (called in file %s)\n", elem->name, file[elem->file_number]);
-		}
-	}
-}
-
-void		assign_var_addr(vector_t *sym)
-{
-	vector_t	*memblock;
-
-	memblock = vector_init(sizeof(memblock2_t));
-	memblock->search = &memblock2_search;
-	memblock->compar = &memblock2_cmp;
-
-	// add all memory blocks
-	{
-		register all_sym_t	*elem = VEC_ELEM_FIRST(all_sym_t, sym);
-
-		for (uint32_t i = 0; i < sym->nitems; i++, elem++)
-		{
-
-			if (elem->type == MEMBLOCK)
-			{
-				printf("memblock found ! (%s)\n", elem->name);
-				memblock2_t	new = {elem->data1, elem->data2, elem->data2 - elem->data1, 0, elem->name};
-				if (memblock->nitems == 0)
-					vector_push(memblock, (void*)&new);
-				else
-					VEC_SORTED_INSERT(memblock, elem->name, new);
-			}
-
-		}
-	}
-
-	// add var in blocks
-	{
-		register all_sym_t	*elem = VEC_ELEM_FIRST(all_sym_t, sym);
-
-		for (uint32_t i = 0; i < sym->nitems; i++, elem++)
-		{
-			register ssize_t	index;
-
-			if (elem->type == VAR)
-			{
-				printf("search variable %s in all memory blocks\n", elem->var_data->block);
-				if ((index = vector_search(memblock, (void*)&elem->var_data->block)) != -1)
-				{
-					register memblock2_t	*block = VEC_ELEM(memblock2_t, memblock, index);
-
-					if (block->space < elem->data2)
-					{
-						fprintf(stderr, "too few space in %s memory block for variable %s\n", block->name, elem->name);
-						g_error++;
-					}
-					else
-					{
-						printf("variable %s found !\n", elem->name);
-						elem->data1 = block->end - block->space;
-						block->space -= elem->data2;
-					}
-				}
-			}
-			
-		}
-	}
-
-	// print remaind space in memblocks
-	for (uint32_t i = 0; i < memblock->nitems; i++)
-	{
-		register memblock2_t	*block = VEC_ELEM(memblock2_t, memblock, i);
-
-		if (block->space != 0)
-		{
-			fprintf(stderr, "WARNING: %u bytes left in %s memory block\n", block->space, block->name);
-		}
-	}
-
-}
 
 uint8_t	inst_length[256] =
 {
 //	0,1,2,3,4,5,6,7,8,9,A,B,C,D,E,F
 	1,3,1,1,1,1,2,1,3,1,1,1,1,1,2,1,
-	1,3,1,1,1,1,2,1,4,1,1,1,1,1,2,1,
-	4,3,1,1,1,1,2,1,4,1,1,1,1,1,2,1,
-	4,3,1,1,1,1,2,1,4,1,1,1,1,1,2,1,
+	1,3,1,1,1,1,2,1,2,1,1,1,1,1,2,1,
+	2,3,1,1,1,1,2,1,2,1,1,1,1,1,2,1,
+	2,3,1,1,1,1,2,1,2,1,1,1,1,1,2,1,
 	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
 	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
 	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
@@ -634,7 +163,7 @@ uint8_t	inst_length[256] =
 	2,1,1,1,0,1,2,1,2,1,3,1,0,0,2,1
 };
 
-void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code, char *files[])
+void		get_code_with_replacement(loc_symbols_t *loc, vector_t *ext, vector_t *code, char *files[])
 {
 	uint8_t			*buf;
 	FILE			*file;
@@ -647,7 +176,7 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 	{
 		file = fopen(files[i], "r");
 		fread(&header, sizeof(tmp_header_t), 1, file);
-		fseek(file, header.header_length + sizeof(tmp_header_t), SEEK_SET);
+		fseek(file, header.header_length, SEEK_CUR);
 
 		while (fread(&code_start, sizeof(uint32_t), 1, file) == 1)
 		{
@@ -667,67 +196,84 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 			if ((ret = fread(buf, 1, code_length, file)) != code_length)
 			{
 			__error:
-				fprintf(stderr, "erreur chargement du code fichier %s (%u/%u)\n", files[i], ret, code_length);
+				fprintf(stderr, "erreur de chargement du code dans le fichier %s (%u/%u)\n", files[i], ret, code_length);
 				exit(1);
 			}
 		
 			// replace all extern symbols with their value
 	//		k = 0;
 			{
-				register all_ext_sym_t	*elem = VEC_ELEM_FIRST(all_ext_sym_t, ext_sym);
+				register ext_sym_t	*elem = VEC_ELEM_FIRST(ext_sym_t, ext);
 
-				printf("ext_sym->nitems = %zu\n", ext_sym->nitems);
-				for (uint32_t j = 0; j < ext_sym->nitems; j++, elem++)
+				printf("ext->nitems = %zu\n", ext->nitems);
+				for (uint32_t j = 0; j < ext->nitems; j++, elem++)
 				{
 
-					printf("file_num = %u, i = %u\n", elem->file_number, i);
-					if (elem->file_number == i)
+					for (var_data_t *data = elem->data; data; data = data->next)
 					{
-						register ssize_t	index = vector_search(sym, (void*)&elem->name);
-						register all_sym_t	*p = VEC_ELEM(all_sym_t, sym, index);
 
-						for (uint32_t l = 0; l < elem->quantity; l++)
+
+						printf("file_num = %u, i = %u\n", data->file_number, i);
+						if (data->file_number == i)
 						{
-							uint8_t		*inst = buf + elem->pos[l] - 8; // - 8 = - code_header_length
-							uint8_t		symbol_size = inst_length[*inst];
-							
-							printf(">>>> replace at inst 0x%x\n", *inst);
+							register loc_sym_t	*p;
 
-							uint8_t		operation = inst[symbol_size];
-							inst++;
-							uint32_t	value = inst[0] | (inst[1] << 8);
-
-							printf("EXT SYM VALUE : 0x%x %c %u\n", p->data1, operation, value);
-							if (operation == '-')
-								value = p->data1 - value;
-							else if (operation == '+')
-								value = p->data1 + value;
-							else
-								value = p->data1;
-
-							if (symbol_size == 3)
+							if (elem->type == VAR)
 							{
-								if (value > 0xffff)
-									fprintf(stderr, "OVERFLOW inst ????? file ?????\n");
-
-								inst[0] = (uint8_t)value;
-								inst[1] = (uint8_t)(value >> 8);
-								inst[2] = 0xdd;
+								register ssize_t	index = vector_search(loc->var, (void*)&elem->name);
+								p = VEC_ELEM(loc_sym_t, loc->var, index); // sizeof(loc_sym_t) == sizeof(loc_var_t);
 							}
-							else if (symbol_size == 2)
+							else // if (elem->type == LABEL)
 							{
-								if (value > 0xff)
-									fprintf(stderr, "OVERFLOW inst ????? file ?????\n");
-
-								inst[0] = (uint8_t)value;
-								inst[1] = 0xdd;
+								register ssize_t	index = vector_search(loc->label, (void*)&elem->name);
+								p = (loc_sym_t *)VEC_ELEM(loc_label_t, loc->label, index); // sizeof(loc_sym_t) == sizeof(loc_var_t);
 							}
 
+							for (uint32_t l = 0; l < data->quantity; l++)
+							{
+								uint8_t		*inst = buf + data->pos[l] - 8; // - 8 = - code_header_length
+								uint8_t		symbol_size = inst_length[*inst];
+								
+								printf(">>>> replace at inst 0x%x\n", *inst);
+
+								uint8_t		operation = inst[symbol_size];
+								inst++;
+								uint32_t	value = inst[0] | (inst[1] << 8);
+
+								printf("EXT SYM VALUE : 0x%x %c %u\n", p->data1, operation, value);
+								if (operation == '-')
+									value = p->data1 - value;
+								else if (operation == '+')
+									value = p->data1 + value;
+								else
+									value = p->data1;
+
+								if (symbol_size == 3)
+								{
+									if (value > 0xffff)
+										fprintf(stderr, "OVERFLOW inst ????? file ?????\n");
+
+									inst[0] = (uint8_t)value;
+									inst[1] = (uint8_t)(value >> 8);
+									inst[2] = 0xdd;
+								}
+								else if (symbol_size == 2)
+								{
+									if (value > 0xff)
+										fprintf(stderr, "OVERFLOW inst ????? file ?????\n");
+
+									inst[0] = (uint8_t)value;
+									inst[1] = 0xdd;
+								}
+
+							}
 						}
+
 					}
 				}
 			}
 
+			/*
 			// replace all extern symbols with their value
 	//		k = 0;
 			{
@@ -783,6 +329,7 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 					}
 				}
 			}
+			*/
 
 // cut info in code
 		uint8_t		*new_buf = malloc(header.code_length - 8);
@@ -797,11 +344,13 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 			{
 				if ((len == 2 && buf[j] != 0xcbU) || len == 3)
 					inc++;
+				/*
 				else if (len == 4)
 				{
 					inc = 1;
 					len = 2;
 				}
+				*/
 
 				printf("\e[0;45m > \e[0mlen = %hhu\n", len);
 
@@ -810,7 +359,6 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 					new_buf[z++] = buf[j++];
 					if (--len == 0)
 						break;
-				//	j++;
 				}
 				j += inc;
 			}
@@ -827,7 +375,7 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 				}
 				else
 				{
-					puts("\e[0;41;1;37mGROS PROBLEME, ILLEGAL INSTRUCTION EN DEHORS DE .BYTE\e[0m");
+					puts("\e[0;41;1;37mGROS PROBLEME, ILLEGAL INSTRUCTION !!\e[0m");
 				}
 			}
 		}
@@ -964,69 +512,126 @@ void		write_binary(vector_t *code, const char *filename)
 	fclose(file);
 }
 
+static void __attribute__((always_inline))	ext_init(vector_t **ext)
+{
+	(*ext) = vector_init(sizeof(ext_sym_t));
+
+	(*ext)->destroy = &ext_destroy;
+	(*ext)->compar = &loc_ext_compar;
+	(*ext)->search = &loc_ext_search;
+}
+
+static void __attribute__((always_inline))	loc_init(loc_symbols_t *loc)
+{
+	loc->var = vector_init(sizeof(loc_var_t));
+	loc->label = vector_init(sizeof(loc_label_t));
+	loc->block = vector_init(sizeof(loc_block_t));
+
+	loc->var->destroy = &loc_var_destroy;
+	loc->var->compar = &loc_ext_compar;
+	loc->var->search = &loc_ext_search;
+
+	loc->label->destroy = &loc_destroy;
+	loc->label->compar = &loc_ext_compar;
+	loc->label->search = &loc_ext_search;
+
+	loc->block->destroy = &loc_destroy;
+	loc->block->compar = &loc_ext_compar;
+	loc->block->search = &loc_ext_search;
+}
+
+static void __attribute__((always_inline))	code_init(vector_t **code)
+{
+	*code = vector_init(sizeof(all_code_t));
+	(*code)->destroy = &code_destroy;
+	(*code)->compar = &code_compar;
+	(*code)->search = &code_search;
+}
 /*
 	argv = {executable, object, ...}
+
+	idee d'amelioration: separer les variables des blocks et des labels
 */
 int main(int argc, char *argv[])
 {
 	if (argc < 2)
 		exit(1);
 
-	vector_t	*sym = vector_init(sizeof(all_sym_t));
-	vector_t	*ext_sym = vector_init(sizeof(all_ext_sym_t));
-	vector_t	*code = vector_init(sizeof(all_code_t));
+	loc_symbols_t	loc;
+	vector_t		*ext;
+	vector_t		*code;
 	char		*exe = argv[0];
 
-	ext_sym->destroy = &all_ext_sym_destroy;
-	ext_sym->compar = &all_ext_sym_cmp;
-	ext_sym->search = &all_ext_sym_search;
-	sym->destroy = &all_sym_destroy;
-	sym->compar = &all_sym_cmp;
-	sym->search = &all_sym_search;
-	code->destroy = &all_code_destroy;
-	code->compar = &all_code_cmp;
-	code->search = &all_code_search;
+	loc_init(&loc);
+	ext_init(&ext);
+	code_init(&code);
+
 
 	argv++;
 	for (uint32_t i = 0; argv[i]; i++)
-		get_symbols(argv[i], sym, ext_sym, i);
+		get_symbols_and_cartridge_info(argv[i], &loc, ext, i);
 
 
-	all_extern_symbols_exist(sym, ext_sym, argv);
+	all_extern_symbols_exist(&loc, ext, argv);
 	if (g_error)
 		exit(1);
 
-	assign_var_addr(sym);
+	assign_addr_to_var(&loc);
 	if (g_error)
 		exit(2);
 
 	// DEBUG
-	puts("intern symbols");
+	puts("\e[1;34mintern labels:\e[0m");
 	{
-		register all_sym_t	*tmp = VEC_ELEM_FIRST(all_sym_t, sym);
-		for (uint32_t i = 0; i < sym->nitems; i++, tmp++)
+		register loc_label_t	*tmp = VEC_ELEM_FIRST(loc_label_t, loc.label);
+		for (uint32_t i = 0; i < loc.label->nitems; i++, tmp++)
 		{
 			printf(
-				"%s (%s) = 0x%x, 0x%x\n",
-				tmp->name, get_type_str(tmp->type), tmp->data1, tmp->data2
+				"%s ==> addr = 0x%0.4x\n",
+				tmp->name, tmp->value
 			);
 		}
 	}
-	puts("extern symbols");
+	puts("\e[1;34mintern variables:\e[0m");
 	{
-		register all_ext_sym_t	*tmp = VEC_ELEM_FIRST(all_ext_sym_t, ext_sym);
-		for (uint32_t i = 0; i < ext_sym->nitems; i++, tmp++)
+		register loc_var_t	*tmp = VEC_ELEM_FIRST(loc_var_t, loc.var);
+		for (uint32_t i = 0; i < loc.var->nitems; i++, tmp++)
 		{
 			printf(
-				"%s (%s) : quantity 0x%x\n",
-				tmp->name, get_type_str(tmp->type), tmp->quantity
+				"%s ==> addr = 0x%0.4x, size = %u, block = \"%s\"\n",
+				tmp->name, tmp->addr, tmp->size, tmp->blockname
+			);
+		}
+	}
+	puts("\e[1;34mintern blocks:\e[0m");
+	{
+		register loc_block_t	*tmp = VEC_ELEM_FIRST(loc_block_t, loc.block);
+		for (uint32_t i = 0; i < loc.block->nitems; i++, tmp++)
+		{
+			printf(
+				"%s ==> start = 0x%0.4x, end = 0x%0.4x\n",
+				tmp->name, tmp->start, tmp->end
+			);
+		}
+	}
+
+	puts("\e[1;36mextern symbols:\e[0m");
+	{
+		register ext_sym_t	*tmp = VEC_ELEM_FIRST(ext_sym_t, ext);
+		for (uint32_t i = 0; i < ext->nitems; i++, tmp++)
+		{
+			printf(
+				"%s (%s)\n",
+				tmp->name, get_type_str(tmp->type)
 			);
 		}
 	}
 	// END DEBUG
 
 
-	get_code_with_replacement(sym, ext_sym, code, argv);
+	puts("\e[1;32m___EXIT___\e[0m");
+	exit(0);
+	get_code_with_replacement(&loc, ext, code, argv);
 	if (g_error)
 		exit(3);
 
@@ -1034,4 +639,3 @@ int main(int argc, char *argv[])
 
 	return (0);
 }
-

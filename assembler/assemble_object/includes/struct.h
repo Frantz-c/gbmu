@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/06 11:38:18 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/09 09:10:28 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/09 19:25:47 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -26,7 +26,7 @@
 # define ROM_SIZE		0x80
 # define RAM_SIZE		0x100
 # define DESTINATION	0x200
-# define VERISION		0x300
+# define VERSION		0x300
 
 # define NINTENDO_LOGO		"\xCE\xED\x66\x66\xCC\x0D\x00\x0B\x03\x73\x00\x83"\
 							"\x00\x0C\x00\x0D\x00\x08\x11\x1F\x88\x89\x00\x0E"\
@@ -123,7 +123,7 @@ typedef struct	tmp_variable_s
 }
 tmp_variable_t;
 
-typedef struct	memblock2_s
+typedef struct	memblock_s
 {
 	uint32_t	start;
 	uint32_t	end;
@@ -131,47 +131,75 @@ typedef struct	memblock2_s
 	uint32_t	garbage;
 	char		*name;
 }
-memblock2_t;
+memblock_t;
 
 typedef struct	var_data_s
 {
 	uint32_t	quantity;	
 	uint32_t	file_number;
-	char		*block;		
+	//char		*block;		
 	uint32_t	*pos;		
 	struct var_data_s	*next;
 }
 var_data_t;
 
-/*
- *	if extern_symbol: 
- *		- data1 -> quantity
- *		- data2 -> unused
- *		- data	-> pos
- */
-typedef struct	all_ext_sym_s
+typedef struct	ext_sym_s
 {
 	char		*name;
+	var_data_t	*data;
+//	uint32_t	quantity;
 	uint32_t	type;
-	uint32_t	quantity;
-	uint32_t	*pos;
-	uint32_t	file_number;
+	//uint32_t	file_number;
 }
-all_ext_sym_t;
+ext_sym_t;
+
+typedef struct	loc_symbols_s
+{
+	vector_t	*var;
+	vector_t	*block;
+	vector_t	*label;
+}
+loc_symbols_t;
 
 // intern_symbols
-typedef struct	all_sym_s
+typedef struct	loc_sym_s
 {
 	char		*name;
-	uint32_t	type;
+//	uint32_t	type;
 	uint32_t	data1;		// value	if LABEL
 							// addr		if VAR
 							// start	if MEMBLOCK
 	uint32_t	data2;		// size		if VAR
 							// end		if MEMBLOCK
-	var_data_t	*var_data;
+	var_data_t	*data;
+	char		*blockname;
 }
-all_sym_t;
+loc_sym_t;
+
+typedef struct	loc_label_s
+{
+	char		*name;
+	uint32_t	value;
+}
+loc_label_t;
+
+typedef struct	loc_var_s
+{
+	char		*name;
+	uint32_t	addr;
+	uint32_t	size;
+	var_data_t	*data;
+	char		*blockname;
+}
+loc_var_t;
+
+typedef struct	loc_block_s
+{
+	char		*name;
+	uint32_t	start;
+	uint32_t	end;
+}
+loc_block_t;
 
 typedef struct	all_code_s
 {
@@ -207,8 +235,6 @@ typedef struct	extern_symbols_s
 }
 extern_symbols_t;
 
-
-// assembly files
 typedef struct	cart_info_s
 {
 	uint8_t		_0x00c3[2];
@@ -229,6 +255,9 @@ typedef struct	cart_info_s
 	uint8_t		check_sum[2];
 }
 cart_info_t;
+*/
+
+// assembly files
 
 typedef struct	instruction_s
 {
@@ -237,13 +266,13 @@ typedef struct	instruction_s
 }
 instruction_t;
 
+/*
 typedef struct	param_error_s
 {
 	uint32_t	p1;
 	uint32_t	p2;
 }
 param_error_t;
-
 typedef struct	loc_sym_s
 {
 	vector_t	*memblock;
