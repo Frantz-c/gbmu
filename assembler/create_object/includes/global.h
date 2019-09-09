@@ -38,6 +38,6 @@ extern uint32_t				included_index;
 extern char					*base;
 extern uint32_t				base_length;
 
-extern uint8_t				inst_length[256];
+extern const uint8_t		inst_length[256];
 
 #endif

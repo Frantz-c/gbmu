@@ -12,9 +12,20 @@
 /* ************************************************************************** */
 
 #include "vector.h"
-
+/*
 void		*_vector_at_mul(vector_t *vec, size_t index);
 void		*_vector_at_shl(vector_t *vec, size_t index);
+*/
+
+static inline void		*_vector_at_mul(vector_t *vec, size_t index)
+{
+	return (vec->data + (index * vec->elemsize));
+}
+
+static inline void		*_vector_at_shl(vector_t *vec, size_t index)
+{
+	return (vec->data + (index << vec->shift));
+}
 
 vector_t	*vector_init(size_t elemsize)
 {

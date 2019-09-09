@@ -225,6 +225,8 @@ extern uint32_t	calcul_param(char *p, value_t *val, data_t *data, uint8_t param_
 	{
 		while (is_alnum(*p) || *p == '_') p++;
 		val->sign = *p;
+		if (is_endl(*p))
+			return (0);
 
 		if (is_endl(p[1]))
 		{

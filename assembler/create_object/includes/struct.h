@@ -113,7 +113,6 @@ typedef union	cart_info_u
 }
 cart_info_t;
 
-// assembly files
 typedef struct	cart_data_s
 {
 	uint8_t		_0x00c3[2];

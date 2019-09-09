@@ -135,7 +135,7 @@ static void	instruction_replace(char **inst, char **param1, char **param2)	// "l
 						len++;
 						while (is_space(p1[len])) len++;
 						/* suppression de la partie 0xff00+ */
-						p2 = strdup(p2 + len + 1);
+						p2 = strdup(p2 + len);
 						free(*param2);
 						*param2 = p2;
 					}

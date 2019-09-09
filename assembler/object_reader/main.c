@@ -771,12 +771,13 @@ static void	read_internal_symbols(FILE *file, uint32_t size)
 {
 	char		buf[128];
 	uint32_t	tmp;
-	uint32_t	i = 0;
+	uint32_t	i;
 	uint32_t	cur = 0;
 
 	puts("\nlocal symbols");
 	do
 	{
+		i = 0;
 		while (1)
 		{
 			fread(buf + i, 1, 1, file);
@@ -949,10 +950,10 @@ static void	read_code(FILE *file, uint32_t length)
 					if (instl == 1)
 						printf("    %s\n", op[buf[i]]);
 					else if (instl == 2)
-						printf("    %s (value = 0x%hhx, sign = '%c')\n", op[buf[i]], buf[i+1], buf[i+2]);
+						printf("    %s (value = 0x%0.2hhx, sign = '%c')\n", op[buf[i]], buf[i+1], buf[i+2]);
 					else
-						printf("    %s (value = 0x%hhx%hhx, sign = '%c')\n", op[buf[i]], buf[i+2], buf[i+1], buf[i+3]);
-					i += instl;
+						printf("    %s (value = 0x%0.2hhx%0.2hhx, sign = '%c')\n", op[buf[i]], buf[i+2], buf[i+1], buf[i+3]);
+					i += instl + (instl != 1);
 				}
 				else
 				{
@@ -973,7 +974,7 @@ static void	read_code(FILE *file, uint32_t length)
 
 int		main(int argc, char *argv[])
 {
-	uint32_t	header[4];
+	uint32_t	header[4] = {0};
 	FILE		*file;
 	
 	if (argc != 2)

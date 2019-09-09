@@ -13,7 +13,7 @@
 
 .bank		1,	0x1000
 
-.memlock	ascii_block, 0xC500, end=0xC600
+.memlock	ascii_block, 0xC500, 0xC600
 .var1		str_iterator, ascii_block
 .var1		str_size, ascii_block
 

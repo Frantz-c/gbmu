@@ -14,38 +14,44 @@
 #ifndef GBASM_STRUCT_H
 # define GBASM_STRUCT_H
 
-# include "std_includes.h"
+# include "vector.h"
 
-// C_FF00 = (C)
-typedef enum	param_e
-{
-	UNKNOWN,NONE,A,B,C,D,E,F,H,L,AF,BC,DE,HL,SP,_NZ_,_Z_,_NC_,_C_,
-	HLI,HLD,SP_ADDR,HL_ADDR,BC_ADDR,DE_ADDR,AF_ADDR,FF00_C,
-	SP_IMM8,FF00_IMM8,IMM8,ADDR8,IMM16,ADDR16,SYMBOL
-}
-param_t;
+# define PROGRAM_START	0x1
+# define GAME_TITLE		0x2
+# define GAME_CODE		0x4
+# define CGB_SUPPORT	0x8
+# define MAKER_CODE		0x10
+# define SGB_SUPPORT	0x20
+# define CART_TYPE		0x40
+# define ROM_SIZE		0x80
+# define RAM_SIZE		0x100
+# define DESTINATION	0x200
+# define VERISION		0x300
 
-typedef enum	insn_err_e
-{
-	ENONE, MISSING_PARAM, TOO_MANY_PARAMS, INVAL_DST, INVAL_SRC, OVERFLOW
-}
-insn_err_t;
-
-#define NINTENDO_LOGO		"\xCE\xED\x66\x66\xCC\x0D\x00\x0B\x03\x73\x00\x83"\
+# define NINTENDO_LOGO		"\xCE\xED\x66\x66\xCC\x0D\x00\x0B\x03\x73\x00\x83"\
 							"\x00\x0C\x00\x0D\x00\x08\x11\x1F\x88\x89\x00\x0E"\
 							"\xDC\xCC\x6E\xE6\xDD\xDD\xD9\x99\xBB\xBB\x67\x63"\
 							"\x6E\x0E\xEC\xCC\xDD\xDC\x99\x9F\xBB\xB9\x33\x3E"
 
+# define VEC_ELEM(_struct, _var, _index)	((_struct *)((_var)->data + ((_index) * sizeof(_struct))))
+# define VEC_ELEM_LAST(_struct, _var)		((_struct *)((_var)->data + (((_var)->nitems - 1) * sizeof(_struct))))
+# define VEC_ELEM_FIRST(_struct, _var)		((_struct *)((_var)->data))
+
+# define VEC_SORTED_INSERT(_vector, _string, _new)	\
+{\
+	register size_t		vindex = vector_index(_vector, (void*)&_string);\
+	vector_insert(_vector, (void*)&_new, vindex);\
+}
 
 # define STATIC_DEBUG		static
 # define EXTERN_DEBUG		extern
 
 // symbol types
-#define UNUSED			0x0
-#define	VAR_OR_LABEL	0x01
-#define	VAR				0x11
-#define LABEL			0x21
-#define MEMBLOCK		0x02
+# define UNUSED				0x0
+# define	VAR_OR_LABEL	0x01
+# define	VAR				0x11
+# define LABEL				0x21
+# define MEMBLOCK			0x02
 
 #define	NOT_DECLARED	0xffffffffu
 #define BYTE_DIRECTIVE	0xffffff00u
@@ -56,11 +62,49 @@ insn_err_t;
 #define JRC		0x38
 #define JRNC	0x30
 
+typedef struct	cart_data_s
+{
+	uint8_t		_0x00c3[2];
+	uint8_t		program_start[2];
+	// logo position
+	uint8_t		game_title[11];
+	uint8_t		game_code[4];
+	uint8_t		cgb_support;
+	uint8_t		maker_code[2];
+	uint8_t		sgb_support;
+	uint8_t		cart_type;
+	uint8_t		rom_size;
+	uint8_t		ram_size;
+	uint8_t		destination;
+	uint8_t		_0x33;	//0x33
+	uint8_t		version;
+	uint8_t		complement_check;
+	uint8_t		check_sum[2];
+}
+cart_data_t;
+
+typedef struct	cart_info_s
+{
+	uint16_t	program_start:1;
+	uint16_t	game_title:1;
+	uint16_t	game_code:1;
+	uint16_t	cgb_support:1;
+	uint16_t	maker_code:1;
+	uint16_t	sgb_support:1;
+	uint16_t	cart_type:1;
+	uint16_t	rom_size:1;
+	uint16_t	ram_size:1;
+	uint16_t	destination:1;
+	uint16_t	version:1;
+}
+cart_info_t;
+
 
 // final binary generation
 typedef struct	tmp_header_s
 {
 	uint32_t	header_length;
+	uint32_t	cart_info_length;
 	uint32_t	intern_symbols_length;
 	uint32_t	code_length;
 }
@@ -138,6 +182,7 @@ typedef struct	all_code_s
 }
 all_code_t;
 
+/*
 // object files generation
 typedef struct	intern_symbols_s
 {
@@ -291,7 +336,6 @@ struct	data_s
 	char		buf[128];
 };
 
-/*
 struct	error_s
 {
 	uint32_t	error;
@@ -299,7 +343,6 @@ struct	error_s
 	int32_t		type[5];
 	uint32_t	info[5];
 };
-*/
 typedef struct symbol_s		symbol_t;
 typedef struct unkwn_sym_s	unkwn_sym_t;
 typedef struct code_s		code_t;
@@ -309,6 +352,7 @@ typedef struct label_s		label_t;
 typedef struct data_s		data_t;
 typedef struct variable_s	variable_t;
 typedef struct memblock_s	memblock_t;
+*/
 //typedef struct error_s		error_t;
 
 #endif

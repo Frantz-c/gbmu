@@ -25,17 +25,17 @@
 STATIC_DEBUG void			header_print(void)
 {
 	puts("==> cartridge:");
-	printf("start_addr  = 0x%hhx%hhx\n", cartridge.start_addr[1], cartridge.start_addr[0]);
-	printf("title       = \"%.11s\"\n", cartridge.title);
-	printf("game_code   = \"%.4s\"\n", cartridge.game_code);
-	printf("cgb_support = 0x%x\n", cartridge.cgb_support);
-	printf("maker_code  = \"%.2s\"\n", cartridge.maker_code);
-	printf("sgb_support = 0x%x\n", cartridge.sgb_support);
-	printf("game_pack   = 0x%x\n", cartridge.game_pack);
-	printf("rom_size    = 0x%x\n", cartridge.rom_size);
-	printf("ram_size    = 0x%x\n", cartridge.ram_size);
-	printf("destination = 0x%x\n", cartridge.destination);
-	printf("version     = 0x%x\n\n", cartridge.version);
+	printf("program_start = 0x%hhx%hhx\n", cartridge.program_start[1], cartridge.program_start[0]);
+	printf("game_title    = \"%.11s\"\n", cartridge.game_title);
+	printf("game_code     = \"%.4s\"\n", cartridge.game_code);
+	printf("cgb_support   = 0x%x\n", cartridge.cgb_support);
+	printf("maker_code    = \"%.2s\"\n", cartridge.maker_code);
+	printf("sgb_support   = 0x%x\n", cartridge.sgb_support);
+	printf("cart_type     = 0x%x\n", cartridge.cart_type);
+	printf("rom_size      = 0x%x\n", cartridge.rom_size);
+	printf("ram_size      = 0x%x\n", cartridge.ram_size);
+	printf("destination   = 0x%x\n", cartridge.destination);
+	printf("version       = 0x%x\n\n", cartridge.version);
 }
 
 STATIC_DEBUG void			area_print(const void *a)
@@ -235,7 +235,7 @@ __print_error:
 **	refaire le systeme de types
 */
 static __attribute__((always_inline))
-uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t args[4], data_t *data, vector_t *area)
+uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t args[5], data_t *data, vector_t *area)
 {
 	char		*arg_start;
 	uint32_t	length;
@@ -371,7 +371,7 @@ uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t a
 			if (!is_alpha(**s) && **s != '_')
 				args[i].type &= ~(ID_STRING_TYPE);
 
-			while (!is_endl(**s))
+			while (!is_endl(**s) && !is_space(**s) && **s != ',')
 			{
 				if (**s == '\\')
 				{
@@ -395,18 +395,28 @@ uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t a
 		if (is_endl(**s))
 			break;
 		if (i == 4)
-			goto __too_many_arguments;
+			break;
 		if (**s != ',')
 			goto __unexpected_char;
 		(*s)++;
 	}
 	args[i].value = NULL;
+	printf("params = ");
+	for (uint8_t i = 0; args[i].value; i++)
+	{
+		if (args[i].type & STRING_TYPE)
+			printf("\"%s\" ", (char *)args[i].value);
+		else
+			printf("%u ", *(uint32_t *)args[i].value);
+	}
+	printf("\n");
 	return (length);
 
-
+/*
 __too_many_arguments:
 	sprintf(data->buf, "too many arguments");
 	goto __print_error_and_free_all;
+*/
 __signed_not_expected:
 	sprintf(data->buf, "signed numbers forbidden in keywords arguments");
 	goto __print_error_and_free_all;

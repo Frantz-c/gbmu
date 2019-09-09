@@ -13,9 +13,11 @@
 
 #include "std_includes.h"
 
-uint32_t		g_error;
-uint32_t		g_warning;
-cart_info_t		cartridge_info;
+uint16_t	cart_info = 0;
+cart_data_t	cartridge = {{0x0, 0xC3},{0},{0},{0},0,{0},0,0,0,0,0,0x33,0,0,{0}};
+uint32_t	g_error = 0;
+uint32_t	g_warning = 0;
+
 
 void	*get_cartridge_header_code(void)
 {
@@ -23,9 +25,9 @@ void	*get_cartridge_header_code(void)
 
 	buf = malloc(0x50);
 	
-	memcpy(buf, &cartridge_info, 4);
+	memcpy(buf, &cartridge, 4);
 	memcpy(buf + 4, NINTENDO_LOGO, 48);
-	memcpy(buf + 52, &cartridge_info.title, 28);
+	memcpy(buf + 52, &cartridge.game_title, 28);
 
 	return (buf);
 }
@@ -52,7 +54,7 @@ char	*get_object_name(const char *s)
 
 uint8_t	get_complement_check(void)
 {
-	uint8_t	*n = cartridge_info.title;
+	uint8_t	*n = cartridge.game_title;
 	uint8_t total = 0;
 
 	for (uint32_t i = 0; i < 25; i++)
@@ -351,44 +353,150 @@ int		add_extern_symbols_bin(vector_t *sym, char *buf, uint32_t len, uint32_t fil
 	return (0);
 }
 
-void	get_symbols(const char *filename, vector_t *sym, vector_t *ext_sym, uint32_t file_number)
+
+void	get_cartridge_info(uint8_t *buf)
+{
+	uint16_t	info;
+	uint8_t		cart_type = 0;
+
+	memcpy(&info, buf, 2);
+	buf += 2;
+
+/*
+	c = a & b
+	c = c ^ b
+	a != c : error
+
+	a = cart_info;
+	b = info;
+*/
+	{
+		register uint16_t	c;
+
+		c = info & cart_info;
+		c = c ^ info;
+		if (c != cart_info)
+			goto __multiple_declaration;
+	}
+
+	if (info & PROGRAM_START)
+	{
+		memcpy(cartridge.program_start, buf, 2);
+		buf += 2;
+	}
+	if (info & GAME_TITLE)
+	{
+		memcpy(cartridge.game_title, buf, 11);
+		buf += 11;
+	}
+	if (info & GAME_CODE)
+	{
+		memcpy(cartridge.game_code, buf, 4);
+		buf += 4;
+	}
+	if (info & CGB_SUPPORT)
+	{
+		cartridge.cgb_support = *(buf++);
+	}
+	if (info & MAKER_CODE)
+	{
+		memcpy(cartridge.game_code, buf, 2);
+		buf += 2;
+	}
+	if (info & SGB_SUPPORT)
+	{
+		cartridge.sgb_support = *(buf++);
+	}
+	if (info & CART_TYPE)
+	{
+		cartridge.cart_type = *(buf++);
+	}
+	if (info & ROM_SIZE)
+	{
+		cartridge.rom_size = *(buf++);
+	}
+	if (info & RAM_SIZE)
+	{
+		cartridge.ram_size = *(buf++);
+	}
+	if (info & DESTINATION)
+	{
+		cartridge.destination = *(buf++);
+	}
+	if (info & VERSION)
+	{
+		cartridge.version = *(buf++);
+	}
+	return;
+
+	__multiple_declaration:
+	if ((info & PROGRAM_START) && (cart_info & PROGRAM_START))
+		fprintf(stderr, "duplicate program_start\n");
+	if ((info & GAME_TITLE) && (cart_info & GAME_TITLE))
+		fprintf(stderr, "duplicate game_title\n");
+	if ((info & GAME_CODE) && (cart_info & GAME_CODE))
+		fprintf(stderr, "duplicate game_code\n");
+	if ((info & CGB_SUPPORT) && (cart_info & CGB_SUPPORT))
+		fprintf(stderr, "duplicate cgb_support\n");
+	if ((info & MAKER_CODE) && (cart_info & MAKER_CODE))
+		fprintf(stderr, "duplicate cart_info\n");
+	if ((info & SGB_SUPPORT) && (cart_info & SGB_SUPPORT))
+		fprintf(stderr, "duplicate sgb_support\n");
+	if ((info & CART_TYPE) && (cart_info & CART_TYPE))
+		fprintf(stderr, "duplicate cart_type\n");
+	if ((info & ROM_SIZE) && (cart_info & ROM_SIZE))
+		fprintf(stderr, "duplicate rom_size\n");
+	if ((info & RAM_SIZE) && (cart_info & RAM_SIZE))
+		fprintf(stderr, "duplicate ram_size\n");
+	if ((info & DESTINATION) && (cart_info & DESTINATION))
+		fprintf(stderr, "duplicate destination\n");
+	if ((info & VERSION) && (cart_info & VERSION))
+		fprintf(stderr, "duplicate version\n");
+}
+
+/*
+**	
+**
+*/
+void	get_symbols_and_cartridge_info(const char *filename, vector_t *sym, vector_t *ext_sym, uint32_t file_number)
 {
 	tmp_header_t	header;
 	FILE			*file;
-	char			*buf;
+	char			*buf = NULL;
 
 	if ((file = fopen(filename, "r")) == NULL)
 	{
-		fprintf(stderr, "file %s does not exist\n", filename);
-		exit(1);
+		fprintf(stderr, "cannot open `%s` file\n", filename);
+		g_error++;
+		return;
 	}
 
 	if (fread(&header, sizeof(tmp_header_t), 1, file) != 1)
 		goto __file_error;
 
-	printf("{%u, %u, %u}\n", header.header_length, header.intern_symbols_length, header.code_length);
-	if (header.header_length < header.intern_symbols_length)
+	if (header.header_length < header.intern_symbols_length + header.cart_info_length)
 		goto __file_error;
 	
+	if (header.cart_info_length)
+	{
+		buf = malloc(header.cart_info_length);
+		if (fread(buf, 1, header.cart_info_length, file) != header.cart_info_length)
+			goto __cart_info_len_error;
+		get_cartridge_info(buf);
+	}
 	if (header.intern_symbols_length != 0)
 	{
-		buf = malloc(header.intern_symbols_length);
+		if (header.intern_symbols_length > header.cart_info_length)
+			buf = malloc(header.intern_symbols_length);
 		if (fread(buf, 1, header.intern_symbols_length, file) != header.intern_symbols_length)
-		{
-			free(buf);
+			goto __intern_symbols_len_error;
+		if (add_intern_symbols(sym, buf, header.intern_symbols_length, file_number) == -1)
 			goto __file_error;
-		}
-		if (add_intern_symbols_bin(sym, buf, header.intern_symbols_length, file_number) == -1)
-		{
-			free(buf);
-			puts("#xxx");
-			// free(var)
-			goto __file_error;
-		}
 	}
 
 
-	register uint32_t	extern_length = header.header_length - header.intern_symbols_length;
+	register uint32_t	extern_length = 
+		header.header_length - (header.intern_symbols_length + header.cart_info_length);
 
 	if (extern_length != 0)
 	{
@@ -398,25 +506,22 @@ void	get_symbols(const char *filename, vector_t *sym, vector_t *ext_sym, uint32_
 			buf = realloc(buf, extern_length);
 
 		if (fread(buf, 1, extern_length, file) != extern_length)
-		{
-			free(buf);
-			goto __file_error;
-		}
+			goto __extern_symbols_len_error;
 		if (add_extern_symbols_bin(ext_sym, buf, extern_length, file_number) == -1)
-		{
-			free(buf);
-			puts("#yyy");
-			// free(var)
 			goto __file_error;
-		}
 	}
 
 	free(buf);
 	fclose(file);
 	return;
 
+__cart_info_length_error:
+__intern_symbols_len_error:
+__extern_symbols_len_error:
 __file_error:
 	fprintf(stderr, "object file not well formated\n");
+	g_error++;
+	free(buf);
 	fclose(file);
 	exit(1);
 }
@@ -430,7 +535,7 @@ void		all_extern_symbols_exist(vector_t *sym, vector_t *ext_sym, char *file[])
 		if (vector_search(sym, (void*)&elem->name) == -1)
 		{
 			g_error++;
-			fprintf(stderr, "undefined symbol %s (file %s)\n", elem->name, file[elem->file_number]);
+			fprintf(stderr, "assembler: undefined symbol %s (called in file %s)\n", elem->name, file[elem->file_number]);
 		}
 	}
 }
@@ -542,7 +647,7 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 	{
 		file = fopen(files[i], "r");
 		fread(&header, sizeof(tmp_header_t), 1, file);
-		fseek(file, header.header_length + 12, SEEK_SET);
+		fseek(file, header.header_length + sizeof(tmp_header_t), SEEK_SET);
 
 		while (fread(&code_start, sizeof(uint32_t), 1, file) == 1)
 		{
@@ -583,10 +688,10 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 
 						for (uint32_t l = 0; l < elem->quantity; l++)
 						{
-							uint8_t		*inst = buf + elem->pos[l] - 8;
+							uint8_t		*inst = buf + elem->pos[l] - 8; // - 8 = - code_header_length
 							uint8_t		symbol_size = inst_length[*inst];
 							
-							printf(">>>> repace at inst 0x%x\n", *inst);
+							printf(">>>> replace at inst 0x%x\n", *inst);
 
 							uint8_t		operation = inst[symbol_size];
 							inst++;
@@ -781,7 +886,7 @@ void		get_code_with_replacement(vector_t *sym, vector_t *ext_sym, vector_t *code
 */
 uint32_t	get_rom_end(void)
 {
-	switch (cartridge_info.rom_size)
+	switch (cartridge.rom_size)
 	{
 		case 0x00: return (0x8000u);
 		case 0x01: return (0x10000u);
@@ -859,39 +964,18 @@ void		write_binary(vector_t *code, const char *filename)
 	fclose(file);
 }
 
-
+/*
+	argv = {executable, object, ...}
+*/
 int main(int argc, char *argv[])
 {
-	// nouveau fichier !!!!!!
-	
-	cartridge_info._0x00c3[0] = 0x00U;
-	cartridge_info._0x00c3[1] = 0xc3U;
-	cartridge_info._0x33 = 0x33U;
-
-
-	/* infos temporaires */
-	cartridge_info.start_addr[0] = 0x50u;
-	cartridge_info.start_addr[1] = 0x01u;
-	strncpy((char*)cartridge_info.title, "__TEST__\0\0\0", 11);
-	strncpy((char*)&cartridge_info.game_code, "TOTO", 4);
-	cartridge_info.cgb_support = 0x80;
-	cartridge_info.maker_code[0] = '0';
-	cartridge_info.maker_code[1] = '1';
-	cartridge_info.sgb_support = 0;
-	cartridge_info.game_pack_type = 0x1bU;	// mbc-5 + SRAM + BATTERY
-	cartridge_info.rom_size = 0;			// 256 KBits (32 KBytes)
-	cartridge_info.ram_size = 2;			// 64 Kbit (8 KBytes)
-	cartridge_info.destination = 1;			// All others
-	cartridge_info.mask_rom_version = 0;	// version du jeu
-	cartridge_info.complement_check = get_complement_check();
-	/* end */
-
-
-
+	if (argc < 2)
+		exit(1);
 
 	vector_t	*sym = vector_init(sizeof(all_sym_t));
 	vector_t	*ext_sym = vector_init(sizeof(all_ext_sym_t));
 	vector_t	*code = vector_init(sizeof(all_code_t));
+	char		*exe = argv[0];
 
 	ext_sym->destroy = &all_ext_sym_destroy;
 	ext_sym->compar = &all_ext_sym_cmp;
@@ -903,54 +987,51 @@ int main(int argc, char *argv[])
 	code->compar = &all_code_cmp;
 	code->search = &all_code_search;
 
-	if (g_error == 0)
+	argv++;
+	for (uint32_t i = 0; argv[i]; i++)
+		get_symbols(argv[i], sym, ext_sym, i);
+
+
+	all_extern_symbols_exist(sym, ext_sym, argv);
+	if (g_error)
+		exit(1);
+
+	assign_var_addr(sym);
+	if (g_error)
+		exit(2);
+
+	// DEBUG
+	puts("intern symbols");
 	{
-		g_error = 0;
-		for (uint32_t i = 0; file[i]; i++)
+		register all_sym_t	*tmp = VEC_ELEM_FIRST(all_sym_t, sym);
+		for (uint32_t i = 0; i < sym->nitems; i++, tmp++)
 		{
-			get_symbols(file[i], sym, ext_sym, i);
+			printf(
+				"%s (%s) = 0x%x, 0x%x\n",
+				tmp->name, get_type_str(tmp->type), tmp->data1, tmp->data2
+			);
 		}
-
-		all_extern_symbols_exist(sym, ext_sym, file);
-		if (g_error)
-			goto __end_compilation;
-
-		assign_var_addr(sym);
-		if (g_error)
-			goto __end_compilation;
-
-		puts("intern symbols");
-		for (uint32_t i = 0; i < sym->nitems; i++)
-		{
-			register all_sym_t	*tmp = VEC_ELEM(all_sym_t, sym, i);
-
-			printf("%s (%s) = 0x%x, 0x%x\n", tmp->name, get_type_str(tmp->type), tmp->data1, tmp->data2);
-		}
-		puts("extern symbols");
-		for (uint32_t i = 0; i < ext_sym->nitems; i++)
-		{
-			register all_ext_sym_t	*tmp = VEC_ELEM(all_ext_sym_t, ext_sym, i);
-
-			printf("%s (%s) : quantity 0x%x\n", tmp->name, get_type_str(tmp->type), tmp->quantity);
-		}
-
-		get_code_with_replacement(sym, ext_sym, code, file);
-		if (g_error)
-			goto __end_compilation;
-
-		write_binary(code, "binary.gb");
-
-		//free tout le bordel
-
-	__end_compilation:
-		if (g_error)
-		{
-			fprintf(stderr, "\e[1;31m%u errors\e[0m\n", g_error);
-			return (1);
-		}
-		for (uint32_t i = 0; file[i]; i++)
-			free(file[i]);
 	}
+	puts("extern symbols");
+	{
+		register all_ext_sym_t	*tmp = VEC_ELEM_FIRST(all_ext_sym_t, ext_sym);
+		for (uint32_t i = 0; i < ext_sym->nitems; i++, tmp++)
+		{
+			printf(
+				"%s (%s) : quantity 0x%x\n",
+				tmp->name, get_type_str(tmp->type), tmp->quantity
+			);
+		}
+	}
+	// END DEBUG
+
+
+	get_code_with_replacement(sym, ext_sym, code, argv);
+	if (g_error)
+		exit(3);
+
+	write_binary(code, exe);
+
 	return (0);
 }
 

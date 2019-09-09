@@ -373,9 +373,11 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 
 	fwrite(header, sizeof(uint32_t), 4, file);
 
-	fwrite(&cart_info.all, sizeof(uint16_t), 1, file);
 	if (cartridge_part_length)
+	{
+		fwrite(&cart_info.all, sizeof(uint16_t), 1, file);
 		fwrite(cartridge_part, 1, cartridge_part_length, file);
+	}
 
 	j = 0;
 	intern_size = 0;
