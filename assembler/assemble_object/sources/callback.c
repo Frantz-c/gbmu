@@ -6,7 +6,7 @@
 /*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/09/09 15:23:29 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/09 20:24:24 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/10 20:22:05 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -55,7 +55,7 @@ extern int	loc_ext_compar(const void *a, const void *b)
 extern int	loc_ext_search(const void *b, const void *a)
 {
 	register universal_t	*u = (universal_t *)a;
-	register char			*name = (char *)b;
+	register char			*name = *(char **)b;
 
 	return (strcmp(u->name, name));
 }

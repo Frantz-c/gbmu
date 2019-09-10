@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/12 13:43:03 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/27 15:30:28 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/10 20:25:15 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -21,7 +21,12 @@
 
 		./gbasm -o file.gb file.gbo ...
 		./gbasm file.gbs -o file.gb
+
+	ajouter:
+
+		./gbasm file.gbo file.gbs -o exe.gb
 */
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -312,7 +317,6 @@ int		main(int argc, char *argv[])
 				free(objects[i]);
 			}
 			printf("\n");
-			free(obj);
 			call_create_executable(obj, src, exe);
 			break;
 		}

@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 13:17:53 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/31 21:38:18 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/10 14:21:16 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -227,12 +227,7 @@ extern void	new_instruction(code_area_t *area)
 
 extern int	push_byte(code_area_t *area, uint8_t byte)
 {
-//	if (area->cur->size > )
-//		return (-1);
-
-	if (area->cur->symbol == NULL)
-		area->cur->symbol = (void *)malloc(sizeof(uint8_t) * BYTE_ALLOC_SIZE);
-	else if ((area->cur->size & 0x7) == 0)
+	if ((area->cur->size & 0x7) == 0)
 		area->cur->symbol = realloc(area->cur->symbol, area->cur->size + BYTE_ALLOC_SIZE);
 	((uint8_t*)(area->cur->symbol))[area->cur->size++] = byte;
 	area->size++;

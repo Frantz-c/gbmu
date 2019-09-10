@@ -6,7 +6,7 @@
 /*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/09/09 15:02:56 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/09 20:28:39 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/10 11:46:09 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -14,7 +14,7 @@
 #include "std_includes.h"
 #include "callback.h"
 
-extern void		assign_addr_to_var(loc_symbols_t *loc)
+extern void		assign_addr_to_var(loc_symbols_t *loc, vector_t *ext)
 {
 	vector_t	*memblock;
 
@@ -61,6 +61,9 @@ extern void		assign_addr_to_var(loc_symbols_t *loc)
 					printf("variable %s found !\n", elem->name);
 					elem->addr = block->end - block->space;
 					block->space -= elem->size;
+
+					ext_sym_t	new = {elem->name, elem->data, elem->addr, VAR};
+					vector_push(ext, (void*)&new);
 				}
 			}
 		}

@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/13 14:04:54 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/30 20:34:51 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/10 14:45:11 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -50,7 +50,8 @@ STATIC_DEBUG void			area_print(const void *a)
 			if (c->size & 0xffffff00u)
 			{
 				uint8_t		*bytes = (uint8_t*)c->symbol;
-				uint32_t	size = (c->size & 0xffffff00u) >> 8;
+				uint32_t	size = (c->size >> 8);
+				printf("byte size = %u\n", size);
 				for (uint8_t i = 0; i < size; i++)
 				{
 					if (i % 8 == 7)
@@ -254,6 +255,22 @@ uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t a
 		uint32_t	len;
 		uint32_t	n_bytes = 0;
 
+		if (n_bytes == 0)
+		{
+			register code_area_t	*tmp = VEC_ELEM(code_area_t, area, data->cur_area);
+			if (tmp->cur == NULL)
+			{
+				tmp->cur = calloc(1, sizeof(code_area_t));
+				tmp->data = tmp->cur;
+			}
+			else
+			{
+				tmp->cur->next = calloc(1, sizeof(code_area_t));
+				tmp->cur = tmp->cur->next;
+			}
+			tmp->cur->symbol = (void *)malloc(sizeof(uint8_t) * /*BYTE_ALLOC_SIZE*/ 8);
+		}
+
 		while (1)
 		{
 			while (is_space(**s)) (*s)++;
@@ -268,10 +285,13 @@ uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t a
 				print_warning(data->filename, data->lineno, data->line, data->buf);
 			}
 			*s += len;
-			if (n_bytes > 0xffffffu)
+			if (n_bytes > 0xffffu)
 				goto __too_many_bytes;
 
-			push_byte(VEC_ELEM(code_area_t, area, data->cur_area), byte & 0xffu);
+			// mettre dans push_byte()
+			register code_area_t	*tmp = VEC_ELEM(code_area_t, area, data->cur_area);
+			push_byte(tmp, byte & 0xffu);
+			n_bytes++;
 
 			while (is_space(**s)) (*s)++;
 			if (**s == '\\')
@@ -282,6 +302,7 @@ uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t a
 				{
 					if (**s == '\n') {
 						(*s)++;
+						data->lineno++;
 						break;
 					}
 					if (**s == '\0')
@@ -298,10 +319,13 @@ uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t a
 				break;
 			}
 		}
+		printf("NBYTES = %u\n", n_bytes);
 		if (n_bytes == 0)
 			print_warning(data->filename, data->lineno, data->line, "0 bytes specified");
 		else
 			VEC_ELEM(code_area_t, area, data->cur_area)->cur->size <<= 8;
+
+		printf("NBYTES = %u\n", (VEC_ELEM(code_area_t, area, data->cur_area)->cur->size >> 8));
 
 		args[0].type = BYTE_KEYWORD;
 		return (0);

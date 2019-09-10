@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/13 14:05:50 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/30 20:37:09 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/10 13:27:53 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -201,16 +201,26 @@ char	*replace_macro_without_param(char *s, const uint32_t len, vector_t *macro, 
 		goto __error_macro_with_param;
 
 
-
+/*
 	register char	*p = m->content;
 
 	// verify macro content validity
 	if (is_alpha(*p) || *p == '_')
 	{
-		//goto __string_or_symbol_forbidden;
 		p++;
 		while (is_alnum(*p) || *p == '_')
 			p++;
+		while (is_spce(*p)) p++;
+		if (is_operator(*p))
+		{
+			if (*p == '<' || *p == '>')
+			{
+				p++;
+				if (p[-1] != *p)
+					goto __unexpected_char;
+			}
+			p++;
+		}
 		*is_string = 1;
 	}
 	else if (is_digit(*p))
@@ -227,7 +237,7 @@ char	*replace_macro_without_param(char *s, const uint32_t len, vector_t *macro, 
 
 	if (*p != '\0')
 		goto __unexpected_char;
-
+*/
 	return (m->content);
 
 
@@ -238,8 +248,8 @@ __error_macro_with_param:
 __error_syntax_digit:
 	error_msg = "error digit";
 	goto __print_error;
-__unexpected_char:
-	sprintf(data->buf, "in macro `%s` content, unexpected character `%c`", m->name, *p);
+//__unexpected_char:
+//	sprintf(data->buf, "in macro `%s` content, unexpected character `%c`", m->name, *p);
 __print_error_fmt:
 	error_msg = (const char *)data->buf;
 __print_error:

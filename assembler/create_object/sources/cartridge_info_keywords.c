@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/23 22:24:16 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/31 22:55:24 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/10 15:09:37 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -188,11 +188,11 @@ void	set_cgb_support(arguments_t args[], data_t *data)
 	if (args->type & STRING_TYPE)
 	{
 		to_lower_string((char *)args->value);
-		if (strcmp((char *)args->value, "exclusive"))
+		if (strcmp((char *)args->value, "exclusive") == 0)
 			cartridge.cgb_support = CGB_EXCLU;
-		else if (strcmp((char *)args->value, "compatible"))
+		else if (strcmp((char *)args->value, "compatible") == 0)
 			cartridge.cgb_support = CGB_COMP;
-		else if (strcmp((char *)args->value, "incompatible"))
+		else if (strcmp((char *)args->value, "incompatible") == 0)
 			cartridge.cgb_support = CGB_INCOMP;
 		else
 			goto __unknown_value;
@@ -290,7 +290,7 @@ void	set_sgb_support(arguments_t args[], data_t *data)
 	if (args[0].type & STRING_TYPE)
 	{
 		to_lower_string((char *)args->value);
-		printf("value = \"%s\"\n", (char*)args->value);
+		printf("ADD_SGB_SUPPORT %s\n", (char*)args->value);
 		if (strcmp((char *)args->value, "supported") == 0)
 			cartridge.sgb_support = USES_SGB_FUNC;
 		else if (strcmp((char *)args->value, "not_supported") == 0)

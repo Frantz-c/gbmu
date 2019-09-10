@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/09/09 18:20:08 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/09 18:20:52 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/10 11:43:34 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -16,6 +16,6 @@
 
 # include "std_includes.h"
 
-void		assign_addr_to_var(loc_symbols_t *loc);
+void		assign_addr_to_var(loc_symbols_t *loc, vector_t *ext);
 
 #endif

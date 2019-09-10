@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/27 19:25:27 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/31 23:05:33 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/10 19:49:19 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -426,6 +426,7 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 		fwrite(&ext->quantity, sizeof(uint32_t), 1, file);
 		fwrite(ext->pos, sizeof(uint32_t), ext->quantity, file);
 		header_size += len + (sizeof(uint32_t) * (2 + ext->quantity));
+		printf("EXTERN_LENGTH += %u\n", len + (sizeof(uint32_t) * (2 + ext->quantity)));
 	}
 
 	fwrite(code, sizeof(uint8_t), i, file);

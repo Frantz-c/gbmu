@@ -6,7 +6,7 @@
 /*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/09/09 14:55:09 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/09 20:06:37 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/10 15:06:11 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -19,6 +19,7 @@ static void	get_cartridge_info(uint8_t *buf)
 
 	memcpy(&info, buf, 2);
 	buf += 2;
+	printf("INFO = 0x%.4hx, cart_info = 0x%.4hx\n", info, cart_info);
 
 /*
 	c = a & b
@@ -34,7 +35,8 @@ static void	get_cartridge_info(uint8_t *buf)
 
 		c = info & cart_info;
 		c = c ^ info;
-		if (c != cart_info)
+		printf("c = 0x%.4hx, info = 0x%.4hx\n", c, info);
+		if (c != info)
 			goto __multiple_declaration;
 	}
 
@@ -55,11 +57,12 @@ static void	get_cartridge_info(uint8_t *buf)
 	}
 	if (info & CGB_SUPPORT)
 	{
+		printf("CGB_SUPPORT = %u\n", *buf);
 		cartridge.cgb_support = *(buf++);
 	}
 	if (info & MAKER_CODE)
 	{
-		memcpy(cartridge.game_code, buf, 2);
+		memcpy(cartridge.maker_code, buf, 2);
 		buf += 2;
 	}
 	if (info & SGB_SUPPORT)
@@ -111,6 +114,7 @@ static void	get_cartridge_info(uint8_t *buf)
 		fprintf(stderr, "duplicate destination\n");
 	if ((info & VERSION) && (cart_info & VERSION))
 		fprintf(stderr, "duplicate version\n");
+	printf("ERROR\n");
 }
 
 
@@ -263,6 +267,7 @@ static int		add_extern_symbols(vector_t *ext, char *buf, uint32_t len, uint32_t 
 	ssize_t			index;
 	uint8_t			already_declared = 0;
 
+	tmp.value = 0;
 	for (uint32_t i = 0; i < len; )
 	{
 		tmp.name = buf + i;
@@ -357,6 +362,7 @@ extern void	get_symbols_and_cartridge_info(const char *filename, loc_symbols_t *
 	
 	if (header.cart_info_length)
 	{
+		printf("header.cart_info_length = %u\n", header.cart_info_length);
 		buf = malloc(header.cart_info_length);
 		if (fread(buf, 1, header.cart_info_length, file) != header.cart_info_length)
 			goto __cart_info_length_error;

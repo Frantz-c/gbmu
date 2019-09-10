@@ -6,31 +6,199 @@
 #    By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+      #
 #                                                  #+#   #+    #+    #+#       #
 #    Created: 2019/08/30 18:11:19 by fcordon      #+#   ##    ##    #+#        #
-#    Updated: 2019/08/30 18:11:33 by fcordon     ###    #+. /#+    ###.fr      #
+#    Updated: 2019/09/10 15:47:56 by fcordon     ###    #+. /#+    ###.fr      #
 #                                                          /                   #
 #                                                         /                    #
 # **************************************************************************** #
 
 .program_start	0x150
-.game_title		"INST TEST"
-.game_code		"CODE"
+.game_title		"*_TADASHI_*"
+.game_code		"TOTO"
 .cgb_support	"incompatible"
-.sgb_support	"supported"
-.maker_code		"12"
+.sgb_support	"not_supported"
+.maker_code		"00"
 .cart_type		"mbc1_sram_battery"
 .rom_size		"8 banks"
 .ram_size		"1 bank"
-.destination	"other"
+.destination	"japan"
 .version		0
 
-.program_start	0x150
-.game_title		"INST TEST"
-.game_code		"CODE"
-.cgb_support	"incompatible"
-.sgb_support	"supported"
-.maker_code		"12"
-.cart_type		"mbc1_sram_battery"
-.rom_size		"8 banks"
-.ram_size		"1 bank"
-.destination	"other"
-.version		0
+
+.bank	0, 0x2000
+
+	__sprite:
+		.byte	0xff 0xff 0x08 0x08 0x08 0x08 0x2E 0x2E\
+				0x28 0x28 0x28 0x28 0x28 0x28 0xff 0xff
+
+
+
+%define DATA_AREA			0x8000
+%define CODE_AREA			0x9800
+
+%define LCDC_ON				0x80
+%define LCDC_OFF			0x00
+%define BG_CODE_9800		0x00
+%define BG_CODE_9C00		0x08
+%define BG_DATA_8800		0x00
+%define BG_DATA_8000		0x10
+%define OBJ_ON				0x02
+%define OBJ_OFF				0x00
+%define	BG_DISPLAY_ON		0x01
+
+
+.bank	0, 0x150
+
+	__wait_vertical_blanking:
+		ld	A,		[_LY]
+		cp	145
+		jrnz	__wait_vertical_blanking
+		
+	ld	A,			LCDC_OFF
+	ld	[_LCDC],	A
+
+
+	## erase 0x8000 to 0xE000
+	ld	HL,	0x8000
+	__erase_data:
+		xor	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	A,	H
+		cp	0xE0
+		jrnz	__erase_data
+
+	## erase 0xFE00 to 0xFEA0
+	ld	HL,	0xFE00
+	__erase_data2:
+		xor	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	[HL++],	A
+		ld	A,	L
+		cp	0xA0
+		jrnz	__erase_data2
+
+
+	## write the sprite's data in background characters memory area
+	## DE = bg_area_addr
+	## HL = sprite_addr
+	__write_one_sprite_in_bg_area:
+		ld	DE, DATA_AREA
+		ld	HL, 0x2000	;;; __sprite -> bug
+		
+		__write_one_sprite:
+			ld		A,		[HL++]
+			ld		[DE],	A
+			inc		DE
+			ld		A,		L
+			cp		0x10
+			jrnz	__write_one_sprite
+	
+
+
+	## write the character code 0 in the character code area
+	## HL = code_area_addr
+	## A = 0
+	__write_character_code_in_code_area:
+		ld	HL, CODE_AREA
+
+		__write_code:
+			xor		A
+			ld		[HL++],	A
+			ld		[HL++],	A
+			ld		[HL++],	A
+			ld		[HL++],	A
+			ld		[HL++],	A
+			ld		[HL++],	A
+			ld		[HL++],	A
+			ld		[HL++],	A
+			ld		[HL++],	A
+			ld		[HL++],	A
+			ld		[HL++],	A
+			ld		[HL++],	A
+			ld		[HL++],	A
+			ld		[HL++],	A
+			ld		[HL++],	A
+			ld		[HL++],	A
+			ld		A, H
+			cp		0x9C
+			jrnz	__write_code
+
+	xor	A
+	ld	[_SCX],	A
+	ld	[_SCY],	A
+	ld	A,			(LCDC_ON | BG_CODE_9800 | BG_DATA_8000 | OBJ_ON | BG_DISPLAY_ON)	;;; ( LCDC_ON... = bug unexpected ' ' !!!
+	ld	[_LCDC],	A
+
+	__infinite_loop:
+		halt
+		nop
+		jr __infinite_loop
+
+
+
+#- - - - - - - - - -
+#- ################
+#-         ##      
+#-         ##      
+#-    ##   ######  
+#-    ##   ##  
+#-    ##   ##      
+#-    ##   ##  
+#- ################
+#- - - - - - - - - -
+#
+#
+# 11 11 11 11 11 11 11 11
+# 00 00 00 00 11 00 00 00
+# 00 00 00 00 11 00 00 00
+# 00 11 00 00 11 11 11 00
+# 00 11 00 00 11 00 00 00
+# 00 11 00 00 11 00 00 00
+# 00 11 00 00 11 00 00 00
+# 11 11 11 11 11 11 11 11
+#
+#11111111
+#11111111
+#00001000
+#00001000
+#00001000
+#00001000
+#00101110
+#00101110
+#00101000
+#00101000
+#00101000
+#00101000
+#00101000
+#00101000
+#11111111
+#11111111
+#

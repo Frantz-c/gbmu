@@ -6,7 +6,7 @@
 /*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/31 21:59:27 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/31 23:33:27 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/10 20:08:19 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -763,6 +763,7 @@ static const char	*get_symbol_type(uint32_t type)
 		case LABEL:		return ("label");
 		case VAR:		return ("variable");
 		case MEMBLOCK:	return ("memblock");
+		case 1:			return ("var or label");
 	}
 	return ("ERROR");
 }
@@ -867,6 +868,7 @@ static void	read_external_symbols(FILE *file, uint32_t size)
 			}
 			i++;
 		}
+		cur += (i + 1);
 		fread(&type, sizeof(uint32_t), 1, file);
 		fread(&quantity, sizeof(uint32_t), 1, file);
 		values = malloc(quantity * sizeof(uint32_t));
@@ -876,8 +878,9 @@ static void	read_external_symbols(FILE *file, uint32_t size)
 		for (i = 0; i < quantity - 1; i++)
 			printf("%u,", values[i]);
 		printf("%u}\n", values[i]);
-		cur += (i + 1) + 8 + (quantity * 4);
+		cur += 8 + (quantity * 4);
 		free(values);
+		printf("cur = %u, size = %u\n", cur, size);
 	}
 	while (cur < size);
 
@@ -927,11 +930,12 @@ static void	read_code(FILE *file, uint32_t length)
 			{
 				printf("    .byte ");
 				i += 3;
-				memcpy(&section_length, buf + i, sizeof(uint32_t));
-				while (section_length)
+				uint32_t	byte_length = (buf[i] << 8) | buf[i+1];
+				i += 2;
+				while (byte_length)
 				{
 					printf("0x%x ", buf[i++]);
-					section_length--;
+					byte_length--;
 				}
 				printf("\n");
 			}
