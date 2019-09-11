@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 13:17:53 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/10 14:21:16 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/11 22:30:37 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -71,6 +71,8 @@ extern char	*replace_content(macro_t *macro, char *param[10])
 	uint32_t	len[10];
 	char		*pos;
 	char		*content = macro->content;
+	uint32_t	maxlen;
+	uint32_t	length = 0;
 
 	for (uint32_t i = 0; i != macro->argc; i++)
 	{
@@ -78,18 +80,33 @@ extern char	*replace_content(macro_t *macro, char *param[10])
 		diff += len[i] - 2;
 	}
 
-	new = malloc(strlen(content) + diff + 1);
-	new[0] = '\0';
+	maxlen = strlen(content) + diff;
+	new = malloc(maxlen + 1);
+//	new[0] = '\0';
 	pos = content;
 	while ((pos = strchr(content, '#')))
 	{
 		register uint8_t	i = pos[1] - '0';
 
-		strncat(new, content, pos - content);
-		strncat(new, param[i], len[i]);
+		if (maxlen <= length + (pos - content) + len[i])
+		{
+			maxlen = length + (pos - content) + len[1];
+			new = realloc(new, maxlen + 1);
+		}
+		strncpy(new + length, content, pos - content);
+		length += (pos - content);
+		strncpy(new + length, param[i], len[i]);
+		length += len[i];
 		content = pos + 2;
 	}
-	strcat(new, content);
+	if (maxlen <= length + strlen(content))
+	{
+		maxlen = length + strlen(content);
+		new = realloc(new, maxlen + 1);
+	}
+	strncpy(new + length, content, strlen(content));
+	length += strlen(content);
+	new[length] = '\0';
 	return (new);
 }
 

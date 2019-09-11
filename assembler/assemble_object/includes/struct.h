@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/06 11:38:18 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/10 11:45:47 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/11 14:39:29 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -137,8 +137,8 @@ typedef struct	var_data_s
 {
 	uint32_t	quantity;	
 	uint32_t	file_number;
-	//char		*block;		
 	uint32_t	*pos;		
+	uint32_t	*offset;		
 	struct var_data_s	*next;
 }
 var_data_t;
@@ -147,10 +147,8 @@ typedef struct	ext_sym_s
 {
 	char		*name;
 	var_data_t	*data;
-//	uint32_t	quantity;
 	uint32_t	value;
 	uint32_t	type;
-	//uint32_t	file_number;
 }
 ext_sym_t;
 

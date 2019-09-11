@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/26 19:27:12 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/27 13:56:32 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/11 17:00:47 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -48,7 +48,7 @@ extern void		replace_internal_labels(vector_t *area, loc_sym_t *local_symbol)
 						if (val > 0x7f || val < -128)
 						{
 							g_error++;
-							fprintf(stderr, "too big jump (%d)\n", val);
+							fprintf(stderr, "too big jump (%d) :: symbol %s\n", val, lab->name);
 						}
 						c->opcode[1] = (uint8_t)val;
 						c->opcode[2] = 0;

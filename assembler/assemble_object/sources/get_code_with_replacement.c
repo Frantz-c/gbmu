@@ -6,7 +6,7 @@
 /*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/09/10 11:12:37 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/10 12:24:30 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/11 14:49:37 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -72,6 +72,7 @@ extern void		get_code_with_replacement(loc_symbols_t *loc, vector_t *ext, vector
 
 	for (uint32_t i = 0; files[i]; i++)
 	{
+		printf("i = %u\n", i);
 		file = fopen(files[i], "r");
 		fread(&header, sizeof(tmp_header_t), 1, file);
 		fseek(file, header.header_length, SEEK_CUR);
@@ -106,34 +107,24 @@ extern void		get_code_with_replacement(loc_symbols_t *loc, vector_t *ext, vector
 				printf("ext->nitems = %zu\n", ext->nitems);
 				for (uint32_t j = 0; j < ext->nitems; j++, elem++)
 				{
+					printf("j = %u, elem = %p\n", j, elem);
 
 					for (var_data_t *data = elem->data; data; data = data->next)
 					{
 
 
-						printf("file_num = %u, i = %u\n", data->file_number, i);
+						printf("data = %p, data->next = %p, file_num = %u, i = %u\n", data, data->next, data->file_number, i);
 						if (data->file_number == i)
 						{
-/*
-							register loc_sym_t	*p;
-
-							if (elem->type == VAR)
-							{
-								register ssize_t	index = vector_search(loc->var, (void*)&elem->name);
-								p = VEC_ELEM(loc_sym_t, loc->var, index); // sizeof(loc_sym_t) == sizeof(loc_var_t);
-							}
-							else // if (elem->type == LABEL)
-							{
-								register ssize_t	index = vector_search(loc->label, (void*)&elem->name);
-								p = (loc_sym_t *)VEC_ELEM(loc_label_t, loc->label, index); // sizeof(loc_sym_t) == sizeof(loc_var_t);
-							}
-*/
 							for (uint32_t l = 0; l < data->quantity; l++)
 							{
-								uint8_t		*inst = buf + data->pos[l] - 8; // - 8 = - code_header_length
+								if (code_start != data->offset[l])
+									continue;
+
+								uint8_t		*inst = buf + data->pos[l];
 								uint8_t		symbol_size = inst_length[*inst];
 								
-								printf(">>>> replace at inst 0x%x\n", *inst);
+								printf(">>>> replace at inst 0x%x, pos 0x%x(%u) (symbol = %s)\n", *inst, data->pos[l], data->pos[l], elem->name);
 
 								uint8_t		operation = inst[symbol_size];
 								inst++;
@@ -188,64 +179,6 @@ extern void		get_code_with_replacement(loc_symbols_t *loc, vector_t *ext, vector
 				}
 			}
 
-			/*
-			// replace all extern symbols with their value
-	//		k = 0;
-			{
-				register all_sym_t	*elem = VEC_ELEM_FIRST(all_sym_t, sym);
-
-				printf("int_sym->nitems = %zu\n", sym->nitems);
-				for (uint32_t j = 0; j < sym->nitems; j++, elem++)
-				{
-
-					if (elem->type == VAR && elem->var_data->file_number == i)
-					{
-						register var_data_t	*var = elem->var_data;
-						printf("file_num = %u\n", var->file_number);
-						for (uint32_t l = 0; l < var->quantity; l++)
-						{
-							printf("var_pos = %u\n", var->pos[l] - 8);
-							uint8_t		*inst = buf + var->pos[l] - 8;
-							uint8_t		symbol_size = inst_length[*inst];
-							
-							printf(">>>> repace at inst 0x%x\n", *inst);
-
-							uint8_t		operation = inst[symbol_size];
-							inst++;
-							uint32_t	value = inst[0] | (inst[1] << 8);
-
-							printf("VAR ADDR = 0x%x\n", elem->data1);
-							if (operation == '-')
-								value -= elem->data1;
-							else if (operation == '+')
-								value += elem->data1;
-							else
-								value = elem->data1;
-
-							if (symbol_size == 3)
-							{
-								if (value > 0xffff)
-									fprintf(stderr, "OVERFLOW inst ????? file ?????\n");
-
-								inst[0] = (uint8_t)value;
-								inst[1] = (uint8_t)(value >> 8);
-								inst[2] = 0xdd;
-							}
-							else if (symbol_size == 2)
-							{
-								if (value > 0xff)
-									fprintf(stderr, "OVERFLOW inst ????? file ?????\n");
-
-								inst[0] = (uint8_t)value;
-								inst[1] = 0xdd;
-							}
-
-						}
-					}
-				}
-			}
-			*/
-
 // cut info in code
 		uint8_t		*new_buf = malloc(header.code_length - 8);
 		uint32_t	z = 0;
@@ -259,13 +192,6 @@ extern void		get_code_with_replacement(loc_symbols_t *loc, vector_t *ext, vector
 			{
 				if ((len == 2 && buf[j] != 0xcbU) || len == 3)
 					inc++;
-				/*
-				else if (len == 4)
-				{
-					inc = 1;
-					len = 2;
-				}
-				*/
 
 				while (len)
 				{

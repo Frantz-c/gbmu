@@ -6,7 +6,7 @@
 /*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/09/09 14:55:09 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/10 15:06:11 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/11 14:43:19 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -166,7 +166,10 @@ static int		add_intern_symbols(loc_symbols_t *loc, char *buf, uint32_t len, uint
 				memcpy(&var_data->quantity, buf + i, sizeof(uint32_t));
 				i += sizeof(uint32_t);
 				var_data->pos = malloc(sizeof(uint32_t) * var_data->quantity);
+				var_data->offset = malloc(sizeof(uint32_t) * var_data->quantity);
 				memcpy(var_data->pos, buf + i, var_data->quantity * sizeof(uint32_t));
+				i += (sizeof(uint32_t) * var_data->quantity);
+				memcpy(var_data->offset, buf + i, var_data->quantity * sizeof(uint32_t));
 				i += (sizeof(uint32_t) * var_data->quantity);
 				tmp.blockname = buf + i;
 				while (buf[i]) i++;
@@ -310,7 +313,10 @@ static int		add_extern_symbols(vector_t *ext, char *buf, uint32_t len, uint32_t 
 		i += sizeof(uint32_t);
 
 		data->pos = malloc(sizeof(uint32_t) * data->quantity);
+		data->offset = malloc(sizeof(uint32_t) * data->quantity);
 		memcpy(data->pos, buf + i, data->quantity * sizeof(uint32_t));
+		i += (sizeof(uint32_t) * data->quantity);
+		memcpy(data->offset, buf + i, data->quantity * sizeof(uint32_t));
 		i += (sizeof(uint32_t) * data->quantity);
 
 		data->file_number = file_number;

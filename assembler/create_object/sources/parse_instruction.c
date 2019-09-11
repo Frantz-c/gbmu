@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/13 14:05:50 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/10 13:27:53 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/11 22:36:57 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -133,7 +133,7 @@ static void	instruction_replace(char **inst, char **param1, char **param2)	// "l
 					if (p2[len] == '+')
 					{
 						len++;
-						while (is_space(p1[len])) len++;
+						while (is_space(p2[len])) len++;
 						/* suppression de la partie 0xff00+ */
 						p2 = strdup(p2 + len);
 						free(*param2);
@@ -798,17 +798,28 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 	**   n_params	= 2
 	*/
 	if (replacement) {
-		char	*p = replacement;
+//		char	*p = replacement;
 		char	*line = data->line;
+		char	*tmp = replacement;
 
 		data->line = replacement;
-		if (set_mnemonic_and_params(&p, &mnemonic, &param1, &param2, &n_params, data, macro) == -1)
+		/* /!\ DANGER: risque de recursive infinie: interdire les appels recursifs dans une macro /!\ */
+		while (1)
 		{
-			free(replacement);
-			data->line = line;
-			return (s);
+			tmp = parse_instruction(tmp, area, ext_symbol, loc_symbol, macro, data);
+			if (*tmp == '\0')
+				break;
+			tmp++;
+			data->line = tmp;
 		}
-		replacement = line;
+//		if (set_mnemonic_and_params(&p, &mnemonic, &param1, &param2, &n_params, data, macro) == -1)
+//		{
+			data->line = line;
+			free(replacement);
+//			data->line = line;
+			return (s);
+//		}
+//		replacement = line;
 	}
 	else {
 		if (set_mnemonic_and_params(&s, &mnemonic, &param1, &param2, &n_params, data, macro) == -1)

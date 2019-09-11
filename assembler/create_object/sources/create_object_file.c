@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/27 19:25:27 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/10 19:49:19 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/11 15:07:23 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -37,12 +37,16 @@ void	intern_destroy(void *a)
 	if (ia->pos) free(ia->pos);
 }
 
+
+
 void	extern_destroy(void *a)
 {
 	register extern_symbols_t	*ea = (extern_symbols_t *)a;
 
 	if (ea->pos) free(ea->pos);
 }
+
+
 
 int		intern_match(const void *a, const void *b)
 {
@@ -60,6 +64,8 @@ int		extern_match(const void *a, const void *b)
 	return (strcmp((char*)ea->name, comp));
 }
 
+
+
 void	add_intern_labels(vector_t *intern_, vector_t *label)
 {
 	intern_symbols_t	new;
@@ -76,6 +82,8 @@ void	add_intern_labels(vector_t *intern_, vector_t *label)
 	}
 }
 
+
+
 void	add_intern_memblocks(vector_t *intern_, vector_t *memblock)
 {
 	intern_symbols_t	new;
@@ -91,6 +99,8 @@ void	add_intern_memblocks(vector_t *intern_, vector_t *memblock)
 	}
 }
 
+
+
 void	__attribute__((always_inline))
 	add_intern_symbols(vector_t *intern_, loc_sym_t *local_symbol)
 {
@@ -98,12 +108,16 @@ void	__attribute__((always_inline))
 	add_intern_memblocks(intern_, local_symbol->memblock);
 }
 
+
+
 /*
  *	instruction size = 1, 2 (+1) or 3 (+1)
  */
 void __attribute__((always_inline))	
-		add_no_symbol_instruction(code_t *inst, uint8_t *code[], uint32_t *i, uint32_t *allocsize)
+		add_no_symbol_instruction(code_t *inst, uint8_t *code[], uint32_t *i, uint32_t *relative_index, uint32_t *allocsize)
 {
+	uint32_t	i_backup = *i;
+
 	if (*allocsize - *i < 5)
 	{
 		*allocsize += 128;
@@ -118,12 +132,15 @@ void __attribute__((always_inline))
 		instruction_len++;
 	memcpy(*code + *i, inst->opcode, instruction_len);
 	*i += instruction_len;
+	*relative_index += *i - i_backup;
 }
 
 void __attribute__((always_inline))
-		add_external_symbol_instruction(vector_t *extern_, code_t *inst, uint8_t *code[],
-										uint32_t *i, uint32_t *allocsize, symbol_t *symbol)
+		add_external_symbol_instruction(vector_t *extern_, code_t *inst, uint8_t *code[], uint32_t *i, uint32_t *relative_index,
+										uint32_t *allocsize, symbol_t *symbol, uint32_t offset)
 {
+	uint32_t	i_backup = *i;
+
 	if (*allocsize - *i < 5)
 	{
 		*allocsize += 128;
@@ -135,17 +152,23 @@ void __attribute__((always_inline))
 
 	if (index == -1)
 	{
-		extern_symbols_t	new = {(uint8_t*)symbol->name, symbol->type, 1, NULL};
+		extern_symbols_t	new = {(uint8_t*)symbol->name, symbol->type, 1, NULL, NULL};
 		new.pos = malloc(sizeof(uint32_t) * 8);
-		new.pos[0] = *i;
+		new.pos[0] = *relative_index;
+		new.offset = malloc(sizeof(uint32_t) * 8);
+		new.offset[0] = offset;
 		VEC_SORTED_INSERT(extern_, symbol->name, new);
 	}
 	else
 	{
 		extern_symbols_t	*elem = VEC_ELEM(extern_symbols_t, extern_, index);
 		if ((elem->quantity & 0x7) == 0)
+		{
 			elem->pos = realloc(elem->pos, elem->quantity + 8);
-		elem->pos[elem->quantity++] = *i;
+			elem->offset = realloc(elem->offset, elem->quantity + 8);
+		}
+		elem->pos[elem->quantity] = *relative_index;
+		elem->offset[elem->quantity++] = offset;
 	}
 
 
@@ -157,13 +180,18 @@ void __attribute__((always_inline))
 		instruction_len++;
 	memcpy(*code + *i, inst->opcode, instruction_len);
 	*i += instruction_len;
+	*relative_index += *i - i_backup;
 }
 
+
+
+
 void __attribute__((always_inline))
-		add_internal_var_instruction(vector_t *intern_, code_t *inst, uint8_t *code[], uint32_t *i,
-									uint32_t *allocsize, vector_t *memblock, const char *symbol)
+		add_internal_var_instruction(vector_t *intern_, code_t *inst, uint8_t *code[], uint32_t *i, uint32_t *relative_index,
+									uint32_t *allocsize, vector_t *memblock, const char *symbol, uint32_t offset)
 {
-	int32_t	index, block_index;
+	int32_t		index, block_index;
+	uint32_t	i_backup = *i;
 
 
 	if (*allocsize - *i < 5)
@@ -181,9 +209,11 @@ void __attribute__((always_inline))
 
 		if (intern_index == -1)
 		{
-			intern_symbols_t	new = {(uint8_t*)var->name, VAR, 1, NULL, (uint8_t*)block->name, var->size};
+			intern_symbols_t	new = {(uint8_t*)var->name, VAR, 1, NULL, NULL, (uint8_t*)block->name, var->size};
 			new.pos = malloc(sizeof(uint32_t) * 8);
-			new.pos[0] = *i;
+			new.pos[0] = *relative_index;
+			new.offset = malloc(sizeof(uint32_t) * 8);
+			new.offset[0] = offset;
 			VEC_SORTED_INSERT(intern_, symbol, new);
 		}
 		else
@@ -191,8 +221,12 @@ void __attribute__((always_inline))
 			//data1 == quantity
 			intern_symbols_t	*elem = VEC_ELEM(intern_symbols_t, intern_, intern_index);
 			if ((elem->data1 & 0x7) == 0)
+			{
 				elem->pos = realloc(elem->pos, elem->data1 + 8);
-			elem->pos[elem->data1++] = *i;
+				elem->offset = realloc(elem->offset, elem->data1 + 8);
+			}
+			elem->pos[elem->data1] = *relative_index;
+			elem->offset[elem->data1++] = offset;
 		}
 	}
 	else
@@ -209,6 +243,7 @@ void __attribute__((always_inline))
 		instruction_len++;
 	memcpy(*code + *i, inst->opcode, instruction_len);
 	*i += instruction_len;
+	*relative_index += *i - i_backup;
 }
 
 static void	set_cartridge_data(uint8_t cartridge_part[], uint8_t *cartridge_part_length)
@@ -271,6 +306,7 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 {
 	uint8_t		*code;
 	uint32_t	i = 0;
+	uint32_t	relative_index;
 	uint32_t	allocsize;
 	uint32_t	j = 0;
 	uint32_t	len_pos = 0;
@@ -301,6 +337,7 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 
 	for (code_area_t *area = VEC_ELEM_FIRST(code_area_t, code_area); j < code_area->nitems; j++, area++)
 	{
+		relative_index = 0;
 		if (area->size == 0)
 			continue;
 		if ((allocsize - i) < 16)
@@ -332,18 +369,19 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 				code[i++] = (uint8_t)n_bytes;
 				memcpy(code + i, inst->symbol, n_bytes);
 				i += n_bytes;
+				relative_index += 5 + n_bytes;
 			}
 			else if (inst->symbol == NULL)
 			{
-				add_no_symbol_instruction(inst, &code, &i, &allocsize);
+				add_no_symbol_instruction(inst, &code, &i, &relative_index, &allocsize);
 			}
 			else
 			{
 				ssize_t	index;
 				if ((index = vector_search(extern_symbol, (void*)&inst->symbol)) != -1)
-					add_external_symbol_instruction(extern_, inst, &code, &i, &allocsize, VEC_ELEM(symbol_t, extern_symbol, index));
+					add_external_symbol_instruction(extern_, inst, &code, &i, &relative_index, &allocsize, VEC_ELEM(symbol_t, extern_symbol, index), area->addr);
 				else
-					add_internal_var_instruction(intern_, inst, &code, &i, &allocsize, local_symbol->memblock, inst->symbol);
+					add_internal_var_instruction(intern_, inst, &code, &i, &relative_index, &allocsize, local_symbol->memblock, inst->symbol, area->addr);
 			}
 		}
 
@@ -394,10 +432,11 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 		{
 			fwrite(&in->data1, sizeof(uint32_t), 1, file);
 			fwrite(in->pos, sizeof(uint32_t), in->data1, file);
+			fwrite(in->offset, sizeof(uint32_t), in->data1, file);
 			len = strlen((const char*)in->blockname) + 1;
 			fwrite(in->blockname, 1, len, file);
 			fwrite(&in->data2, sizeof(uint32_t), 1, file);
-			intern_size += (sizeof(uint32_t) * (2 + in->data1)) + len;
+			intern_size += (sizeof(uint32_t) * (2 + (in->data1 * 2))) + len;
 				printf("quantity = %u, ..., block = \"%s\", size = %u\n", in->data1, in->blockname, in->data2);
 		}
 		else if (in->type == LABEL)
@@ -425,8 +464,8 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 		fwrite(&ext->type, sizeof(uint32_t), 1, file);
 		fwrite(&ext->quantity, sizeof(uint32_t), 1, file);
 		fwrite(ext->pos, sizeof(uint32_t), ext->quantity, file);
-		header_size += len + (sizeof(uint32_t) * (2 + ext->quantity));
-		printf("EXTERN_LENGTH += %u\n", len + (sizeof(uint32_t) * (2 + ext->quantity)));
+		fwrite(ext->offset, sizeof(uint32_t), ext->quantity, file);
+		header_size += len + (sizeof(uint32_t) * (2 + (ext->quantity * 2)));
 	}
 
 	fwrite(code, sizeof(uint8_t), i, file);

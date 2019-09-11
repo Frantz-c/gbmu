@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/31 21:41:11 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/11 12:01:48 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -67,10 +67,15 @@ static char	*get_file_path(const char *start)
 {
 	const char *end = start + strlen(start + 1);
 
-	while (end >= start && *end != DIR_SEPARATOR) end++;
+	while (end >= start && *end != DIR_SEPARATOR) end--;
 	if (end < start)
 		return (NULL);
-	base_length = (end - start) + 1;
+	if (end == start)
+	{
+		base_length = 0;
+		return (NULL);
+	}
+	base_length = (end - start);
 	return (strndup(start, base_length));
 }
 

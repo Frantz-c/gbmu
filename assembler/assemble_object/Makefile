@@ -6,7 +6,7 @@
 #    By: fcordon<marvin@le-101.fr>                  +:+   +:    +:    +:+      #
 #                                                  #+#   #+    #+    #+#       #
 #    Created: 1981/02/25 16:43:57 by fcordon      #+#   ##    ##    #+#        #
-#    Updated: 1982/08/27 15:20:33 by fcordon     ###    #+. /#+    ###.fr      #
+#    Updated: 2019/09/11 22:08:31 by fcordon     ###    #+. /#+    ###.fr      #
 #                                                          /                   #
 #                                                         /                    #
 # **************************************************************************** #
@@ -19,7 +19,7 @@ INC_DIR   = includes
 SOURCES  := $(wildcard ${SRC_DIR}/*.c)
 OBJECTS  := $(patsubst ${SRC_DIR}/%.c,${OBJ_DIR}/%.o,${SOURCES})
 DEPENDS  := $(patsubst ${SRC_DIR}/%.c,${OBJ_DIR}/%.d,${SOURCES})
-CFLAGS   ?= -Wextra -Wall -g3 #-fsanitize=address
+CFLAGS   ?= -Wextra -Wall -g3 -fsanitize=address
 CINC     := -I $(subst :, -I ,${INC_DIR})
 CC       ?= gcc-9
 

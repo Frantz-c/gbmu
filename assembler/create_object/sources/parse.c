@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/13 14:04:54 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/10 14:45:11 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/11 15:22:13 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -140,6 +140,7 @@ file_included(const char *file)
 {
 	for (uint32_t i = 0; included_list[i]; i++)
 	{
+		printf("CMP(\"%s\", \"%s\")\n", included_list[i], file);
 		if (strcmp(included_list[i], file) == 0)
 			return (1);
 	}
@@ -157,7 +158,9 @@ static char	*get_include_filename(char **s, data_t *data)
 	const uint32_t	max_length = base_length + 512; // include argument max length = 512
 
 	fullname = malloc(max_length);
-	strncpy(fullname, base, base_length);
+	if (base)
+		strncpy(fullname, base, base_length);
+	printf("base = \"%s\"\n", base);
 	if (**s != '"')
 	{
 		while (!is_space(**s) && !is_endl(**s))
@@ -248,6 +251,91 @@ uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t a
 	while (is_alnum(**s) || **s == '_') (*s)++;
 	length = *s - keyword_start;
 
+	// .ascii : creer une fonction
+	if (length == 5 && strncmp(keyword_start, "ascii", length) == 0)
+	{
+		uint32_t	byte;
+		uint32_t	n_bytes = 0;
+
+		if (n_bytes == 0)
+		{
+			register code_area_t	*tmp = VEC_ELEM(code_area_t, area, data->cur_area);
+			if (tmp->cur == NULL)
+			{
+				tmp->cur = calloc(1, sizeof(code_area_t));
+				tmp->data = tmp->cur;
+			}
+			else
+			{
+				tmp->cur->next = calloc(1, sizeof(code_area_t));
+				tmp->cur = tmp->cur->next;
+			}
+			tmp->cur->symbol = (void *)malloc(sizeof(uint8_t) * /*BYTE_ALLOC_SIZE*/ 8);
+		}
+
+		while (is_space(**s)) (*s)++;
+		if (**s != '"')
+			goto __unexpected_charX;
+		(*s)++;
+
+		while (1)
+		{
+			if (**s == '"')
+			{
+				(*s)++;
+				while (is_space(**s)) (*s)++;
+				if (!is_endl(**s))
+					goto __unexpected_charX;
+				break;
+			}
+			if (is_endl(**s))
+				goto __unexpected_charX;
+
+			if (**s == '\\')
+			{
+				(*s)++;
+				if (**s == 'n')
+					byte = '\n';
+				else if (**s == 't')
+					byte = '\t';
+				else if (**s >= '0' && **s <= '9')
+					byte = **s - '0';
+				else
+					byte = **s;
+			}
+			else
+				byte = **s;
+
+			if (n_bytes > 0xffffu)
+				goto __too_many_bytesX;
+
+			register code_area_t	*tmp = VEC_ELEM(code_area_t, area, data->cur_area);
+			push_byte(tmp, byte & 0xffu);
+			n_bytes++;
+			(*s)++;
+		}
+		printf("NBYTES = %u\n", n_bytes);
+		if (n_bytes == 0)
+			print_warning(data->filename, data->lineno, data->line, "0 bytes specified");
+		else
+			VEC_ELEM(code_area_t, area, data->cur_area)->cur->size <<= 8;
+
+
+		args[0].type = BYTE_KEYWORD;
+		return (0);
+
+	__too_many_bytesX:
+		print_error(data->filename, data->lineno, data->line, "more than 0xffffff bytes");
+		return (0);
+	__unexpected_charX:
+		sprintf(data->buf, "unexpected character `%c`", **s);
+		print_error(data->filename, data->lineno, data->line, data->buf);
+		while (!is_endl(**s)) (*s)++;
+		return (0);
+	}
+	// .byte end
+
+
 	// .byte : creer une fonction
 	if (length == 4 && strncmp(keyword_start, "byte", length) == 0)
 	{
@@ -277,7 +365,7 @@ uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t a
 			if (is_endl(**s))
 				break;
 			if (is_numeric_len(*s, NULL) == 0)
-				goto __unexpected_char;
+				goto __unexpected_char2;
 			byte = atou_len(*s, &len);
 			if (byte > 0xffu)
 			{
@@ -325,7 +413,6 @@ uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t a
 		else
 			VEC_ELEM(code_area_t, area, data->cur_area)->cur->size <<= 8;
 
-		printf("NBYTES = %u\n", (VEC_ELEM(code_area_t, area, data->cur_area)->cur->size >> 8));
 
 		args[0].type = BYTE_KEYWORD;
 		return (0);
@@ -493,8 +580,12 @@ do{\
 	{\
 		s = end_word;\
 		include_filename = get_include_filename(&s, &data);\
+		printf("INCLUDE \"%s\"\n", include_filename);\
 		if (file_included(include_filename))\
+		{\
+			puts("FILE ALREADY INCLUDED");\
 			goto __free_filename;\
+		}\
 		if (parse_file(include_filename, area, macro, ext_symbol, loc_symbol, data.cur_area) == -1)\
 		{\
 			sprintf(data.buf, "can't open included file `%s`", include_filename);\

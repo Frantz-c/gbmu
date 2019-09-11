@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/10 11:54:21 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/11 12:36:41 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -18,33 +18,12 @@
 #include "callback.h"
 #include "get_code_with_replacement.h"
 #include "write_binary.h"
+#include "export_local_var_to_ext_symbols.h"
 
 uint16_t	cart_info = 0;
 cart_data_t	cartridge = {{0x0, 0xC3},{0},{0},{0},0,{0},0,0,0,0,0,0x33,0,0,{0}};
 uint32_t	g_error = 0;
 uint32_t	g_warning = 0;
-
-/*
-char	*get_object_name(const char *s)
-{
-	const char	*end = s + strlen(s) - 1;
-
-	while (*end != '.')
-	{
-		if (end == s)
-		{
-			g_error++;
-			fprintf(stderr, "fichier sans extention !\n");
-			exit(1);
-		}
-		end--;
-	}
-
-	char	*new = malloc((end - s) + 5);
-	sprintf(new, "%.*s.gbo", (int)(end - s), s);
-	return (new);
-}
-*/
 
 const char	*get_type_str(uint32_t type)
 {
@@ -124,6 +103,7 @@ int main(int argc, char *argv[])
 	assign_addr_to_var(&loc, ext); // loc.var -> ext
 	if (g_error)
 		exit(2);
+	export_local_var_to_ext_symbols(&loc, ext);
 
 	// DEBUG
 	puts("\e[1;34mintern labels:\e[0m");

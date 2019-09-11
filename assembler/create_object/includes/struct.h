@@ -6,7 +6,7 @@
 /*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/31 19:36:13 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/31 19:56:41 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/11 14:03:31 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -75,6 +75,7 @@ typedef struct	intern_symbols_s
 							// quantity	if VAR
 							// start	if MEMBLOCK
 	uint32_t	*pos;		//			if VAR
+	uint32_t	*offset;
 	uint8_t		*blockname;	//			if VAR
 	uint32_t	data2;		// end		if MEMBLOCK
 							// size		if VAR
@@ -87,6 +88,7 @@ typedef struct	extern_symbols_s
 	uint32_t	type;
 	uint32_t	quantity;
 	uint32_t	*pos;
+	uint32_t	*offset;
 }
 extern_symbols_t;
 

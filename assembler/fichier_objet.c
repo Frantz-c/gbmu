@@ -25,6 +25,7 @@ header
 		{
 			uint32_t	quantity;	// nombre d'utilisations
 			uint32_t	pos[];		// positions des instructions qui l'utilisent
+			uint32_t	offset[];	// offset (code start : .bank)
 			char		*blockname;	// nom du block contenant la variable
 			uint32_t	size;		// taille de la variable
 		}
@@ -41,6 +42,7 @@ header
 		uint32_t	type;		// var, label, block
 		uint32_t	quantity;	// nombre d'appels
 		uint32_t	pos[]; ...	// position relative au debut du code de la valeur (apres le header)
+		uint32_t	offset[];	// offset de la portion de code
 	}
 };
 
