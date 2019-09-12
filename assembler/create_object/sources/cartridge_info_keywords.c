@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/23 22:24:16 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/10 15:09:37 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/12 18:45:14 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -290,7 +290,6 @@ void	set_sgb_support(arguments_t args[], data_t *data)
 	if (args[0].type & STRING_TYPE)
 	{
 		to_lower_string((char *)args->value);
-		printf("ADD_SGB_SUPPORT %s\n", (char*)args->value);
 		if (strcmp((char *)args->value, "supported") == 0)
 			cartridge.sgb_support = USES_SGB_FUNC;
 		else if (strcmp((char *)args->value, "not_supported") == 0)
@@ -333,38 +332,36 @@ static uint16_t	get_mbc_options(char *s)
 {
 	uint8_t	o = 0;
 	uint8_t	i;
-	uint8_t	test = 0;
 
 	if (!is_space(*s) && *s != '_')
 		return (0x8000u);
-	for (i = 0; ; i++)
+	for (i = 0; *s; i++)
 	{
+		s++;
 		if (i == 3)
 			return (0xC000u);
 
-		s++;
+//		s++;
 		if (strncmp(s, "sram", 4) == 0 &&
 			(is_space(s[4]) || s[4] == '_' || s[4] == 0))
 		{
-			o |= SRAM;
-			if (test & SRAM)
+			if (o & SRAM)
 				return (0x4000u);
-			test |= SRAM;
-			s += 5;
+			o |= SRAM;
+			s += 4;
 		}
 		else if (strncmp(s, "battery", 7) == 0 &&
 			(is_space(s[7]) || s[7] == '_' || s[7] == 0))
 		{
-			o |= BATTERY;
-			if (test & BATTERY)
+			if (o & BATTERY)
 				return (0x4000u);
-			test |= BATTERY;
+			o |= BATTERY;
 			s += 7;
 		}
 		else if (strncmp(s, "rtc", 3) == 0 &&
 			(is_space(s[3]) || s[3] == '_' || s[3] == 0))
 		{
-			if (test & RTC || test & RUMBLE)
+			if ((o & RTC) || (o & RUMBLE))
 				return (0x4000u);
 			o |= RTC;
 			s += 3;
@@ -372,7 +369,7 @@ static uint16_t	get_mbc_options(char *s)
 		else if (strncmp(s, "rumble", 6) == 0 &&
 			(is_space(s[6]) || s[6] == '_' || s[6] == 0))
 		{
-			if (test & RUMBLE || test & RTC)
+			if ((o & RUMBLE) || (o & RTC))
 				return (0x4000u);
 			o |= RUMBLE;
 			s += 6;
@@ -454,7 +451,7 @@ void	set_cartridge_type(arguments_t args[], data_t *data)
 						cartridge.cart_type = 2u;
 					else
 						goto __error_mbc1;
-					return;
+					break;
 				}
 				case '2':
 				{
@@ -464,6 +461,7 @@ void	set_cartridge_type(arguments_t args[], data_t *data)
 						cartridge.cart_type = 6u;
 					else
 						goto __error_mbc2;
+					return;
 				}
 				case '3':
 				{
@@ -479,6 +477,7 @@ void	set_cartridge_type(arguments_t args[], data_t *data)
 						cartridge.cart_type = 0x12u;
 					else
 						goto __error_mbc3;
+					break;
 				}
 				case '5':
 				{
@@ -488,14 +487,18 @@ void	set_cartridge_type(arguments_t args[], data_t *data)
 					if (opt == 0)
 						cartridge.cart_type = 0x19u;
 					else if (opt == (BATTERY | SRAM))
-						cartridge.cart_type = 0x1Au;
-					else if (opt == SRAM)
 						cartridge.cart_type = 0x1Bu;
+					else if (opt == SRAM)
+						cartridge.cart_type = 0x1Au;
 					else
 						goto __error_mbc5;
+					break;
 				}
 				default:
+				{
+				//	printf("*arg = %c(%d)\n", *arg, *arg);
 					goto __error_mbc;
+				}
 			}
 		}
 		else

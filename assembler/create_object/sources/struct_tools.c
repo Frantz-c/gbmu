@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 13:17:53 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/11 22:30:37 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/12 13:14:35 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -199,7 +199,6 @@ extern void			push_instruction(code_area_t *area, uint8_t bin[4], param_t p[2], 
 
 				size_t	index = vector_index(loc_symbol->label, (void*)&symbol);
 				vector_insert(loc_symbol->label, (void*)&sym, index);
-				printf("\e[1;33minsert label undeclared %s\n", sym.name);
 			}
 			else if (index > -1)
 			{
@@ -208,7 +207,6 @@ extern void			push_instruction(code_area_t *area, uint8_t bin[4], param_t p[2], 
 				free(symbol);
 				if (sym->type == UNUSED)
 				{
-					printf("\e[1;44m<><>\e[0msymbol %s unused -> var_or_label\n", sym->name);
 					sym->type = VAR_OR_LABEL;
 				}
 				else if (sym->type == MEMBLOCK)

@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 12:49:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/09 13:03:48 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/12 13:22:57 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -230,7 +230,6 @@ size_t		vector_index(vector_t *vec, const void *elem)
 		else
 			right = middle;
 	}
-	printf("\e[1;31mLEFT = %zu\e[0m\n", left);
 	return (left);
 }
 

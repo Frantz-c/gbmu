@@ -1,0 +1,501 @@
+# **************************************************************************** #
+#                                                           LE - /             #
+#                                                               /              #
+#    cpu_test.gbs                                     .::    .:/ .      .::    #
+#                                                  +:+:+   +:    +:  +:+:+     #
+#    By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+      #
+#                                                  #+#   #+    #+    #+#       #
+#    Created: 2019/09/12 16:54:46 by fcordon      #+#   ##    ##    #+#        #
+#    Updated: 2019/09/12 22:01:56 by fcordon     ###    #+. /#+    ###.fr      #
+#                                                          /                   #
+#                                                         /                    #
+# **************************************************************************** #
+
+.program_start	0x150
+.game_title		"AFF STRING"
+.cgb_support	"incompatible"
+.sgb_support	"not_supported"
+.cart_type		"mbc-5_sram_battery"
+.rom_size		"8 banks"
+.ram_size		"1 bank"
+.destination	"other"
+.version		0
+
+.bank	0,	0x3000
+%include	"ascii_printer.gbs"
+
+
+.memlock	var_area, 0xC000, 0xC020
+.var2		var, var_area
+.var2		var2, var_area
+.var1		tmpA, var_area
+.var1		tmpB, var_area
+.var1		tmpC, var_area
+.var1		tmpD, var_area
+.var1		tmpE, var_area
+.var1		tmpH, var_area
+.var1		tmpL, var_area
+
+.bank	0,	0x150
+
+call	_load_ascii
+
+xor	A
+ld	B,	A
+ld	C,	A
+ld	D,	A
+ld	E,	A
+ld	H,	A
+ld	L,	A
+
+###### TEST1: ld ######
+
+	ld		HL,		var
+	ld		A,		0x23
+	ld		[var],	A
+
+	ld		A,		[HL]
+	ld		C,		A
+	push	BC		# 2.7)
+
+	ld		B,		[HL]
+	ld		C,		B
+	push	BC		# 2.6)
+
+	ld		C,		[HL]
+	push	BC		# 2.5)
+
+	ld		D,		[HL]
+	ld		C,		D
+	push	BC		# 2.4)
+
+	ld		E,		[HL]
+	push	DE		# 2.3)
+
+	ld		H,		[HL]
+	ld		C,		H
+	push	BC		# 2.2)
+
+	ld		HL,		var
+	ld		L,		[HL]
+	push	HL		# 2.1)
+
+## PUSH ALL REGISTERS
+	push	AF		# Z8)
+	push	BC		# Z7)
+	push	DE		# Z6)
+	push	HL		# Z5)
+	ld		C,		A
+	push	BC		# Z4)
+	ld		C,		B
+	push	BC		# Z3)
+	ld		C,		D
+	push	BC		# Z2)
+	ld		C,		H
+	push	BC		# Z1)
+
+	# ====
+
+	ld		HL,		var
+	ld		A,		0x23
+	ld		[HL],	A
+
+	ld		A,		[HL]
+	ld		C,		A
+	push	BC		# 1.7)
+
+	ld		B,		[HL]
+	ld		C,		B
+	push	BC		# 1.6)
+
+	ld		C,		[HL]
+	push	BC		# 1.5)
+	
+	ld		D,		[HL]
+	ld		C,		D
+	push	BC		# 1.4)
+
+	ld		E,		[HL]
+	push	DE		# 1.3)
+
+	ld		H,		[HL]
+	ld		C,		H
+	push	BC		# 1.2)
+
+	ld		HL,		var
+	ld		L,		[HL]
+	push	HL		# 1.1)
+
+## PUSH ALL REGISTERS
+	push	AF		# Y8)
+	push	BC		# Y7)
+	push	DE		# Y6)
+	push	HL		# Y5)
+	ld		C,		A
+	push	BC		# Y4)
+	ld		C,		B
+	push	BC		# Y3)
+	ld		C,		D
+	push	BC		# Y2)
+	ld		C,		H
+	push	BC		# Y1)
+
+ld		HL,	__TEST1
+call	_print_string
+call	_wait_until_enter_is_pressed
+jr		__test_2
+
+__TEST1:	.ascii	"TEST1: ld\n\n"
+			.ascii	"Y{~~~~~~~~}\n"
+			.ascii	"1.1)~ 2)~ 3)~\n"
+			.ascii	"  4)~ 5)~ 6)~\n"
+			.ascii	"  7)~\n"
+			.ascii	"X{~~~~~~~~}\n"
+			.ascii	"2.1)~ 2)~ 3)~\n"
+			.ascii	"  4)~ 5)~ 6)~\n"
+			.ascii	"  7)~\n\n"
+			.ascii	"Press [ENTER]..."
+			.byte	0
+
+###### END ##########
+
+
+__test_2:
+###### TEST2: ld (suite) ######
+
+	ld		BC,		var
+	ld		A,		0x42
+	ld		[var],	A
+
+	ld		A,		[BC]
+	ld		C,		A
+	push	BC		# t)
+
+	ld		DE,		var
+	ld		A,		[DE]
+	ld		C,		A
+	push	BC		# s)
+
+	ld		C,		LCDC
+	ld		A,		[C]
+	ld		C,		A
+	push	BC		# r)
+
+	ld		A,		0xFF
+	ld		DE,		var
+	ld		[DE],	A
+	ld		A,		[DE]
+	ld		C,		A
+	push	BC		# q)
+
+	ld		BC,		var
+	ld		A,		[BC]
+	ld		C,		A
+	push	BC		# p)
+
+	ld		A,		[var]
+	ld		C,		A
+	push	BC		# o)
+
+	ld		A,		0xDD
+	ld		[var],	A
+	ld		C,		A
+	push	BC		# n)
+
+	ld		HL,		var
+	ld		A,		[HL++]
+	ld		C,		A
+	push	HL		# m)
+	push	BC		# l)
+
+	ld		HL,		var
+	ld		A,		[HL--]
+	ld		C,		A
+	push	HL		# k)
+	push	BC		# j)
+
+	ld		A,		0xAA
+	ld		HL,		var
+	ld		[HL++],	A
+	ld		A,		[var]
+	ld		C,		A
+	push	HL		# i)
+	push	BC		# h)
+
+	ld		A,		0xAA
+	ld		HL,		var
+	ld		[HL--],	A
+	ld		A,		[var]
+	ld		C,		A
+	push	HL		# g)
+	push	BC		# f)
+
+	ld		HL,		0xFFFF
+	ld		A,		[HL++]
+	ld		C,		A
+	push	HL		# e)
+	push	BC		# d)
+
+	ld		HL,		0x0000
+	ld		A,		[HL--]
+	ld		C,		A
+	push	HL		# c)
+	push	BC		# b)
+
+	ld		HL,		0xABCD
+	ld		C,		H
+	push	HL		# a)
+	push	BC		# 9)
+
+	ld		DE,		0xABCD
+	ld		C,		D
+	push	DE		# 8)
+	push	BC		# 7)
+
+	ld		BC,		0xABCD
+	ld		E,		B
+	push	BC		# 6)
+	push	DE		# 5)
+
+	ld		[var],		SP
+	ld		SP,			HL
+	ld		[var2],		SP
+	ld		A,			[var]
+	ld		L,			A
+	ld		A,			[var + 1]
+	ld		H,			A
+	ld		SP,			HL
+	ld		A,			[var2]
+	ld		C,			A
+	ld		A,			[var2 + 1]
+	ld		E,			A
+	push	BC		# 4)
+	push	DE		# 3)
+	ld		C,			H
+	push	BC		# 2)
+	push	HL		# 1)
+
+
+
+## PUSH ALL REGISTERS
+	push	AF		# Z6)
+	push	DE		# Z5)
+	ld		C,		A
+	push	BC		# Z4)
+	ld		C,		B
+	push	BC		# Z3)
+	ld		C,		D
+	push	BC		# Z2)
+	ld		C,		H
+	push	BC		# Z1)
+
+	ld		HL,		__TEST2
+	call	_print_string
+	call	_wait_until_enter_is_pressed
+	jr		__test_3
+
+__TEST2:	.ascii	"TEST2: ld (suite)\n\n"
+			.ascii	"Z{~~~~~~}\n"
+			.ascii	"1-8)~~~~~~~~"
+			.ascii	"9-g)~~~~~~~~"
+			.ascii	"h-o)~~~~~~~~"
+			.ascii	"p-t)~~~~~\n\n"
+			.ascii	"Press [ENTER]..."
+			.byte	0
+
+
+###### END ####################
+
+
+__test_3:
+
+###### TEST3: ld HL, SP+* ######
+
+	# store stack pointer
+	ld		[var2],		SP
+
+	ld		SP,			0xFFFF
+
+	ld		HL,			SP+2
+	# store result
+	ld		A,			H
+	ld		[var],		A
+	ld		A,			L
+	ld		[var + 1],	A
+	
+	# restore SP
+	ld		A,			[var2]
+	ld		H,			A
+	ld		A,			[var2 + 1]
+	ld		L,			A
+	ld		SP,			HL
+
+	# print flags and result
+	push	AF		# c)
+	ld		A,			[var]
+	ld		C,			A
+	push	BC		# b)
+	ld		A,			[var + 1]
+	ld		C,			A
+	push	BC		# a)
+
+
+	# store stack pointer
+	ld		[var2],		SP
+
+	ld		SP,			0x0FFF
+
+	ld		HL,			SP+2
+	# store result
+	ld		A,			H
+	ld		[var],		A
+	ld		A,			L
+	ld		[var + 1],	A
+	
+	# restore SP
+	ld		A,			[var2]
+	ld		H,			A
+	ld		A,			[var2 + 1]
+	ld		L,			A
+	ld		SP,			HL
+
+	# print flags and result
+	push	AF		# 9)
+	ld		A,			[var]
+	ld		C,			A
+	push	BC		# 8)
+	ld		A,			[var + 1]
+	ld		C,			A
+	push	BC		# 7)
+
+
+	# store stack pointer
+	ld		[var2],		SP
+
+	ld		SP,			0x0000
+
+	ld		HL,			SP+0xFE		;;; SP+-2 = error
+	# store result
+	ld		A,			H
+	ld		[var],		A
+	ld		A,			L
+	ld		[var + 1],	A
+	
+	# restore SP
+	ld		A,			[var2]
+	ld		H,			A
+	ld		A,			[var2 + 1]
+	ld		L,			A
+	ld		SP,			HL
+
+	# print flags and result
+	push	AF		# 6)
+	ld		A,			[var]
+	ld		C,			A
+	push	BC		# 5)
+	ld		A,			[var + 1]
+	ld		C,			A
+	push	BC		# 4)
+
+
+	# store stack pointer
+	ld		[var2],		SP
+
+	ld		SP,			0x1000
+
+	ld		HL,			SP+0xFE		;;; SP+-2 = error
+	# store result
+	ld		A,			H
+	ld		[var],		A
+	ld		A,			L
+	ld		[var + 1],	A
+	
+	# restore SP
+	ld		A,			[var2]
+	ld		H,			A
+	ld		A,			[var2 + 1]
+	ld		L,			A
+	ld		SP,			HL
+
+	# print flags and result
+	push	AF		# 3)
+	ld		A,			[var]
+	ld		C,			A
+	push	BC		# 2)
+	ld		A,			[var + 1]
+	ld		C,			A
+	push	BC		# 1)
+
+
+	## PUSH ALL REGISTERS
+	push	AF		# Z8)
+	push	BC		# Z7)
+	push	DE		# Z6)
+	push	HL		# Z5)
+	ld		C,		A
+	push	BC		# Z4)
+	ld		C,		B
+	push	BC		# Z3)
+	ld		C,		D
+	push	BC		# Z2)
+	ld		C,		H
+	push	BC		# Z1)
+
+
+	ld		HL,		__TEST3
+	call	_print_string
+	call	_wait_until_enter_is_pressed
+	jr		__test_4
+
+__TEST3:	.ascii	"TEST3: ld HL, SP+*\n\n"
+			.ascii	"Z{~~~~~~~~}\n"
+			.ascii	"123) ~~~\n"
+			.ascii	"456) ~~~\n"
+			.ascii	"789) ~~~\n"
+			.ascii	"abc) ~~~\n\n"
+			.ascii	"Press [ENTER]..."
+			.byte	0
+
+###### END #########################
+
+
+__test_4:
+
+###### TEST4: add ######
+	ld		HL,		__TEST4
+	call	_print_string
+	__infinite:
+		halt
+		nop
+		jr	__infinite
+
+
+__TEST4:	.ascii	"TEST4: add\n\n"
+			.ascii	"En construction...\n\n      _&(^-^)3"
+			.byte	0
+
+
+_wait_until_enter_is_pressed:
+#{
+	ld	A,		0x10
+	ld	[_IE],	A
+	halt
+	nop
+	xor	A
+	ld	[_IF],	A
+
+	ld	A,		0x10
+	ld	[_P1],	A
+	ld	A,		[_P1]
+	ld	A,		[_P1]
+	ld	A,		[_P1]
+	ld	A,		[_P1]
+	ld	A,		[_P1]
+	ld	A,		[_P1]
+
+	cpl	A
+	and	0x0f
+	cp	0
+	jrz	_wait_until_enter_is_pressed
+	ret
+#}

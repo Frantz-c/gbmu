@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/11 12:36:41 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/12 13:22:48 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -105,6 +105,7 @@ int main(int argc, char *argv[])
 		exit(2);
 	export_local_var_to_ext_symbols(&loc, ext);
 
+/*
 	// DEBUG
 	puts("\e[1;34mintern labels:\e[0m");
 	{
@@ -152,7 +153,7 @@ int main(int argc, char *argv[])
 		}
 	}
 	// END DEBUG
-
+*/
 
 	get_code_with_replacement(&loc, ext, code, argv);
 	if (g_error)

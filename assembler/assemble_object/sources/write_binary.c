@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/09/10 11:18:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/10 11:20:30 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/12 13:23:35 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -59,7 +59,6 @@ extern void		write_binary(vector_t *code, const char *filename)
 	register uint32_t	tmp = elem->start;
 	register uint32_t	end = elem->end;
 	
-	printf("WRITE 0x%x\n", elem->start);
 	while (tmp > 128)
 	{
 		fwrite(fill, 1, 128, file);
@@ -71,7 +70,6 @@ extern void		write_binary(vector_t *code, const char *filename)
 
 	for (uint32_t i = 1; i < code->nitems; i++, elem++)
 	{
-	printf("WRITE 0x%x\n", elem->start);
 		if (end < elem->start)
 		{
 			tmp = elem->start - end;
@@ -106,5 +104,3 @@ extern void		write_binary(vector_t *code, const char *filename)
 	}
 	fclose(file);
 }
-
-

@@ -6,7 +6,7 @@
 /*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/26 15:36:50 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/29 16:52:44 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/12 13:04:44 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -166,7 +166,6 @@ static int32_t	execute_calcul(calc_elem_t *calc, uint32_t n_elem)
 
 			while (len >= 3)
 			{
-				printf("(1)calculate(%d %c %d);\n", calc[start].val, calc[start+1].val, calc[start+2].val);
 				calc[start].val = calculate(calc + start);
 				end -= 2;
 				len = end - start;
@@ -184,7 +183,6 @@ static int32_t	execute_calcul(calc_elem_t *calc, uint32_t n_elem)
 		{
 			if ((start < 2 || calc[start-2].lvl < calc[start].lvl) && calc[start+2].lvl <= calc[start].lvl)
 			{
-				printf("(2)calculate(%d %c %d);\n", calc[start-1].val, calc[start].val, calc[start+1].val);
 				calc[start-1].val = calculate(calc + start - 1);
 				memmove(calc + start, calc + start + 2, (n_elem - (start + 1)) * sizeof(calc_elem_t));
 				n_elem -= 2;
@@ -205,7 +203,6 @@ extern uint32_t	calcul_param(char *p, value_t *val, data_t *data, uint8_t param_
 	if (*p == '[') p++;
 	if (*p == '~' || *p == '(' || is_numeric_len(p, NULL))
 	{
-		printf("get_calc(\"%s\");\n", p);
 		calc = get_calc(p, &n_elem);
 		val->sign = '+';
 
@@ -236,7 +233,6 @@ extern uint32_t	calcul_param(char *p, value_t *val, data_t *data, uint8_t param_
 		}
 
 		*(p++) = '\0';
-		printf("(2) get_calc(\"%s\");\n", p);
 		calc = get_calc(p, &n_elem);
 
 		if (n_elem == 0)

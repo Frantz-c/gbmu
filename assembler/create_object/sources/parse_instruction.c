@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/13 14:05:50 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/11 22:36:57 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/12 13:13:25 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -16,6 +16,7 @@
 #include "get_bin_instruction.h"
 #include "calcul_param.h"
 
+/*
 STATIC_DEBUG const char		*get_param_type_str(enum param_e p)
 {
 	switch (p)
@@ -57,7 +58,7 @@ STATIC_DEBUG const char		*get_param_type_str(enum param_e p)
 	}
 	return ("PARAM TYPE ERROR");
 }
-
+*/
 
 /* a recoder !!!! en 2 fonctions */
 static void	instruction_replace(char **inst, char **param1, char **param2)	// "ld (ff00h)" -> ldff, "ld HL, SP" -> ldhl, "(HL++?)" -> (HLI, "(HL--?)" -> (HLD
@@ -825,7 +826,6 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 		if (set_mnemonic_and_params(&s, &mnemonic, &param1, &param2, &n_params, data, macro) == -1)
 			return (s);
 	}
-	printf("set_mnemonic_and_params() -> \e[0;36m%s %s, %s\e[0m\n", mnemonic, param1, param2);
 
 	if (n_params == 3)
 		goto __too_many_parameters;
@@ -852,7 +852,6 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 	str_to_lower(mnemonic);
 	if (n_params == 2)
 		instruction_replace(&mnemonic, &param1, &param2);	// "ld (ff00h)" -> ldff, "ld HL, SP" -> ldhl
-	printf("\e[0;36m%s %s, %s\e[0m (%u, %u)\n", mnemonic, param1, param2, param[0], param[1]);
 	
 	if (param1)
 	{
@@ -877,7 +876,7 @@ char	*parse_instruction(char *s, vector_t *area, vector_t *ext_symbol, loc_sym_t
 				val = tmp_val;
 		}
 	}
-	printf("[2] \e[0;36m%s %s, %s\e[0m (%s, %s) :: \e[0;33mvalue = %u\e[0m\n", mnemonic, param1, param2, get_param_type_str(param[0]), get_param_type_str(param[1]), val.value);
+//	printf("\e[0;36m%s %s, %s\e[0m (%s, %s) :: \e[0;33mvalue = %u\e[0m\n", mnemonic, param1, param2, get_param_type_str(param[0]), get_param_type_str(param[1]), val.value);
 
 	char	*symbol = param2;
 	if (param[0] == SYMBOL)

@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/13 14:04:54 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/11 15:22:13 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/12 17:40:35 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -22,6 +22,7 @@
 ** ######### DEBUG FUNCTIONS #########
 ** ###################################
 */
+/*
 STATIC_DEBUG void			header_print(void)
 {
 	puts("==> cartridge:");
@@ -130,6 +131,7 @@ STATIC_DEBUG void			vector_print(vector_t *vec, char *name, void (*print)(const 
 	}
 	printf("\n");
 }
+*/
 /* #######################################
 ** ######### END DEBUG FUNCTIONS #########
 ** #######################################
@@ -140,7 +142,6 @@ file_included(const char *file)
 {
 	for (uint32_t i = 0; included_list[i]; i++)
 	{
-		printf("CMP(\"%s\", \"%s\")\n", included_list[i], file);
 		if (strcmp(included_list[i], file) == 0)
 			return (1);
 	}
@@ -159,8 +160,10 @@ static char	*get_include_filename(char **s, data_t *data)
 
 	fullname = malloc(max_length);
 	if (base)
+	{
 		strncpy(fullname, base, base_length);
-	printf("base = \"%s\"\n", base);
+		fullname[i++] = '/';
+	}
 	if (**s != '"')
 	{
 		while (!is_space(**s) && !is_endl(**s))
@@ -294,6 +297,8 @@ uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t a
 			if (**s == '\\')
 			{
 				(*s)++;
+				if (**s < 32)
+					goto __unexpected_charX;
 				if (**s == 'n')
 					byte = '\n';
 				else if (**s == 't')
@@ -314,7 +319,6 @@ uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t a
 			n_bytes++;
 			(*s)++;
 		}
-		printf("NBYTES = %u\n", n_bytes);
 		if (n_bytes == 0)
 			print_warning(data->filename, data->lineno, data->line, "0 bytes specified");
 		else
@@ -407,7 +411,6 @@ uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t a
 				break;
 			}
 		}
-		printf("NBYTES = %u\n", n_bytes);
 		if (n_bytes == 0)
 			print_warning(data->filename, data->lineno, data->line, "0 bytes specified");
 		else
@@ -512,6 +515,7 @@ uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t a
 		(*s)++;
 	}
 	args[i].value = NULL;
+	/*
 	printf("params = ");
 	for (uint8_t i = 0; args[i].value; i++)
 	{
@@ -521,6 +525,7 @@ uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t a
 			printf("%u ", *(uint32_t *)args[i].value);
 	}
 	printf("\n");
+	*/
 	return (length);
 
 /*
@@ -580,12 +585,8 @@ do{\
 	{\
 		s = end_word;\
 		include_filename = get_include_filename(&s, &data);\
-		printf("INCLUDE \"%s\"\n", include_filename);\
 		if (file_included(include_filename))\
-		{\
-			puts("FILE ALREADY INCLUDED");\
 			goto __free_filename;\
-		}\
 		if (parse_file(include_filename, area, macro, ext_symbol, loc_symbol, data.cur_area) == -1)\
 		{\
 			sprintf(data.buf, "can't open included file `%s`", include_filename);\
@@ -620,7 +621,6 @@ do {\
 \
 	uint32_t	len;\
 	uint32_t	type;\
-	printf("keyword = \"%.*s\"\n", keyword_len, keyword);\
 \
 	if (keyword_len == 4 && strncmp(keyword, "bank", keyword_len) == 0)\
 		bank_switch(area, args, &data);\
@@ -709,6 +709,7 @@ __end_directive:
 	}
 	
 	/* degug start */
+	/*
 	puts("");
 	vector_print(macro, "macro", &macro_print);
 	vector_print(area, "code area", &area_print);
@@ -716,6 +717,7 @@ __end_directive:
 	vector_print(loc_symbol->label, "label", &label_print);
 	vector_print(loc_symbol->memblock, "block", &memblock_print);
 	header_print();
+	*/
 	/* debug end */
 
 	free(content_start);

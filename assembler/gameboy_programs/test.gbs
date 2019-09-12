@@ -1,0 +1,146 @@
+# **************************************************************************** #
+#                                                           LE - /             #
+#                                                               /              #
+#    test.gbs                                         .::    .:/ .      .::    #
+#                                                  +:+:+   +:    +:  +:+:+     #
+#    By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+      #
+#                                                  #+#   #+    #+    #+#       #
+#    Created: 2019/09/10 19:08:18 by fcordon      #+#   ##    ##    #+#        #
+#    Updated: 2019/09/12 22:13:11 by fcordon     ###    #+. /#+    ###.fr      #
+#                                                          /                   #
+#                                                         /                    #
+# **************************************************************************** #
+
+.program_start	0x150
+.game_title		"AFF STRING"
+.cgb_support	"incompatible"
+.sgb_support	"not_supported"
+.cart_type		"mbc1_sram_battery"
+.rom_size		"8 banks"
+.ram_size		"1 bank"
+.destination	"other"
+.version		0
+
+%define	DEBUG_GENERAL_REG(reg)\
+	push	AF\
+	push	BC\
+	push	DE\
+	push	HL\
+	ld		HL,	__fmt\
+	ld		A,	[reg]\
+	ld		C,	A\
+	push	BC\
+	call	_print_string\
+	pop		HL\
+	pop		DE\
+	pop		BC\
+	pop		AF
+
+
+# ===================== 0x60   ========================#
+.bank	0,	0x60
+ret
+
+# ===================== 0x40   ========================#
+.bank	0,	0x40
+ret
+
+# ===================== 0x48   ========================#
+.bank	0,	0x48
+ret
+
+# ===================== 0x50   ========================#
+.bank	0,	0x50
+ret
+
+# ===================== 0x58   ========================#
+.bank	0,	0x58
+ret
+
+
+
+#====================== 0x2000 ========================#
+.bank	0,	0x2000
+%include	"ascii_printer.gbs"
+
+
+
+#====================== 0x150  ========================#
+.bank	0,	0x150
+
+xor		A
+ld		[_LCDC],	A
+
+call	_load_ascii
+
+ld		C,	0x1c
+ld		E,	0xFA
+push	DE
+push	BC
+ld		HL,	__string
+
+call	_print_string
+
+__loop:
+#	DEBUG_GENERAL_REG(_P1)		;; attention, erreur lors de l'appel d'une macro inexistante imprecise !
+	ld	A,		0x10
+	ld	[_IE],	A
+	halt
+	nop
+	xor	A
+	ld	[_IF],	A
+
+	ld	A,		0x20
+	ld	[_P1],	A
+	xor	A
+	ld	A,		[_P1]
+	ld	A,		[_P1]
+	ld	A,		[_P1]
+	ld	A,		[_P1]
+	ld	A,		[_P1]
+	ld	A,		[_P1]
+
+	cpl	A
+	and	0x0f
+
+	cp		1
+	jrnz	__cp_button_left
+	ld		A,		[_SCX]
+	dec		A
+	ld		[_SCX],	A
+	jr		__loop
+
+	__cp_button_left:
+	cp		2
+	jrnz	__cp_button_up
+	ld		A,		[_SCX]
+	inc		A
+	ld		[_SCX],	A
+	jr		__loop
+
+	__cp_button_up:
+	cp		4
+	jrnz	__cp_button_down
+	ld		A,		[_SCY]
+	inc		A
+	ld		[_SCY],	A
+	jr		__loop
+
+	__cp_button_down:
+	cp		8
+	jrnz	__loop
+	ld		A,		[_SCY]
+	dec		A
+	ld		[_SCY],	A
+	jr		__loop
+
+
+
+#====================== 0x1000 ========================#
+.bank	0,	0x1000
+__string:	.ascii	"Register C value:\n  0x~\n"
+			.ascii	"Register E value:\n  0x~\n"
+			.ascii	"If C is not 0x1C\nor E is not 0xFA\nthis program\n   sucks... :'(\n"
+			.ascii	" !\"$%&'()*+,-./0123456789:<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}\0"
+
+__fmt:	.ascii	"REGISTER P1 = 0x~\0"

@@ -6,7 +6,7 @@
 /*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/09/10 11:12:37 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/11 14:49:37 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/12 13:20:51 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -72,7 +72,6 @@ extern void		get_code_with_replacement(loc_symbols_t *loc, vector_t *ext, vector
 
 	for (uint32_t i = 0; files[i]; i++)
 	{
-		printf("i = %u\n", i);
 		file = fopen(files[i], "r");
 		fread(&header, sizeof(tmp_header_t), 1, file);
 		fseek(file, header.header_length, SEEK_CUR);
@@ -82,10 +81,9 @@ extern void		get_code_with_replacement(loc_symbols_t *loc, vector_t *ext, vector
 
 			if (fread(&code_length, sizeof(uint32_t), 1, file) != 1)
 			{
-				printf("error code_length\n");
+				fprintf(stderr, "error code_length\n");
 				goto __error;
 			}
-			printf("code_start = 0x%x, code_length = %u\n", code_start, code_length);
 
 			if (length == 0)
 				buf = malloc(code_length);
@@ -104,16 +102,13 @@ extern void		get_code_with_replacement(loc_symbols_t *loc, vector_t *ext, vector
 			{
 				register ext_sym_t	*elem = VEC_ELEM_FIRST(ext_sym_t, ext);
 
-				printf("ext->nitems = %zu\n", ext->nitems);
 				for (uint32_t j = 0; j < ext->nitems; j++, elem++)
 				{
-					printf("j = %u, elem = %p\n", j, elem);
 
 					for (var_data_t *data = elem->data; data; data = data->next)
 					{
 
 
-						printf("data = %p, data->next = %p, file_num = %u, i = %u\n", data, data->next, data->file_number, i);
 						if (data->file_number == i)
 						{
 							for (uint32_t l = 0; l < data->quantity; l++)
@@ -124,13 +119,11 @@ extern void		get_code_with_replacement(loc_symbols_t *loc, vector_t *ext, vector
 								uint8_t		*inst = buf + data->pos[l];
 								uint8_t		symbol_size = inst_length[*inst];
 								
-								printf(">>>> replace at inst 0x%x, pos 0x%x(%u) (symbol = %s)\n", *inst, data->pos[l], data->pos[l], elem->name);
 
 								uint8_t		operation = inst[symbol_size];
 								inst++;
 								uint32_t	value = inst[0] | (inst[1] << 8);
 
-								printf("EXT SYM VALUE : 0x%x %c %u\n", elem->value, operation, value);
 								if (operation == '-')
 									value = elem->value - value;
 								else if (operation == '+')
@@ -183,44 +176,43 @@ extern void		get_code_with_replacement(loc_symbols_t *loc, vector_t *ext, vector
 		uint8_t		*new_buf = malloc(header.code_length - 8);
 		uint32_t	z = 0;
 
-		for (uint32_t j = 0; j < code_length;)
-		{
-			register uint8_t	len;
-			register uint8_t	inc = 0;
-
-			if ((len = inst_length[buf[j]]) != 0)
+			for (uint32_t j = 0; j < code_length;)
 			{
-				if ((len == 2 && buf[j] != 0xcbU) || len == 3)
-					inc++;
+				register uint8_t	len;
+				register uint8_t	inc = 0;
 
-				while (len)
+				if ((len = inst_length[buf[j]]) != 0)
 				{
-					new_buf[z++] = buf[j++];
-					if (--len == 0)
-						break;
-				}
-				j += inc;
-			}
-			else
-			{
-				if (buf[j] == 0xddu && buf[j+1] == 0xddu && buf[j+2] == 0xddu)
-				{
-					register uint32_t	l = (buf[j+3] << 8) | buf[j+4];
-					printf("l = %u\n", l);
-					j += 5;
-					memcpy(new_buf + z, buf + j, l);
-					j += l;
-					z += l;
+					if ((len == 2 && buf[j] != 0xcbU) || len == 3)
+						inc++;
+
+					while (len)
+					{
+						new_buf[z++] = buf[j++];
+						if (--len == 0)
+							break;
+					}
+					j += inc;
 				}
 				else
 				{
-					puts("\e[0;41;1;37mGROS PROBLEME, ILLEGAL INSTRUCTION !!\e[0m");
+					if (buf[j] == 0xddu && buf[j+1] == 0xddu && buf[j+2] == 0xddu)
+					{
+						register uint32_t	l = (buf[j+3] << 8) | buf[j+4];
+						j += 5;
+						memcpy(new_buf + z, buf + j, l);
+						j += l;
+						z += l;
+					}
+					else
+					{
+						fprintf(stderr, "\e[0;41;1;37mGROS PROBLEME, ILLEGAL INSTRUCTION !!\e[0m\n");
+					}
 				}
 			}
-		}
 
-		all_code_t	new = {code_start, code_start + z, new_buf, i};
-		vector_push(code, (void*)&new);
+			all_code_t	new = {code_start, code_start + z, new_buf, i};
+			vector_push(code, (void*)&new);
 		}
 		fclose(file);
 	}
@@ -239,11 +231,9 @@ extern void		get_code_with_replacement(loc_symbols_t *loc, vector_t *ext, vector
 		fprintf(stderr, "cartridge header overlap\n");
 		g_error++;
 	}
-	printf("(0) start = 0x%x\n", elem->start);
 	elem++;
 	for (uint32_t i = 1; i < code->nitems; i++, elem++)
 	{
-		printf("(%u) start = 0x%x\n", i, elem->start);
 		if (elem->start < end)
 		{
 			fprintf(stderr, "code overlap in 0x%x (current code start), 0x%x (previous code end)\n", elem->start, end);

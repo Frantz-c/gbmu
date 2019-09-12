@@ -6,7 +6,7 @@
 /*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/09/09 15:02:56 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/10 11:46:09 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/12 13:18:37 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -29,7 +29,6 @@ extern void		assign_addr_to_var(loc_symbols_t *loc, vector_t *ext)
 
 		for (uint32_t i = 0; i < loc->block->nitems; i++, elem++)
 		{
-			printf("memblock found ! (%s)\n", elem->name);
 			memblock_t	new = {elem->start, elem->end, elem->end - elem->start, 0, elem->name};
 			if (memblock->nitems == 0)
 				vector_push(memblock, (void*)&new);
@@ -46,7 +45,6 @@ extern void		assign_addr_to_var(loc_symbols_t *loc, vector_t *ext)
 		{
 			register ssize_t	index;
 
-			printf("search variable %s in all memory blocks\n", elem->blockname);
 			if ((index = vector_search(memblock, (void*)&elem->blockname)) != -1)
 			{
 				register memblock_t	*block = VEC_ELEM(memblock_t, memblock, index);
@@ -58,7 +56,6 @@ extern void		assign_addr_to_var(loc_symbols_t *loc, vector_t *ext)
 				}
 				else
 				{
-					printf("variable %s found !\n", elem->name);
 					elem->addr = block->end - block->space;
 					block->space -= elem->size;
 

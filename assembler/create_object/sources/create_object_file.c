@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/27 19:25:27 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/11 15:07:23 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/12 20:26:45 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -127,7 +127,6 @@ void __attribute__((always_inline))
 	// copy de l'opcode dans code[]
 	uint8_t	instruction_len = inst_length[inst->opcode[0]];
 
-	printf("\e[1;46m   >   \e[0minstruction \"0x%hhx\", size = %u\n", inst->opcode[0], instruction_len);
 	if (instruction_len > 1 && inst->opcode[0] != 0xCBu)
 		instruction_len++;
 	memcpy(*code + *i, inst->opcode, instruction_len);
@@ -164,8 +163,8 @@ void __attribute__((always_inline))
 		extern_symbols_t	*elem = VEC_ELEM(extern_symbols_t, extern_, index);
 		if ((elem->quantity & 0x7) == 0)
 		{
-			elem->pos = realloc(elem->pos, elem->quantity + 8);
-			elem->offset = realloc(elem->offset, elem->quantity + 8);
+			elem->pos = realloc(elem->pos, (elem->quantity + 8) * sizeof(uint32_t));
+			elem->offset = realloc(elem->offset, (elem->quantity + 8) * sizeof(uint32_t));
 		}
 		elem->pos[elem->quantity] = *relative_index;
 		elem->offset[elem->quantity++] = offset;
@@ -175,7 +174,6 @@ void __attribute__((always_inline))
 	// copy de l'opcode dans code[]
 	uint8_t	instruction_len = inst_length[inst->opcode[0]];
 
-	printf("\e[1;46m   >   \e[0minstruction \"0x%hhx\", size = %u\n", inst->opcode[0], instruction_len);
 	if (instruction_len > 1 && inst->opcode[0] != 0xCBu)
 		instruction_len++;
 	memcpy(*code + *i, inst->opcode, instruction_len);
@@ -222,8 +220,8 @@ void __attribute__((always_inline))
 			intern_symbols_t	*elem = VEC_ELEM(intern_symbols_t, intern_, intern_index);
 			if ((elem->data1 & 0x7) == 0)
 			{
-				elem->pos = realloc(elem->pos, elem->data1 + 8);
-				elem->offset = realloc(elem->offset, elem->data1 + 8);
+				elem->pos = realloc(elem->pos, (elem->data1 + 8) * sizeof(uint32_t));
+				elem->offset = realloc(elem->offset, (elem->data1 + 8) * sizeof(uint32_t));
 			}
 			elem->pos[elem->data1] = *relative_index;
 			elem->offset[elem->data1++] = offset;
@@ -238,7 +236,6 @@ void __attribute__((always_inline))
 	// copy de l'opcode dans code[]
 	uint8_t	instruction_len = inst_length[inst->opcode[0]];
 
-	printf("\e[1;46m   >   \e[0minstruction \"0x%hhx\", size = %u\n", inst->opcode[0], instruction_len);
 	if (instruction_len > 1 && inst->opcode[0] != 0xCBu)
 		instruction_len++;
 	memcpy(*code + *i, inst->opcode, instruction_len);
@@ -427,7 +424,6 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 		fwrite(&in->type, sizeof(uint32_t), 1, file);
 		intern_size += len + sizeof(uint32_t);
 
-			printf("write: intern symbol \"%s\" (%u) : ", in->name, in->type);
 		if (in->type == VAR)
 		{
 			fwrite(&in->data1, sizeof(uint32_t), 1, file);
@@ -437,20 +433,17 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 			fwrite(in->blockname, 1, len, file);
 			fwrite(&in->data2, sizeof(uint32_t), 1, file);
 			intern_size += (sizeof(uint32_t) * (2 + (in->data1 * 2))) + len;
-				printf("quantity = %u, ..., block = \"%s\", size = %u\n", in->data1, in->blockname, in->data2);
 		}
 		else if (in->type == LABEL)
 		{
 			fwrite(&in->data1, sizeof(uint32_t), 1, file);
 			intern_size += sizeof(uint32_t);
-				printf("addr = 0x%x\n", in->data1);
 		}
 		else //memblock
 		{
 			fwrite(&in->data1, sizeof(uint32_t), 1, file);
 			fwrite(&in->data2, sizeof(uint32_t), 1, file);
 			intern_size += (sizeof(uint32_t) * 2);
-				printf("start = 0x%x, end = 0x%x\n", in->data1, in->data2);
 		}
 	}
 	header_size += intern_size;

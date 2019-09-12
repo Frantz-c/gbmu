@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/12 13:43:03 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/10 20:25:15 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/12 16:00:28 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -27,6 +27,14 @@
 		./gbasm file.gbo file.gbs -o exe.gb
 */
 
+
+typedef struct	src_obj_s
+{
+	char	*src;
+	char	*obj;
+}
+src_obj_t;
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -40,7 +48,7 @@
 #define	ASSEMBLE_OBJECTS		2	// generates a lot of .o
 #define FULL_COMPILATION		4	// generate executable file directly
 
-int	valid_extension(const char *s, const char *ext)
+int		valid_extension(const char *s, const char *ext)
 {
 	const char	*start = s;
 	s += strlen(s + 1);
@@ -50,9 +58,37 @@ int	valid_extension(const char *s, const char *ext)
 	return (strcmp(s + 1, ext) == 0);
 }
 
+void	push_array(char ***a, char *new, uint32_t *len, uint32_t *max)
+{
+	if ((*len & 0x7) == 0)
+	{
+		*max += 8;
+		*a = realloc(*a, (*max + 1) * sizeof(char*));
+	}
+	(*a)[*len] = new;
+	(*len)++;
+}
+
+void	push_array_struct(src_obj_t **a, char *new_src, char *new_obj, uint32_t *len, uint32_t *max)
+{
+	if ((*len & 0x7) == 0)
+	{
+		*max += 8;
+		*a = realloc(*a, (*max + 1) * sizeof(src_obj_t));
+	}
+	((*a)[*len]).src = new_src;
+	((*a)[*len]).obj = new_obj;
+	(*len)++;
+}
+
+
 uint8_t	get_action(char *argv[], char **exe, void **obj, void **src)
 {
 	uint32_t	i = 0;
+	char		**o = NULL;//malloc(sizeof(char*) * 9);
+	src_obj_t	*s = NULL;//malloc(sizeof(char*) * 9);
+	uint32_t	olen = 0, omax = 0;
+	uint32_t	slen = 0, smax = 0;
 
 	// -i *.gbs -o *.gbo
 	if (strcmp(argv[i], "-i") == 0)
@@ -84,99 +120,112 @@ uint8_t	get_action(char *argv[], char **exe, void **obj, void **src)
 			goto __invalid_param;
 		return (CREATE_ONE_OBJECT);
 	}
-	// -o *.gbo -i *.gbs
 	// -o exe *.gbo
-	else if (strcmp(argv[i], "-o") == 0)
-	{
-		i++;
-		if (argv[i] == NULL || !valid_extension(argv[i], "gbo"))
-		{
-		__multiple_objects_compilation:
-			// -o exe *.gbo
-			*exe = argv[i];
-			i++;
-			*obj = argv + i;
-			while (argv[i] != NULL)
-			{
-				if (!valid_extension(argv[i], "gbo"))
-					goto __invalid_extension;
-				i++;
-			}
-			return (ASSEMBLE_OBJECTS);
-		}
-
-		// -o *.gbo -i *.gbs
-		*obj = (void*)strdup(argv[i]);
-		i++;
-		if (argv[i] == NULL)
-		{
-			free(*obj);
-			goto __i_expected;
-		}
-		else if (strcmp(argv[i], "-i") == 0)
-		{
-			i++;
-			if (argv[i] == NULL || !valid_extension(argv[i], "gbs"))
-				goto __error_extension;
-			*src = argv[i];
-			i++;
-			if (argv[i] != NULL)
-			{
-				free(*obj);
-				goto __invalid_param;
-			}
-		}
-		else
-		{
-			free(*obj);
-			i = 1;
-			goto __multiple_objects_compilation;
-		}
-		return (CREATE_ONE_OBJECT);
-	}
 	// *.gbs ... -o exe
 	else
 	{
-		*src = argv + i;
-		while (argv[i] != NULL && valid_extension(argv[i], "gbs")) i++;
-		if (i == 0)
-			goto __invalid_param;
-		if (argv[i] == NULL)
-			goto __invalid_param;
+		uint8_t		flag_o = 0;
+		*exe = NULL;
+
 		if (strcmp(argv[i], "-o") == 0)
 		{
-			argv[i] = NULL;
 			i++;
+			if (argv[i] && argv[i+1] && strcmp(argv[i+1], "-i") == 0)
+				goto __flag_o__flag_i;
+			flag_o = 1;
 			if (argv[i] == NULL)
-				goto __invalid_param;
-			*exe = argv[i];
-			i++;
-			if (argv[i] != NULL)
-				goto __invalid_param;
-		}
-		else
-			goto __invalid_param;
-
-
-		{
-			register char	**p = *src;
-			register char	**o = malloc((i - 1) * sizeof(char*));
-
-			for (uint32_t j = 0; ;)
 			{
-				o[j] = strdup(p[j]);
-				o[j][strlen(p[j] + 1)] = 'o';
-				if (p[++j] == NULL)
-				{
-					o[j] = NULL;
-					break;
-				}
+				// ERROR "./gbasm -o"
+				fprintf(stderr, "./gbasm -o\n");
+				goto __free_and_exit;
 			}
-			*obj = o;
+			*exe = argv[i++];
 		}
 
+		while (argv[i] && (flag_o || (argv[i][0] != '-' || argv[i][1] != 'o' || argv[i][2] != 0)))
+		{
+			if (valid_extension(argv[i], "gbs"))
+			{
+				char	*new_obj = strdup(argv[i]);
+
+
+				new_obj[strlen(new_obj + 1)] = 'o';
+				push_array_struct(&s, strdup(argv[i]), new_obj, &slen, &smax);
+				push_array(&o, new_obj, &olen, &omax);
+			}
+			else if (valid_extension(argv[i], "gbo"))
+			{
+				char	*new_obj = strdup(argv[i]);
+				push_array(&o, new_obj, &olen, &omax);
+			}
+			else
+			{
+				fprintf(stderr, "invalid extension file \"%s\"\n", argv[i]);
+			}
+			i++;
+		}
+
+		if (!flag_o)
+		{
+			if (argv[i] == NULL)
+			{
+				// ERROR "./gbasm file.gbs"
+				fprintf(stderr, "./gbasm file.gbs\n");
+				goto __free_and_exit;
+			}
+			i++;
+			*exe = argv[i++];
+			if (argv[i])
+			{
+				// ERROR "./gbasm file.gbs -o"
+				fprintf(stderr, "./gbasm file.gbs -o\n");
+				goto __free_and_exit;
+			}
+		}
+
+		o[olen] = NULL;
+		s[slen].src = NULL;
+		*obj = o;
+		*src = s;
+		return (FULL_COMPILATION);
 	}
-	return (FULL_COMPILATION);
+
+	// -o *.gbo -i *.gbs
+__flag_o__flag_i:
+		*obj = strdup(argv[i]);
+		i++;
+		i++;
+		if (argv[i] == NULL)
+		{
+			// ERROR "./gbasm -o file.gbo -i"
+			goto __free_and_exit;
+		}
+		if (!valid_extension(argv[i], "gbs"))
+		{
+			// ERROR "./gbasm -o file.gbo -i error.toto"
+			goto __free_and_exit;
+		}
+		*src = argv[i];
+		return (CREATE_ONE_OBJECT);
+
+__free_and_exit:
+		puts("ERROR");
+		if (olen)
+		{
+			for (uint32_t i = 0; i < olen; i++)
+				free(o[i]);
+		}
+		free(o);
+		if (slen)
+		{
+			for (uint32_t i = 0; i < slen; i++)
+				free(o[i]);
+		}
+		free(s);
+		exit(1);
+
+
+
 
 __i_expected:
 	fprintf(stderr, "-i expected");
@@ -242,22 +291,6 @@ void	call_assemble_objects(char **obj, char *exe)
 	free(argv);
 }
 
-void	call_create_executable(char **obj, char **src, char *exe)
-{
-	for (uint32_t i = 0; obj[i]; i++)
-		call_create_object(obj[i], src[i]);
-
-	call_assemble_objects(obj, exe);
-
-	for (uint32_t i = 0; obj[i]; i++)
-	{
-		remove(obj[i]);
-		free(obj[i]);
-	}
-	free(obj);
-}
-
-
 int		main(int argc, char *argv[])
 {
 	uint8_t		action = 0;
@@ -278,46 +311,55 @@ int		main(int argc, char *argv[])
 	{
 		case CREATE_ONE_OBJECT:
 		{
-			/*
 			printf("object = \"%s\", source = \"%s\"\n",
 					(char*)obj, (char*)src);
-			*/
 			call_create_object(obj, src);
 			free(obj);
 			break;
 		}
-		case ASSEMBLE_OBJECTS:
-		{
-			call_assemble_objects(obj, exe);
-			/*
-			register char	**objects = (char **)obj;
-			printf("exe = \"%s\", objects = ", (char*)exe);
-			for (uint32_t i = 0; objects[i]; objects++)
-			{
-				printf("\"%s\" ", objects[i]);
-			}
-			printf("\n");
-			*/
-			break;
-		}
 		case FULL_COMPILATION:
 		{
-			register char	**objects = (char **)obj;
-			register char	**sources = (char **)src;
+			register char		**objects = (char **)obj;
+			register src_obj_t	*sources = (src_obj_t *)src;
 
-			printf("exe = \"%s\", sources = ", (char*)exe);
-			for (uint32_t i = 0; sources[i]; sources++)
+			printf("exe = \"%s\", ", (char*)exe);
+			if (sources)
 			{
-				printf("\"%s\" ", sources[i]);
+				printf("sources = ");
+				for (uint32_t i = 0; sources[i].src; i++)
+				{
+					printf("\"%s\" ", sources[i].src);
+				}
 			}
-			printf(", objects = ");
-			for (uint32_t i = 0; objects[i]; objects++)
+			if (objects)
 			{
-				printf("\"%s\" ", objects[i]);
-				free(objects[i]);
+				printf(", objects = ");
+				for (uint32_t i = 0; objects[i]; i++)
+				{
+					printf("\"%s\" ", objects[i]);
+				}
 			}
 			printf("\n");
-			call_create_executable(obj, src, exe);
+
+			if (sources)
+			{
+				for (uint32_t i = 0; sources[i].src; i++)
+				{
+					call_create_object(sources[i].obj, sources[i].src);
+					free(sources[i].src);
+				}
+			}
+			call_assemble_objects(objects, exe);
+			
+			if (sources)
+			{
+				for (uint32_t i = 0; sources[i].src; i++)
+					remove(sources[i].obj);
+				free(sources);
+			}
+			for (uint32_t i = 0; objects[i]; i++)
+				free(objects[i]);
+			free(objects);
 			break;
 		}
 	}

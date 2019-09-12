@@ -6,7 +6,7 @@
 /*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/22 22:53:58 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/27 13:46:20 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/12 13:03:49 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -30,7 +30,6 @@ void	add_label(char *name, vector_t *area, vector_t *ext_symbol, loc_sym_t *loc_
 		{
 			lab->base_or_status = VEC_ELEM(code_area_t, area, data->cur_area)->addr + VEC_ELEM(code_area_t, area, data->cur_area)->size;
 			lab->pos = VEC_ELEM(code_area_t, area, data->cur_area)->size;
-			printf("\e[1;36mlab->base_or_status = %u\n\e[0m", lab->base_or_status);
 		}
 		else
 		{
@@ -75,7 +74,6 @@ void	add_label(char *name, vector_t *area, vector_t *ext_symbol, loc_sym_t *loc_
 	{
 		symbol_t	*sym = VEC_ELEM(symbol_t, ext_symbol, index);
 
-		printf("\e[1;32msym = \e[0m%s\n", name);
 		sprintf(
 					data->buf,
 					"(#3) duplicate symbol `%s` (previous declaration in file %s:%u)",
@@ -90,7 +88,6 @@ void	add_label(char *name, vector_t *area, vector_t *ext_symbol, loc_sym_t *loc_
 	register uint32_t	pos = VEC_ELEM(code_area_t, area, data->cur_area)->size;
 	register size_t		i = vector_index(loc_symbol->label, (void*)&name);
 	label_t	new = {name, pos, addr + pos, data->lineno, strdup(data->filename)};
-	printf("\e[1;35mnew.base_or_status = %u, label = %s, pos = 0x%x\e[0m\n", new.base_or_status, new.name, addr + pos);
 
 	vector_insert(loc_symbol->label, (void*)&new, i);
 }
