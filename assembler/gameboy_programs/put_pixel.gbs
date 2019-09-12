@@ -1,0 +1,68 @@
+# **************************************************************************** #
+#                                                           LE - /             #
+#                                                               /              #
+#    put_pixel.gbs                                    .::    .:/ .      .::    #
+#                                                  +:+:+   +:    +:  +:+:+     #
+#    By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+      #
+#                                                  #+#   #+    #+    #+#       #
+#    Created: 2019/09/12 22:15:34 by fcordon      #+#   ##    ##    #+#        #
+#    Updated: 2019/09/12 22:36:59 by fcordon     ###    #+. /#+    ###.fr      #
+#                                                          /                   #
+#                                                         /                    #
+# **************************************************************************** #
+
+%define LCDC_ON			0x80
+%define BG_DISPLAY_ON	0x01
+%define BG_AREA_8000	0x10
+
+.memlock	global_var, 0xC000, 0xC020
+.var1		fg_color, global_var
+.var1		bg_color, global_var
+
+_lcdc_off:	## lcdc_off(void)
+#{
+	ld		A,		[_LCDC]
+	and		0x80
+	retz	## if LCDC is off
+
+	__wait_vertical_blank:
+		ld	A,	[_LY]
+		cp		145
+		jrnz	__AP_wait_vertical_blank
+
+		ld	A,			[_LCDC]
+		and	(~LCDC_ON & 0xff)
+		ld	[_LCDC],	A
+	ret
+#}
+
+_lcdc_on:
+	ld	A,	(LCDC_ON | BG_AREA_8000 | BG_ON)
+
+_write_character_code:	## write_character_code(void);
+#{
+	
+#}
+
+_clear_screen:	## clear_screen(color=A);
+#{
+	push	BC
+	push	DE
+
+	ld	E,	A
+#}
+
+_select_color:
+
+_write_pixel_in_vram:
+
+_print_vbuf_to_screen:
+
+
+
+
+cursor =
+
+###
+# #
+###

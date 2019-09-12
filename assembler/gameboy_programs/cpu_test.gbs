@@ -6,7 +6,7 @@
 #    By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+      #
 #                                                  #+#   #+    #+    #+#       #
 #    Created: 2019/09/12 16:54:46 by fcordon      #+#   ##    ##    #+#        #
-#    Updated: 2019/09/12 22:01:56 by fcordon     ###    #+. /#+    ###.fr      #
+#    Updated: 2019/09/12 23:34:35 by fcordon     ###    #+. /#+    ###.fr      #
 #                                                          /                   #
 #                                                         /                    #
 # **************************************************************************** #
@@ -460,19 +460,297 @@ __TEST3:	.ascii	"TEST3: ld HL, SP+*\n\n"
 
 
 __test_4:
-
 ###### TEST4: add ######
+
+	ld		A,	0xFF
+	ld		B,	0xFF
+	add		A,	B
+	ld		C,	A
+	push	AF		# P)
+	push	BC		# O)
+
+	ld		A,	0xFF
+	ld		C,	0xFF
+	add		A,	C
+	ld		C,	A
+	push	AF		# N)
+	push	BC		# M)
+
+	ld		A,	0xFF
+	ld		D,	0xFF
+	add		A,	D
+	ld		C,	A
+	push	AF		# L)
+	push	BC		# K)
+
+	ld		A,	0xFF
+	ld		E,	0xFF
+	add		A,	E
+	ld		C,	A
+	push	AF		# J)
+	push	BC		# I)
+
+	ld		A,	0xFF
+	ld		H,	0xFF
+	add		A,	H
+	ld		C,	A
+	push	AF		# H)
+	push	BC		# G)
+
+	ld		A,	0xFF
+	ld		L,	0xFF
+	add		A,	L
+	ld		C,	A
+	push	AF		# F)
+	push	BC		# E)
+
+	ld		A,	0x3A
+	ld		B,	0xC6
+	add		A,	B
+	ld		C,	A
+	push	AF		# D)
+	push	BC		# C)
+
+	ld		A,	0x00
+	ld		B,	0x00
+	add		A,	B
+	ld		C,	A
+	push	AF		# B)
+	push	BC		# A)
+
+
+	ld		A,	0x33
+	add		A,	0x11
+	ld		C,	A
+	push	AF		# h)
+	push	BC		# g)
+
+	ld		A,	0x33
+	add		A,	0xD1
+	ld		C,	A
+	push	AF		# f)
+	push	BC		# e)
+
+	ld		A,	0x33
+	add		A,	0x1D
+	ld		C,	A
+	push	AF		# d)
+	push	BC		# c)
+
+	ld		A,	0x33
+	add		A,	0xCD
+	ld		C,	A
+	push	AF		# b)
+	push	BC		# a)
+
+
+	ld		HL,		var
+	ld		[HL],	0x11
+	ld		A,		0xEF
+	add		A,		[HL]
+	ld		C,	A
+	push	AF		# 6)
+	push	BC		# 5)
+
+	ld		[HL],	0x0
+	ld		A,		0x0
+	add		A,		[HL]
+	ld		C,	A
+	push	AF		# 4)
+	push	BC		# 3)
+
+	ld		[HL],	0x08
+	ld		A,		0xF1
+	add		A,		[HL]
+	ld		C,	A
+	push	AF		# 2)
+	push	BC		# 1)
+
+
 	ld		HL,		__TEST4
 	call	_print_string
+	call	_wait_until_enter_is_pressed
+	jr		__test_5
+
+
+__TEST4:	.ascii	"TEST4: add\n\n"
+			.ascii	"1-6)~~~~~~\n"
+			.ascii	"a-h)~~~~~~~~"
+			.ascii	"A-H)~~~~~~~~"
+			.ascii	"I-P)~~~~~~~~"
+			.ascii	"\nPress [ENTER]..."
+			.byte	0
+
+###### END #########################
+
+
+__test_5:
+###### TEST5: adc ##################
+
+	ld		A,	0x0F
+	ld		C,	0x0F
+	adc		A,	C
+	ld		C,	A
+	push	AF		# X)
+	push	BC		# W)
+
+	ld		A,	0xFF
+	ld		C,	0x00
+	adc		A,	C
+	ld		C,	A
+	push	AF		# V)
+	push	BC		# U)
+
+	ld		A,	0xF0
+	ld		C,	0xF0
+	adc		A,	C
+	ld		C,	A
+	push	AF		# T)
+	push	BC		# S)
+
+	ld		A,	0xFF
+	ld		C,	0x00
+	adc		A,	C
+	ld		C,	A
+	push	AF		# R)
+	push	BC		# Q)
+
+	ld		A,	0xFF
+	ld		B,	0xFF
+	adc		A,	B
+	ld		C,	A
+	push	AF		# P)
+	push	BC		# O)
+
+	ld		A,	0xFF
+	ld		C,	0xFF
+	adc		A,	C
+	ld		C,	A
+	push	AF		# N)
+	push	BC		# M)
+
+	ld		A,	0xFF
+	ld		D,	0xFF
+	adc		A,	D
+	ld		C,	A
+	push	AF		# L)
+	push	BC		# K)
+
+	ld		A,	0xFF
+	ld		E,	0xFF
+	adc		A,	E
+	ld		C,	A
+	push	AF		# J)
+	push	BC		# I)
+
+	ld		A,	0xFF
+	ld		H,	0xFF
+	adc		A,	H
+	ld		C,	A
+	push	AF		# H)
+	push	BC		# G)
+
+	ld		A,	0xFF
+	ld		L,	0xFF
+	adc		A,	L
+	ld		C,	A
+	push	AF		# F)
+	push	BC		# E)
+
+	ld		A,	0x3A
+	ld		B,	0xC6
+	adc		A,	B
+	ld		C,	A
+	push	AF		# D)
+	push	BC		# C)
+
+	ld		A,	0x00
+	ld		B,	0x00
+	adc		A,	B
+	ld		C,	A
+	push	AF		# B)
+	push	BC		# A)
+
+
+	ld		A,	0x33
+	adc		A,	0x11
+	ld		C,	A
+	push	AF		# h)
+	push	BC		# g)
+
+	ld		A,	0x33
+	adc		A,	0xD1
+	ld		C,	A
+	push	AF		# f)
+	push	BC		# e)
+
+	ld		A,	0x33
+	adc		A,	0x1D
+	ld		C,	A
+	push	AF		# d)
+	push	BC		# c)
+
+	ld		A,	0x33
+	adc		A,	0xCD
+	ld		C,	A
+	push	AF		# b)
+	push	BC		# a)
+
+
+	ld		HL,		var
+	ld		[HL],	0x11
+	ld		A,		0xEF
+	adc		A,		[HL]
+	ld		C,	A
+	push	AF		# 6)
+	push	BC		# 5)
+
+	ld		[HL],	0x0
+	ld		A,		0x0
+	adc		A,		[HL]
+	ld		C,	A
+	push	AF		# 4)
+	push	BC		# 3)
+
+	ld		[HL],	0x08
+	ld		A,		0xF1
+	adc		A,		[HL]
+	ld		C,	A
+	push	AF		# 2)
+	push	BC		# 1)
+
+
+	ld		HL,		__TEST5
+	call	_print_string
+	call	_wait_until_enter_is_pressed
+	jr		__test_6
+
+__TEST5:	.ascii	"TEST5: adc\n\n"
+			.ascii	"1-6)~~~~~~\n"
+			.ascii	"a-h)~~~~~~~~"
+			.ascii	"A-H)~~~~~~~~"
+			.ascii	"I-P)~~~~~~~~"
+			.ascii	"Q-X)~~~~~~~~"
+			.ascii	"\nPress [ENTER]..."
+			.byte	0
+
+####### END ###############
+
+
+__test_6:
+	ld	HL,		__TEST6
+	call	_print_string
+	call	_wait_until_enter_is_pressed
 	__infinite:
 		halt
 		nop
 		jr	__infinite
 
 
-__TEST4:	.ascii	"TEST4: add\n\n"
+__TEST6:	.ascii	"TEST6: sub\n\n"
 			.ascii	"En construction...\n\n      _&(^-^)3"
 			.byte	0
+
 
 
 _wait_until_enter_is_pressed:
