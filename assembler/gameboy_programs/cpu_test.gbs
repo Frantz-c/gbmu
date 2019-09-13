@@ -1651,7 +1651,7 @@ __test_15:
 	ld		HL,		__TEST15
 	call	_print_string
 	call	_wait_until_enter_is_pressed
-	jr		__end_of_test
+	jr		__test_16
 	
 __TEST15:	.ascii	"TEST15: set/res\n\n"
 			.ascii	"res)~~\nset)~~\n\n"
@@ -1659,6 +1659,83 @@ __TEST15:	.ascii	"TEST15: set/res\n\n"
 			.byte	0
 ##### END ###########################
 
+
+__test_16:
+
+	ld		A,	0x33
+	add		A,	0x49
+	daa
+	ld		C,	A
+	push	AF		# daa12)
+	push	BC		# daa11)
+
+	ld		A,	0x33
+	add		A,	0x99
+	daa
+	ld		C,	A
+	push	AF		# daa10)
+	push	BC		# daa9)
+
+	ld		A,	0x30
+	add		A,	0x19
+	daa
+	ld		C,	A
+	push	AF		# daa8)
+	push	BC		# daa7)
+
+
+	ld		A,	0x91
+	sub		A,	0x05
+	daa
+	ld		C,	A
+	push	AF		# daa6)
+	push	BC		# daa5)
+
+	ld		A,	0x33
+	sub		A,	0x99
+	daa
+	ld		C,	A
+	push	AF		# daa4)
+	push	BC		# daa3)
+
+	ld		A,	0
+	sub		A,	0
+	daa
+	ld		C,	A
+	push	AF		# daa2)
+	push	BC		# daa1)
+
+
+	ld	A,	0xAA
+	cpl	A
+	ld	C,	A
+	push	AF		# cpl2)
+	push	BC		# cpl1)
+
+	ccf
+	push	AF		# ccf2)
+	ccf
+	push	AF		# ccf1)
+
+	xor		A
+	scf
+	push	AF		# scf)
+
+
+	ld		HL,		__TEST16
+	call	_print_string
+	call	_wait_until_enter_is_pressed
+	jr		__end_of_test
+
+
+__TEST16:	.ascii	"TEST16: other\n\n"
+			.ascii	"scf)~\n"
+			.ascii	"ccf)~~\n"
+			.ascii	"cpl)~~\n"
+			.ascii	"daa)~~~~~~\n"
+			.ascii	"    ~~~~~~\n\n"
+			.ascii	"Press [ENTER]..."
+			.byte	0
 
 __end_of_test:
 ##### TEST16: #######################
