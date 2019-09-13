@@ -6,11 +6,12 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/08 11:02:11 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/13 13:30:28 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/13 14:04:47 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
+#include <stdio.h>
 #include <unistd.h>
 #include "memory_map.h"
 #include "registers.h"
@@ -1145,12 +1146,12 @@ add_sp_imm8:
 	imm_16 = regs->reg_sp + (int8_t)imm_8;
 	if ((imm_8 < 0x80u) && (imm_16 & 0xFFu) < (regs->reg_sp & 0xFFu))
 		regs->reg_f |= FLAG_CY;
-	else if ((imm_8 >= 0x80u) && (imm_16 & 0xFFu) > (regs->reg_sp & 0xFFu))
-		regs->reg_f |= FLAG_CY;
+//	else if ((imm_8 >= 0x80u) && (imm_16 & 0xFFu) > (regs->reg_sp & 0xFFu))
+//		regs->reg_f |= FLAG_CY;
 	if ((imm_8 < 0x80u) && (imm_16 & 0xFu) < (regs->reg_sp & 0xFu))
 		regs->reg_f |= FLAG_H;
-	else if ((imm_8 >= 0x80u) && (imm_16 & 0xFu) > (regs->reg_sp & 0xFu))
-		regs->reg_f |= FLAG_H;
+//	else if ((imm_8 >= 0x80u) && (imm_16 & 0xFu) > (regs->reg_sp & 0xFu))
+//		regs->reg_f |= FLAG_H;
 	regs->reg_sp = imm_16;
 	return (16);
 
@@ -1222,12 +1223,12 @@ ld_hl_sp_imm8:
 	imm_16 = regs->reg_sp + (int8_t)imm_8;
 	if ((imm_8 < 0x80u) && (imm_16 & 0xFFu) < (regs->reg_sp & 0xFFu))
 		regs->reg_f |= FLAG_CY;
-	else if ((imm_8 >= 0x80u) && (imm_16 & 0xFFu) > (regs->reg_sp & 0xFFu))
-		regs->reg_f |= FLAG_CY;
+//	else if ((imm_8 >= 0x80u) && (imm_16 & 0xFFu) > (regs->reg_sp & 0xFFu))
+//		regs->reg_f |= FLAG_CY;
 	if ((imm_8 < 0x80u) && (imm_16 & 0xFu) < (regs->reg_sp & 0xFu))
 		regs->reg_f |= FLAG_H;
-	else if ((imm_8 >= 0x80u) && (imm_16 & 0xFu) > (regs->reg_sp & 0xFu))
-		regs->reg_f |= FLAG_H;
+//	else if ((imm_8 >= 0x80u) && (imm_16 & 0xFu) > (regs->reg_sp & 0xFu))
+//		regs->reg_f |= FLAG_H;
 	regs->reg_hl = imm_16;
 	return (12);
 
