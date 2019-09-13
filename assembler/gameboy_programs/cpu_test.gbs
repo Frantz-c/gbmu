@@ -6,7 +6,7 @@
 #    By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+      #
 #                                                  #+#   #+    #+    #+#       #
 #    Created: 2019/09/12 16:54:46 by fcordon      #+#   ##    ##    #+#        #
-#    Updated: 2019/09/12 23:34:35 by fcordon     ###    #+. /#+    ###.fr      #
+#    Updated: 2019/09/13 13:25:17 by fcordon     ###    #+. /#+    ###.fr      #
 #                                                          /                   #
 #                                                         /                    #
 # **************************************************************************** #
@@ -36,8 +36,11 @@
 .var1		tmpH, var_area
 .var1		tmpL, var_area
 
+
+
 .bank	0,	0x150
 
+di
 call	_load_ascii
 
 xor	A
@@ -773,7 +776,12 @@ _wait_until_enter_is_pressed:
 
 	cpl	A
 	and	0x0f
-	cp	0
 	jrz	_wait_until_enter_is_pressed
+
+	__wait_until_p1_is_cleared:
+	ld	A,		[_P1]
+	cpl	A
+	and	0x0f
+	jrnz	__wait_until_p1_is_cleared
 	ret
 #}
