@@ -6,7 +6,7 @@
 #    By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+      #
 #                                                  #+#   #+    #+    #+#       #
 #    Created: 2019/09/12 16:54:46 by fcordon      #+#   ##    ##    #+#        #
-#    Updated: 2019/09/13 13:25:17 by fcordon     ###    #+. /#+    ###.fr      #
+#    Updated: 2019/09/13 18:32:56 by fcordon     ###    #+. /#+    ###.fr      #
 #                                                          /                   #
 #                                                         /                    #
 # **************************************************************************** #
@@ -43,6 +43,7 @@
 di
 call	_load_ascii
 
+__begin_test:
 xor	A
 ld	B,	A
 ld	C,	A
@@ -327,9 +328,9 @@ __test_3:
 	ld		[var + 1],	A
 	
 	# restore SP
-	ld		A,			[var2]
-	ld		H,			A
 	ld		A,			[var2 + 1]
+	ld		H,			A
+	ld		A,			[var2]
 	ld		L,			A
 	ld		SP,			HL
 
@@ -356,9 +357,9 @@ __test_3:
 	ld		[var + 1],	A
 	
 	# restore SP
-	ld		A,			[var2]
-	ld		H,			A
 	ld		A,			[var2 + 1]
+	ld		H,			A
+	ld		A,			[var2]
 	ld		L,			A
 	ld		SP,			HL
 
@@ -385,9 +386,9 @@ __test_3:
 	ld		[var + 1],	A
 	
 	# restore SP
-	ld		A,			[var2]
-	ld		H,			A
 	ld		A,			[var2 + 1]
+	ld		H,			A
+	ld		A,			[var2]
 	ld		L,			A
 	ld		SP,			HL
 
@@ -414,9 +415,9 @@ __test_3:
 	ld		[var + 1],	A
 	
 	# restore SP
-	ld		A,			[var2]
-	ld		H,			A
 	ld		A,			[var2 + 1]
+	ld		H,			A
+	ld		A,			[var2]
 	ld		L,			A
 	ld		SP,			HL
 
@@ -581,7 +582,7 @@ __TEST4:	.ascii	"TEST4: add\n\n"
 			.ascii	"a-h)~~~~~~~~"
 			.ascii	"A-H)~~~~~~~~"
 			.ascii	"I-P)~~~~~~~~"
-			.ascii	"\nPress [ENTER]..."
+			.ascii	"\n\nPress [ENTER]..."
 			.byte	0
 
 ###### END #########################
@@ -734,25 +735,943 @@ __TEST5:	.ascii	"TEST5: adc\n\n"
 			.ascii	"A-H)~~~~~~~~"
 			.ascii	"I-P)~~~~~~~~"
 			.ascii	"Q-X)~~~~~~~~"
-			.ascii	"\nPress [ENTER]..."
+			.ascii	"\n\nPress [ENTER]..."
 			.byte	0
 
 ####### END ###############
 
 
 __test_6:
-	ld	HL,		__TEST6
+###### TEST6: sub ###############
+
+	ld	A,	0x3E
+	ld	B,	0x3E
+	sub	A,	B
+	ld	A,	C
+	push	AF		# g)
+	push	BC		# f)
+
+	ld	A, 0x3E
+	ld	C,	0x0F
+	sub	A,	C
+	push	AF		# e)
+	push	BC		# d)
+
+	ld	A,	0x3E
+	ld	D,	0x40
+	sub	A,	D
+	ld	E,	D
+	push	AF		# c)
+	push	DE		# b)
+
+	ld	A,	0
+	ld	E,	0
+	sub	A,	E
+	push	AF		# a)
+	push	DE		# 9)
+
+	ld	A,	0
+	ld	H,	1
+	sub	A,	H
+	ld	C,	H
+	push	AF		# 8)
+	push	BC		# 7)
+
+	ld	A, 0
+	ld	L, 0xFF
+	sub	A,	L
+	push	AF		# 6)
+	push	HL		# 5)
+
+
+	ld	A,		0xFF
+	ld	HL,		var
+	ld	[HL],	0xEE
+	sub	A,		[HL]
+	ld	C,		A
+	push	AF		# 4)
+	push	BC		# 3)
+
+
+	ld	A,	0x88
+	sub	A,	0x11
+	ld	C,	A
+	push	AF		# 2)
+	push	BC		# 1)
+
+	push	DE		# Z6)
+	push	HL		# Z5)
+	ld		C,	A
+	ld		E,	B
+	push	BC		# Z4)
+	push	DE		# Z3)
+	ld		C,	D
+	ld		E,	H
+	push	BC		# Z2)
+	push	DE		# Z1)
+
+
+	ld		HL,		__TEST6
 	call	_print_string
 	call	_wait_until_enter_is_pressed
-	__infinite:
-		halt
-		nop
-		jr	__infinite
-
+	jr		__test_7
 
 __TEST6:	.ascii	"TEST6: sub\n\n"
-			.ascii	"En construction...\n\n      _&(^-^)3"
+			.ascii	"Z{~~~~~~}\n"
+			.ascii	"1-8)~~~~~~~~"
+			.ascii	"9-g)~~~~~~~~"
+			.ascii	"\n\nPress [ENTER]..."
 			.byte	0
+###### END ###########################
+	
+
+__test_7:
+###### TEST7: sbc ####################
+	
+	ld	A,	0xF0
+	add	A,	0x10
+
+	ld	A,	0x3E
+	ld	B,	0x3D
+	sbc	A,	B
+	ld	A,	C
+	push	AF		# g)
+	push	BC		# f)
+
+	ld	A,	0xF0
+	add	A,	0x10
+
+	ld	A, 0x3E
+	ld	C,	0x0E
+	sub	A,	C
+	push	AF		# e)
+	push	BC		# d)
+
+	ld	A,	0xF0
+	add	A,	0x10
+
+	ld	A,	0x3E
+	ld	D,	0x3F
+	sub	A,	D
+	ld	E,	D
+	push	AF		# c)
+	push	DE		# b)
+
+	ld	A,	0xF0
+	add	A,	0x10
+
+	ld	A,	1
+	ld	E,	0
+	sub	A,	E
+	push	AF		# a)
+	push	DE		# 9)
+
+	ld	A,	0xF0
+	add	A,	0x10
+
+	ld	A,	0
+	ld	H,	1
+	sub	A,	H
+	ld	C,	H
+	push	AF		# 8)
+	push	BC		# 7)
+
+	ld	A,	0xF0
+	add	A,	0x10
+
+	ld	A, 0
+	ld	L, 0xFF
+	sub	A,	L
+	push	AF		# 6)
+	push	HL		# 5)
+
+	ld	A,	0xF0
+	add	A,	0x10
+
+	ld	A,		0xFF
+	ld	HL,		var
+	ld	[HL],	0xEE
+	sub	A,		[HL]
+	ld	C,		A
+	push	AF		# 4)
+	push	BC		# 3)
+
+
+	ld	A,	0xF0
+	add	A,	0x10
+
+	ld	A,	0x88
+	sub	A,	0x10
+	ld	C,	A
+	push	AF		# 2)
+	push	BC		# 1)
+
+	push	DE		# Z6)
+	push	HL		# Z5)
+	ld		C,	A
+	ld		E,	B
+	push	BC		# Z4)
+	push	DE		# Z3)
+	ld		C,	D
+	ld		E,	H
+	push	BC		# Z2)
+	push	DE		# Z1)
+
+
+	ld	HL,		__TEST7
+	call	_print_string
+	call	_wait_until_enter_is_pressed
+	jr		__test_8
+
+__TEST7:	.ascii	"TEST7: sbc\n\n"
+			.ascii	"Z{~~~~~~}\n"
+			.ascii	"1-8)~~~~~~~~"
+			.ascii	"9-g)~~~~~~~~"
+			.ascii	"\n\nPress [ENTER]..."
+			.byte	0
+
+###### END ##############################
+
+
+__test_8:
+###### TEST8: binary inst ###############
+
+	ld	A,	0xEF
+	and	0x10
+	ld	C,	A
+	push	AF		# k)
+	push	BC		# j)
+
+	ld	A,	0
+	and	A,	A
+	ld	C,	A
+	push	AF		# i)
+	push	BC		# h)
+
+	ld	A, 0x08
+	ld	B,	0x8F
+	and	A,	B
+	ld	C,	A
+	push	AF		# g)
+	push	BC		# f)
+
+	ld	A,	0xFF
+	ld	C,	0
+	or	A,	C
+	ld	C,	A
+	push	AF		# e)
+	push	BC		# d)
+
+	ld	A,	0
+	ld	D,	0
+	or	A,	D
+	ld	C,	A
+	push	AF		# c)
+	push	BC		# b)
+
+	ld	A,	0xFF
+	ld	E,	0xFF
+	xor	A,	E
+	ld	C,	A
+	push	AF		# a)
+	push	BC		# 9)
+
+	ld	A,	0x0F
+	ld	H,	0xF0
+	xor	A,	H
+	ld	C,	A
+	push	AF		# 8)
+	push	BC		# 7)
+
+	ld	A,	0
+	xor	A,	0
+	ld	C,	A
+	push	AF		# 6)
+	push	BC		# 5)
+
+	ld	HL,		var
+	ld	[HL],	0x11
+	ld	A,		0x10
+	ld	B,		0x02
+	ld	C,		0x10
+	xor	A,	[HL]
+	push	AF		# 4)
+	or	A,	B
+	push	AF		# 3)
+	and	A,	C
+	ld	C,	A
+	push	AF		# 2)
+	push	BC		# 1)
+
+	push	DE		# Z6)
+	push	HL		# Z5)
+	ld		C,	A
+	ld		E,	B
+	push	BC		# Z4)
+	push	DE		# Z3)
+	ld		C,	D
+	ld		E,	H
+	push	BC		# Z2)
+	push	DE		# Z1)
+
+
+	ld		HL,		__TEST8
+	call	_print_string
+	call	_wait_until_enter_is_pressed
+	jr		__test_9
+
+__TEST8:	.ascii	"TEST8: binary inst\n\n"
+			.ascii	"Z{~~~~~~}\n"
+			.ascii	"1-8)~~~~~~~~"
+			.ascii	"9-g)~~~~~~~~"
+			.ascii	"h-k)~~~~\n\n"
+			.ascii	"Press [ENTER]..."
+			.byte	0
+####### END ############################
+
+
+__test_9:
+###### TEST9: cp #######################
+
+	ld		A,	0x77
+	cp		A,	0x76
+	push	AF		# 9)
+
+	ld		A,	2
+	ld		B,	1
+	cp		A,	B
+	push	AF		# 8)
+
+	ld		C,	2
+	cp		A,	C
+	push	AF		# 7)
+
+	ld		D,	3
+	cp		A,	D
+	push	AF		# 6)
+
+	ld		A,	0
+	ld		E,	1
+	cp		A,	E
+	push	AF		# 5)
+
+	ld		A,	0x10
+	ld		H,	1
+	cp		A,	H
+	push	AF		# 4)
+
+	ld		A,	0xFF
+	ld		L,	0x11
+	cp		A,	L
+	push	AF		# 3)
+
+	ld		A,	0xFF
+	cp		A,	0xFF
+	push	AF		# 2)
+
+	ld		HL,		var
+	ld		[HL],	0x22
+	ld		A,		0x11
+	cp		A,	[HL]
+	push	AF		# 1)
+
+	push	BC		# Z7)
+	push	DE		# Z6)
+	push	HL		# Z5)
+	ld		C,	A
+	ld		E,	B
+	push	BC		# Z4)
+	push	DE		# Z3)
+	ld		C,	D
+	ld		E,	H
+	push	BC		# Z2)
+	push	DE		# Z1)
+
+
+
+	ld		HL,		__TEST9
+	call	_print_string
+	call	_wait_until_enter_is_pressed
+	jr		__test_10
+
+__TEST9:	.ascii	"TEST9: cp\n\n"
+			.ascii	"Z{~~~~~~~}\n"
+			.ascii	"1-5)~~~~~\n"
+			.ascii	"6-9)~~~~\n\n"
+			.ascii	"Press [ENTER]..."
+			.byte	0
+####### END ########################
+
+
+__test_10:
+####### TEST10: ####################
+
+	ld	A,	0xFF
+	inc	A
+	ld	C,	A
+	push	AF		# t)
+	push	BC		# s)
+
+	ld	B,	0x00
+	dec	B
+	ld	C,	B
+	push	AF		# r)
+	push	BC		# q)
+
+	ld	C,	0x0F
+	inc	C
+	push	AF		# p)
+	push	BC		# o)
+
+	ld	D,	0x8
+	dec	D
+	ld	C,	D
+	push	AF		# n)
+	push	BC		# m)
+
+	ld	E,	0x7
+	inc	E
+	push	AF		# l)
+	push	DE		# k)
+	
+	ld	H,	0x80
+	dec	H
+	ld	C,	H
+	push	AF		# j)
+	push	BC		# i)
+
+	ld	L,	0x7F
+	inc	L
+	ld	C,	L
+	push	AF		# h)
+	push	BC		# g)
+
+	ld	HL,		var
+	ld	[HL],	0xFF
+	inc	[HL]
+	push	AF		# f)
+	ld	A,	[HL]
+	ld	C,	A
+	push	BC		# e)
+
+	ld	BC,	0xFFFF
+	inc	BC
+	ld	E,	B
+	push	AF		# d)
+	push	BC		# c)
+	push	DE		# b)
+
+	ld	DE, 0x0000
+	dec	DE
+	ld	D,	C
+	push	AF		# a)
+	push	DE		# 9)
+	push	BC		# 8)
+
+	ld	HL,	0x8FFF
+	dec	HL
+	ld	C,	H
+	push	AF		# 7)
+	push	HL		# 6)
+	push	BC		# 5)
+
+	ld		[var],	SP
+	dec		SP
+	ld		[var2],	SP
+	ld		A,	[var + 1]
+	ld		H,	A
+	ld		A,	[var]
+	ld		L,	A
+	ld		SP,	HL
+	push	AF		# 4)
+	push	BC		# 3)
+	ld		A,	[var2 + 1]
+	ld		C,	A
+	ld		A,	[var2]
+	ld		E,	A
+	push	BC		# 2)
+	push	DE		# 1)
+
+
+	ld		HL,		__TEST10
+	call	_print_string
+	call	_wait_until_enter_is_pressed
+	jr		__test_11
+
+__TEST10:	.ascii	"TEST10: inc/dec\n\n"
+			.ascii	"1-8)~~~~~~~~"
+			.ascii	"9-g)~~~~~~~~"
+			.ascii	"h-o)~~~~~~~~"
+			.ascii	"p-t)~~~~~\n\n"
+			.ascii	"Press [ENTER]..."
+			.byte	0
+###### END #####################
+	
+__test_11:
+##### TEST11: ADD (16-bit) ##################
+
+	ld		A,	0
+	add		A,	A
+	ld		HL,	0xFFFF
+	ld		DE,	0x0001
+	add		HL,	DE
+	push	AF		# c)
+	push	HL		# b)
+	ld		C,	H
+	push	BC		# a)
+
+	add		HL,	SP
+	ld		C,	H
+	push	AF		# 9)
+	push	BC		# 8)
+	push	HL		# 7)
+
+	ld		[var],	SP
+	ADD		SP,	0x7F
+	ld		[var2],	SP
+	ld		A,		[var + 1]
+	ld		H,		A
+	ld		A,		[var]
+	ld		L,		A
+	ld		SP,		HL
+	push	AF		# 6)
+	ld		A,		[var2 + 1]
+	ld		C,		A
+	ld		A,		[var2]
+	ld		E,		A
+	push	BC		# 5)
+	push	DE		# 4)
+
+	ld		[var],	SP
+	add		SP,	0xFF
+	ld		[var2],	SP
+	ld		A,		[var + 1]
+	ld		H,		A
+	ld		A,		[var]
+	ld		L,		A
+	ld		SP,		HL
+	push	AF		# 3)
+	ld		A,		[var2 + 1]
+	ld		C,		A
+	ld		A,		[var2]
+	ld		E,		A
+	push	BC		# 2)
+	push	DE		# 1)
+
+	push	HL		# Z5)
+	ld		C,	A
+	ld		E,	B
+	push	BC		# Z4)
+	push	DE		# Z3)
+	ld		C,	D
+	ld		E,	H
+	push	BC		# Z2)
+	push	DE		# Z1)
+
+
+	ld		HL,		__TEST11
+	call	_print_string
+	call	_wait_until_enter_is_pressed
+	jr		__test_12
+	
+__TEST11:	.ascii	"TEST11: add (16-bit)\n\n"
+			.ascii	"Z{~~~~~}\n"
+			.ascii	"1-8)~~~~~~~~"
+			.ascii	"9-c)~~~~\n\n"
+			.ascii	"Press [ENTER]..."
+			.byte	0
+##### END ###########################
+
+__test_12:
+##### TEST12: rotations #######################
+
+	ld	A,	0xAA
+	rlca
+	ld	C,	A
+	push	AF		# E)
+	push	BC		# D)
+	
+	rlca
+	ld	C,	A
+	push	AF		# C)
+	push	BC		# B)
+
+	xor	C
+	ld	A,	0xAA
+	rla
+	ld	C,	A
+	push	AF		# A)
+	push	BC		# z)
+	
+	rla
+	ld	C,	A
+	push	AF		# y)
+	push	BC		# x)
+
+	rla
+	ld	C,	A
+	push	AF		# w)
+	push	BC		# v)
+
+
+	ld	A,	0xAA
+	rrca
+	ld	C,	A
+	push	AF		# u)
+	push	BC		# t)
+	
+	rrca
+	ld	C,	A
+	push	AF		# s)
+	push	BC		# r)
+
+	xor	C
+	ld	A,	0xAA
+	rra
+	ld	C,	A
+	push	AF		# q)
+	push	BC		# p)
+	
+	rra
+	ld	C,	A
+	push	AF		# o)
+	push	BC		# n)
+
+	rra
+	ld	C,	A
+	push	AF		# m)
+	push	BC		# l)
+
+
+	ld	B,	0xAA
+	rlc	B
+	ld	C,	A
+	push	AF		# k)
+	push	BC		# j)
+
+	ld	C,	B
+	rlc	C
+	push	AF		# i)
+	push	BC		# h)
+
+	xor	C
+	ld	D,	0xAA
+	rl	D
+	ld	C,	D
+	push	AF		# g)
+	push	BC		# f)
+	
+	ld	E,	D
+	rl	E
+	push	AF		# e)
+	push	DE		# d)
+
+	ld	H,	E
+	rl	H
+	ld	C,	H
+	push	AF		# c)
+	push	BC		# b)
+
+
+	ld	L,	0x55
+	rrc	L
+	push	AF		# a)
+	push	HL		# 9)
+
+	ld	A,		L
+	ld	[var],	A
+	ld	HL,		var
+	rrc	[HL]
+	ld	C,	[HL]
+	push	AF		# 8)
+	push	BC		# 7)
+
+	xor	C
+	ld	D,	0x55
+	rr	D
+	ld	C,	D
+	push	AF		# 6)
+	push	BC		# 5)
+	
+	ld	E,	D
+	rr	E
+	push	AF		# 4)
+	push	DE		# 3)
+
+	ld	H,	E
+	rr	H
+	ld	C,	H
+	push	AF		# 2)
+	push	BC		# 1)
+
+
+
+
+	ld		HL,		__TEST12
+	call	_print_string
+	call	_wait_until_enter_is_pressed
+	jr		__test_13
+
+__TEST12:	.ascii	"TEST12: rotations 1\n\n"
+			.ascii	"1-8)~~~~~~~~"
+			.ascii	"9-g)~~~~~~~~"
+			.ascii	"h-o)~~~~~~~~"
+			.ascii	"p-w)~~~~~~~~"
+			.ascii	"xyz)~~~\n"
+			.ascii	"A-E)~~~~~\n\n"
+			.ascii	"Press [ENTER]..."
+			.byte	0
+
+##### END ##############################
+
+__test_13:
+
+	ld	C,	0x55
+	sla	C
+	push	AF		# C)
+	push	BC		# B)
+
+	sla	C
+	push	AF		# A)
+	push	BC		# z)
+
+	sla	C
+	push	AF		# y)
+	push	BC		# x)
+
+	sla	C
+	push	AF		# w)
+	push	BC		# v)
+
+	sla	C
+	push	AF		# u)
+	push	BC		# t)
+
+	sla	C
+	push	AF		# s)
+	push	BC		# r)
+
+	ld	C,	0x55
+	sra	C
+	push	AF		# q)
+	push	BC		# p)
+
+	sra	C
+	push	AF		# o)
+	push	BC		# n)
+
+	sra	C
+	push	AF		# m)
+	push	BC		# l)
+
+	sra	C
+	push	AF		# k)
+	push	BC		# j)
+
+	sra	C
+	push	AF		# i)
+	push	BC		# h)
+
+	sra	C
+	push	AF		# g)
+	push	BC		# f)
+
+	ld	C,	0x55
+	srl	C
+	push	AF		# e)
+	push	BC		# d)
+
+	srl	C
+	push	AF		# c)
+	push	BC		# b)
+
+	srl	C
+	push	AF		# a)
+	push	BC		# 9)
+
+	srl	C
+	push	AF		# 8)
+	push	BC		# 7)
+
+	srl	C
+	push	AF		# 6)
+	push	BC		# 5)
+
+	ld		L,	0x3C
+	swap	L
+	push	AF		# 4)
+	push	HL		# 3)
+
+	ld		HL,		var
+	ld		[HL],	0
+	swap	[HL]
+	push	AF		# 2)
+	ld		C,	[HL]
+	push	BC		# 1)
+
+
+	ld		HL,		__TEST13
+	call	_print_string
+	call	_wait_until_enter_is_pressed
+	jr		__test_14
+
+
+__TEST13:	.ascii	"TEST13: rotations 2\n\n"
+			.ascii	"1-8)~~~~~~~~"
+			.ascii	"9-g)~~~~~~~~"
+			.ascii	"h-o)~~~~~~~~"
+			.ascii	"p-w)~~~~~~~~"
+			.ascii	"x-C)~~~~~~\n\n"
+			.ascii	"Press [ENTER]..."
+			.byte	0
+##### END ###########################
+
+
+__test_14:
+##### TEST14: ######################
+
+	ld	A,	0xFF
+	add	A,	0x11
+
+	ld	A,	0xFF
+	bit	0,	A
+	push	AF		# i)
+	bit	1,	A
+	push	AF		# h)
+	ld	B,	A
+	bit	2,	B
+	push	AF		# g)
+	bit	3,	B
+	push	AF		# f)
+	ld	C,	B
+	bit	4,	C
+	push	AF		# e)
+	bit	5,	C
+	push	AF		# d)
+	ld	D,	C
+	bit	6,	D
+	push	AF		# c)
+	bit	7,	D
+	push	AF		# b)
+	ld		C,	D
+	push	BC		# a)
+
+	ld	E,	0
+	bit	0,	E
+	push	AF		# 9)
+	bit	1,	E
+	push	AF		# 8)
+	ld	H,	E
+	bit	2,	H
+	push	AF		# 7)
+	bit	3,	H
+	push	AF		# 6)
+	ld	L,	H
+	bit	4,	L
+	push	AF		# 5)
+	bit	5,	L
+	push	AF		# 4)
+	ld	A,	L
+	ld	HL,	var
+	ld	[HL],	A
+	bit	6,	[HL]
+	push	AF		# 3)
+	bit	7,	[HL]
+	push	AF		# 2)
+	ld	C,	[HL]
+	push	BC		# 1)
+
+
+	ld		HL,		__TEST14
+	call	_print_string
+	call	_wait_until_enter_is_pressed
+	jr		__test_15
+	
+__TEST14:	.ascii	"TEST14: bit\n\n"
+			.ascii	"1-8)~~~~~~~~"
+			.ascii	"9-g)~~~~~~~~"
+			.ascii	"h-i)~~\n\n"
+			.ascii	"Press [ENTER]..."
+			.byte	0
+##### END ###########################
+
+
+__test_15:
+##### TEST15: ######################
+
+	ld	A,	0xFF
+	add	A,	0x11
+	
+	ld	A,	0xAA
+	set	0,	A
+	ld	B,	A
+	set	1,	B
+	ld	C,	B
+	set	2,	C
+	ld	D,	C
+	set	3,	D
+	ld	E,	D
+	set	4,	E
+	ld	H,	E
+	set	5,	H
+	ld	L,	H
+	set	6,	L
+	ld	A,	L
+	ld	HL,	var
+	ld	[HL],	A
+	set	7,	[HL]
+	ld	C,	[HL]
+	push	AF		# 4)
+	push	BC		# 3)
+
+	
+	ld	A,	0xAA
+	res	0,	A
+	ld	B,	A
+	res	1,	B
+	ld	C,	B
+	res	2,	C
+	ld	D,	C
+	res	3,	D
+	ld	E,	D
+	res	4,	E
+	ld	H,	E
+	res	5,	H
+	ld	L,	H
+	res	6,	L
+	ld	A,	L
+	ld	HL,	var
+	ld	[HL],	A
+	res	7,	[HL]
+	ld	C,	[HL]
+	push	AF		# 2)
+	push	BC		# 1)
+
+
+	ld		HL,		__TEST15
+	call	_print_string
+	call	_wait_until_enter_is_pressed
+	jr		__end_of_test
+	
+__TEST15:	.ascii	"TEST15: set/res\n\n"
+			.ascii	"res)~~\nset)~~\n\n"
+			.ascii	"Press [ENTER]..."
+			.byte	0
+##### END ###########################
+
+
+__end_of_test:
+##### TEST16: #######################
+
+	ld		HL,		__END_OF_TEST
+	call	_print_string
+	call	_wait_until_enter_is_pressed
+	jp		__begin_test
+
+__END_OF_TEST:	.ascii	"   <End of tests>\n\n\n\n\n\n\n"
+				.ascii	"  Press [ENTER] to\n"
+				.ascii	"  restart tests...\n\n\n\n\n\n      _&(^-^)3"
+				.byte	0
 
 
 
