@@ -26,6 +26,8 @@
 %define COLOR_DGREY		0x2
 %define COLOR_LGREY		0x1
 %define COLOR_WHITE		0x0
+%define	XOFF			60
+%define YOFF			40
 
 .bank		0,	0x150
 
@@ -34,30 +36,460 @@ call		_clean_character_data
 call		_set_put_pixel_character_code
 
 ld			E,	COLOR_BLACK
-ld			A,	78
-ld			C,	40
+
+## Y = 0
+ld			A,	XOFF + 13
+ld			C,	YOFF + 0
 call		_put_pixel
-ld			A,	79
-ld			C,	41
+## Y = 1
+ld			A,	XOFF + 13
+ld			C,	YOFF + 1
 call		_put_pixel
-ld			A,	77
-ld			C,	41
+## Y = 2
+ld			A,	XOFF + 13
+ld			C,	YOFF + 2
 call		_put_pixel
-ld			A,	78
-ld			C,	42
+## Y = 3
+ld			A,	XOFF + 12
+ld			C,	YOFF + 3
 call		_put_pixel
-ld			A,	77
-ld			C,	43
+ld			A,	XOFF + 13
+ld			C,	YOFF + 3
 call		_put_pixel
-ld			A,	79
-ld			C,	43
+ld			A,	XOFF + 14
+ld			C,	YOFF + 3
 call		_put_pixel
-ld			A,	78
-ld			C,	44
+ld			A,	XOFF + 15
+ld			C,	YOFF + 3
 call		_put_pixel
-ld			A,	78
-ld			C,	45
+ld			A,	XOFF + 16
+ld			C,	YOFF + 3
 call		_put_pixel
+ld			A,	XOFF + 17
+ld			C,	YOFF + 3
+call		_put_pixel
+ld			A,	XOFF + 18
+ld			C,	YOFF + 3
+call		_put_pixel
+ld			A,	XOFF + 19
+ld			C,	YOFF + 3
+call		_put_pixel
+## Y = 4
+ld			A,	XOFF + 9
+ld			C,	YOFF + 4
+call		_put_pixel
+ld			A,	XOFF + 10
+ld			C,	YOFF + 4
+call		_put_pixel
+ld			A,	XOFF + 11
+ld			C,	YOFF + 4
+call		_put_pixel
+ld			A,	XOFF + 12
+ld			C,	YOFF + 4
+call		_put_pixel
+ld			A,	XOFF + 16
+ld			C,	YOFF + 4
+call		_put_pixel
+## Y = 5
+ld			A,	XOFF + 0
+ld			C,	YOFF + 5
+call		_put_pixel
+ld			A,	XOFF + 1
+ld			C,	YOFF + 5
+call		_put_pixel
+ld			A,	XOFF + 11
+ld			C,	YOFF + 5
+call		_put_pixel
+ld			A,	XOFF + 16
+ld			C,	YOFF + 5
+call		_put_pixel
+## Y = 6
+ld			A,	XOFF + 2
+ld			C,	YOFF + 6
+call		_put_pixel
+ld			A,	XOFF + 3
+ld			C,	YOFF + 6
+call		_put_pixel
+ld			A,	XOFF + 11
+ld			C,	YOFF + 6
+call		_put_pixel
+ld			A,	XOFF + 15
+ld			C,	YOFF + 6
+call		_put_pixel
+ld			A,	XOFF + 16
+ld			C,	YOFF + 6
+call		_put_pixel
+## Y = 7
+ld			A,	XOFF + 11
+ld			C,	YOFF + 7
+call		_put_pixel
+ld			A,	XOFF + 12
+ld			C,	YOFF + 7
+call		_put_pixel
+ld			A,	XOFF + 15
+ld			C,	YOFF + 7
+call		_put_pixel
+## Y = 8
+ld			A,	XOFF + 12
+ld			C,	YOFF + 8
+call		_put_pixel
+ld			A,	XOFF + 15
+ld			C,	YOFF + 8
+call		_put_pixel
+## Y = 9
+ld			A,	XOFF + 12
+ld			C,	YOFF + 9
+call		_put_pixel
+ld			A,	XOFF + 13
+ld			C,	YOFF + 9
+call		_put_pixel
+ld			A,	XOFF + 14
+ld			C,	YOFF + 9
+call		_put_pixel
+ld			A,	XOFF + 15
+ld			C,	YOFF + 9
+call		_put_pixel
+ld			A,	XOFF + 16
+ld			C,	YOFF + 9
+call		_put_pixel
+ld			A,	XOFF + 17
+ld			C,	YOFF + 9
+call		_put_pixel
+ld			A,	XOFF + 18
+ld			C,	YOFF + 9
+call		_put_pixel
+ld			A,	XOFF + 19
+ld			C,	YOFF + 9
+call		_put_pixel
+## Y = 10
+ld			A,	XOFF + 9
+ld			C,	YOFF + 10
+call		_put_pixel
+ld			A,	XOFF + 10
+ld			C,	YOFF + 10
+call		_put_pixel
+ld			A,	XOFF + 11
+ld			C,	YOFF + 10
+call		_put_pixel
+ld			A,	XOFF + 12
+ld			C,	YOFF + 10
+call		_put_pixel
+ld			A,	XOFF + 19
+ld			C,	YOFF + 10
+call		_put_pixel
+ld			A,	XOFF + 20
+ld			C,	YOFF + 10
+call		_put_pixel
+## Y = 11
+ld			A,	XOFF + 7
+ld			C,	YOFF + 11
+call		_put_pixel
+ld			A,	XOFF + 8
+ld			C,	YOFF + 11
+call		_put_pixel
+ld			A,	XOFF + 9
+ld			C,	YOFF + 11
+call		_put_pixel
+## Y = 12
+ld			A,	XOFF + 0
+ld			C,	YOFF + 12
+call		_put_pixel
+ld			A,	XOFF + 1
+ld			C,	YOFF + 12
+call		_put_pixel
+ld			A,	XOFF + 14
+ld			C,	YOFF + 12
+call		_put_pixel
+ld			A,	XOFF + 15
+ld			C,	YOFF + 12
+call		_put_pixel
+ld			A,	XOFF + 16
+ld			C,	YOFF + 12
+call		_put_pixel
+ld			A,	XOFF + 17
+ld			C,	YOFF + 12
+call		_put_pixel
+## Y = 13
+ld			A,	XOFF + 2
+ld			C,	YOFF + 13
+call		_put_pixel
+ld			A,	XOFF + 3
+ld			C,	YOFF + 13
+call		_put_pixel
+ld			A,	XOFF + 11
+ld			C,	YOFF + 13
+call		_put_pixel
+ld			A,	XOFF + 12
+ld			C,	YOFF + 13
+call		_put_pixel
+ld			A,	XOFF + 13
+ld			C,	YOFF + 13
+call		_put_pixel
+ld			A,	XOFF + 14
+ld			C,	YOFF + 13
+call		_put_pixel
+ld			A,	XOFF + 17
+ld			C,	YOFF + 13
+call		_put_pixel
+## Y = 14
+ld			A,	XOFF + 9
+ld			C,	YOFF + 14
+call		_put_pixel
+ld			A,	XOFF + 10
+ld			C,	YOFF + 14
+call		_put_pixel
+ld			A,	XOFF + 11
+ld			C,	YOFF + 14
+call		_put_pixel
+ld			A,	XOFF + 13
+ld			C,	YOFF + 14
+call		_put_pixel
+ld			A,	XOFF + 17
+ld			C,	YOFF + 14
+call		_put_pixel
+## Y = 15
+ld			A,	XOFF + 9
+ld			C,	YOFF + 15
+call		_put_pixel
+ld			A,	XOFF + 13
+ld			C,	YOFF + 15
+call		_put_pixel
+ld			A,	XOFF + 14
+ld			C,	YOFF + 15
+call		_put_pixel
+ld			A,	XOFF + 15
+ld			C,	YOFF + 15
+call		_put_pixel
+ld			A,	XOFF + 16
+ld			C,	YOFF + 15
+call		_put_pixel
+ld			A,	XOFF + 17
+ld			C,	YOFF + 15
+call		_put_pixel
+## Y = 16
+ld			A,	XOFF + 9
+ld			C,	YOFF + 16
+call		_put_pixel
+ld			A,	XOFF + 11
+ld			C,	YOFF + 16
+call		_put_pixel
+ld			A,	XOFF + 12
+ld			C,	YOFF + 16
+call		_put_pixel
+ld			A,	XOFF + 13
+ld			C,	YOFF + 16
+call		_put_pixel
+ld			A,	XOFF + 17
+ld			C,	YOFF + 16
+call		_put_pixel
+## Y = 17
+ld			A,	XOFF + 9
+ld			C,	YOFF + 17
+call		_put_pixel
+ld			A,	XOFF + 10
+ld			C,	YOFF + 17
+call		_put_pixel
+ld			A,	XOFF + 13
+ld			C,	YOFF + 17
+call		_put_pixel
+ld			A,	XOFF + 17
+ld			C,	YOFF + 17
+call		_put_pixel
+## Y = 18
+ld			A,	XOFF + 9
+ld			C,	YOFF + 18
+call		_put_pixel
+ld			A,	XOFF + 11
+ld			C,	YOFF + 18
+call		_put_pixel
+ld			A,	XOFF + 12
+ld			C,	YOFF + 18
+call		_put_pixel
+ld			A,	XOFF + 13
+ld			C,	YOFF + 18
+call		_put_pixel
+ld			A,	XOFF + 14
+ld			C,	YOFF + 18
+call		_put_pixel
+ld			A,	XOFF + 15
+ld			C,	YOFF + 18
+call		_put_pixel
+ld			A,	XOFF + 16
+ld			C,	YOFF + 18
+call		_put_pixel
+ld			A,	XOFF + 17
+ld			C,	YOFF + 18
+call		_put_pixel
+## Y = 19
+ld			A,	XOFF + 9
+ld			C,	YOFF + 19
+call		_put_pixel
+ld			A,	XOFF + 10
+ld			C,	YOFF + 19
+call		_put_pixel
+ld			A,	XOFF + 11
+ld			C,	YOFF + 19
+call		_put_pixel
+ld			A,	XOFF + 12
+ld			C,	YOFF + 19
+call		_put_pixel
+ld			A,	XOFF + 13
+ld			C,	YOFF + 19
+call		_put_pixel
+## Y = 20
+ld			A,	XOFF + 12
+ld			C,	YOFF + 20
+call		_put_pixel
+ld			A,	XOFF + 13
+ld			C,	YOFF + 20
+call		_put_pixel
+## Y = 21
+ld			A,	XOFF + 3
+ld			C,	YOFF + 21
+call		_put_pixel
+ld			A,	XOFF + 12
+ld			C,	YOFF + 21
+call		_put_pixel
+ld			A,	XOFF + 13
+ld			C,	YOFF + 21
+call		_put_pixel
+## Y = 22
+ld			A,	XOFF + 3
+ld			C,	YOFF + 22
+call		_put_pixel
+ld			A,	XOFF + 12
+ld			C,	YOFF + 22
+call		_put_pixel
+ld			A,	XOFF + 13
+ld			C,	YOFF + 22
+call		_put_pixel
+## Y = 23
+ld			A,	XOFF + 2
+ld			C,	YOFF + 23
+call		_put_pixel
+ld			A,	XOFF + 3
+ld			C,	YOFF + 23
+call		_put_pixel
+ld			A,	XOFF + 12
+ld			C,	YOFF + 23
+call		_put_pixel
+ld			A,	XOFF + 13
+ld			C,	YOFF + 23
+call		_put_pixel
+## Y = 24
+ld			A,	XOFF + 2
+ld			C,	YOFF + 24
+call		_put_pixel
+ld			A,	XOFF + 3
+ld			C,	YOFF + 24
+call		_put_pixel
+ld			A,	XOFF + 12
+ld			C,	YOFF + 24
+call		_put_pixel
+ld			A,	XOFF + 22
+ld			C,	YOFF + 24
+call		_put_pixel
+ld			A,	XOFF + 23 
+ld			C,	YOFF + 24
+call		_put_pixel
+## Y = 25
+ld			A,	XOFF + 2
+ld			C,	YOFF + 25
+call		_put_pixel
+ld			A,	XOFF + 12
+ld			C,	YOFF + 25
+call		_put_pixel
+ld			A,	XOFF + 13
+ld			C,	YOFF + 25
+call		_put_pixel
+ld			A,	XOFF + 22
+ld			C,	YOFF + 25
+call		_put_pixel
+ld			A,	XOFF + 23
+ld			C,	YOFF + 25
+call		_put_pixel
+ld			A,	XOFF + 24
+ld			C,	YOFF + 25
+call		_put_pixel
+## Y = 26
+ld			A,	XOFF + 1
+ld			C,	YOFF + 26
+call		_put_pixel
+ld			A,	XOFF + 2
+ld			C,	YOFF + 26
+call		_put_pixel
+ld			A,	XOFF + 13
+ld			C,	YOFF + 26
+call		_put_pixel
+ld			A,	XOFF + 14
+ld			C,	YOFF + 26
+call		_put_pixel
+ld			A,	XOFF + 15
+ld			C,	YOFF + 26
+call		_put_pixel
+ld			A,	XOFF + 16
+ld			C,	YOFF + 26
+call		_put_pixel
+ld			A,	XOFF + 17
+ld			C,	YOFF + 26
+call		_put_pixel
+ld			A,	XOFF + 18
+ld			C,	YOFF + 26
+call		_put_pixel
+ld			A,	XOFF + 19
+ld			C,	YOFF + 26
+call		_put_pixel
+ld			A,	XOFF + 20
+ld			C,	YOFF + 26
+call		_put_pixel
+ld			A,	XOFF + 21
+ld			C,	YOFF + 26
+call		_put_pixel
+ld			A,	XOFF + 22
+ld			C,	YOFF + 26
+call		_put_pixel
+ld			A,	XOFF + 23
+ld			C,	YOFF + 26
+call		_put_pixel
+ld			A,	XOFF + 24
+ld			C,	YOFF + 26
+call		_put_pixel
+## Y = 27
+ld			A,	XOFF + 1
+ld			C,	YOFF + 27
+call		_put_pixel
+ld			A,	XOFF + 2
+ld			C,	YOFF + 27
+call		_put_pixel
+ld			A,	XOFF + 14
+ld			C,	YOFF + 27
+call		_put_pixel
+ld			A,	XOFF + 15
+ld			C,	YOFF + 27
+call		_put_pixel
+ld			A,	XOFF + 16
+ld			C,	YOFF + 27
+call		_put_pixel
+## Y = 28
+ld			A,	XOFF + 1
+ld			C,	YOFF + 28
+call		_put_pixel
+ld			A,	XOFF + 2
+ld			C,	YOFF + 28
+call		_put_pixel
+## Y = 29
+ld			A,	XOFF + 1
+ld			C,	YOFF + 29
+call		_put_pixel
+## Y = 30
+ld			A,	XOFF + 0
+ld			C,	YOFF + 30
+call		_put_pixel
+ld			A,	XOFF + 1
+ld			C,	YOFF + 30
+call		_put_pixel
+
+#{ 13:0,	13:1,	13:2,	12-19:3,	9-12:4,	16:4, 0-1:5,	11:5,	16:5,	2-3:6,	11:6,	15-16:6, 11-12:7,	15:7, 12:8,	15:8, 12-19:9, 9-12:10,	19-20:10, 7-9:11, 0-1:12,	14-17:12, 2-3:13,	11-14:13,	17:13, 9-11:14,	13:14,	17:14, 9:15,	13-17:15, 9:16,	11-13:16,	17:16, 9-10:17,	13:17,	17:17, 9:18,	11-17:18, 9-13:19, 12-13:20, 3:21,	12-13:21, 3:22, 12-13:22, 2-3:23,	12-13:23, 2-3:24,	12:24,	22-23:24, 2:25,	12-13:25,	22-24:25, 1-2:26,	13-24:26, 1-2:27,	14-16:27, 1-2:28, 1:29, 0-1:30 }
 
 call		_lcdc_on
 
