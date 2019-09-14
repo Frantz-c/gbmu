@@ -6,7 +6,7 @@
 #    By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+      #
 #                                                  #+#   #+    #+    #+#       #
 #    Created: 2019/09/10 16:06:26 by fcordon      #+#   ##    ##    #+#        #
-#    Updated: 2019/09/12 19:15:26 by fcordon     ###    #+. /#+    ###.fr      #
+#    Updated: 2019/09/14 18:32:16 by fcordon     ###    #+. /#+    ###.fr      #
 #                                                          /                   #
 #                                                         /                    #
 # **************************************************************************** #
@@ -25,9 +25,9 @@
 
 
 # LCDC OPTIONS #
-%define LCDC_ON			0x80
-%define BG_DISPLAY_ON	0x01
-%define BG_AREA_8000	0x10
+%define AP_LCDC_ON			0x80
+%define AP_BG_DISPLAY_ON	0x01
+%define AP_BG_AREA_8000		0x10
 
 # VARIABLE ARGUMENT PROCEDURES #
 %define	VA_START(var, reg, hi, lo)\
@@ -62,7 +62,7 @@ _load_ascii:
 			jrnz	__AP_wait_vertical_blank
 
 			ld	A,			[_LCDC]
-			and	(~LCDC_ON & 0xff)
+			and	(~AP_LCDC_ON & 0xff)
 			ld	[_LCDC],	A
 
 	__AP_next:
@@ -119,8 +119,6 @@ _load_ascii:
 		inc	BC
 		ld	[HL++],	A
 		dec	D
-		ld	A,		D
-		cp	0
 		jrnz	__AP_loop
 
 		pop		HL
@@ -150,7 +148,6 @@ _AP_STATIC_FUNCTION__print_one_digit:
 	ld		B,	A
 	sub		A,	10
 	and		A,	0xf8
-	cp		A,	0
 
 	jrz		__AP_print_alpha_hex
 	ld		A,	B
@@ -191,7 +188,7 @@ _print_string:
 			jrnz	__AP_wait_vb
 
 			ld	A,			[_LCDC]
-			and	(~LCDC_ON & 0xff)
+			and	(~AP_LCDC_ON & 0xff)
 			ld	[_LCDC],	A
 
 		__AP_reset_scroll_XY:
@@ -309,7 +306,7 @@ _print_string:
 	## END
 	__AP_enable_lcdc:
 		ld		A,			[_LCDC]
-		or		A,			LCDC_ON | BG_AREA_8000 | BG_DISPLAY_ON
+		or		A,			AP_LCDC_ON | AP_BG_AREA_8000 | AP_BG_DISPLAY_ON
 		ld		[_LCDC],	A
 		VA_END(stack_ptr, BC, B, C)
 		ret

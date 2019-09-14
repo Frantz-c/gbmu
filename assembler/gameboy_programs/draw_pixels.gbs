@@ -1,0 +1,68 @@
+# **************************************************************************** #
+#                                                           LE - /             #
+#                                                               /              #
+#    draw_pixels.gbs                                  .::    .:/ .      .::    #
+#                                                  +:+:+   +:    +:  +:+:+     #
+#    By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+      #
+#                                                  #+#   #+    #+    #+#       #
+#    Created: 2019/09/14 16:03:05 by fcordon      #+#   ##    ##    #+#        #
+#    Updated: 2019/09/14 20:17:55 by fcordon     ###    #+. /#+    ###.fr      #
+#                                                          /                   #
+#                                                         /                    #
+# **************************************************************************** #
+
+.game_title		"PUT PIXELS"
+.cgb_support	"incompatible"
+.sgb_support	"not_supported"
+.cart_type		"mbc-5_sram_battery"
+.rom_size		"8 banks"
+.ram_size		"1 bank"
+.destination	"other"
+.version		0
+
+.program_start	0x150
+
+%define COLOR_BLACK		0x3
+%define COLOR_DGREY		0x2
+%define COLOR_LGREY		0x1
+%define COLOR_WHITE		0x0
+
+.bank		0,	0x150
+
+call		_lcdc_off
+call		_clean_character_data
+call		_set_put_pixel_character_code
+
+ld			E,	COLOR_BLACK
+ld			A,	78
+ld			C,	40
+call		_put_pixel
+ld			A,	79
+ld			C,	41
+call		_put_pixel
+ld			A,	77
+ld			C,	41
+call		_put_pixel
+ld			A,	78
+ld			C,	42
+call		_put_pixel
+ld			A,	77
+ld			C,	43
+call		_put_pixel
+ld			A,	79
+ld			C,	43
+call		_put_pixel
+ld			A,	78
+ld			C,	44
+call		_put_pixel
+ld			A,	78
+ld			C,	45
+call		_put_pixel
+
+call		_lcdc_on
+
+halt
+jr			0xFE
+
+.bank		0,	0x1000
+%include	"put_pixel.gbs"
