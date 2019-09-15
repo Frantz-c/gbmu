@@ -1,0 +1,65 @@
+# **************************************************************************** #
+#                                                           LE - /             #
+#                                                               /              #
+#    div_mul_test.gbs                                 .::    .:/ .      .::    #
+#                                                  +:+:+   +:    +:  +:+:+     #
+#    By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+      #
+#                                                  #+#   #+    #+    #+#       #
+#    Created: 2019/09/15 19:24:25 by fcordon      #+#   ##    ##    #+#        #
+#    Updated: 2019/09/15 20:19:03 by fcordon     ###    #+. /#+    ###.fr      #
+#                                                          /                   #
+#                                                         /                    #
+# **************************************************************************** #
+
+.game_title		"DIVMUL_TEST"
+.cgb_support	"incompatible"
+.sgb_support	"not_supported"
+.cart_type		"mbc-5_sram_battery"
+.rom_size		"8 banks"
+.ram_size		"1 bank"
+.destination	"other"
+.version		0
+.program_start	0x150
+
+
+.bank	0,	0x150
+
+call	_load_ascii
+
+ld		A,	19
+ld		C,	13
+call	_mul_8
+ld		C,	A
+push	BC
+
+ld		A,	24
+ld		C,	5
+call	_div_8
+ld		C,	A
+ld		E,	B
+push	DE
+push	BC
+
+ld		HL,	__FMT
+call	_print_string
+
+halt
+nop
+jr		0xFE
+
+__FMT:	.ascii	"TESTS _mul_8/_div_8\n\n\n\n\n"
+		.ascii	"24 / 5 :\n> result = 0x~\n> remainder = 0x~\n\n"
+		.ascii	"19 * 13:\n> result = 0x~\0"
+
+10011 * 1101
+
+.bank	0,	0x2800
+
+%include "lib_maths.gbs"
+
+
+
+.bank	0,	0x3000
+
+%include "ascii_printer.gbs"
+

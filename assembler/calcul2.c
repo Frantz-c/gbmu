@@ -87,6 +87,7 @@ calc_elem_t	*get_calc(const char *s, uint32_t *n_elem)
 	uint8_t		minus;
 	
 	*n_elem = 0;
+	while (*s == ' ' || *s == '\t') s++;
 
 	if (*s == 0)
 		return (NULL);
@@ -96,6 +97,7 @@ calc_elem_t	*get_calc(const char *s, uint32_t *n_elem)
 // is opened parent ?
 		while (*s == '(') {
 			s++;
+			while (*s == ' ' || *s == '\t') s++;
 			lvl &= ~0x1u;	// cplt = 0;
 			lvl += PARENT_VALUE;
 		}
@@ -129,11 +131,13 @@ calc_elem_t	*get_calc(const char *s, uint32_t *n_elem)
 		calc[i].val = n;
 		calc[i++].lvl = lvl;
 		
+		while (*s == ' ' || *s == '\t') s++;
 
 // is closed parent ?
 		int32_t	prev_lvl = lvl;
 		while (*s == ')') {
 			s++;
+			while (*s == ' ' || *s == '\t') s++;
 			lvl &= ~0x1u; // cplt = 0
 			prev_lvl = lvl;
 			lvl -= PARENT_VALUE;
@@ -175,6 +179,7 @@ calc_elem_t	*get_calc(const char *s, uint32_t *n_elem)
 				fprintf(stderr, "ope error (%c::%d) \"%s\"\n", *s, *s, s); exit(1);
 		}
 
+
 // add operator
 		calc[i].val = *s;
 		calc[i++].lvl = lvl;
@@ -182,6 +187,9 @@ calc_elem_t	*get_calc(const char *s, uint32_t *n_elem)
 		if (*s == 0)
 			break;
 		s++;
+		while (*s == ' ' || *s == '\t') s++;
+		if (*s == 0)
+			break;
 	}
 	
 	if ((lvl &= ~0x1u) != 0)
@@ -274,7 +282,8 @@ int		main(int argc, char *argv[])
 
 	calc_elem_t	*calc = get_calc(argv[1], &n_elem);
 
-	printf("result = %d\n", execute_calcul(calc, n_elem));
+	int	result = execute_calcul(calc, n_elem);
+	printf("result = %d (%x)\n", result, result);
 
 	return (0);
 }

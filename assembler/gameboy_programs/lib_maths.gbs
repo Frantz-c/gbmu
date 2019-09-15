@@ -1,0 +1,174 @@
+# **************************************************************************** #
+#                                                           LE - /             #
+#                                                               /              #
+#    lib_maths.gbs                                    .::    .:/ .      .::    #
+#                                                  +:+:+   +:    +:  +:+:+     #
+#    By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+      #
+#                                                  #+#   #+    #+    #+#       #
+#    Created: 2019/09/15 16:51:47 by fcordon      #+#   ##    ##    #+#        #
+#    Updated: 2019/09/15 21:59:46 by fcordon     ###    #+. /#+    ###.fr      #
+#                                                          /                   #
+#                                                         /                    #
+# **************************************************************************** #
+
+
+## DIV
+
+_div_8:	## div(A = number, C = diviser)	## return {A = result, B = remainder}
+#{
+	push	DE
+	push	BC
+
+	ld	E,	0
+	ld	B,	A
+	sub	A,	C
+	jrc	__return_result
+
+	__loop:
+		inc		E
+		ld		B,	A
+		sub		A,	C
+		jrnc	__loop
+
+	__return_result:
+	ld	A,	E
+
+	ld	E, B
+	pop	BC
+	ld	B,	E
+	pop	DE
+	ret
+#}
+
+
+
+
+
+## MUL
+
+%define	int8_mul_2(n)\
+	sla	n
+%define	int8_mul_4(n)\
+	sla	n\
+	sla	n
+%define	int8_mul_8(n)\
+	sla	n\
+	sla	n\
+	sla	n
+%define	int8_mul_16(n)\
+	sla	n\
+	sla	n\
+	sla	n\
+	sla	n
+%define	int8_mul_32(n)\
+	sla	n\
+	sla	n\
+	sla	n\
+	sla	n\
+	sla	n
+%define	int8_mul_64(n)\
+	sla	n\
+	sla	n\
+	sla	n\
+	sla	n\
+	sla	n\
+	sla	n
+%define	int8_mul_128(n)\
+	sla	n\
+	sla	n\
+	sla	n\
+	sla	n\
+	sla	n\
+	sla	n\
+	sla	n
+						
+_mul_8:	##mul(n = A, mul = C)	## return {A = result}
+#{
+	push	BC
+	push	DE
+
+	ld	B,	0
+	ld	D,	A
+
+	bit	7,	C
+	jrz	__MUL_bit6
+	int8_mul_128(A)
+	add	A,	B
+	ld	B,	A
+	ld	A,	D
+	res	7,	C
+
+	__MUL_bit6:
+		bit	6,	C
+		jrz	__MUL_bit5
+		int8_mul_64(A)
+		add	A,	B
+		ld	B,	A
+		ld	A,	D
+		res	6,	C
+
+	__MUL_bit5:
+		bit	5,	C
+		jrz	__MUL_bit4
+		int8_mul_32(A)
+		add	A,	B
+		ld	B,	A
+		ld	A,	D
+		res	5,	C
+
+	__MUL_bit4:
+		bit	4,	C
+		jrz	__MUL_bit3
+		int8_mul_16(A)
+		add	A,	B
+		ld	B,	A
+		ld	A,	D
+		res	4,	C
+
+	__MUL_bit3:
+		bit	3,	C
+		jrz	__MUL_bit2
+		int8_mul_8(A)
+		add	A,	B
+		ld	B,	A
+		ld	A,	D
+		res	3,	C
+
+	__MUL_bit2:
+		bit	2,	C
+		jrz	__MUL_bit1
+		int8_mul_4(A)
+		add	A,	B
+		ld	B,	A
+		ld	A,	D
+		res	2,	C
+
+	__MUL_bit1:
+		bit	1,	C
+		jrz	__MUL_add_A
+		int8_mul_2(A)
+		add	A,	B
+		ld	B,	A
+		ld	A,	D
+		res	1,	C
+
+	__MUL_add_A:
+	bit	0,	C
+	jrz	__end
+	add	A,	B
+	ld	B,	A
+
+	__end:
+	ld	A,	B
+	pop	DE
+	pop	BC
+	ret
+#}
+
+%undef int8_mul_2
+%undef int8_mul_4
+%undef int8_mul_8
+%undef int8_mul_16
+%undef int8_mul_32
+%undef int8_mul_64
+%undef int8_mul_128

@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 16:48:47 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/30 20:33:17 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/15 19:47:42 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -154,7 +154,7 @@ extern char	*undef_macro(vector_t *macro, char *s, data_t *data)
 	name = strndup(name, s - name);
 	ssize_t index;
 
-	if ((index = vector_search(macro, &name)) != -1)
+	if ((index = vector_search(macro, (void *)&name)) != -1)
 		vector_delete(macro, (size_t)index);
 
 	while (*s == ' ' && *s == '\t') s++;

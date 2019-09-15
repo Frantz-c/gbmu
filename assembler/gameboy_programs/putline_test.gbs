@@ -1,0 +1,61 @@
+# **************************************************************************** #
+#                                                           LE - /             #
+#                                                               /              #
+#    put_line_test.gbs                                .::    .:/ .      .::    #
+#                                                  +:+:+   +:    +:  +:+:+     #
+#    By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+      #
+#                                                  #+#   #+    #+    #+#       #
+#    Created: 2019/09/15 19:24:25 by fcordon      #+#   ##    ##    #+#        #
+#    Updated: 2019/09/15 22:11:19 by fcordon     ###    #+. /#+    ###.fr      #
+#                                                          /                   #
+#                                                         /                    #
+# **************************************************************************** #
+
+.game_title		"PUT_LINE"
+.cgb_support	"incompatible"
+.sgb_support	"not_supported"
+.cart_type		"mbc-5_sram_battery"
+.rom_size		"8 banks"
+.ram_size		"1 bank"
+.destination	"other"
+.version		0
+.program_start	0x150
+
+
+.bank	0,	0x150
+
+call		_lcdc_off
+call		_clean_character_data
+call		_set_put_pixel_character_code
+
+
+
+ld		H,	75
+ld		L,	100
+ld		D,	0
+ld		E,	0
+ld		C,	0x3
+call	_put_line
+
+call	_lcdc_on
+
+halt
+nop
+jr		0xFE
+
+
+
+.bank	0,	0x2800
+
+%include "lib_maths.gbs"
+
+
+
+#.bank	0,	0x3000
+#
+#%include "ascii_printer.gbs"
+
+.bank	0,	0x3000
+
+%include "put_pixel.gbs"
+%include "put_line.gbs"

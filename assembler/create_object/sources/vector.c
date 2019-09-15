@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 12:49:01 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/31 19:06:23 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/15 19:47:23 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -135,15 +135,15 @@ void		vector_delete(vector_t *vec, size_t index)
 		if (vec->destroy != NULL)
 			vec->destroy(_vector_at_mul(vec, index));
 
-		memcpy(_vector_at_mul(vec, index), _vector_at_mul(vec, index + 1),
-				(vec->nitems - index) * vec->elemsize);
+			memmove(_vector_at_mul(vec, index), _vector_at_mul(vec, index + 1),
+					(vec->nitems - index) * vec->elemsize);
 	}
 	else
 	{
 		if (vec->destroy != NULL)
 			vec->destroy(_vector_at_shl(vec, index));
 
-		memcpy(_vector_at_shl(vec, index), _vector_at_shl(vec, index + 1),
+		memmove(_vector_at_shl(vec, index), _vector_at_shl(vec, index + 1),
 				(vec->nitems - index));
 	}
 	vec->nitems--;
