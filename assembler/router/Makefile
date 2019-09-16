@@ -13,3 +13,8 @@
 
 all: router.c
 	gcc router.c -o ../gbasm -g3 -fsanitize=address
+
+re:	all
+
+fclean:
+	/bin/rm -f ../gbasm

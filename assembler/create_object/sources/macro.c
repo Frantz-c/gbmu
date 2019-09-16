@@ -81,7 +81,7 @@ extern char	*define_macro(vector_t *macro, char *s, data_t *data)
 		}
 
 	}
-	else if (!is_space(*s))
+	else if (!is_space(*s) && *s != '\\')
 		goto __unexpected_char;
 
 	/*

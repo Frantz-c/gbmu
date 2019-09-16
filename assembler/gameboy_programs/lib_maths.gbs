@@ -11,6 +11,42 @@
 #                                                         /                    #
 # **************************************************************************** #
 
+## SQRT
+
+_sqrt_16:	##sqrt(HL = number)	# return = {HL = result}
+#{
+#	max = 127 * 127 + 111 * 111 = 0x6F22 (28450) = 168 * 168
+
+#}
+
+_sqrt_8:	##sqrt(A = number)	# return = {A = result}
+#{
+	push	BC
+	push	DE
+	push	HL
+	ld		D,	0
+	ld		E,	15
+	ld		B,	A
+
+	__SQRT8_loop:
+		ld		HL,	__SQRT8_table
+		add		HL,	DE
+		ld		A,	[HL]
+		sub		A,	B
+		jrnc	__SQRT8_ret_E
+		dec		E
+		jr		__SQRT8_loop
+	
+	__SQRT8_ret_E:
+		ld	A,	E
+		pop	HL
+		pop	DE
+		pop	BC
+		ret
+
+	__SQRT8_table:	.byte	0 1 4 9 16 25 36 49 64 81 100 121 144 169 196 225
+#}
+
 
 ## DIV
 
@@ -33,7 +69,7 @@ _div_8:	## div(A = number, C = diviser)	## return {A = result, B = remainder}
 	__return_result:
 	ld	A,	E
 
-	ld	E, B
+	ld	E,	B
 	pop	BC
 	ld	B,	E
 	pop	DE
@@ -43,6 +79,53 @@ _div_8:	## div(A = number, C = diviser)	## return {A = result, B = remainder}
 
 
 
+_div_16:	##	div(HL = number, DE = diviser)	# ret{result = HL, remainder = DE}
+#{
+	push	BC
+
+	push	HL
+	push	DE
+	push	DE
+	pop		HL		## HL = diviser + ...
+	pop		DE		## DE = number
+	pop		BC		## BC = diviser
+
+	ld		BC,	0	## BC = result
+
+	#### opti: HL = (diviser << 1) until (HL > number)
+
+	__DIV16_loop:
+		ld		A,	E
+		sub		A,	L
+		ld		A,	D
+		__no_carry:
+		sbc		A,	H
+		jrc		__ret_C		## underflow
+		
+		inc		BC
+		jr		__DIV16_loop
+
+
+
+	__ret_C:
+		## get remainder
+		ld	A,	C
+		add	A,	B
+		jrz	__return_BC		## BC == 0
+		## HL -= BC (diviser * x - diviser)
+		ld	A,	L
+		sub	A,	C
+		ld	E,	A
+		ld	A,	H
+		sbc	A,	C
+		ld	D,	A
+
+		__return_BC:
+		ld	H,	B
+		ld	L,	C
+		pop	BC
+		ret
+#}
 
 ## MUL
 
@@ -81,6 +164,7 @@ _div_8:	## div(A = number, C = diviser)	## return {A = result, B = remainder}
 	sla	n\
 	sla	n\
 	sla	n
+
 						
 _mul_8:	##mul(n = A, mul = C)	## return {A = result}
 #{
@@ -96,7 +180,6 @@ _mul_8:	##mul(n = A, mul = C)	## return {A = result}
 	add	A,	B
 	ld	B,	A
 	ld	A,	D
-	res	7,	C
 
 	__MUL_bit6:
 		bit	6,	C
@@ -105,7 +188,6 @@ _mul_8:	##mul(n = A, mul = C)	## return {A = result}
 		add	A,	B
 		ld	B,	A
 		ld	A,	D
-		res	6,	C
 
 	__MUL_bit5:
 		bit	5,	C
@@ -114,7 +196,6 @@ _mul_8:	##mul(n = A, mul = C)	## return {A = result}
 		add	A,	B
 		ld	B,	A
 		ld	A,	D
-		res	5,	C
 
 	__MUL_bit4:
 		bit	4,	C
@@ -123,7 +204,6 @@ _mul_8:	##mul(n = A, mul = C)	## return {A = result}
 		add	A,	B
 		ld	B,	A
 		ld	A,	D
-		res	4,	C
 
 	__MUL_bit3:
 		bit	3,	C
@@ -132,7 +212,6 @@ _mul_8:	##mul(n = A, mul = C)	## return {A = result}
 		add	A,	B
 		ld	B,	A
 		ld	A,	D
-		res	3,	C
 
 	__MUL_bit2:
 		bit	2,	C
@@ -141,7 +220,6 @@ _mul_8:	##mul(n = A, mul = C)	## return {A = result}
 		add	A,	B
 		ld	B,	A
 		ld	A,	D
-		res	2,	C
 
 	__MUL_bit1:
 		bit	1,	C
@@ -150,7 +228,6 @@ _mul_8:	##mul(n = A, mul = C)	## return {A = result}
 		add	A,	B
 		ld	B,	A
 		ld	A,	D
-		res	1,	C
 
 	__MUL_add_A:
 	bit	0,	C
@@ -162,6 +239,413 @@ _mul_8:	##mul(n = A, mul = C)	## return {A = result}
 	ld	A,	B
 	pop	DE
 	pop	BC
+	ret
+#}
+
+%define	SHIFT_15(hi, lo)\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi
+%define	SHIFT_14(hi, lo)\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi
+%define	SHIFT_13(hi, lo)\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi
+%define	SHIFT_12(hi, lo)\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi
+%define	SHIFT_11(hi, lo)\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi
+%define	SHIFT_10(hi, lo)\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi
+%define	SHIFT_9(hi, lo)\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi
+%define	SHIFT_8(hi, lo)\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi
+%define	SHIFT_7(hi, lo)\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi
+%define	SHIFT_6(hi, lo)\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi
+%define	SHIFT_5(hi, lo)\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi
+%define	SHIFT_4(hi, lo)\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi
+%define	SHIFT_3(hi, lo)\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi
+%define	SHIFT_2(hi, lo)\
+	sla	lo\
+	rl	hi\
+	sla	lo\
+	rl	hi
+%define	SHIFT_1(hi, lo)\
+	sla	lo\
+	rl	hi
+
+%define ADD_DE_BC	\
+	ld		A,	C\
+	add		A,	E\
+	ld		E,	A\
+	ld		A,	B\
+	adc		A,	D\
+	ld		D,	A\
+	ld		B,	H\
+	ld		C,	L
+
+
+
+%define	tmp_hi	0xFFA0
+%define	tmp_lo	0xFFA1
+
+_mul_16:	##	mul_16(HL = number, DE = multiplier)	# result = {HL}
+#{
+	push	BC
+	push	DE
+
+	ld		A,			D
+	ld		[tmp_hi],	A
+	ld		A,			E
+	ld		[tmp_lo],	A
+
+	ld		B,	H
+	ld		C,	L
+	ld		DE,	0
+	ld		A,	[tmp_hi]
+
+	bit		7,	A			## bit 15
+	jrz		__MUL16_bit_14
+	SHIFT_15(B, C)
+	ADD_DE_BC
+	ld		A,	[tmp_hi]
+
+	__MUL16_bit_14:
+		bit		6,	A			## bit 14
+		jrz		__MUL16_bit_13
+		SHIFT_14(B, C)
+		ADD_DE_BC
+		ld		A,	[tmp_hi]
+
+	__MUL16_bit_13:
+		bit		5,	A			## bit 13
+		jrz		__MUL16_bit_12
+		SHIFT_13(B, C)
+		ADD_DE_BC
+		ld		A,	[tmp_hi]
+
+	__MUL16_bit_12:
+		bit		4,	A			## bit 12
+		jrz		__MUL16_bit_11
+		SHIFT_12(B, C)
+		ADD_DE_BC
+		ld		A,	[tmp_hi]
+
+	__MUL16_bit_11:
+		bit		3,	A			## bit 11
+		jrz		__MUL16_bit_10
+		SHIFT_11(B, C)
+		ADD_DE_BC
+		ld		A,	[tmp_hi]
+
+	__MUL16_bit_10:
+		bit		2,	A			## bit 10
+		jrz		__MUL16_bit_9
+		SHIFT_10(B, C)
+		ADD_DE_BC
+		ld		A,	[tmp_hi]
+
+	__MUL16_bit_9:
+		bit		1,	A			## bit 9
+		jrz		__MUL16_bit_8
+		SHIFT_9(B, C)
+		ADD_DE_BC
+		ld		A,	[tmp_hi]
+
+	__MUL16_bit_8:
+		bit		0,	A			## bit 8
+		jrz		__MUL16_bit_7
+		SHIFT_8(B, C)
+		ADD_DE_BC
+
+	__MUL16_bit_7:
+		ld		A,	[tmp_lo]
+		bit		7,	A			## bit 7
+		jrz		__MUL16_bit_6
+		SHIFT_7(B, C)
+		ADD_DE_BC
+		ld		A,	[tmp_lo]
+
+	__MUL16_bit_6:
+		bit		6,	A			## bit 6
+		jrz		__MUL16_bit_5
+		SHIFT_6(B, C)
+		ADD_DE_BC
+		ld		A,	[tmp_lo]
+
+	__MUL16_bit_5:
+		bit		5,	A			## bit 5
+		jrz		__MUL16_bit_4
+		SHIFT_5(B, C)
+		ADD_DE_BC
+		ld		A,	[tmp_lo]
+
+	__MUL16_bit_4:
+		bit		4,	A			## bit 4
+		jrz		__MUL16_bit_3
+		SHIFT_4(B, C)
+		ADD_DE_BC
+		ld		A,	[tmp_lo]
+
+	__MUL16_bit_3:
+		bit		3,	A			## bit 3
+		jrz		__MUL16_bit_2
+		SHIFT_3(B, C)
+		ADD_DE_BC
+		ld		A,	[tmp_lo]
+
+	__MUL16_bit_2:
+		bit		2,	A			## bit 2
+		jrz		__MUL16_bit_1
+		SHIFT_2(B, C)
+		ADD_DE_BC
+		ld		A,	[tmp_lo]
+
+	__MUL16_bit_1:
+		bit		1,	A			## bit 1
+		jrz		__MUL16_bit_0
+		SHIFT_1(B, C)
+		ADD_DE_BC
+		ld		A,	[tmp_lo]
+
+	__MUL16_bit_0:
+		bit		0,	A			## bit 0
+		jrz		__MUL16_mov_return
+		ld		H,	D
+		ld		L,	E
+		add		HL,	BC
+		jr		__MUL16_return
+
+	__MUL16_mov_return:
+	ld		H,	D
+	ld		L,	E
+	__MUL16_return:
+	pop		DE
+	pop		BC
 	ret
 #}
 

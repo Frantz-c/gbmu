@@ -131,12 +131,152 @@
 #	}
 #
 
+## faire en sorte que put_line et put_pixel n'utilisent pas les memes variables au meme moment
+## utiliser un memblock:
+# .memlock		line_pixel_maths_var_ff80, 0xFF80, 0xFFA0
+%define COTE_A	0xFF80
+%define COTE_B	0xFF81
+%define COTE_C	0xFF82
+%define SIGN_A	0xFF83
+%define SIGN_B	0xFF84
+%define DX		0xFF85
+%define DY		0xFF86
+%define COLOR	0xFF87
+
+
+_put_line:	## put_line(start = HL, end = DE, color = C)
+#{
+	push	DE
+	push	BC
+	push	HL
+
+	ld		A,	C
+	ld		[COLOR],	C
+	xor		A
+	ld		[SIGN_A],	A
+	ld		[SIGN_B],	A
+
+	ld		A,	D
+	sub		A,	H
+	jrz		__PL_vertical_line
+	jrnc	__PL_calcul_B
+	## result is negative
+	not		A
+	inc		A
+	ld		[COTE_A],	A
+	ld		[SIGN_A],	A
+
+	__PL_calcul_B:
+	ld		A,	E
+	sub		A,	L
+	jrz		__PL_horizontal_line
+	jrnc	__PL_next_step2
+	## result is negative
+	not		A
+	inc		A
+	ld		[COTE_B],	A
+	ld		[SIGN_B],	A
+
+	__PL_calcul_HYP:
+	push	HL
+	ld		D,	0
+	ld		HL,	__SQRT8_table
+	ld		E,	A
+	add		HL,	DE
+	ld		A,	[HL]
+	ld		[COTE_C],	A
+	ld		A,	[COTE_A]
+	ld		HL,	__SQRT8_table
+	ld		E,	A
+	add		HL,	DE
+	ld		A,	[COTE_C]
+	ld		L,	[HL]
+	ld		H,	0
+	ld		E,	A
+	add		HL,	DE	## HL = A*A + B*B
+	call	_sqrt_16		## A CODER !!!!!!!
+	ld		A,			L
+	ld		[COTE_C],	A	## COTE_C ok
+
+	## dx = div_16(COTE_A << 8, HYPO)
+	__PL_calcul_dx:
+	ld		E,	A		## HYPO, D = 0
+	ld		A,	[COTE_A]
+	ld		H,	A		## HL = COTE_A << 8
+	ld		L,	0
+	call	_div_16	## HL / DE
+	ld		A,	L
+	ld		[DX],	A
+	## dy = div_16(COTE_B << 8, HYPO)
+	ld		A,	[COTE_C]
+	ld		E,	A
+	ld		A,	[COTE_B]
+	ld		H,	A
+	ld		L,	0
+	call	_div_16
+	ld		A,	L
+	ld		[DY],	A
+
+	## loop (i = 0; i < HYPO + 1; i++)
+	#  {
+	#    X = start.x + ((dx * i) >> 8)
+	#    Y = start.y + ((dy * i) >> 8)
+	#    call _put_pixel
+	#  }
+	ld	DE,	0	## E = 0
+	ld	A,	[COTE_C]
+	ld	B,	A	
+	inc	B		## B = HYPO + 1
+
+	__PL_draw_loop:
+	## Y = start.y + ((dy * i) >> 8)
+	ld	A,	[DY]
+	ld	H,	0
+	ld	L,	A			## HL = DX
+	call	_mul_16:	## HL = HL * DE (DX * E)
+	ld	A,	H			## A = HL << 8
+	pop		HL			## pop start
+	push	HL
+	add	A,	L			## A += start.y
+	ld	C,	A			## C = px.y
+
+	## X = start.x + ((dx * i) >> 8)
+	ld	A,	[DX]
+	ld	H,	0
+	ld	L,	A			## HL = DX
+	call	_mul_16:	## HL = HL * DE (DX * E)
+	ld	A,	H			## A = HL << 8
+	pop		HL			## pop start
+	push	HL
+	add	A,	H			## A += start.x
+	ld	H,	A			## H = px.x
+
+	push	DE
+	ld	A,	[COLOR]
+	ld	E,	A
+	ld	A,	H
+	call	_put_pixel	## _put_pixel(X = A, Y = C, color = E)
+	pop		DE
+
+	inc		E
+	ld		A,	E
+	sub		B
+	jrnz	__PL_draw_loop
+
+	pop		HL
+	pop		BC
+	pop		DE
+	ret
+#}
+
+
 
 %define n_shift		0xFF80
 %define length		0xFF81
 %define shift_len	0xFF82
 %define	inc_or_dec	0xFF83
-%define col			0xFF84
+%define direction	0xFF84
+%define add_px		0xFF85
 
 %define	start		HL
 %define end			DE
@@ -155,15 +295,14 @@ _put_line:	##	put_line(start = HL, end = DE, C = color)	# H = start.x, L = start
 	push	DE
 	push	BC
 
-#	ld		A,		C
-#	ld		[col],	A
+	xor		A
+	ld		[direction],	A
 	ld		negative,	1
 
 	## end.x - start.x < 0 ? jrz
 	ld		A,	end_x
 	sub		A,	start_x
 	jpz		__PL_put_vertical_line				## <<<<<<<<<<<<<<<
-#	and		0x80				## is negative ?
 	jrnc	__PL_no_swap_start_end
 
 	## swap
@@ -177,7 +316,6 @@ _put_line:	##	put_line(start = HL, end = DE, C = color)	# H = start.x, L = start
 	ld		A,	end_y
 	sub		A,	start_y
 	jrz		__PL_put_horizontal_line			## <<<<<<<<<<<<<<<
-#	and		A,	0x80
 	jrnc	__PL_next_step
 	
 	push	AF
@@ -192,19 +330,34 @@ _put_line:	##	put_line(start = HL, end = DE, C = color)	# H = start.x, L = start
 	ld		A,			negative
 	ld		[inc_or_dec],	A
 
-	ld		A,	end_x
-	sub		A,	start_x		## A = number
+	ld		A,			end_x
+	sub		A,			start_x		## A = number
 	ld		[length],	A
+	sub		C
+	jrnc	__PL_no_swap_nshift_length
+
+	## swap n_shift and length if length < n_shift
+	ld		A,			[length]
+	ld		C,			A
+	ld		A,			[n_shift]
+	dec		A			## length--
+	ld		[length],	A
+	inc		C			## diviser++
+	ld		A,			C
+	ld		[n_shift],	A
+	ld		[direction],	A			## direction != 0 --> direction = Y
+	__PL_no_swap_nshift_length:
+	ld		A,			[length]
+	
 
 	## div length/n_shift
 	call	_div_8
-	sla		B					## check if B == 0
-	jrz		__PL_no_inc_shift_len
-	inc		A
-	__PL_no_inc_shift_len:
 	ld		[shift_len],	A
-	ld		A,				negative
-	ld		[inc_or_dec],	A
+	sla		B					## check if B == 0
+	jrz		__PL_no_extra_px
+
+	__PL_no_extra_px:
+	
 
 	
 

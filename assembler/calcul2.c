@@ -4,6 +4,52 @@
 #include <ctype.h>
 #include <string.h>
 
+const uint32_t	ascii[256] = {
+	0x40,0,0,0,0,0,0,0,0,2, //0
+	0x40,0,0,0,0,0,0,0,0,0, //10
+	0,0,0,0,0,0,0,0,0,0, //20
+	0,0,2,0,0,0,0,4,4,0, //30
+	0x80,0x80,4,4,0,4,0,4,1,1, //40
+	1,1,1,1,1,1,1,1,0,0, //50
+	4,0,4,0,0,0x18,0x18,0x18,0x18,0x18, //60
+	0x18,0x18,0x18,0x18,0x18,0x18,0x18,0x18,0x18,0x18, //70
+	0x18,0x18,0x18,0x18,0x18,0x18,0x18,0x18,0x18,0x18, //80
+	0x18,0x80,0,0x80,4,0,0,0x28,0x28,0x28, //90
+	0x28,0x28,0x28,0x28,0x28,0x28,0x28,0x28,0x28,0x28, //100
+	0x28,0x28,0x28,0x28,0x28,0x28,0x28,0x28,0x28,0x28, //110
+	0x28,0x28,0x28,0,4,0,0,0,0,0 //120
+};
+
+const uint8_t	to_lower_char[128] = {
+	0,1,2,3,4,5,6,7,8,9,
+	10,11,12,13,14,15,16,17,18,19,
+	20,21,22,23,24,25,26,27,28,29,
+	30,31,32,33,34,35,36,37,38,39,
+	40,41,42,43,44,45,46,47,48,49,
+	50,51,52,53,54,55,56,57,58,59,
+	60,61,62,63,64,97,98,99,100,101,
+	102,103,104,105,106,107,108,109,110,111,
+	112,113,114,115,116,117,118,119,120,121,
+	122,91,92,93,94,95,96,97,98,99,
+	100,101,102,103,104,105,106,107,108,109,
+	110,111,112,113,114,115,116,117,118,119,
+	120,121,122,123,124,125,126,127
+};
+
+# define is_digit(c)		(ascii[(uint8_t)c] & 0x01)
+# define is_alpha(c)		(ascii[(uint8_t)c] & 0x08)
+# define is_lower_alpha(c)	(ascii[(uint8_t)c] & 0x20)
+# define is_upper_alpha(c)	(ascii[(uint8_t)c] & 0x10)
+# define is_space(c)		(ascii[(uint8_t)c] & 0x02)
+# define is_alnum(c)		(ascii[(uint8_t)c] & 0x09)
+# define is_endl(c)			(ascii[(uint8_t)c] & 0x40)
+# define is_operator(c)		(ascii[(uint8_t)c] & 0x04)	// + - / % * ^ | & <(<) >(>)
+# define is_parent(c)		(ascii[(uint8_t)c] & 0x80)
+# define is_comment(c)		(c == ';' || c == '#')
+
+# define LOWER(x)			to_lower_char[((x) & 0x7f)]
+
+
 typedef struct	calc_elem_s
 {
 	int32_t		val;		// value or operator
@@ -11,70 +57,91 @@ typedef struct	calc_elem_s
 }
 calc_elem_t;
 
-/*
-	couper encore une fois en tableau 2D (le niveau depend uniquement du signe la 2e fois)
 
-	exemple:
+uint32_t	atou_inc(const char **s)
+{
+	const char	*p;
+	uint32_t	n;
 
-		5*(3+6*2+3*5)*(5+3*(5+5)) = 5 * 30 * 35 = 
+	if (**s == '0' && LOWER((*s)[1]) == 'x')
+	{
+		p = *s + 2;
+		if (is_digit(*p))
+			n = *p - '0';
+		else if (LOWER(*p) >= 'a' && LOWER(*p) <= 'f')
+			n = LOWER(*p) - 87;
+		else
+			goto __ret_0;
+		while (1)
+		{
+			p++;
+			if (is_digit(*p))
+				n = (n << 4) | (*p - '0');
+			else if (LOWER(*p) >= 'a' && LOWER(*p) <= 'f')
+				n = (n << 4) | (LOWER(*p) - 87) ;
+			else
+				break;
+		}
+	}
+	else if (**s == '0' && LOWER((*s)[1]) == 'b')
+	{
+		p = *s + 2;
+		if (*p == '1' || *p == 0)
+			n = *p - '0';
+		else
+			goto __ret_0;
+		while (1)
+		{
+			p++;
+			if (*p == '0')
+				n <<= 1;
+			else if (*p == '1')
+				n = (n << 1) | 1;
+			else
+				break;
+		}
+	}
+	else if (**s == '0')
+	{
+		if (**s >= '0' && **s <= '7')
+			n = **s - '0';
+		else
+			goto __ret_0;
+		p = *s + 1;
+		while (1)
+		{
+			if (*p >= '0' && *p <= '7')
+				n = (n << 3) | (*p - '0');
+			else
+				break;
+			p++;
+		}
+	}
+	else if (is_digit(**s))
+	{
+		if (is_digit(**s))
+			n = **s - '0';
+		else
+			goto __ret_0;
+		p = *s + 1;
+		while (1)
+		{
+			if (is_digit(*p))
+				n = (n * 10) + (*p - '0');
+			else
+				break;
+			p++;
+		}
+	}
+	else
+		goto __ret_0;
 
-		==>	1) faire les calculs possible dans chaque ligne  (on ote les parentheses)
+	*s = p;
+	return (n);
 
-		5 *
-		3 +
-		6 * 2
-		+
-		3 * 5
-		*
-		5 +
-		3 *
-		5 + 5
-
-		==> 2) faire les calculs de niveau prioritaire (signe precedent < signe courant && signe suivant < signe courant)
-
-		// tableau 2D ?
-		5 *(1)
-		3 +(4) 12 +(4)
-		15 *(0)
-		5 +(4)
-		3 *(5)
-		10 0(0)
-
-		==>
-
-		5 *(1)
-		30 *(0)
-		5 +(4)
-		30
-
-		==>
-
-		150 *(0)
-		35
-
-		==>
-
-		...
-
-		A priori ce qui suit est nul...
-		Alternative: couper directement dans la chaine [ avec '(' = '\0' && ')' = '\0' ]
-
-		"5*"
-		"3+6*2+3*5"
-		"*"
-		"5+3*"
-		"5+5"
-
-		==> reprises des etapes normales (voir au dessus)
-
-		// tableau 2D ?
-		5 *(1)
-		3 +(4) 12 +(4)
-		15 *(0)
-		5 +(4)
-		...
-
-*/
+__ret_0:
+	return (0);
+}
 
 #define	PARENT_VALUE	2	//must be greater than 1 and do not contain BIT0
 
@@ -111,19 +178,17 @@ calc_elem_t	*get_calc(const char *s, uint32_t *n_elem)
 		}
 		else
 			minus = 0;
-		if (!isdigit(*s))
+		if (!is_digit(*s))
 			goto __error_not_digit;
 
-		register uint32_t	tmp = 0;
-		tmp = *(s++) - 48;
+		n = atou_inc(&s);
+/*		tmp = *(s++) - 48;
 		while (isdigit(*s)) {
 			tmp *= 10;
 			tmp += *(s++) - 48;
-		}
+		}*/
 		if (minus)
-			n = (int32_t)(~tmp + 1);
-		else
-			n = (int32_t)tmp;
+			n = (int32_t)(~n + 1);
 
 // add number
 		if ((i & 0x7) == 0)
@@ -240,7 +305,7 @@ int32_t	execute_calcul(calc_elem_t *calc, uint32_t n_elem)
 
 			while (len >= 3)
 			{
-				printf("(1)calculate(%d %c %d);\n", calc[start].val, calc[start+1].val, calc[start+2].val);
+				//printf("(1)calculate(%d %c %d);\n", calc[start].val, calc[start+1].val, calc[start+2].val);
 				calc[start].val = calculate(calc + start);
 				end -= 2;
 				len = end - start;
@@ -258,7 +323,7 @@ int32_t	execute_calcul(calc_elem_t *calc, uint32_t n_elem)
 		{
 			if ((start < 2 || calc[start-2].lvl < calc[start].lvl) && calc[start+2].lvl <= calc[start].lvl)
 			{
-				printf("(2)calculate(%d %c %d);\n", calc[start-1].val, calc[start].val, calc[start+1].val);
+				//printf("(2)calculate(%d %c %d);\n", calc[start-1].val, calc[start].val, calc[start+1].val);
 				calc[start-1].val = calculate(calc + start - 1);
 				memmove(calc + start, calc + start + 2, (n_elem - (start + 1)) * sizeof(calc_elem_t));
 				n_elem -= 2;
@@ -271,31 +336,86 @@ int32_t	execute_calcul(calc_elem_t *calc, uint32_t n_elem)
 }
 
 
+const char	*binary(int32_t n)
+{
+	uint32_t		space = 0x01010100u;
+	uint32_t		b = 0x80000000u;
+	uint8_t			is_neg = (n < 0);
+	static char		string[48] = {0};
+	uint8_t			i = 0;
+	
+	if (is_neg)
+		n = (~n + 1);
+
+	if ((b & n) == 0)
+	{
+		b >>= 1;
+		while (b && (b & n) == 0)
+			b >>= 1;
+	}
+	if (is_neg)
+	{
+		uint32_t	c = b;
+
+		if (b < 0x80)
+			c = 0x80u;
+		else if (b < 0x8000)
+			c = 0x8000u;
+		else if (b < 0x800000)
+			c = 0x800000u;
+		else
+			c = 0x80000000u;
+
+		while (c != b)
+		{
+			string[i++] = '1';
+			if (space & c)
+				string[i++] = ' ';
+			c >>= 1;
+		}
+	}
+
+	if (b == 0)
+	{
+		string[i++] = '0';
+	}
+	else
+	{
+		while (b)
+		{
+			string[i++] = (b & n) ? '1' : '0';
+			if (space & b)
+				string[i++] = ' ';
+			b >>= 1;
+		}
+	}
+
+	return ((const char *)string);
+}
+
 int		main(int argc, char *argv[])
 {
 	uint32_t	n_elem;
 	if (argc != 2)
 	{
-		fprintf(stderr, "error\n");
+		fprintf(stderr, "%s [operations]\n\n"
+						"  operators:\n"
+						"    + - / * %% >> << | & ^\n"
+						"  others:\n"
+						"    ( ) ' ' '\\t'\n\n", argv[0]);
 		return (1);
 	}
 
 	calc_elem_t	*calc = get_calc(argv[1], &n_elem);
 
 	int	result = execute_calcul(calc, n_elem);
-	printf("result = %d (%x)\n", result, result);
+	printf(
+			"\e[1;33mhexa\e[0m=[\e[1m0x%X\e[0m], "
+			"\e[1;33mdecimal\e[0m=[\e[1m%d\e[0m], "
+			"\e[1;33moctal\e[0m=[\e[1m0%o\e[0m], "
+			"\e[1;33mbinary\e[0m=[\e[1m%s\e[0m]\n",
+			result, result, result, binary(result)
+	);
 
 	return (0);
 }
-
-/*
-	printf("n_elem = %u\n", n_elem);
-	for (uint32_t j = 0; ; j += 2)
-	{
-		printf("%d\e[0;31m(%d)\e[0m %c\e[0;31m(%d)\e[0m ", calc[j].val, calc[j].lvl, calc[j+1].val, calc[j+1].lvl);
-		if (calc[j+1].val == 0 && calc[j+1].lvl == 0)
-			break;
-	}
-	puts("\n");
-*/
-

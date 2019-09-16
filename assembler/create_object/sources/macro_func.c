@@ -6,6 +6,15 @@ extern char		*copy_macro_content(char *dest, char *s, uint32_t *lineno)
 {
 	char	*bs_pos;
 
+	while (is_space(*s)) s++;
+	while (*s == '\\')
+	{
+		s++;
+		while (is_space(*s)) s++;
+		if (*s == '\n')
+			s++;
+		while (is_space(*s)) s++;
+	}
 	for (; ; s++)
 	{
 		if (is_endl(*s))
@@ -20,6 +29,14 @@ extern char		*copy_macro_content(char *dest, char *s, uint32_t *lineno)
 				*(dest++) = *(s++);
 				if (is_space(*s))
 					while (is_space(s[1])) s++;
+				while (s[1] == '\\')
+				{
+					s++;
+					while (is_space(s[1])) s++;
+					if (s[1] == '\n')
+						s++;
+					while (is_space(s[1])) s++;
+				}
 				(*lineno)++;
 				continue;
 			}

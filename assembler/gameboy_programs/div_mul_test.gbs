@@ -40,6 +40,14 @@ ld		E,	B
 push	DE
 push	BC
 
+ld		HL,	0x12
+ld		DE,	0x300
+call	_mul_16
+ld		C,	H
+push	HL
+push	BC
+
+
 ld		HL,	__FMT
 call	_print_string
 
@@ -48,10 +56,10 @@ nop
 jr		0xFE
 
 __FMT:	.ascii	"TESTS _mul_8/_div_8\n\n\n\n\n"
+		.ascii	"0x12 * 0x300\n> result = 0x~~\n\n"
 		.ascii	"24 / 5 :\n> result = 0x~\n> remainder = 0x~\n\n"
 		.ascii	"19 * 13:\n> result = 0x~\0"
 
-10011 * 1101
 
 .bank	0,	0x2800
 
