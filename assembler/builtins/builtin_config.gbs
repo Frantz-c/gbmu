@@ -1,0 +1,21 @@
+# **************************************************************************** #
+#                                                           LE - /             #
+#                                                               /              #
+#    builtin_config.gbs                               .::    .:/ .      .::    #
+#                                                  +:+:+   +:    +:  +:+:+     #
+#    By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+      #
+#                                                  #+#   #+    #+    #+#       #
+#    Created: 2019/09/16 15:44:47 by mhouppin     #+#   ##    ##    #+#        #
+#    Updated: 2019/09/16 16:40:56 by mhouppin    ###    #+. /#+    ###.fr      #
+#                                                          /                   #
+#                                                         /                    #
+# **************************************************************************** #
+
+%define BUILTIN_BANK	31
+
+#.memlock	builtin_cache, 0xD800, 0xD8FF
+#.var2		__div_cache, builtin_cache
+#.var1		__div_count, builtin_cache
+
+%define		__div_cache	0xD800
+%define		__div_count	0xD802

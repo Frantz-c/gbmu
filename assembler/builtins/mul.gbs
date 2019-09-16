@@ -1,0 +1,40 @@
+# **************************************************************************** #
+#                                                           LE - /             #
+#                                                               /              #
+#    mul.gbs                                          .::    .:/ .      .::    #
+#                                                  +:+:+   +:    +:  +:+:+     #
+#    By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+      #
+#                                                  #+#   #+    #+    #+#       #
+#    Created: 2019/09/16 15:29:38 by mhouppin     #+#   ##    ##    #+#        #
+#    Updated: 2019/09/16 15:48:56 by mhouppin    ###    #+. /#+    ###.fr      #
+#                                                          /                   #
+#                                                         /                    #
+# **************************************************************************** #
+
+%include "builtin_config.gbs"
+
+.bank	BUILTIN_BANK, 0
+
+#uint16_t mul(uint16_t big_factor, uint16_t small_factor);
+
+___builtin_mul:
+		push	BC
+		push	DE
+		mov		H,		D
+		mov		L,		E
+		mov		A,		16
+
+	mul_loop:
+		shr		B
+		rr		C
+		jrnc	mul_bit_fail
+		add		HL,		DE
+
+	mul_bit_fail:
+		shl		E
+		rl		D
+		dec		A
+		jrnz	mul_loop
+		pop		DE
+		pop		BC
+		ret

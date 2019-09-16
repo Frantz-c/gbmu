@@ -1,0 +1,63 @@
+# **************************************************************************** #
+#                                                           LE - /             #
+#                                                               /              #
+#    div.gbs                                          .::    .:/ .      .::    #
+#                                                  +:+:+   +:    +:  +:+:+     #
+#    By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+      #
+#                                                  #+#   #+    #+    #+#       #
+#    Created: 2019/09/16 16:13:26 by mhouppin     #+#   ##    ##    #+#        #
+#    Updated: 2019/09/16 16:40:31 by mhouppin    ###    #+. /#+    ###.fr      #
+#                                                          /                   #
+#                                                         /                    #
+# **************************************************************************** #
+
+%include "builtin_config.gbs"
+
+.bank	BUILTIN_BANK, 0x100
+
+#uint16_t div(uint16_t skipped, uint16_t HL:numerator, uint16_t BC:denominator)
+
+#return HL(quotient), BC(remainder)
+
+___builtin_div:
+		push	DE
+		mov		D,		H
+		mov		E,		L
+		mov		HL,		__div_cache
+		mov		[HL],	C
+		inc		HL
+		mov		[HL],	B
+		inc		HL
+		mov		[HL],	17
+		mov		BC,		0
+
+	div_loop:
+		mov		HL,		__div_count
+		rl		E
+		rl		D
+		dec		[HL]
+		retz
+		rl		C
+		rl		B
+		dec		HL
+		dec		HL
+		mov		A,		C
+		sub		A,		[HL]
+		mov		C,		A
+		inc		HL
+		mov		A,		B
+		sbb		A,		[HL]
+		mov		B,		A
+		jrnc	div_skip
+		dec		HL
+		mov		A,		C
+		add		A,		[HL]
+		mov		C,		A
+		inc		HL
+		mov		A,		B
+		adc		A,		[HL]
+		mov		B,		A
+
+	div_skip:
+		ccf
+		jr		div_loop
