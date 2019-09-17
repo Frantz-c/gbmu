@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/13 14:04:54 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/17 14:49:26 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/17 15:44:22 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -703,8 +703,8 @@ do {\
 		bank_switch(area, args, &data);\
 	else if (keyword_len == 7 && strncmp(keyword, "memlock", keyword_len) == 0)\
 		set_memlock_area(loc_symbol->memblock, args, &data);\
-	else if (strncmp(keyword, "var", 3) == 0 && (type = is_numeric(keyword + 3, &len)) && is_space(keyword[len + 3]) && len == (keyword_len - 3))\
-		assign_var_to_memory(loc_symbol, ext_symbol, atou_type(keyword + 3, NULL, type), args, &data);\
+	else if (keyword_len == 3 && strncmp(keyword, "var", keyword_len) == 0)\
+		assign_var_to_memory(loc_symbol, ext_symbol, args, &data);\
 	else if (keyword_len == 6 && strncmp(keyword, "extern", keyword_len) == 0)\
 		set_extern_symbol(ext_symbol, args, &data);\
 	else if (keyword_len == 13 && strncmp(keyword, "program_start", keyword_len) == 0)\

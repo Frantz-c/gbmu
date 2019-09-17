@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/13 22:59:31 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/27 14:00:11 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/17 15:51:41 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -85,32 +85,45 @@ static uint32_t	get_block_addr(const char *block, vector_t *memblock, uint32_t s
 	return (0xffffffffu);
 }
 
-extern void	assign_var_to_memory(loc_sym_t *loc_symbol, vector_t *ext_symbol, uint8_t size, arguments_t args[4], data_t *data)
+extern void	assign_var_to_memory(loc_sym_t *loc_symbol, vector_t *ext_symbol, arguments_t args[5], data_t *data)
 {
 	uint32_t	addr;
+	uint32_t	size;
 
-	if (size == 0)
-		goto __null_size;
-	if (args[0].value == NULL || args[1].value == NULL)
+//	if (size == 0)
+//		goto __null_size;
+	if (args[0].value == NULL || args[1].value == NULL || args[2].value == NULL)
 		goto __too_few_arguments;
-	if (args[2].value != NULL)
+	if (args[3].value != NULL)
 		goto __too_many_arguments;
 	
+	// check argument 1
 	if (args[0].type & INTEGER_TYPE)
 		goto __wrong_type_arg1;
 	if ((args[0].type & ID_STRING_TYPE) == 0)
 		goto __not_well_formated_arg1;
-	if (args[1].type & INTEGER_TYPE)
+	// check argument 2
+	if (args[1].type & STRING_TYPE)
 		goto __wrong_type_arg2;
-	if ((args[1].type & ID_STRING_TYPE) == 0)
+	// check argument 3
+	if (args[2].type & INTEGER_TYPE)
+		goto __wrong_type_arg2;
+	if ((args[2].type & ID_STRING_TYPE) == 0)
 		goto __not_well_formated_arg2;
 
 	// verify if arg1 identifier is not already used
 	if (duplicate_symbol((char *)args[0].value, loc_symbol, ext_symbol, data))
 		return;
 
-	// verify if arg2 memblock identifier exists and get addr
-	const char *blockname = (char*)args[1].value;
+	// verify if arg2 is lower than 0x2001
+	size = *(uint32_t*)args[1].value;
+	if (size > 0x2000)
+		goto __too_big_variable;
+	if (size == 0)
+		goto __null_size;
+
+	// verify if arg3 memblock identifier exists and get addr
+	const char *blockname = (char*)args[2].value;
 	uint32_t	index = 0;
 	addr = get_block_addr(blockname, loc_symbol->memblock, size, &index);
 	if (addr == 0xffffffffu)
@@ -146,6 +159,9 @@ extern void	assign_var_to_memory(loc_sym_t *loc_symbol, vector_t *ext_symbol, ui
 	register const char	*error_msg;
 __null_size:
 	error_msg = "variable size cannot be 0";
+	goto __print_error;
+__too_big_variable:
+	error_msg = "variable size cannot be greater than 0x2000";
 	goto __print_error;
 __too_few_arguments:
 	error_msg = "too few arguments: .varX var_name, block_name";

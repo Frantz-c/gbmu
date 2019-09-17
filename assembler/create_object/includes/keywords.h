@@ -4,7 +4,7 @@
 void	bank_switch(vector_t *area, arguments_t args[], data_t *data);
 void	add_bytes(vector_t *area, arguments_t args[], data_t *data);
 void	set_memlock_area(vector_t *memblock, arguments_t args[], data_t *data);
-void	assign_var_to_memory(loc_sym_t *loc_symbol, vector_t *ext_symbol, uint8_t size, arguments_t args[], data_t *data);
+void	assign_var_to_memory(loc_sym_t *loc_symbol, vector_t *ext_symbol, arguments_t args[], data_t *data);
 void	set_extern_symbol(vector_t *symbol, arguments_t args[], data_t *data);
 
 // cartridge
