@@ -5,6 +5,7 @@ ressources
 *.dSYM
 log_gbmul
 *.sav
+*.save
 *.d
 .DS_Store
 project/gbmu_project
@@ -13,3 +14,5 @@ roms
 gbasm
 gbdis
 unit-test
+gbasm_create_object
+gbasm_assemble_objects
