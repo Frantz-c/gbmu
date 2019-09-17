@@ -6,7 +6,7 @@
 #    By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+      #
 #                                                  #+#   #+    #+    #+#       #
 #    Created: 2019/09/15 16:51:47 by fcordon      #+#   ##    ##    #+#        #
-#    Updated: 2019/09/15 21:59:46 by fcordon     ###    #+. /#+    ###.fr      #
+#    Updated: 2019/09/16 22:30:25 by fcordon     ###    #+. /#+    ###.fr      #
 #                                                          /                   #
 #                                                         /                    #
 # **************************************************************************** #
@@ -16,6 +16,84 @@
 _sqrt_16:	##sqrt(HL = number)	# return = {HL = result}
 #{
 #	max = 127 * 127 + 111 * 111 = 0x6F22 (28450) = 168 * 168
+	push	DE
+	push	BC
+
+	ld		D,	H
+	ld		E,	L
+	ld		C,	0x15
+	ld		HL,	__SQRT16_table_hi + 15
+
+	__SQRT16_loop:
+	ld		A,	[HL++]
+	inc		C
+	sub		A,	D
+	jrc		__SQRT16_loop
+	jrz		__SQRT16_loop
+
+	dec		HL
+	dec		HL
+	dec		C
+	ld		A,	[HL]
+	sub		A,	D
+	jrz		__SQRT16_get_this_lo
+
+#	ld		D,	[HL]
+
+	ld		HL,	__SQRT8_table_lo
+	ld		B,	0
+	add		HL,	BC
+	__SQRT16_loop2:
+	ld		A,	[HL--]
+	dec		C
+	sub		A,	E
+	jrnc	__SQRT16_loop2
+
+	__SQRT16_get_this_lo:
+	ld		L,	C
+	ld		H,	0
+
+#	inc		HL
+#	inc		HL
+#	ld		L,	[HL]
+#	jr		__SQRT16_return
+
+#	__SQRT16_get_this_lo:
+#	ld		HL,	__SQRT8_table_lo
+#	ld		B,	0
+#	add		HL,	BC
+#	ld		L,	[HL]
+
+	__SQRT16_return:
+#		ld	H,	D
+		pop	BC
+		pop	DE
+		ret
+
+
+	__SQRT16_table_hi:
+		.byte	0		0		0		0		0		0		0		0\
+				0		0		0		0		0		0		0		0\
+				1		1		1		1		1		1		1		2\
+				2		2		2		2		3		3		3		3\
+				4		4		4		4		5		5		5		5\
+				6		6		6		7		7		7		8		8\
+				9		9		9		10		10		10		11		11\
+				12		12		13		13		14		14		15		15\
+				16		16		17		17		18		18		19		19\
+				20		20		21		21		22		23		23		24\
+				25		25		26		26		27		28		28		29\
+				30		30		31		32		33		33		34		35\
+				36		36		37		38		39		39		40		41\
+				42		43		43		44		45		46		47		48\
+				49		49		50		51		52		53		54		55\
+				56		57		58		59		60		61		62		63\
+				64		65		66		67		68		69		70		71\
+				72		73		74		75		76		77		78		79\
+				81		82		83		84		85		86		87		89\
+				90		91		92		93		95		96		97		98\
+				100		101		102		103		105		106		107		108\
+				110		111
 
 #}
 
@@ -29,7 +107,7 @@ _sqrt_8:	##sqrt(A = number)	# return = {A = result}
 	ld		B,	A
 
 	__SQRT8_loop:
-		ld		HL,	__SQRT8_table
+		ld		HL,	__SQRT8_table_lo
 		add		HL,	DE
 		ld		A,	[HL]
 		sub		A,	B
@@ -44,7 +122,31 @@ _sqrt_8:	##sqrt(A = number)	# return = {A = result}
 		pop	BC
 		ret
 
-	__SQRT8_table:	.byte	0 1 4 9 16 25 36 49 64 81 100 121 144 169 196 225
+	__SQRT8_table_lo:
+		.byte	0		1		4		9		16		25		36		49\
+				64		81		100		121		144		169		196		225\
+				0		0x21	0x44	0x69	0x90	0xB9	0xE4	0x11\
+				0x40	0x71	0xA4	0xD9	0x10	0x49	0x84	0xC1\
+				0x00	0x41	0x84	0xC9	0x10	0x59	0xA4	0xF1\
+				0x40	0x91	0xE4	0x39	0x90	0xE9	0x44	0xA1\
+				0x00	0x61	0xC4	0x29	0x90	0xF9	0x64	0xD1\
+				0x40	0xB1	0x24	0x99	0x10	0x89	0x04	0x81\
+				0x00	0x81	0x04	0x89	0x10	0x99	0x24	0xB1\
+				0x40	0xD1	0x64	0xF9	0x90	0x29	0xC4	0x61\
+				0x00	0xA1	0x44	0xE9	0x90	0x39	0xE4	0x91\
+				0x40	0xF1	0xA4	0x59	0x10	0xC9	0x84	0x41\
+				0x00	0xC1	0x84	0x49	0x10	0xD9	0xA4	0x71\
+				0x40	0x11	0xE4	0xB9	0x90	0x69	0x44	0x21\
+				0x00	0xE1	0xC4	0xA9	0x90	0x79	0x64	0x51\
+				0x40	0x31	0x24	0x19	0x10	0x09	0x04	0x01\
+				0x00	0x01	0x04	0x09	0x10	0x19	0x24	0x31\
+				0x40	0x51	0x64	0x79	0x90	0xA9	0xC4	0xE1\
+				0x00	0x21	0x44	0x69	0x90	0xB9	0xE4	0x11\
+				0x40	0x71	0xA4	0xD9	0x10	0x49	0x84	0xC1\
+				0x00	0x41	0x84	0xC9	0x10	0x59	0xA4	0xF1\
+				0x40	0x91
+
+
 #}
 
 

@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/12 12:47:39 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/29 16:53:46 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/17 12:03:29 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -71,6 +71,26 @@ extern void			print_error(char *filename, uint32_t lineno, char *line, const cha
 		filename,
 		lineno, error,
 		(int)(len), line
+	);
+
+	if (g_error == MAX_ERROR)
+	{
+		fprintf(stderr, "\e[1;31mtoo many errors emitted\e[0m (%u)\n", g_error);
+		exit(g_error);
+	}
+}
+
+extern void			print_error_dont_show(char *filename, uint32_t lineno, const char *error)
+{
+	g_error++;
+
+	fprintf
+	(
+		stderr,
+		"\e[1;31m[ERROR]\e[0m \e[1min file \e[0;33m\"%s\"\e[0m\e[1m:\t"
+		"line %u: \e[0;31m%s\e[0m\n",
+		filename,
+		lineno, error
 	);
 
 	if (g_error == MAX_ERROR)

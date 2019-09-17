@@ -86,8 +86,10 @@ uint32_t	atou_inc(const char **s)
 	else if (**s == '0' && LOWER((*s)[1]) == 'b')
 	{
 		p = *s + 2;
-		if (*p == '1' || *p == 0)
-			n = *p - '0';
+		if (*p == '1')
+			n = 1;
+		else if (*p == '0')
+			n = 0;
 		else
 			goto __ret_0;
 		while (1)

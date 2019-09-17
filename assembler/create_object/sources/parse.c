@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/13 14:04:54 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/12 17:40:35 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/16 19:33:44 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -238,11 +238,89 @@ __print_error:
 	return (NULL);
 }
 
+
+static char	*replace_macro_without_params(char *macro_name, vector_t *macro)
+{
+	macro_t		*m;
+
+	m = get_macro(macro, macro_name);
+	return (m ? strdup(m->content) : NULL);
+}
+
+
+static void	get_integer_value(char **s, arguments_t args[5], uint32_t i)
+{
+	args[i].type = INTEGER_TYPE;
+	args[i].value = malloc(sizeof(uint32_t));
+	*(uint32_t*)(args[i].value) = atou_inc(s);
+}
+
+static int	get_noquote_string(char **s, arguments_t args[5], uint32_t i)
+{
+	char	*arg_start;
+
+	args[i].type = (GB_STRING_TYPE | STRING_TYPE | ID_STRING_TYPE);
+
+	arg_start = *s;
+	if (!is_alpha(**s) && **s != '_')
+		args[i].type &= ~(ID_STRING_TYPE);
+
+	while (!is_endl(**s) && !is_space(**s) && **s != ',')
+	{
+		if (**s == '\\')
+		{
+			(*s)++;
+			if (is_endl(**s)) break;
+		}
+		if (**s < ' ' || **s > '_')
+			args[i].type &= ~(GB_STRING_TYPE);
+		if (!is_alnum(**s) && **s != '_')
+			args[i].type &= ~(ID_STRING_TYPE);
+		(*s)++;
+	}
+
+	if (*s - arg_start > IDENTIFIER_MAX_LENGTH)
+		return (-1);
+	args[i].value = (void*)strndup(arg_start, *s - arg_start);
+	return (0);
+}
+
+static int		get_dquote_string(char **s, arguments_t args[5], uint32_t i)
+{
+	char	*arg_start;
+
+	args[i].type = (GB_STRING_TYPE | DB_QUOTE_STRING | STRING_TYPE | ID_STRING_TYPE);
+
+	arg_start = ++(*s);
+	if (!is_alpha(**s) && **s != '_')
+		args[i].type &= ~(ID_STRING_TYPE);
+
+	while (!is_endl(**s) && **s != '"')
+	{
+		if (**s == '\\')
+			(*s)++;
+		if (**s < ' ' || **s > '_')
+			args[i].type &= ~(GB_STRING_TYPE);
+		if (!is_alnum(**s) && **s != '_')
+			args[i].type &= ~(ID_STRING_TYPE);
+		(*s)++;
+	}
+	if (**s != '"')
+		return (-1);
+	if (*s - arg_start > IDENTIFIER_MAX_LENGTH)
+		return (-2);
+	args[i].value = (void*)strndup(arg_start, *s - arg_start);
+	(*s)++;
+	return (0);
+}
+
+
+
 /*
 **	refaire le systeme de types
 */
 static __attribute__((always_inline))
-uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t args[5], data_t *data, vector_t *area)
+uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t args[5], data_t *data, vector_t *area, vector_t *macro)
 {
 	char		*arg_start;
 	uint32_t	length;
@@ -447,61 +525,71 @@ uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t a
 		{
 			if (minus)
 				goto __signed_not_expected;
-			args[i].type = INTEGER_TYPE;
-			args[i].value = malloc(sizeof(uint32_t));
-			*(uint32_t*)(args[i].value) = atou_inc(s);
+			get_integer_value(s, args, i);
 		}
 		else if (**s == '"') // indirect string (ex: "string space")
 		{
-			args[i].type = (GB_STRING_TYPE | DB_QUOTE_STRING | STRING_TYPE | ID_STRING_TYPE);
+			int	error;
 
-			arg_start = ++(*s);
-			if (!is_alpha(**s) && **s != '_')
-				args[i].type &= ~(ID_STRING_TYPE);
-
-			while (!is_endl(**s) && **s != '"')
-			{
-				if (**s == '\\')
-					(*s)++;
-				if (**s < ' ' || **s > '_')
-					args[i].type &= ~(GB_STRING_TYPE);
-				if (!is_alnum(**s) && **s != '_')
-					args[i].type &= ~(ID_STRING_TYPE);
-				(*s)++;
-			}
-
-			if (**s != '"')
+			error = get_dquote_string(s, args, i);
+			if (error == -1)
 				goto __unexpected_char;
-			if (*s - arg_start > IDENTIFIER_MAX_LENGTH)
+			if (error == -2)
 				goto __too_long_argument;
-			args[i].value = (void*)strndup(arg_start, *s - arg_start);
-			(*s)++;
 		}
 		else // direct string (ex: string\ space)
 		{
-			args[i].type = (GB_STRING_TYPE | STRING_TYPE | ID_STRING_TYPE);
+			int	error;
 
-			arg_start = *s;
-			if (!is_alpha(**s) && **s != '_')
-				args[i].type &= ~(ID_STRING_TYPE);
-
-			while (!is_endl(**s) && !is_space(**s) && **s != ',')
-			{
-				if (**s == '\\')
-				{
-					(*s)++;
-					if (is_endl(**s)) break;
-				}
-				if (**s < ' ' || **s > '_')
-					args[i].type &= ~(GB_STRING_TYPE);
-				if (!is_alnum(**s) && **s != '_')
-					args[i].type &= ~(ID_STRING_TYPE);
-				(*s)++;
-			}
-
-			if (*s - arg_start > IDENTIFIER_MAX_LENGTH)
+			error = get_noquote_string(s, args, i);
+			if (error)
 				goto __too_long_argument;
-			args[i].value = (void*)strndup(arg_start, *s - arg_start);
+		}
+
+		/* check if it's a macro without params */
+		if (args[i].type & ID_STRING_TYPE)
+		{
+			char	*tmp;
+			char	*s;
+
+			tmp = replace_macro_without_params(args[i].value, macro);
+			if (tmp)
+			{
+				free(args[i].value);
+				s = tmp;
+				if (*s == '-')
+				{
+					minus = 1;
+					s++;
+				}
+				else
+					minus = 0;
+				if (is_digit(*s))
+				{
+					if (minus)
+						goto __signed_not_expected;
+					get_integer_value(&s, args, i);
+				}
+				else if (*s == '"') // indirect string (ex: "string space")
+				{
+					int	error;
+
+					error = get_dquote_string(&s, args, i);
+					if (error == -1)
+						goto __unexpected_char;
+					if (error == -2)
+						goto __too_long_argument;
+				}
+				else // direct string (ex: string\ space)
+				{
+					int	error;
+
+					error = get_noquote_string(&s, args, i);
+					if (error)
+						goto __too_long_argument;
+				}
+				free(tmp);
+			}
 		}
 
 		while (is_space(**s)) (*s)++;
@@ -515,17 +603,6 @@ uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t a
 		(*s)++;
 	}
 	args[i].value = NULL;
-	/*
-	printf("params = ");
-	for (uint8_t i = 0; args[i].value; i++)
-	{
-		if (args[i].type & STRING_TYPE)
-			printf("\"%s\" ", (char *)args[i].value);
-		else
-			printf("%u ", *(uint32_t *)args[i].value);
-	}
-	printf("\n");
-	*/
 	return (length);
 
 /*
@@ -615,7 +692,7 @@ do {\
 		goto __end_keyword;\
 	}\
 \
-	keyword_len = get_keywords_and_arguments(keyword, &s, args, &data, area);\
+	keyword_len = get_keywords_and_arguments(keyword, &s, args, &data, area, macro);\
 	if (keyword_len == 0 || args->type == BYTE_KEYWORD)\
 		goto __end_keyword;\
 \

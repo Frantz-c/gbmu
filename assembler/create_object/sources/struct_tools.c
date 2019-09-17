@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 13:17:53 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/12 13:14:35 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/17 12:31:12 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -151,29 +151,19 @@ extern void			push_instruction(code_area_t *area, uint8_t bin[4], param_t p[2], 
 	uint8_t	inst_size = inst_length[bin[0]];
 	
 	new = calloc(1, sizeof(code_t));
-	if (area->cur == NULL)
-	{
-		area->data = new;
-		area->cur = new;
-	}
-	else
-	{
-		area->cur->next = new;
-		area->cur = new;
-	}
 
 	if (inst_size == 2)
 	{
 		if (bin[0] != 0xCBu)
-			area->cur->opcode[2] = bin[3];
+			new->opcode[2] = bin[3];
 	}
 	else if (inst_size == 3)
 	{
-		area->cur->opcode[3] = bin[3];
-		area->cur->opcode[2] = bin[2];
+		new->opcode[3] = bin[3];
+		new->opcode[2] = bin[2];
 	}
-	area->cur->opcode[1] = bin[1];
-	area->cur->opcode[0] = bin[0];
+	new->opcode[1] = bin[1];
+	new->opcode[0] = bin[0];
 
 
 	//symbol
@@ -182,7 +172,7 @@ extern void			push_instruction(code_area_t *area, uint8_t bin[4], param_t p[2], 
 		if (symbol[0] == '[')
 			memmove(symbol, symbol + 1, strlen(symbol));
 
-		area->cur->symbol = strdup(symbol);
+		new->symbol = strdup(symbol);
 		int32_t	index;
 
 		if (vector_search(loc_symbol->label, (void*)&symbol) == -1
@@ -191,6 +181,7 @@ extern void			push_instruction(code_area_t *area, uint8_t bin[4], param_t p[2], 
 			if (memblock_match_name(loc_symbol->memblock, symbol) != -1)
 			{
 				fprintf(stderr, "can't use memory block as operand\n");
+				free(new);
 				return;
 			}
 			else if ((index = vector_search(ext_symbol, (void*)&symbol)) == -1)
@@ -212,11 +203,26 @@ extern void			push_instruction(code_area_t *area, uint8_t bin[4], param_t p[2], 
 				else if (sym->type == MEMBLOCK)
 				{
 					fprintf(stderr, "can't use memory block as operand\n");
+					free(new);
 					return;
 				}
 			}
 		}
 	}
+	
+	if (area->cur == NULL)
+	{
+		area->data = new;
+		area->cur = new;
+	}
+	else
+	{
+		area->cur->next = new;
+		area->cur = new;
+	}
+
+	area->cur->filename = strdup(data->filename);
+	area->cur->lineno = data->lineno;
 	area->cur->addr = area->size + area->addr;
 	area->cur->size = inst_length[bin[0]];
 	area->size += inst_length[bin[0]];

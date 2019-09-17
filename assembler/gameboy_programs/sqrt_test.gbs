@@ -1,0 +1,56 @@
+# **************************************************************************** #
+#                                                           LE - /             #
+#                                                               /              #
+#    sqrt_test.gbs                                    .::    .:/ .      .::    #
+#                                                  +:+:+   +:    +:  +:+:+     #
+#    By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+      #
+#                                                  #+#   #+    #+    #+#       #
+#    Created: 2019/09/16 22:16:23 by fcordon      #+#   ##    ##    #+#        #
+#    Updated: 2019/09/16 22:20:22 by fcordon     ###    #+. /#+    ###.fr      #
+#                                                          /                   #
+#                                                         /                    #
+# **************************************************************************** #
+
+
+.game_title		"SQRT_TEST"
+.cgb_support	"incompatible"
+.sgb_support	"not_supported"
+.cart_type		"mbc-5_sram_battery"
+.rom_size		"8 banks"
+.ram_size		"1 bank"
+.destination	"other"
+.version		0
+.program_start	0x150
+
+
+.bank	0,	0x150
+
+#call		_lcdc_off
+#call		_clean_character_data
+#call		_set_put_pixel_character_code
+call		_load_ascii
+
+ld			HL,	225
+call		_sqrt_16
+push		HL
+
+ld			HL,	__FMT
+call		_print_string
+
+halt
+nop
+jr		0xFE
+
+__FMT:	.ascii	"\n\n\n\nSQRT(225) = 0x~\0"
+
+
+.bank	0,	0x2000
+
+%include "lib_maths.gbs"
+
+
+
+.bank	0,	0x3000
+
+%include "ascii_printer.gbs"
+

@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/12 13:19:39 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/26 18:08:49 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/17 12:03:05 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -18,5 +18,6 @@
 
 void			print_warning(char *filename, uint32_t lineno, char *line, const char *error);
 void			print_error(char *filename, uint32_t lineno, char *line, const char *error);
+extern void			print_error_dont_show(char *filename, uint32_t lineno, const char *error);
 
 #endif

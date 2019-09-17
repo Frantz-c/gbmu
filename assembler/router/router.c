@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/12 13:43:03 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/12 16:00:28 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/16 22:02:05 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -161,6 +161,7 @@ uint8_t	get_action(char *argv[], char **exe, void **obj, void **src)
 			else
 			{
 				fprintf(stderr, "invalid extension file \"%s\"\n", argv[i]);
+				goto __free_and_exit;
 			}
 			i++;
 		}
@@ -184,7 +185,8 @@ uint8_t	get_action(char *argv[], char **exe, void **obj, void **src)
 		}
 
 		o[olen] = NULL;
-		s[slen].src = NULL;
+		if (s)
+			s[slen].src = NULL;
 		*obj = o;
 		*src = s;
 		return (FULL_COMPILATION);
@@ -209,7 +211,6 @@ __flag_o__flag_i:
 		return (CREATE_ONE_OBJECT);
 
 __free_and_exit:
-		puts("ERROR");
 		if (olen)
 		{
 			for (uint32_t i = 0; i < olen; i++)
@@ -248,7 +249,7 @@ uint32_t	count_tab(char *tab[])
 }
 
 // argv = obj, src
-void	call_create_object(char *obj, char *src)
+unsigned int	call_create_object(char *obj, char *src)
 {
 	int		process;
 	int		status;
@@ -262,11 +263,20 @@ void	call_create_object(char *obj, char *src)
 	}
 	wait(&status);
 	if (WIFSIGNALED(status))
+	{
 		printf("CHILD TERMINATED WITH SIGNAL %u\n", WTERMSIG(status));
+		return (1);
+	}
+	if (WIFEXITED(status))
+	{
+		if (WEXITSTATUS(status) != 0)
+			return (1);
+	}
+	return (0);
 }
 
 // argv = exe, obj...
-void	call_assemble_objects(char **obj, char *exe)
+unsigned int	call_assemble_objects(char **obj, char *exe)
 {
 	int			process;
 	char		**argv = malloc((count_tab(obj) + 2) * sizeof(char *));
@@ -285,10 +295,19 @@ void	call_assemble_objects(char **obj, char *exe)
 		exit(1);
 	}
 	wait(&status);
-	if (WIFSIGNALED(status))
-		printf("CHILD TERMINATED WITH SIGNAL %u\n", WTERMSIG(status));
-
 	free(argv);
+
+	if (WIFSIGNALED(status))
+	{
+		printf("CHILD TERMINATED WITH SIGNAL %u\n", WTERMSIG(status));
+		return (1);
+	}
+	if (WIFEXITED(status))
+	{
+		if (WEXITSTATUS(status) != 0)
+			return (1);
+	}
+	return (0);
 }
 
 int		main(int argc, char *argv[])
@@ -345,7 +364,8 @@ int		main(int argc, char *argv[])
 			{
 				for (uint32_t i = 0; sources[i].src; i++)
 				{
-					call_create_object(sources[i].obj, sources[i].src);
+					if (call_create_object(sources[i].obj, sources[i].src) != 0)
+						exit(1);
 					free(sources[i].src);
 				}
 			}

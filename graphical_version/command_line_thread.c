@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/03 09:33:12 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/09 14:42:44 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/16 20:19:34 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -707,6 +707,8 @@ __print:
 
 					// default stats
 					memcpy(addr + 1, default_stats, 43);
+					if (0)
+					{
 
 					// set name
 					addr = GET_REAL_ADDR(pkmn_addr[NAME] + (count * (max + 1)));
@@ -739,6 +741,7 @@ __print:
 					addr = GET_REAL_ADDR(pkmn_addr[USER_NAME]);
 					dest = GET_REAL_ADDR(pkmn_addr[OWNER] + (count * 11));
 					for (; (*dest = *addr) != 0x50; addr++, dest++);
+					}
 				}
 				else if (strncmp(p, "soin", 4) == 0 && non_alnum(p[4]))
 				{

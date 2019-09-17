@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/11 12:01:48 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/17 12:35:28 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -22,7 +22,17 @@
 #include "check_readed_data.h"
 #include "replace_internal_labels.h"
 
-#define	DIR_SEPARATOR	'/'
+/*
+ * utiliser getcwd pour recuperer le chemin jusqu'a l'executable (dans le router)
+ * puis le transmettre aux programmes fils
+ */
+
+#if defined	WIN32
+	# define	DIR_SEPARATOR	'\\'
+#else
+	# define	DIR_SEPARATOR	'/'
+#endif
+
 #define	SKIP_SPACES(ptr)		{while (is_space(*(ptr))) (ptr)++;}
 
 uint32_t		g_error;

@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/12 16:22:40 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/30 18:00:03 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/16 18:14:04 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -26,7 +26,7 @@ extern void	bank_switch(vector_t *area, arguments_t args[4], data_t *data)
 		goto __too_few_arguments;
 	if (args[2].value != NULL)	// more than 2 arguments
 		goto __too_many_arguments;
-	if (args[1].type & STRING_TYPE)
+	if (args[0].type & STRING_TYPE)
 		goto __wrong_type_arg1;
 
 
@@ -41,6 +41,7 @@ extern void	bank_switch(vector_t *area, arguments_t args[4], data_t *data)
 			print_warning(data->filename, data->lineno, data->line, "following code may overlap an other bank");
 		addr += offset;
 	}
+	printf("ADDR = 0x%x\n", addr);
 
 
 	// check if addr is already used

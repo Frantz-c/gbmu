@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/13 14:05:50 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/12 13:13:25 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/16 18:06:01 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -687,7 +687,7 @@ param_t	get_param_type(char *param, value_t *n)
 	return (UNKNOWN);
 }
 
-char	*replace_macro(char **s, vector_t *macro, data_t *data)
+static char	*replace_macro(char **s, vector_t *macro, data_t *data)
 {
 	char		*p = *s;
 	char		*param[10] = {NULL};

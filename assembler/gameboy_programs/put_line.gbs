@@ -6,130 +6,11 @@
 #    By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+      #
 #                                                  #+#   #+    #+    #+#       #
 #    Created: 2019/09/15 15:26:28 by fcordon      #+#   ##    ##    #+#        #
-#    Updated: 2019/09/15 22:25:40 by fcordon     ###    #+. /#+    ###.fr      #
+#    Updated: 2019/09/16 22:06:48 by fcordon     ###    #+. /#+    ###.fr      #
 #                                                          /                   #
 #                                                         /                    #
 # **************************************************************************** #
 
-## Methode
-
-#0,0 -> 1,4
-#
-#
-#4 shifts, W = 1
-#if (n_shift > W + 1)
-#	n_shift = W + 1
-#
-#0,0 -> 1,4
-#
-#1 shift + 1 = 2, W = 1 + 1 = 2
-#4 / 2 = 2
-#0,0		0,1		1,2		1,3
-
-
-#start	= {0, 3}
-#end		= {5, 1}
-#
-#
-#end.x - start.x < end.x ? ok : swap(end, start)
-#
-#n_decalage = start.y - end.y
-#
-#
-#
-#1) n_decalage = 3 - 1 = 2
-#	end.x - start.x = 5 (length)
-#	dec_len = length/n_decalage = 2 reste 1
-#
-#	x = start.x, y = start.y
-#	while (length)
-#	{
-#		tmp = dec_len
-#		while (dec_len && length)
-#		{
-#			put_pixel(x, y)
-#			x++
-#			length--;
-#		}
-#		y++ # ou y-- si n_decalage < 0
-#		length--
-#	}
-
-
-#1)=====================
-#  0 1 2 3 4 5 6 7 8 9
-#0
-#1           X
-#2
-#3 X
-#4
-#5
-#
-#2)=====================
-#  0 1 2 3 4 5 6 7 8 9
-#0
-#1 X         
-#2
-#3           X 
-#4
-#5
-#3)=====================
-#  0 1 2 3 4 5 6 7 8 9
-#0
-#1 X         
-#2
-#3   X         
-#4
-#5
-
-#
-#start	= {0, 3}
-#end		= {5, 1}
-#
-#
-#end.x - start.x < end.x ? ok : swap(end, start)
-#
-#n_decalage = start.y - end.y
-#
-#
-#
-#1) n_decalage = 3 - 1 = 2
-#	end.x - start.x = 5 (length)
-#	dec_len = length/n_decalage = 2 reste 1
-#
-#	x = start.x, y = start.y
-#	while (length)
-#	{
-#		tmp = dec_len
-#		while (dec_len && length)
-#		{
-#			put_pixel(x, y)
-#			x++
-#			length--;
-#		}
-#		y++ # ou y-- si n_decalage < 0
-#		length--
-#	}
-#
-#
-#2) n_decalage = 1 - 3 = -2
-#	end.x - start.x = 5 (length)
-#	dec_len = length/n_decalage = -2 reste -1
-#
-#	x = start.x, y = start.y
-#	while (length)
-#	{
-#		tmp = dec_len
-#		while (dec_len && length)
-#		{
-#			put_pixel(x, y)
-#			x++
-#			length--;
-#		}
-#		y--
-#		length--
-#	}
-#
 
 ## faire en sorte que put_line et put_pixel n'utilisent pas les memes variables au meme moment
 ## utiliser un memblock:
@@ -137,11 +18,11 @@
 %define COTE_A	0xFF80
 %define COTE_B	0xFF81
 %define COTE_C	0xFF82
-%define SIGN_A	0xFF83
-%define SIGN_B	0xFF84
-%define DX		0xFF85
-%define DY		0xFF86
-%define COLOR	0xFF87
+%define SIGN_A	0xFF84
+%define SIGN_B	0xFF85
+%define DX		0xFF86
+%define DY		0xFF87
+%define COLOR	0xFF88
 
 
 _put_line:	## put_line(start = HL, end = DE, color = C)
@@ -150,15 +31,15 @@ _put_line:	## put_line(start = HL, end = DE, color = C)
 	push	BC
 	push	HL
 
-	ld		A,	C
-	ld		[COLOR],	C
+	ld		A,			C
+	ld		[COLOR],	A
 	xor		A
 	ld		[SIGN_A],	A
 	ld		[SIGN_B],	A
 
 	ld		A,	D
 	sub		A,	H
-	jrz		__PL_vertical_line
+	jpz		__PL_vertical_line
 	jrnc	__PL_calcul_B
 	## result is negative
 	not		A
@@ -169,8 +50,8 @@ _put_line:	## put_line(start = HL, end = DE, color = C)
 	__PL_calcul_B:
 	ld		A,	E
 	sub		A,	L
-	jrz		__PL_horizontal_line
-	jrnc	__PL_next_step2
+	jpz		__PL_horizontal_line
+	jrnc	__PL_calcul_HYP
 	## result is negative
 	not		A
 	inc		A
@@ -179,28 +60,47 @@ _put_line:	## put_line(start = HL, end = DE, color = C)
 
 	__PL_calcul_HYP:
 	push	HL
+	pop		BC
 	ld		D,	0
-	ld		HL,	__SQRT8_table
+	ld		HL,	__SQRT8_table_lo
 	ld		E,	A
+	add		HL,	DE
+	ld		C,	[HL]
+	ld		HL,	__SQRT16_table_hi
+	add		HL,	DE
+	ld		B,	[HL]
+
+#	ld		[COTE_C],	A
+	ld		A,	[COTE_A]
+	ld		HL,	__SQRT8_table_lo
+	ld		E,	A
+	add		HL,	DE
+	ld		A,	C
+	add		A,	[HL]
+	ld		C,	A
+	ld		A,	B
+	adc		A,	0
+	ld		B,	A
+	ld		HL,	__SQRT16_table_hi
 	add		HL,	DE
 	ld		A,	[HL]
-	ld		[COTE_C],	A
-	ld		A,	[COTE_A]
-	ld		HL,	__SQRT8_table
-	ld		E,	A
-	add		HL,	DE
-	ld		A,	[COTE_C]
-	ld		L,	[HL]
-	ld		H,	0
-	ld		E,	A
-	add		HL,	DE	## HL = A*A + B*B
-	call	_sqrt_16		## A CODER !!!!!!!
-	ld		A,			L
-	ld		[COTE_C],	A	## COTE_C ok
+	add		A,	B
+	ld		B,	A
+## BC = A*A + B*B
+	ld		H,	B
+	ld		L,	C
+	call	_sqrt_16
+	ld		A,				H
+	ld		[COTE_C],		A
+	ld		D,				A
+	ld		A,				L
+	ld		[COTE_C + 1],	A	## COTE_C ok
+	ld		E,				A
+	pop		BC
 
 	## dx = div_16(COTE_A << 8, HYPO)
 	__PL_calcul_dx:
-	ld		E,	A		## HYPO, D = 0
+	## HYPO = DE
 	ld		A,	[COTE_A]
 	ld		H,	A		## HL = COTE_A << 8
 	ld		L,	0
@@ -209,6 +109,8 @@ _put_line:	## put_line(start = HL, end = DE, color = C)
 	ld		[DX],	A
 	## dy = div_16(COTE_B << 8, HYPO)
 	ld		A,	[COTE_C]
+	ld		D,	A
+	ld		A,	[COTE_C + 1]
 	ld		E,	A
 	ld		A,	[COTE_B]
 	ld		H,	A
@@ -233,7 +135,7 @@ _put_line:	## put_line(start = HL, end = DE, color = C)
 	ld	A,	[DY]
 	ld	H,	0
 	ld	L,	A			## HL = DX
-	call	_mul_16:	## HL = HL * DE (DX * E)
+	call	_mul_16		## HL = HL * DE (DX * E)
 	ld	A,	H			## A = HL << 8
 	pop		HL			## pop start
 	push	HL
@@ -244,7 +146,7 @@ _put_line:	## put_line(start = HL, end = DE, color = C)
 	ld	A,	[DX]
 	ld	H,	0
 	ld	L,	A			## HL = DX
-	call	_mul_16:	## HL = HL * DE (DX * E)
+	call	_mul_16		## HL = HL * DE (DX * E)
 	ld	A,	H			## A = HL << 8
 	pop		HL			## pop start
 	push	HL
@@ -267,248 +169,251 @@ _put_line:	## put_line(start = HL, end = DE, color = C)
 	pop		BC
 	pop		DE
 	ret
+
+	__PL_vertical_line:
+	__PL_horizontal_line:
 #}
 
 
-
-%define n_shift		0xFF80
-%define length		0xFF81
-%define shift_len	0xFF82
-%define	inc_or_dec	0xFF83
-%define direction	0xFF84
-%define add_px		0xFF85
-
-%define	start		HL
-%define end			DE
-%define neg_color	BC
-
-%define	start_x		H
-%define	start_y		L
-%define	end_x		D
-%define	end_y		E
-%define negative	B
-%define color		C
-
-_put_line:	##	put_line(start = HL, end = DE, C = color)	# H = start.x, L = start.y, ...
-#{
-	push	HL
-	push	DE
-	push	BC
-
-	xor		A
-	ld		[direction],	A
-	ld		negative,	1
-
-	## end.x - start.x < 0 ? jrz
-	ld		A,	end_x
-	sub		A,	start_x
-	jpz		__PL_put_vertical_line				## <<<<<<<<<<<<<<<
-	jrnc	__PL_no_swap_start_end
-
-	## swap
-	push	end
-	push	start
-	pop		end
-	pop		start
-
-	## set n_shift, length and shift_len
-	__PL_no_swap_start_end:
-	ld		A,	end_y
-	sub		A,	start_y
-	jrz		__PL_put_horizontal_line			## <<<<<<<<<<<<<<<
-	jrnc	__PL_next_step
-	
-	push	AF
-	ld		negative,	0xFF
-	not		A				## Absolute number (~A + 1)
-	inc		A				## Absolute number
-
-	__PL_next_step:
-	inc		A			## n_shift++ ?
-	ld		[n_shift],	A
-	ld		C,			A	## C = diviser
-	ld		A,			negative
-	ld		[inc_or_dec],	A
-
-	ld		A,			end_x
-	sub		A,			start_x		## A = number
-	ld		[length],	A
-	sub		C
-	jrnc	__PL_no_swap_nshift_length
-
-	## swap n_shift and length if length < n_shift
-	ld		A,			[length]
-	ld		C,			A
-	ld		A,			[n_shift]
-	dec		A			## length--
-	ld		[length],	A
-	inc		C			## diviser++
-	ld		A,			C
-	ld		[n_shift],	A
-	ld		[direction],	A			## direction != 0 --> direction = Y
-	__PL_no_swap_nshift_length:
-	ld		A,			[length]
-	
-
-	## div length/n_shift
-	call	_div_8
-	ld		[shift_len],	A
-	sla		B					## check if B == 0
-	jrz		__PL_no_extra_px
-
-	__PL_no_extra_px:
-	
-
-	
-
-
-	%define	X			A
-	%define Y			C
-	%define LENGTH		D
-	%define COLOR		E
-	%define SHIFT_LEN	B
-
-	pop		DE		## E = color
-	push	DE
-	ld		A,	[length]
-	ld		D,	A
-	ld		A,	[shift_len]
-	ld		B,	A
-	ld		C,	start_y
-	ld		A,	start_x
-
-
-	__PL_put_line:
-		push	HL
-		push	AF
-		call	_put_pixel
-		pop		AF
-		pop		HL
-
-		dec		LENGTH			## dec D
-		jpz		__PL_return
-		inc		X				## inc A
-		dec		SHIFT_LEN		## dec B
-		jrnz	__PL_put_line
-
-	push	AF
-	ld		A,	[inc_or_dec]
-	cp		0xFF
-	jrnz	__PL_inc
-	dec		Y
-	jr		__PL_after_incrementation
-	__PL_inc:
-	inc		Y
-	__PL_after_incrementation:
-	ld		A,	[shift_len]
-	ld		B,	A
-	pop		AF
-	jr		__PL_put_line
-
-	
-	
-
-%undef length
-%define length	D
-
-__PL_put_vertical_line:
-	ld		A,	end_y
-	sub		A,	start_y
-	jpz		__PL_put_one_px
-	jrnc	__PL_no_abs
-	not		A
-	inc		A
-## swap start and end
-	push	start
-	push	end
-	pop		start
-	pop		end
-	__PL_no_abs:
-	pop		DE
-	push	DE
-	ld		length,		A
-	ld		A,			start_x
-	ld		C,			start_y
-
-	__PL_vertical_loop:
-		push	AF
-		push	HL
-		call	_put_pixel
-		pop		HL
-		pop		AF
-		inc		C
-		dec		length
-		jrnz	__PL_vertical_loop
-	jr	__PL_return
-
-
-__PL_put_horizontal_line:
-	ld		A,	end_x
-	sub		A,	start_x
-	pop		DE
-	push	DE
-	ld		length,	A
-	ld		A,	start_x
-	ld		C,	start_y
-
-	__PL_horizontal_loop:
-		push	AF
-		push	HL
-		call	_put_pixel
-		pop		HL
-		pop		AF
-		inc		A
-		dec		length
-		jrnz	__PL_horizontal_loop
-	jr	__PL_return
-	
-	__PL_put_one_px:
-		ld		A,			start_x
-		ld		C,			start_y
-		pop		DE
-		push	DE
-		call	_put_pixel
-
-__PL_return:
-	pop		BC
-	pop		DE
-	pop		HL
-	ret
-#}
-
-%undef length
-
 #
-#1) n_decalage = 3 - 1 = 2
-#	end.x - start.x = 5 (length)
-#	dec_len = length/n_decalage = 2 reste 1
+#%define n_shift		0xFF80
+#%define length		0xFF81
+#%define shift_len	0xFF82
+#%define	inc_or_dec	0xFF83
+#%define direction	0xFF84
+#%define add_px		0xFF85
 #
-#	x = start.x, y = start.y
-#	while (length)
-#	{
-#		tmp = dec_len
-#		while (tmp && length)
-#		{
-#			put_pixel(x, y)
-#			x++
-#			length--;
-#		}
-#		y++ # ou y-- si n_decalage < 0
-#	}
-
-%undef X
-%undef Y
-%undef LENGTH
-%undef COLOR
-%undef SHIFT_LEN
-
-
-%undef start
-%undef end
-%undef neg_color
-%undef start_x
-%undef start_y
-%undef end_x
-%undef end_y
-%undef negative
-%undef color
+#%define	start		HL
+#%define end			DE
+#%define neg_color	BC
+#
+#%define	start_x		H
+#%define	start_y		L
+#%define	end_x		D
+#%define	end_y		E
+#%define negative	B
+#%define color		C
+#
+#_put_line:	##	put_line(start = HL, end = DE, C = color)	# H = start.x, L = start.y, ...
+##{
+#	push	HL
+#	push	DE
+#	push	BC
+#
+#	xor		A
+#	ld		[direction],	A
+#	ld		negative,	1
+#
+#	## end.x - start.x < 0 ? jrz
+#	ld		A,	end_x
+#	sub		A,	start_x
+#	jpz		__PL_put_vertical_line				## <<<<<<<<<<<<<<<
+#	jrnc	__PL_no_swap_start_end
+#
+#	## swap
+#	push	end
+#	push	start
+#	pop		end
+#	pop		start
+#
+#	## set n_shift, length and shift_len
+#	__PL_no_swap_start_end:
+#	ld		A,	end_y
+#	sub		A,	start_y
+#	jrz		__PL_put_horizontal_line			## <<<<<<<<<<<<<<<
+#	jrnc	__PL_next_step
+#	
+#	push	AF
+#	ld		negative,	0xFF
+#	not		A				## Absolute number (~A + 1)
+#	inc		A				## Absolute number
+#
+#	__PL_next_step:
+#	inc		A			## n_shift++ ?
+#	ld		[n_shift],	A
+#	ld		C,			A	## C = diviser
+#	ld		A,			negative
+#	ld		[inc_or_dec],	A
+#
+#	ld		A,			end_x
+#	sub		A,			start_x		## A = number
+#	ld		[length],	A
+#	sub		C
+#	jrnc	__PL_no_swap_nshift_length
+#
+#	## swap n_shift and length if length < n_shift
+#	ld		A,			[length]
+#	ld		C,			A
+#	ld		A,			[n_shift]
+#	dec		A			## length--
+#	ld		[length],	A
+#	inc		C			## diviser++
+#	ld		A,			C
+#	ld		[n_shift],	A
+#	ld		[direction],	A			## direction != 0 --> direction = Y
+#	__PL_no_swap_nshift_length:
+#	ld		A,			[length]
+#	
+#
+#	## div length/n_shift
+#	call	_div_8
+#	ld		[shift_len],	A
+#	sla		B					## check if B == 0
+#	jrz		__PL_no_extra_px
+#
+#	__PL_no_extra_px:
+#	
+#
+#	
+#
+#
+#	%define	X			A
+#	%define Y			C
+#	%define LENGTH		D
+#	%define COLOR		E
+#	%define SHIFT_LEN	B
+#
+#	pop		DE		## E = color
+#	push	DE
+#	ld		A,	[length]
+#	ld		D,	A
+#	ld		A,	[shift_len]
+#	ld		B,	A
+#	ld		C,	start_y
+#	ld		A,	start_x
+#
+#
+#	__PL_put_line:
+#		push	HL
+#		push	AF
+#		call	_put_pixel
+#		pop		AF
+#		pop		HL
+#
+#		dec		LENGTH			## dec D
+#		jpz		__PL_return
+#		inc		X				## inc A
+#		dec		SHIFT_LEN		## dec B
+#		jrnz	__PL_put_line
+#
+#	push	AF
+#	ld		A,	[inc_or_dec]
+#	cp		0xFF
+#	jrnz	__PL_inc
+#	dec		Y
+#	jr		__PL_after_incrementation
+#	__PL_inc:
+#	inc		Y
+#	__PL_after_incrementation:
+#	ld		A,	[shift_len]
+#	ld		B,	A
+#	pop		AF
+#	jr		__PL_put_line
+#
+#	
+#	
+#
+#%undef length
+#%define length	D
+#
+#__PL_put_vertical_line:
+#	ld		A,	end_y
+#	sub		A,	start_y
+#	jpz		__PL_put_one_px
+#	jrnc	__PL_no_abs
+#	not		A
+#	inc		A
+### swap start and end
+#	push	start
+#	push	end
+#	pop		start
+#	pop		end
+#	__PL_no_abs:
+#	pop		DE
+#	push	DE
+#	ld		length,		A
+#	ld		A,			start_x
+#	ld		C,			start_y
+#
+#	__PL_vertical_loop:
+#		push	AF
+#		push	HL
+#		call	_put_pixel
+#		pop		HL
+#		pop		AF
+#		inc		C
+#		dec		length
+#		jrnz	__PL_vertical_loop
+#	jr	__PL_return
+#
+#
+#__PL_put_horizontal_line:
+#	ld		A,	end_x
+#	sub		A,	start_x
+#	pop		DE
+#	push	DE
+#	ld		length,	A
+#	ld		A,	start_x
+#	ld		C,	start_y
+#
+#	__PL_horizontal_loop:
+#		push	AF
+#		push	HL
+#		call	_put_pixel
+#		pop		HL
+#		pop		AF
+#		inc		A
+#		dec		length
+#		jrnz	__PL_horizontal_loop
+#	jr	__PL_return
+#	
+#	__PL_put_one_px:
+#		ld		A,			start_x
+#		ld		C,			start_y
+#		pop		DE
+#		push	DE
+#		call	_put_pixel
+#
+#__PL_return:
+#	pop		BC
+#	pop		DE
+#	pop		HL
+#	ret
+##}
+#
+#%undef length
+#
+##
+##1) n_decalage = 3 - 1 = 2
+##	end.x - start.x = 5 (length)
+##	dec_len = length/n_decalage = 2 reste 1
+##
+##	x = start.x, y = start.y
+##	while (length)
+##	{
+##		tmp = dec_len
+##		while (tmp && length)
+##		{
+##			put_pixel(x, y)
+##			x++
+##			length--;
+##		}
+##		y++ # ou y-- si n_decalage < 0
+##	}
+#
+#%undef X
+#%undef Y
+#%undef LENGTH
+#%undef COLOR
+#%undef SHIFT_LEN
+#
+#
+#%undef start
+#%undef end
+#%undef neg_color
+#%undef start_x
+#%undef start_y
+#%undef end_x
+#%undef end_y
+#%undef negative
+#%undef color

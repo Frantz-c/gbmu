@@ -6,7 +6,7 @@
 /*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/31 19:36:13 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/11 14:03:31 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/17 12:20:38 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -200,9 +200,11 @@ typedef struct	code_s
 			// if (sign) value is the complement
 	uint32_t		size;	// instruction size (1 - 3)
 			// if .byte, length = ((size & 0xffffff00) >> 8)
-	void			*symbol; // symbol   or  .bytes
-	struct code_s	*next;
 	uint32_t		addr;
+	void			*symbol; // symbol   or  .bytes
+	char			*filename;
+	uint32_t		lineno;
+	struct code_s	*next;
 }
 code_t;
 

@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/09/10 11:18:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/12 13:23:35 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/16 22:14:35 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -44,6 +44,7 @@ static uint32_t	get_rom_end(void)
 	return (0);
 }
 
+// verifier qu'on depasse pas la taille de la rom !
 extern void		write_binary(vector_t *code, const char *filename)
 {
 	register all_code_t		*elem = VEC_ELEM_FIRST(all_code_t, code);

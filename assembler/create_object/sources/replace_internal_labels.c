@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/26 19:27:12 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/12 13:14:14 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/17 12:40:37 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -18,6 +18,7 @@
  */
 extern void		replace_internal_labels(vector_t *area, loc_sym_t *local_symbol)
 {
+	char					buf[128];
 	register code_area_t	*a;
 
 	a = (code_area_t *)area->data;
@@ -47,8 +48,9 @@ extern void		replace_internal_labels(vector_t *area, loc_sym_t *local_symbol)
 						val -= 2;
 						if (val > 0x7f || val < -128)
 						{
-							g_error++;
-							fprintf(stderr, "too big jump (%d) :: symbol %s\n", val, lab->name);
+							//g_error++;
+							sprintf(buf, "too big jump (%d) to label `%s`\n", val, lab->name);
+							print_error_dont_show(c->filename, c->lineno, buf);
 						}
 						c->opcode[1] = (uint8_t)val;
 						c->opcode[2] = 0;
@@ -65,8 +67,9 @@ extern void		replace_internal_labels(vector_t *area, loc_sym_t *local_symbol)
 						c->opcode[2] = (val >> 8);
 						if (val & 0xffff0000u)
 						{
-							g_error++;
-							fprintf(stderr, "overflow label (0x%x) :: symbol (%s)\n", val, lab->name);
+							//g_error++;
+							sprintf(buf, "overflow (0x%x) in operation with symbol `%s`\n", val, lab->name);
+							print_error_dont_show(c->filename, c->lineno, buf);
 						}
 					}
 					free(c->symbol);
