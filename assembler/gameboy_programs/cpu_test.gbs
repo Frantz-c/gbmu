@@ -6,7 +6,7 @@
 #    By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+      #
 #                                                  #+#   #+    #+    #+#       #
 #    Created: 2019/09/12 16:54:46 by fcordon      #+#   ##    ##    #+#        #
-#    Updated: 2019/09/13 18:32:56 by fcordon     ###    #+. /#+    ###.fr      #
+#    Updated: 2019/09/17 16:59:38 by fcordon     ###    #+. /#+    ###.fr      #
 #                                                          /                   #
 #                                                         /                    #
 # **************************************************************************** #
@@ -26,15 +26,15 @@
 
 
 .memlock	var_area, 0xC000, 0xC020
-.var2		var, var_area
-.var2		var2, var_area
-.var1		tmpA, var_area
-.var1		tmpB, var_area
-.var1		tmpC, var_area
-.var1		tmpD, var_area
-.var1		tmpE, var_area
-.var1		tmpH, var_area
-.var1		tmpL, var_area
+.var		var, 2, var_area
+.var		var2, 2, var_area
+.var		tmpA, 1, var_area
+.var		tmpB, 1, var_area
+.var		tmpC, 1, var_area
+.var		tmpD, 1, var_area
+.var		tmpE, 1, var_area
+.var		tmpH, 1, var_area
+.var		tmpL, 1, var_area
 
 
 

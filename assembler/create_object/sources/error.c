@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/12 12:47:39 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/17 12:03:29 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/17 16:42:39 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -14,7 +14,7 @@
 #include "std_includes.h"
 #include "error.h"
 
-#define MAX_ERROR	20
+#define MAX_ERROR	2000
 
 extern void			print_warning(char *filename, uint32_t lineno, char *line, const char *error)
 {

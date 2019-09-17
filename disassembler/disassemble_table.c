@@ -6,14 +6,14 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/22 21:51:26 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/06/03 14:02:11 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/17 17:57:31 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
 enum	e_operand_type
 {
-	NONE, IMM8, IMM16, ADDR8, ADDR16
+	NONE, IMM8, IMM16
 };
 
 struct	s_strconv
@@ -30,68 +30,68 @@ typedef struct s_strconv	t_strconv;
 
 t_strconv	opcodes[] = {
 	{"nop\n", NONE}, //0x00
-	{"ld   BC, *\n", IMM16},
-	{"ld   (BC), A\n", NONE},
+	{"ld   BC, 0x%0.4hX\n", IMM16},
+	{"ld   [BC], A\n", NONE},
 	{"inc  BC\n", NONE},
 	{"inc  B\n", NONE},
 	{"dec  B\n", NONE},
-	{"ld   B, *\n", IMM8},
+	{"ld   B, 0x%0.2hhX\n", IMM8},
 	{"rlca\n", NONE},
-	{"ld   (*), SP\n", ADDR16}, //0x08
+	{"ld   [0x%0.4hX], SP\n", IMM16}, //0x08
 	{"add  HL, BC\n", NONE},
-	{"ld   A, (BC)\n", NONE},
+	{"ld   A, [BC]\n", NONE},
 	{"dec  BC\n", NONE},
 	{"inc  C\n", NONE},
 	{"dec  C\n", NONE},
-	{"ld   C, *\n", IMM8},
+	{"ld   C, 0x%0.2hhX\n", IMM8},
 	{"rrca\n", NONE},
 	{"stop\n", NONE}, //0x10
-	{"ld   DE, *\n", IMM16},
-	{"ld   (DE), A\n", NONE},
+	{"ld   DE, 0x%0.4hX\n", IMM16},
+	{"ld   [DE], A\n", NONE},
 	{"inc  DE\n", NONE},
 	{"inc  D\n", NONE},
 	{"dec  D\n", NONE},
-	{"ld   D, *\n", IMM8},
+	{"ld   D, 0x%0.2X\n", IMM8},
 	{"rla\n", NONE},
-	{"jr   *\n", IMM8}, //0x18
+	{"jr   %hhd\n", IMM8}, //0x18
 	{"add  HL, DE\n", NONE},
-	{"ld   A, (DE)\n", NONE},
+	{"ld   A, [DE]\n", NONE},
 	{"dec  DE\n", NONE},
 	{"inc  E\n", NONE},
 	{"dec  E\n", NONE},
-	{"ld   E, *\n", IMM8},
+	{"ld   E, 0x%0.2hhX\n", IMM8},
 	{"rra\n", NONE},
-	{"jr   NZ, *\n", IMM8}, //0x20   alt="jrnz   *\n"
-	{"ld   HL, *\n", IMM16},
-	{"ld   (HL++), A\n", NONE},
+	{"jr   NZ, %hhd\n", IMM8}, //0x20   alt="jrnz   *\n"
+	{"ld   HL, 0x%0.4hX\n", IMM16},
+	{"ld   [HL++], A\n", NONE},
 	{"inc  HL\n", NONE},
 	{"inc  H\n", NONE},
 	{"dec  H\n", NONE},
-	{"ld   H, *\n", IMM8},
+	{"ld   H, 0x%0.2hhX\n", IMM8},
 	{"daa\n", NONE},
-	{"jr   Z, *\n", IMM8}, //0x28   alt="jrz   *\n"
+	{"jr   Z, %hhd\n", IMM8}, //0x28   alt="jrz   *\n"
 	{"add  HL, HL\n", NONE},
-	{"ld   A, (HL++)\n", NONE},
+	{"ld   A, [HL++]\n", NONE},
 	{"dec  HL\n", NONE},
 	{"inc  L\n", NONE},
 	{"dec  L\n", NONE},
-	{"ld   L, *\n", IMM8},
+	{"ld   L, 0x%0.2hhX\n", IMM8},
 	{"cpl\n", NONE},
-	{"jr   NC, *\n", IMM8}, //0x30   alt="jrnc   *\n"
-	{"ld   SP, *\n", IMM16},
-	{"ld   (HL--), A\n", NONE},
+	{"jr   NC, %hhd\n", IMM8}, //0x30   alt="jrnc   *\n"
+	{"ld   SP, 0x%0.4hX\n", IMM16},
+	{"ld   [HL--], A\n", NONE},
 	{"inc  SP\n", NONE},
-	{"inc  (HL)\n", NONE},
-	{"dec  (HL)\n", NONE},
-	{"ld   (HL), *\n", IMM8},
+	{"inc  [HL]\n", NONE},
+	{"dec  [HL]\n", NONE},
+	{"ld   [HL], 0x%0.2hhX\n", IMM8},
 	{"scf\n", NONE},
-	{"jr   C, *\n", IMM8}, //0x38   alt="jrc   *\n"
+	{"jr   C, %hhd\n", IMM8}, //0x38   alt="jrc   *\n"
 	{"add  HL, SP\n", NONE},
-	{"ld   A, (HL--)\n", NONE},
+	{"ld   A, [HL--]\n", NONE},
 	{"dec  SP\n", NONE},
 	{"inc  A\n", NONE},
 	{"dec  A\n", NONE},
-	{"ld   A, *\n", IMM8},
+	{"ld   A, 0x%0.2hhX\n", IMM8},
 	{"ccf\n", NONE},
 	{"ld   B, B\n", NONE}, //0x40
 	{"ld   B, C\n", NONE},
@@ -99,7 +99,7 @@ t_strconv	opcodes[] = {
 	{"ld   B, E\n", NONE},
 	{"ld   B, H\n", NONE},
 	{"ld   B, L\n", NONE},
-	{"ld   B, (HL)\n", NONE},
+	{"ld   B, [HL]\n", NONE},
 	{"ld   B, A\n", NONE},
 	{"ld   C, B\n", NONE}, //0x48
 	{"ld   C, C\n", NONE},
@@ -107,7 +107,7 @@ t_strconv	opcodes[] = {
 	{"ld   C, E\n", NONE},
 	{"ld   C, H\n", NONE},
 	{"ld   C, L\n", NONE},
-	{"ld   C, (HL)\n", NONE},
+	{"ld   C, [HL]\n", NONE},
 	{"ld   C, A\n", NONE},
 	{"ld   D, B\n", NONE}, //0x50
 	{"ld   D, C\n", NONE},
@@ -115,7 +115,7 @@ t_strconv	opcodes[] = {
 	{"ld   D, E\n", NONE},
 	{"ld   D, H\n", NONE},
 	{"ld   D, L\n", NONE},
-	{"ld   D, (HL)\n", NONE},
+	{"ld   D, [HL]\n", NONE},
 	{"ld   D, A\n", NONE},
 	{"ld   E, B\n", NONE}, //0x58
 	{"ld   E, C\n", NONE},
@@ -123,7 +123,7 @@ t_strconv	opcodes[] = {
 	{"ld   E, E\n", NONE},
 	{"ld   E, H\n", NONE},
 	{"ld   E, L\n", NONE},
-	{"ld   E, (HL)\n", NONE},
+	{"ld   E, [HL]\n", NONE},
 	{"ld   E, A\n", NONE},
 	{"ld   H, B\n", NONE}, //0x60
 	{"ld   H, C\n", NONE},
@@ -131,7 +131,7 @@ t_strconv	opcodes[] = {
 	{"ld   H, E\n", NONE},
 	{"ld   H, H\n", NONE},
 	{"ld   H, L\n", NONE},
-	{"ld   H, (HL)\n", NONE},
+	{"ld   H, [HL]\n", NONE},
 	{"ld   H, A\n", NONE},
 	{"ld   L, B\n", NONE}, //0x68
 	{"ld   L, C\n", NONE},
@@ -139,23 +139,23 @@ t_strconv	opcodes[] = {
 	{"ld   L, E\n", NONE},
 	{"ld   L, H\n", NONE},
 	{"ld   L, L\n", NONE},
-	{"ld   L, (HL)\n", NONE},
+	{"ld   L, [HL]\n", NONE},
 	{"ld   L, A\n", NONE},
-	{"ld   (HL), B\n", NONE}, //0x70
-	{"ld   (HL), C\n", NONE},
-	{"ld   (HL), D\n", NONE},
-	{"ld   (HL), E\n", NONE},
-	{"ld   (HL), H\n", NONE},
-	{"ld   (HL), L\n", NONE},
+	{"ld   [HL], B\n", NONE}, //0x70
+	{"ld   [HL], C\n", NONE},
+	{"ld   [HL], D\n", NONE},
+	{"ld   [HL], E\n", NONE},
+	{"ld   [HL], H\n", NONE},
+	{"ld   [HL], L\n", NONE},
 	{"halt\n", NONE},
-	{"ld   (HL), A\n", NONE},
+	{"ld   [HL], A\n", NONE},
 	{"ld   A, B\n", NONE}, //0x78
 	{"ld   A, C\n", NONE},
 	{"ld   A, D\n", NONE},
 	{"ld   A, E\n", NONE},
 	{"ld   A, H\n", NONE},
 	{"ld   A, L\n", NONE},
-	{"ld   A, (HL)\n", NONE},
+	{"ld   A, [HL]\n", NONE},
 	{"ld   A, A\n", NONE},
 	{"add  B\n", NONE}, //0x80
 	{"add  C\n", NONE},
@@ -163,7 +163,7 @@ t_strconv	opcodes[] = {
 	{"add  E\n", NONE},
 	{"add  H\n", NONE},
 	{"add  L\n", NONE},
-	{"add  (HL)\n", NONE},
+	{"add  [HL]\n", NONE},
 	{"add  A\n", NONE},
 	{"adc  B\n", NONE}, //0x88
 	{"adc  C\n", NONE},
@@ -171,7 +171,7 @@ t_strconv	opcodes[] = {
 	{"adc  E\n", NONE},
 	{"adc  H\n", NONE},
 	{"adc  L\n", NONE},
-	{"adc  (HL)\n", NONE},
+	{"adc  [HL]\n", NONE},
 	{"adc  A\n", NONE},
 	{"sub  B\n", NONE}, //0x90
 	{"sub  C\n", NONE},
@@ -179,7 +179,7 @@ t_strconv	opcodes[] = {
 	{"sub  E\n", NONE},
 	{"sub  H\n", NONE},
 	{"sub  L\n", NONE},
-	{"sub  (HL)\n", NONE},
+	{"sub  [HL]\n", NONE},
 	{"sub  A\n", NONE},
 	{"sbc  B\n", NONE}, //0x98
 	{"sbc  C\n", NONE},
@@ -187,7 +187,7 @@ t_strconv	opcodes[] = {
 	{"sbc  E\n", NONE},
 	{"sbc  H\n", NONE},
 	{"sbc  L\n", NONE},
-	{"sbc  (HL)\n", NONE},
+	{"sbc  [HL]\n", NONE},
 	{"sbc  A\n", NONE},
 	{"and  B\n", NONE}, //0xa0
 	{"and  C\n", NONE},
@@ -195,7 +195,7 @@ t_strconv	opcodes[] = {
 	{"and  E\n", NONE},
 	{"and  H\n", NONE},
 	{"and  L\n", NONE},
-	{"and  (HL)\n", NONE},
+	{"and  [HL]\n", NONE},
 	{"and  A\n", NONE},
 	{"xor  B\n", NONE}, //0xa8
 	{"xor  C\n", NONE},
@@ -203,7 +203,7 @@ t_strconv	opcodes[] = {
 	{"xor  E\n", NONE},
 	{"xor  H\n", NONE},
 	{"xor  L\n", NONE},
-	{"xor  (HL)\n", NONE},
+	{"xor  [HL]\n", NONE},
 	{"xor  A\n", NONE},
 	{"or   B\n", NONE}, //0xb0
 	{"or   C\n", NONE},
@@ -211,7 +211,7 @@ t_strconv	opcodes[] = {
 	{"or   E\n", NONE},
 	{"or   H\n", NONE},
 	{"or   L\n", NONE},
-	{"or   (HL)\n", NONE},
+	{"or   [HL]\n", NONE},
 	{"or   A\n", NONE},
 	{"cp   B\n", NONE}, //0xb8   alt="cmp   reg\n"
 	{"cp   C\n", NONE},
@@ -219,71 +219,71 @@ t_strconv	opcodes[] = {
 	{"cp   E\n", NONE},
 	{"cp   H\n", NONE},
 	{"cp   L\n", NONE},
-	{"cp   (HL)\n", NONE},
+	{"cp   [HL]\n", NONE},
 	{"cp   A\n", NONE},
 	{"ret  NZ\n", NONE}, //0xc0
 	{"pop  BC\n", NONE},
-	{"jp   NZ, *\n", ADDR16}, // alt="jpnz   *\n"
-	{"jp   *\n", ADDR16},
-	{"call NZ, *\n", ADDR16}, // alt="callnz   *\n"
+	{"jp   NZ, 0x%0.4hX\n", IMM16}, // alt="jpnz   *\n"
+	{"jp   0x%0.4hX\n", IMM16},
+	{"call NZ, 0x%0.4hX\n", IMM16}, // alt="callnz   *\n"
 	{"push BC\n", NONE},
-	{"add  A, *\n", IMM8},
+	{"add  A, 0x%0.2hhX\n", IMM8},
 	{"rst  0x00\n", NONE},
 	{"ret  Z\n", NONE}, //0xc8   alt="retz\n"
 	{"ret\n", NONE},
-	{"jp   Z, *\n", ADDR16}, // alt="jpz   *\n"
+	{"jp   Z, 0x%0.4hX\n", IMM16}, // alt="jpz   *\n"
 	{NULL, 0}, // PREFIX 0xCB
-	{"call Z, *\n", ADDR16}, // alt="callz   *\n"
-	{"call *\n", ADDR16},
-	{"adc  A, *\n", IMM8},
+	{"call Z, 0x%0.4hX\n", IMM16}, // alt="callz   *\n"
+	{"call 0x%0.4hX\n", IMM16},
+	{"adc  A, 0x%0.2hhX\n", IMM8},
 	{"rst  0x08\n", NONE},
 	{"ret  NC\n", NONE}, //0xd0   alt="retnc\n"
 	{"pop  DE\n", NONE},
-	{"jp   NC, *\n", ADDR16}, // alt="jpnc   *\n"
+	{"jp   NC, 0x%0.4hX\n", IMM16}, // alt="jpnc   *\n"
 	{NULL, 0}, //unused
-	{"call NC, *\n", ADDR16}, // alt="callnc   *\n"
+	{"call NC, 0x%0.4hX\n", IMM16}, // alt="callnc   *\n"
 	{"push DE\n", NONE},
-	{"sub  *\n", IMM8},
+	{"sub  0x%0.2hhX\n", IMM8},
 	{"rst  0x10\n", NONE},
 	{"ret  C\n", NONE}, //0xd8   alt="retc\n"
 	{"reti\n", NONE},
-	{"jp   C, *\n", ADDR16}, // alt="jpc   *\n"
+	{"jp   C, 0x%0.4hX\n", IMM16}, // alt="jpc   *\n"
 	{NULL, 0}, //unused
-	{"call C, *\n", ADDR16}, // alt="callc   *\n"
+	{"call C, 0x%0.4hX\n", IMM16}, // alt="callc   *\n"
 	{NULL, 0}, //unused
-	{"sbc  A, *\n", IMM8},
+	{"sbc  A, 0x%0.2hhX\n", IMM8},
 	{"rst  0x18\n", NONE},
-	{"ld   (0xff00+*), A\n", ADDR8}, //0xe0
+	{"ld   [0xff00+0x%0.2hX], A\n", IMM8}, //0xe0
 	{"pop  HL\n", NONE},
-	{"ld   (0xff00+C), A\n", NONE}, /**** 2 bytes ?????  */
+	{"ld   [0xff00+C], A\n", NONE}, /**** 2 bytes ?????  */
 	{NULL, 0},
 	{NULL, 0},
 	{"push HL\n", NONE},
-	{"and  *\n", IMM8},
+	{"and  0x%0.2hhX\n", IMM8},
 	{"rst  0x20\n", NONE},
-	{"add  SP, *\n", IMM8}, //0xe8
-	{"jp   (HL)\n", NONE},
-	{"ld   (*), A\n", ADDR16},
+	{"add  SP, %hhd\n", IMM8}, //0xe8
+	{"jp   [HL]\n", NONE},
+	{"ld   [0x%0.4hX], A\n", IMM16},
 	{NULL, 0},
 	{NULL, 0},
 	{NULL, 0},
-	{"xor  *\n", IMM8},
+	{"xor  %0.2hhX\n", IMM8},
 	{"rst  0x28\n", NONE},
-	{"ld   A, (0xff00+*)\n", ADDR8}, //0xf0
+	{"ld   A, [0xff00+0x%0.2hhX]\n", IMM8}, //0xf0
 	{"pop  AF\n", NONE},
-	{"ld   A, (0xff00+C)\n", NONE}, /**** 2 bytes ?????  */
+	{"ld   A, [0xff00+C]\n", NONE}, /**** 2 bytes ?????  */
 	{"di\n", NONE},
 	{NULL, 0},
 	{"push AF\n", NONE},
-	{"or   *\n", IMM8},
+	{"or   0x%0.2hhX\n", IMM8},
 	{"rst  0x30\n", NONE},
-	{"ldhl SP, *\n", IMM8}, //0xf8  (== "ld  HL, SP+*")
+	{"ldhl SP, %hhd\n", IMM8}, //0xf8  [== "ld  HL, SP+*"]
 	{"ld   SP, HL\n", NONE},
-	{"ld   A, (*)\n", ADDR16},
+	{"ld   A, [0x%0.4hX]\n", IMM16},
 	{"ei\n", NONE},
 	{NULL, 0},
 	{NULL, 0},
-	{"cp   *\n", IMM8}, // alt="cmp   *\n"
+	{"cp   0x%0.2hhX\n", IMM8}, // alt="cmp   *\n"
 	{"rst  0x38\n", NONE}
 };
 

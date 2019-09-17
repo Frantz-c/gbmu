@@ -6,12 +6,13 @@
 /*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/09/10 11:12:37 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/12 13:20:51 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/17 16:38:10 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
 
 #include "std_includes.h"
+#include "get_inst_str.h"
 
 static const uint8_t	inst_length[256] =
 {
@@ -150,7 +151,10 @@ extern void		get_code_with_replacement(loc_symbols_t *loc, vector_t *ext, vector
 								if (symbol_size == 3)
 								{
 									if (value > 0xffff)
-										fprintf(stderr, "OVERFLOW inst ????? file ?????\n");
+									{
+										g_error++;
+										fprintf(stderr, "16-bit parameter overflow in \e[0;36m\"%s\"\e[0m (file \e[0;33m\"%s\"\e[0m)\n", get_inst_str(inst[-1]), files[i]);
+									}
 
 									inst[0] = (uint8_t)value;
 									inst[1] = (uint8_t)(value >> 8);
@@ -159,7 +163,10 @@ extern void		get_code_with_replacement(loc_symbols_t *loc, vector_t *ext, vector
 								else if (symbol_size == 2)
 								{
 									if (value > 0xff)
-										fprintf(stderr, "OVERFLOW inst ????? file ?????\n");
+									{
+										g_error++;
+										fprintf(stderr, "8-bit parameter overflow in \e[0;36m\"%s\"\e[0m (file \e[0;33m\"%s\"\e[0m)\n", get_inst_str(inst[-1]), files[i]);
+									}
 
 									inst[0] = (uint8_t)value;
 									inst[1] = 0xdd;
