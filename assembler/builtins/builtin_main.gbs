@@ -1,0 +1,59 @@
+# **************************************************************************** #
+#                                                           LE - /             #
+#                                                               /              #
+#    builtin_main.gbs                                 .::    .:/ .      .::    #
+#                                                  +:+:+   +:    +:  +:+:+     #
+#    By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+      #
+#                                                  #+#   #+    #+    #+#       #
+#    Created: 2019/09/17 14:21:10 by mhouppin     #+#   ##    ##    #+#        #
+#    Updated: 2019/09/17 14:54:35 by mhouppin    ###    #+. /#+    ###.fr      #
+#                                                          /                   #
+#                                                         /                    #
+# **************************************************************************** #
+
+.game_title		"BLTN_TEST"
+.program_start	0x150
+.cgb_support	0
+.sgb_support	0
+.cart_type		"mbc-5_sram_battery"
+.rom_size		"32 banks"
+.ram_size		"1 bank"
+.destination	"other"
+.version		0
+
+.bank	0,		0x3000
+%include		"../gameboy_programs/ascii_printer.gbs"
+
+.bank	0,		0x150
+
+.extern	___builtin_mul
+
+_main:
+		mov		A,			0x10
+		mov		[_IE],		A
+		mov		A,			0x1F
+		mov		[0x2000],	A
+		xor		A
+		mov		[0x4000],	A
+
+		call	_load_ascii
+
+		mov		HL,			0x40
+		mov		BC,			0x40
+		call	___builtin_mul
+
+		push	HL
+		mov		L,			H
+		push	HL
+		mov		HL,			__fmt_hl
+		call	_print_string
+
+	_loop:
+		halt
+		nop
+		xor		A
+		mov		[_IF],		A
+		jr	 _loop
+
+__fmt_hl:
+	.ascii	"HL=0x~~\0"

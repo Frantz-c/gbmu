@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/13 14:04:54 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/16 19:33:44 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/17 14:49:26 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -343,12 +343,12 @@ uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t a
 			register code_area_t	*tmp = VEC_ELEM(code_area_t, area, data->cur_area);
 			if (tmp->cur == NULL)
 			{
-				tmp->cur = calloc(1, sizeof(code_area_t));
+				tmp->cur = calloc(1, sizeof(code_t));
 				tmp->data = tmp->cur;
 			}
 			else
 			{
-				tmp->cur->next = calloc(1, sizeof(code_area_t));
+				tmp->cur->next = calloc(1, sizeof(code_t));
 				tmp->cur = tmp->cur->next;
 			}
 			tmp->cur->symbol = (void *)malloc(sizeof(uint8_t) * /*BYTE_ALLOC_SIZE*/ 8);
@@ -430,12 +430,12 @@ uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t a
 			register code_area_t	*tmp = VEC_ELEM(code_area_t, area, data->cur_area);
 			if (tmp->cur == NULL)
 			{
-				tmp->cur = calloc(1, sizeof(code_area_t));
+				tmp->cur = calloc(1, sizeof(code_t));
 				tmp->data = tmp->cur;
 			}
 			else
 			{
-				tmp->cur->next = calloc(1, sizeof(code_area_t));
+				tmp->cur->next = calloc(1, sizeof(code_t));
 				tmp->cur = tmp->cur->next;
 			}
 			tmp->cur->symbol = (void *)malloc(sizeof(uint8_t) * /*BYTE_ALLOC_SIZE*/ 8);

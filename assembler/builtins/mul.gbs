@@ -6,7 +6,7 @@
 #    By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+      #
 #                                                  #+#   #+    #+    #+#       #
 #    Created: 2019/09/16 15:29:38 by mhouppin     #+#   ##    ##    #+#        #
-#    Updated: 2019/09/16 15:48:56 by mhouppin    ###    #+. /#+    ###.fr      #
+#    Updated: 2019/09/17 14:52:25 by mhouppin    ###    #+. /#+    ###.fr      #
 #                                                          /                   #
 #                                                         /                    #
 # **************************************************************************** #
@@ -20,8 +20,8 @@
 ___builtin_mul:
 		push	BC
 		push	DE
-		mov		H,		D
-		mov		L,		E
+		mov		D,		H
+		mov		E,		L
 		mov		A,		16
 
 	mul_loop:
