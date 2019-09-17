@@ -5,6 +5,7 @@ ressources
 *.dSYM
 log_gbmul
 *.sav
+*.save
 *.d
 .DS_Store
 project/gbmu_project
