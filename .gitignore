@@ -13,3 +13,5 @@ roms
 gbasm
 gbdis
 unit-test
+gbasm_create_object
+gbasm_assemble_objects
