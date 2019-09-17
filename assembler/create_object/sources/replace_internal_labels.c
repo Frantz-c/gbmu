@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/26 19:27:12 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/17 12:40:37 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/17 15:20:33 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -42,8 +42,12 @@ extern void		replace_internal_labels(vector_t *area, loc_sym_t *local_symbol)
 					{
 						register int32_t	val = c->opcode[1] | (c->opcode[2] << 8);
 						register int32_t	lab_addr = lab->base_or_status;
+						register int32_t	cur_addr = (int32_t)c->addr;
 
-						lab_addr -= (int32_t)c->addr;
+						if (cur_addr > 0x7999)
+							cur_addr = (cur_addr % 0x4000) + 0x4000;
+						printf("0x%X - 0x%X\n", lab_addr, cur_addr);
+						lab_addr -= cur_addr;
 						val = (c->opcode[3] == '-') ? lab_addr - val : lab_addr + val;
 						val -= 2;
 						if (val > 0x7f || val < -128)

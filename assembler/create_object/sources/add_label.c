@@ -6,7 +6,7 @@
 /*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/22 22:53:58 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/15 20:30:50 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/17 15:31:34 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -28,8 +28,13 @@ void	add_label(char *name, vector_t *area, vector_t *ext_symbol, loc_sym_t *loc_
 
 		if (lab->base_or_status == NOT_DECLARED)
 		{
-			lab->base_or_status = VEC_ELEM(code_area_t, area, data->cur_area)->addr + VEC_ELEM(code_area_t, area, data->cur_area)->size;
-			lab->pos = VEC_ELEM(code_area_t, area, data->cur_area)->size;
+			register uint32_t	addr = VEC_ELEM(code_area_t, area, data->cur_area)->addr;
+			register uint32_t	pos = VEC_ELEM(code_area_t, area, data->cur_area)->size;
+
+			if (addr > 0x7999)
+				addr = (addr % 0x4000) + 0x4000;
+			lab->base_or_status = addr + pos;
+			lab->pos = pos;
 		}
 		else
 		{
@@ -87,7 +92,11 @@ void	add_label(char *name, vector_t *area, vector_t *ext_symbol, loc_sym_t *loc_
 	register uint32_t	addr = VEC_ELEM(code_area_t, area, data->cur_area)->addr;
 	register uint32_t	pos = VEC_ELEM(code_area_t, area, data->cur_area)->size;
 	register size_t		i = vector_index(loc_symbol->label, (void*)&name);
+
+	if (addr > 0x7999)
+		addr = ((addr % 0x4000) + 0x4000);
 	label_t	new = {name, pos, addr + pos, data->lineno, strdup(data->filename)};
+	printf("new->pos = 0x%x, new->base = 0x%x\n", new.pos, new.base_or_status);
 
 	vector_insert(loc_symbol->label, (void*)&new, i);
 }
