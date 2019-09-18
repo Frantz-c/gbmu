@@ -18,10 +18,10 @@
 ##	HL = "result = ~\0"
 ##	arguments sur la stack
 
-.memlock	tmp, 0xFF80, 0xFF84
-.var2		stack_ptr, tmp
-.var1		count, tmp
-.var1		curline,	tmp
+.memlock	tmp, 0xFF80, 4
+.var		stack_ptr,	2,	tmp
+.var		count,		1,	tmp
+.var		curline,	1,	tmp
 
 
 # LCDC OPTIONS #

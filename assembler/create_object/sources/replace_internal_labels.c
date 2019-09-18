@@ -46,7 +46,6 @@ extern void		replace_internal_labels(vector_t *area, loc_sym_t *local_symbol)
 
 						if (cur_addr > 0x7999)
 							cur_addr = (cur_addr % 0x4000) + 0x4000;
-						printf("0x%X - 0x%X\n", lab_addr, cur_addr);
 						lab_addr -= cur_addr;
 						val = (c->opcode[3] == '-') ? lab_addr - val : lab_addr + val;
 						val -= 2;

@@ -84,7 +84,6 @@ extern void		area_destroy(void *a)
 extern void		label_destroy(void *a)
 {
 	free(((label_t *)a)->name);
-	free(((label_t *)a)->filename);
 }
 
 extern void		ext_symbol_destroy(void *a)
