@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/27 19:25:27 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/12 20:26:45 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/18 12:13:51 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -86,8 +86,9 @@ void	add_intern_labels(vector_t *intern_, vector_t *label)
 
 void	add_intern_memblocks(vector_t *intern_, vector_t *memblock)
 {
+	char				buf[256];
 	intern_symbols_t	new;
-	register memblock_t	*block = (memblock_t *)memblock->data;
+	memblock_t			*block = (memblock_t *)memblock->data;
 
 	for (uint32_t i = 0; i < memblock->nitems; i++, block++)
 	{
@@ -95,7 +96,27 @@ void	add_intern_memblocks(vector_t *intern_, vector_t *memblock)
 		new.type = MEMBLOCK;
 		new.data1 = block->start;
 		new.data2 = block->end;
+		new.blockname = NULL;
+		new.pos = NULL;
+		new.offset = NULL;
 		VEC_SORTED_INSERT(intern_, block->name, new);
+
+		variable_t *var = VEC_ELEM_FIRST(variable_t, block->var);
+		for (uint32_t i = 0; i < block->var->nitems; i++, var++)
+		{
+			if (vector_search(intern_, (void*)&var->name) == -1)
+			{
+				new.name = (uint8_t*)var->name;
+				new.type = VAR;
+				new.data1 = 0;
+				new.pos = NULL;
+				new.data2 = var->size;
+				new.blockname = (uint8_t*)block->name;
+				VEC_SORTED_INSERT(intern_, var->name, new);
+				sprintf(buf, "unused variable `%s` (in block `%s`)", var->name, block->name);
+				print_warning_dont_show(var->filename, var->line, buf);
+			}
+		}
 	}
 }
 
@@ -105,7 +126,7 @@ void	__attribute__((always_inline))
 	add_intern_symbols(vector_t *intern_, loc_sym_t *local_symbol)
 {
 	add_intern_labels(intern_, local_symbol->label);
-	add_intern_memblocks(intern_, local_symbol->memblock);
+	add_intern_memblocks(intern_, local_symbol->memblock); // and unused variables
 }
 
 
@@ -426,24 +447,43 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 
 		if (in->type == VAR)
 		{
-			fwrite(&in->data1, sizeof(uint32_t), 1, file);
-			fwrite(in->pos, sizeof(uint32_t), in->data1, file);
-			fwrite(in->offset, sizeof(uint32_t), in->data1, file);
+#define	n_positions	in->data1
+#define	var_size	in->data2
+			fwrite(&n_positions, sizeof(uint32_t), 1, file);
+			if (n_positions == 0)
+			{
+				fwrite(&n_positions, sizeof(uint32_t), 1, file);
+				fwrite(&n_positions, sizeof(uint32_t), 1, file);
+				n_positions++;
+			}
+			else
+			{
+				fwrite(in->pos, sizeof(uint32_t), n_positions, file);
+				fwrite(in->offset, sizeof(uint32_t), n_positions, file);
+			}
 			len = strlen((const char*)in->blockname) + 1;
 			fwrite(in->blockname, 1, len, file);
-			fwrite(&in->data2, sizeof(uint32_t), 1, file);
-			intern_size += (sizeof(uint32_t) * (2 + (in->data1 * 2))) + len;
+			fwrite(&var_size, sizeof(uint32_t), 1, file);
+			intern_size += (sizeof(uint32_t) * (2 + (n_positions * 2))) + len;
+#undef n_positions
+#undef var_size
 		}
 		else if (in->type == LABEL)
 		{
-			fwrite(&in->data1, sizeof(uint32_t), 1, file);
+#define address	in->data1
+			fwrite(&address, sizeof(uint32_t), 1, file);
 			intern_size += sizeof(uint32_t);
+#undef address
 		}
 		else //memblock
 		{
-			fwrite(&in->data1, sizeof(uint32_t), 1, file);
-			fwrite(&in->data2, sizeof(uint32_t), 1, file);
+#define start	in->data1
+#define end		in->data2
+			fwrite(&start, sizeof(uint32_t), 1, file);
+			fwrite(&end, sizeof(uint32_t), 1, file);
 			intern_size += (sizeof(uint32_t) * 2);
+#undef	start
+#undef	end
 		}
 	}
 	header_size += intern_size;

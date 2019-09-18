@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/22 22:17:53 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/17 18:56:59 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/18 12:42:40 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -323,32 +323,35 @@ int				disassemble_region(char **disassembled_code, void *binary,
 			}
 		}
 
-		if (*(unsigned char*)binary == 0)
+		if (dontpaddr)
 		{
-			binary++;
-			n_nop++;
-			continue;
-		}
-		else if (n_nop)
-		{
-			if (n_nop < 9)
+			if (*(unsigned char*)binary == 0)
 			{
-				while (n_nop)
-				{
-
-					i += sprintf(buf + i, "nop\n");
-					n_nop--;
-				}
+				binary++;
+				n_nop++;
+				continue;
 			}
-			else
+			else if (n_nop)
 			{
-				i += sprintf(
-					buf + i,
-					"\n.bank	%u,	0x%x\n\n", 
-					(unsigned int)((char *)binary - binstart) / 0x4000,
-					(unsigned int)((char *)binary - binstart) % 0x4000
-				);
-				n_nop = 0;
+				if (n_nop < 9)
+				{
+					while (n_nop)
+					{
+
+						i += sprintf(buf + i, "nop\n");
+						n_nop--;
+					}
+				}
+				else
+				{
+					i += sprintf(
+						buf + i,
+						"\n.bank	%u,	0x%x\n\n", 
+						(unsigned int)((char *)binary - binstart) / 0x4000,
+						(unsigned int)((char *)binary - binstart) % 0x4000
+					);
+					n_nop = 0;
+				}
 			}
 		}
 
@@ -451,9 +454,12 @@ char	*get_file_contents(const char *file, int *length)
 	return (content);
 }
 
-void	print_data(const char *filename, int len, int readl)
+void	print_data(const char *filename, int len, int readl, unsigned int comment)
 {
-	printf("\e[1mfile  : \e[0;33m%s\e[0m\n\e[1mlength: \e[0;33m%d octets\e[0m\n\e[1mdisassembled size: \e[0;33m%d\e[0m\n\n", filename, len, readl);
+	if (!comment)
+		printf("\e[1mfile  : \e[0;33m%s\e[0m\n\e[1mlength: \e[0;33m%d octets\e[0m\n\e[1mdisassembled size: \e[0;33m%d\e[0m\n\n", filename, len, readl);
+	else
+		printf("## file  : %s\n## length: %d octets\n## disassembled size: %d\n\n", filename, len, readl);
 }
 
 int main(int ac, char *av[])
@@ -466,18 +472,25 @@ int main(int ac, char *av[])
 
 	if (ac < 2 || ac > 5)
 	{
-		fprintf(stderr, "%s \"file\" [start offset] [end offset]\n", av[0]);
+__print_help:
+		fprintf(stderr, "%s [option] \"file\" [start offset] [end offset]\n\noption = -c: mode compilable\n", av[0]);
 		return (1);
 	}
-	if ((file = get_file_contents(av[1], &len)) == NULL)
+
+	if (ac > 1)
+	{
+		if (av[1][0] == '-' && av[1][1] == 'c' && av[1][2] == 0)
+		{
+			if (ac == 2)
+				goto __print_help;
+			i++;
+		}
+	}
+
+	if ((file = get_file_contents(av[1 + i], &len)) == NULL)
 		return (1);
 	start = 0;
 	end = len;
-	if (ac > 2)
-	{
-		if (av[2][0] == '-' && av[2][1] == 'c' && av[2][2] == 0)
-			i++;
-	}
 
 	if (ac > 2 + i)
 	{
@@ -509,7 +522,7 @@ int main(int ac, char *av[])
 
 
 
-	print_data(av[1], len, end - start);
+	print_data(av[1 + i], len, end - start, i);
 	disassemble_region(&dis, file, start, end, i);
 
 	if (dis)

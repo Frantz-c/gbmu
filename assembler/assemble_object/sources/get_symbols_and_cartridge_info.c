@@ -6,7 +6,7 @@
 /*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/09/09 14:55:09 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/12 13:22:15 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/18 13:45:06 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -160,18 +160,30 @@ static int		add_intern_symbols(loc_symbols_t *loc, char *buf, uint32_t len, uint
 
 				memcpy(&var_data->quantity, buf + i, sizeof(uint32_t));
 				i += sizeof(uint32_t);
-				var_data->pos = malloc(sizeof(uint32_t) * var_data->quantity);
-				var_data->offset = malloc(sizeof(uint32_t) * var_data->quantity);
-				memcpy(var_data->pos, buf + i, var_data->quantity * sizeof(uint32_t));
-				i += (sizeof(uint32_t) * var_data->quantity);
-				memcpy(var_data->offset, buf + i, var_data->quantity * sizeof(uint32_t));
-				i += (sizeof(uint32_t) * var_data->quantity);
+				if (var_data->quantity == 0)
+				{
+					free(var_data);
+					var_data = NULL;
+					i += 2 * 4;
+				}
+				else
+				{
+					var_data->pos = malloc(sizeof(uint32_t) * var_data->quantity);
+					var_data->offset = malloc(sizeof(uint32_t) * var_data->quantity);
+					memcpy(var_data->pos, buf + i, var_data->quantity * sizeof(uint32_t));
+					i += (sizeof(uint32_t) * var_data->quantity);
+					memcpy(var_data->offset, buf + i, var_data->quantity * sizeof(uint32_t));
+					i += (sizeof(uint32_t) * var_data->quantity);
+				}
 				tmp.blockname = buf + i;
 				while (buf[i]) i++;
 				tmp.blockname = strndup(tmp.blockname, i);
 				i++;
-				var_data->file_number = file_number;
-				var_data->next = NULL;
+				if (var_data)
+				{
+					var_data->file_number = file_number;
+					var_data->next = NULL;
+				}
 
 				memcpy(&tmp.data2, buf + i, sizeof(uint32_t));
 				i += sizeof(uint32_t);
@@ -196,11 +208,19 @@ static int		add_intern_symbols(loc_symbols_t *loc, char *buf, uint32_t len, uint
 						goto __loop_end;
 					}
 					free(tmp.name);
+					free(tmp.blockname);
 					
 					//push var_data
 					register var_data_t *v = p->data;
-					for (; v->next; v = v->next);
-					v->next = var_data;
+					if (v == NULL)
+					{
+						p->data = var_data;
+					}
+					else
+					{
+						for (; v->next; v = v->next);
+						v->next = var_data;
+					}
 
 					goto __loop_end;
 				}

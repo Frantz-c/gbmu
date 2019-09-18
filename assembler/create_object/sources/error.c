@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/12 12:47:39 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/17 16:42:39 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/18 11:30:04 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -15,6 +15,20 @@
 #include "error.h"
 
 #define MAX_ERROR	2000
+
+extern void			print_warning_dont_show(char *filename, uint32_t lineno, const char *error)
+{
+	g_warning++;
+
+	fprintf
+	(
+		stderr,
+		"\e[1;33m[WARNING]\e[0m \e[1min file \e[0;33m\"%s\"\e[0m\e[1m:\t"
+		"line %u: \e[0;33m%s\e[0m\n",
+		filename,
+		lineno, error
+	);
+}
 
 extern void			print_warning(char *filename, uint32_t lineno, char *line, const char *error)
 {

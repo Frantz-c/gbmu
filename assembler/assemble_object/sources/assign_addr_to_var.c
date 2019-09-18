@@ -6,7 +6,7 @@
 /*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/09/09 15:02:56 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/12 13:18:37 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/18 13:43:08 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -59,8 +59,23 @@ extern void		assign_addr_to_var(loc_symbols_t *loc, vector_t *ext)
 					elem->addr = block->end - block->space;
 					block->space -= elem->size;
 
-					ext_sym_t	new = {elem->name, elem->data, elem->addr, VAR};
-					vector_push(ext, (void*)&new);
+					if ((index = vector_search(ext, (void *)&elem->name)) != -1)
+					{
+						ext_sym_t	*sym = VEC_ELEM(ext_sym_t, ext, index);
+
+						sym->value = elem->addr;
+						if (elem->data)
+						{
+							var_data_t	*d = sym->data;
+							while (d->next) d = d->next;
+							d->next = elem->data;
+						}
+					}
+					else
+					{
+						ext_sym_t	new = {elem->name, elem->data, elem->addr, VAR};
+						vector_push(ext, (void*)&new);
+					}
 				}
 			}
 		}

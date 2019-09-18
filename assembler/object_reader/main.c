@@ -6,7 +6,7 @@
 /*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/31 21:59:27 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/11 14:36:19 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/18 11:56:53 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -801,10 +801,18 @@ static void	read_internal_symbols(FILE *file, uint32_t size)
 			uint32_t	*offset;
 
 			fread(&quantity, sizeof(uint32_t), 1, file);
-			values = malloc(quantity * sizeof(uint32_t));
-			offset = malloc(quantity * sizeof(uint32_t));
-			fread(values, sizeof(uint32_t), quantity, file);
-			fread(offset, sizeof(uint32_t), quantity, file);
+			if (quantity)
+			{
+				values = malloc(quantity * sizeof(uint32_t));
+				offset = malloc(quantity * sizeof(uint32_t));
+				fread(values, sizeof(uint32_t), quantity, file);
+				fread(offset, sizeof(uint32_t), quantity, file);
+			}
+			else
+			{
+				fseek(file, 8, SEEK_CUR);
+			}
+
 			i = 0;
 			while (1)
 			{
@@ -818,14 +826,22 @@ static void	read_internal_symbols(FILE *file, uint32_t size)
 				i++;
 			}
 			fread(&tmp, sizeof(uint32_t), 1, file);
-			cur += (i + 9 + (quantity * 4 * 2));
 			printf("size = %u, block = \"%s\", pos = {", tmp, buf);
 
-			for (i = 0; i < quantity - 1; i++)
-				printf("0x%x:%u,", offset[i], values[i]);
-			printf("0x%x:%u}\n", offset[i], values[i]);
-			free(values);
-			free(offset);
+			if (quantity)
+			{
+				for (i = 0; i < quantity - 1; i++)
+					printf("0x%x:%u,", offset[i], values[i]);
+				printf("0x%x:%u}\n", offset[i], values[i]);
+				free(values);
+				free(offset);
+			}
+			else
+			{
+				printf("UNUSED}\n");
+				quantity++;
+			}
+			cur += (i + 9 + (quantity * 4 * 2));
 		}
 		else if (tmp == LABEL)
 		{
@@ -875,18 +891,33 @@ static void	read_external_symbols(FILE *file, uint32_t size)
 		cur += (i + 1);
 		fread(&type, sizeof(uint32_t), 1, file);
 		fread(&quantity, sizeof(uint32_t), 1, file);
-		values = malloc(quantity * sizeof(uint32_t));
-		offset = malloc(quantity * sizeof(uint32_t));
-		fread(values, sizeof(uint32_t), quantity, file);
-		fread(offset, sizeof(uint32_t), quantity, file);
+		if (quantity)
+		{
+			values = malloc(quantity * sizeof(uint32_t));
+			offset = malloc(quantity * sizeof(uint32_t));
+			fread(values, sizeof(uint32_t), quantity, file);
+			fread(offset, sizeof(uint32_t), quantity, file);
+		}
+		else
+		{
+			fseek(file, 8, SEEK_CUR);
+		}
 		printf("  > name = \"%s\", type = %s, pos = {", buf, get_symbol_type(type));
 
-		for (i = 0; i < quantity - 1; i++)
-			printf("0x%x:%u,", offset[i], values[i]);
-		printf("0x%x:%u}\n", offset[i], values[i]);
-		cur += 8 + (quantity * 4 * 2);
-		free(values);
-		free(offset);
+		if (quantity)
+		{
+			for (i = 0; i < quantity - 1; i++)
+				printf("0x%x:%u,", offset[i], values[i]);
+			printf("0x%x:%u}\n", offset[i], values[i]);
+			free(values);
+			free(offset);
+		}
+		else
+		{
+			printf("UNUSED}\n");
+			quantity++;
+		}
+		cur += 8 + (quantity * 4 * 2);	// 4 * 2 = (pos + offset) * sizeof(uint32_t)
 	}
 	while (cur < size);
 
