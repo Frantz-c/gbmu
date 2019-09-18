@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/12 10:39:48 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/08/04 19:26:03 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/18 18:31:38 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -23,17 +23,13 @@ extern void		variable_destroy(void *a)
 
 	free(var->name);
 	free(var->filename);
+	free(var->blockname);
 }
 
 extern void		memblock_destroy(void *a)
 {
-	vector_t	*v;
-
 	free(((memblock_t *)a)->name);
-	v = (((memblock_t *)a)->var);
-
-	if (v != NULL)
-		vector_destroy(v);
+	free(((memblock_t *)a)->filename);
 }
 
 extern int		macro_filter(void *a)
@@ -88,11 +84,14 @@ extern void		area_destroy(void *a)
 extern void		label_destroy(void *a)
 {
 	free(((label_t *)a)->name);
+	free(((label_t *)a)->filename);
 }
 
 extern void		ext_symbol_destroy(void *a)
 {
-	free(((symbol_t *)a)->name);
+	register symbol_t	*s = (symbol_t *)a;
+	free(s->name);
+	free(s->filename);
 }
 
 /*

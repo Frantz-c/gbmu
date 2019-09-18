@@ -6,7 +6,7 @@
 /*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/09/10 11:12:37 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/17 16:38:10 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/18 18:44:50 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -62,7 +62,7 @@ static void	*get_cartridge_header_code(void)
 	return (buf);
 }
 
-extern void		get_code_with_replacement(loc_symbols_t *loc, vector_t *ext, vector_t *code, char *files[])
+extern void		get_code_with_replacement(vector_t *ext, vector_t *code, char *files[])
 {
 	uint8_t			*buf;
 	FILE			*file;

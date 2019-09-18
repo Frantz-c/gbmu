@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/18 12:20:32 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/18 18:44:59 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
 	// END DEBUG
 	// */
 
-	get_code_with_replacement(&loc, ext, code, argv);
+	get_code_with_replacement(ext, code, argv);
 	if (g_error)
 		exit(3);
 	write_binary(code, exe);

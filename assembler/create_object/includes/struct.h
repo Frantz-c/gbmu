@@ -6,7 +6,7 @@
 /*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/31 19:36:13 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/17 12:20:38 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/18 17:53:02 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -154,6 +154,7 @@ typedef struct	loc_sym_s
 {
 	vector_t	*memblock;
 	vector_t	*label;
+	vector_t	*var;
 }
 loc_sym_t;
 
@@ -216,7 +217,7 @@ typedef struct	code_area_s
 	struct code_s	*cur;
 }
 code_area_t;
-
+/*
 typedef struct	memblock_s
 {
 	uint32_t	start;
@@ -228,14 +229,26 @@ typedef struct	memblock_s
 	vector_t	*var;
 }
 memblock_t;
+*/
+
+typedef struct	memblock_s
+{
+	uint32_t	start;
+	uint32_t	end;
+	uint32_t	space;
+	uint32_t	line;
+	char		*name;
+	char		*filename;
+}
+memblock_t;
 
 typedef struct	variable_s
 {
 	char		*name;
-	uint32_t	addr;	// extern memblocks not allowed
 	uint32_t	size;
 	uint32_t	line;
 	char		*filename;
+	char		*blockname;
 }
 variable_t;
 

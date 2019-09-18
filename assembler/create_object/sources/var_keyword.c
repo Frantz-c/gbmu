@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/13 22:59:31 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/17 15:51:41 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/18 18:21:30 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -18,15 +18,16 @@
 #include "error.h"
 #include "callback.h"
 
+/*
 enum symbol_name	//?????
 {
 	SYM_VAR, SYM_LAB, SYM_EXT, SYM_BLOCK
 };
+*/
 
 static int		duplicate_symbol(char *name, loc_sym_t *loc_symbol, vector_t *ext_symbol, data_t *data)
 {
 	int32_t						index;
-	int32_t						block_index;
 	static const char *const	err_msg = "duplicate symbol `%s` (previous declaration in file %s:%u)";
 
 	if ((index = vector_search(loc_symbol->label, (void*)&name)) != -1)
@@ -36,17 +37,16 @@ static int		duplicate_symbol(char *name, loc_sym_t *loc_symbol, vector_t *ext_sy
 		sprintf(data->buf, err_msg, name, lab->filename, lab->line);
 		goto __print_error;
 	}
-	if ((index = memblock_match_name(loc_symbol->memblock, name)) != -1)
+	if ((index = vector_search(loc_symbol->memblock, (void *)&name)) != -1)
 	{
 		memblock_t	*block = VEC_ELEM(memblock_t, loc_symbol->memblock, index);
 		
 		sprintf(data->buf, err_msg, name, block->filename, block->line);
 		goto __print_error;
 	}
-	if ((index = variables_match_name(loc_symbol->memblock, name, &block_index)) != -1)
+	if ((index = vector_search(loc_symbol->var, (void *)&name)) != -1)
 	{
-		memblock_t	*block = VEC_ELEM(memblock_t, loc_symbol->memblock, block_index);
-		variable_t	*var = VEC_ELEM(variable_t, block->var, index);
+		variable_t	*var = VEC_ELEM(variable_t, loc_symbol->var, index);
 
 		sprintf(data->buf, err_msg, name, var->filename, var->line);
 		goto __print_error;
@@ -65,21 +65,18 @@ __print_error:
 	return (-1);	
 }
 
-static uint32_t	get_block_addr(const char *block, vector_t *memblock, uint32_t size, uint32_t *index)
+static uint32_t	update_block_space(const char *block, vector_t *memblock, uint32_t size)
 {
-	uint32_t	var_addr;
 	memblock_t	*b = VEC_ELEM_FIRST(memblock_t, memblock);
 
 	for (uint32_t i = 0; i < memblock->nitems; i++, b++)
 	{
 		if (strcmp(b->name, block) == 0)
 		{
-			var_addr = b->end - b->space;
 			b->space -= size;
-			if (b->space >= 0xffffu)
+			if (b->space >= 0x2000u)
 				return (0xfffffffeu);
-			*index = i;
-			return (var_addr);
+			return (0);
 		}
 	}
 	return (0xffffffffu);
@@ -87,7 +84,7 @@ static uint32_t	get_block_addr(const char *block, vector_t *memblock, uint32_t s
 
 extern void	assign_var_to_memory(loc_sym_t *loc_symbol, vector_t *ext_symbol, arguments_t args[5], data_t *data)
 {
-	uint32_t	addr;
+	uint32_t	ret;
 	uint32_t	size;
 
 //	if (size == 0)
@@ -122,34 +119,32 @@ extern void	assign_var_to_memory(loc_sym_t *loc_symbol, vector_t *ext_symbol, ar
 	if (size == 0)
 		goto __null_size;
 
-	// verify if arg3 memblock identifier exists and get addr
+	// verify if arg3 memblock identifier exists and update space
 	const char *blockname = (char*)args[2].value;
-	uint32_t	index = 0;
-	addr = get_block_addr(blockname, loc_symbol->memblock, size, &index);
-	if (addr == 0xffffffffu)
-		goto __unknown_memblock;
-	if (addr == 0xfffffffeu)
+	ret = update_block_space(blockname, loc_symbol->memblock, size);
+	if (ret == 0xffffffffu)
+	{
+		// memblock is an external symbol ?
+		ssize_t	ext_index = vector_search(ext_symbol, (void *)&blockname);
+
+		if (ext_index == -1)
+			goto __unknown_memblock;
+
+		symbol_t	*sym = VEC_ELEM(symbol_t, ext_symbol, ext_index);
+		if (sym->type == UNUSED)
+			sym->type = MEMBLOCK;
+		else if (sym->type != MEMBLOCK)
+			goto __wrong_type_symbol;
+	}
+	else if (ret == 0xfffffffeu)
 		goto __no_space;
 
 	// push a new variable
 	char	*name = strdup((char *)args[0].value);
-	memblock_t	*block = VEC_ELEM(memblock_t, loc_symbol->memblock, index);
-	variable_t	new = {name, addr, size, data->lineno, strdup(data->filename)};
+	variable_t	new = {name, size, data->lineno, strdup(data->filename), strdup(blockname)};
 
-	if (block->var == NULL)
-	{
-		block->var = vector_init(sizeof(variable_t));
-		block->var->destroy = &variable_destroy;
-		block->var->compar = &variable_cmp;
-		block->var->search = &variable_match;
-		vector_push(block->var, (void*)&new);
-	}
-	else
-	{
-		register size_t		i = vector_index(block->var, (void*)&name);
-
-		vector_insert(block->var, (void*)&new, i);
-	}
+	register size_t		i = vector_index(loc_symbol->var, (void*)&name);
+	vector_insert(loc_symbol->var, (void*)&new, i);
 	return;
 
 
@@ -183,6 +178,9 @@ __wrong_type_arg2:
 	goto __print_error;
 __no_space:
 	sprintf(data->buf, "no more space in memblock `%s`", blockname);
+	goto __print_error_buffer;
+__wrong_type_symbol:
+	sprintf(data->buf, "symbol `%s` is not a block", blockname);
 	goto __print_error_buffer;
 __unknown_memblock:
 	sprintf(data->buf, "unknown memblock `%s`", blockname);

@@ -6,7 +6,7 @@
 /*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/26 15:36:50 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/12 13:04:44 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/18 18:26:34 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -248,7 +248,6 @@ extern uint32_t	calcul_param(char *p, value_t *val, data_t *data, uint8_t param_
 			goto __underflow;
 	}
 
-__ret_0:
 	free(calc);
 	return (0);
 
@@ -264,7 +263,6 @@ __underflow:
 	sprintf(data->buf, "underflow argument %u (value is %i (-0x%x))", param_number, (int32_t)val->value, -((int32_t)val->value));
 __print_error_fmt:
 	error_msg = (const char *)data->buf;
-__print_error:
 	print_error(data->filename, data->lineno, data->line, error_msg);
 	free(calc);
 	return (0xffffffffu);

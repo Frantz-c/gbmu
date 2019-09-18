@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/11 10:36:42 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/17 12:35:28 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/18 18:48:57 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -198,6 +198,10 @@ set_vectors(vector_t **macro, vector_t **code_area, loc_sym_t *local_symbol, vec
 	local_symbol->memblock->destroy = &memblock_destroy;
 	local_symbol->memblock->compar = &memblock_cmp;
 	local_symbol->memblock->search = &memblock_match;
+	local_symbol->var = vector_init(sizeof(memblock_t));
+	local_symbol->var->destroy = &variable_destroy;
+	local_symbol->var->compar = &variable_cmp;
+	local_symbol->var->search = &variable_match;
 	*extern_symbol = vector_init(sizeof(symbol_t));
 	(*extern_symbol)->destroy = &ext_symbol_destroy;
 	(*extern_symbol)->compar = &ext_symbol_cmp;

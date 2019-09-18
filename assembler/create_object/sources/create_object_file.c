@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/27 19:25:27 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/18 12:13:51 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/18 18:40:18 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -66,7 +66,7 @@ int		extern_match(const void *a, const void *b)
 
 
 
-void	add_intern_labels(vector_t *intern_, vector_t *label)
+static void	add_intern_labels(vector_t *intern_, vector_t *label)
 {
 	intern_symbols_t	new;
 	register label_t	*lab = (label_t *)label->data;
@@ -83,12 +83,33 @@ void	add_intern_labels(vector_t *intern_, vector_t *label)
 }
 
 
-
-void	add_intern_memblocks(vector_t *intern_, vector_t *memblock)
+static void	add_intern_unused_variables(vector_t *intern_, vector_t *variables)
 {
 	char				buf[256];
 	intern_symbols_t	new;
-	memblock_t			*block = (memblock_t *)memblock->data;
+
+	variable_t *var = VEC_ELEM_FIRST(variable_t, variables);
+	for (uint32_t i = 0; i < variables->nitems; i++, var++)
+	{
+		if (vector_search(intern_, (void*)&var->name) == -1)
+		{
+			new.name = (uint8_t*)var->name;
+			new.type = VAR;
+			new.data1 = 0;
+			new.pos = NULL;
+			new.data2 = var->size;
+			new.blockname = (uint8_t*)var->blockname;
+			VEC_SORTED_INSERT(intern_, var->name, new);
+			sprintf(buf, "unused variable `%s` (in block `%s`)", var->name,  var->blockname);
+			print_warning_dont_show(var->filename, var->line, buf);
+		}
+	}
+}
+
+static void	add_intern_memblocks(vector_t *intern_, vector_t *memblock)
+{
+	intern_symbols_t	new;
+	memblock_t			*block = VEC_ELEM_FIRST(memblock_t, memblock);
 
 	for (uint32_t i = 0; i < memblock->nitems; i++, block++)
 	{
@@ -100,23 +121,6 @@ void	add_intern_memblocks(vector_t *intern_, vector_t *memblock)
 		new.pos = NULL;
 		new.offset = NULL;
 		VEC_SORTED_INSERT(intern_, block->name, new);
-
-		variable_t *var = VEC_ELEM_FIRST(variable_t, block->var);
-		for (uint32_t i = 0; i < block->var->nitems; i++, var++)
-		{
-			if (vector_search(intern_, (void*)&var->name) == -1)
-			{
-				new.name = (uint8_t*)var->name;
-				new.type = VAR;
-				new.data1 = 0;
-				new.pos = NULL;
-				new.data2 = var->size;
-				new.blockname = (uint8_t*)block->name;
-				VEC_SORTED_INSERT(intern_, var->name, new);
-				sprintf(buf, "unused variable `%s` (in block `%s`)", var->name, block->name);
-				print_warning_dont_show(var->filename, var->line, buf);
-			}
-		}
 	}
 }
 
@@ -126,7 +130,8 @@ void	__attribute__((always_inline))
 	add_intern_symbols(vector_t *intern_, loc_sym_t *local_symbol)
 {
 	add_intern_labels(intern_, local_symbol->label);
-	add_intern_memblocks(intern_, local_symbol->memblock); // and unused variables
+	add_intern_memblocks(intern_, local_symbol->memblock);
+	add_intern_unused_variables(intern_, local_symbol->var);
 }
 
 
@@ -207,9 +212,9 @@ void __attribute__((always_inline))
 
 void __attribute__((always_inline))
 		add_internal_var_instruction(vector_t *intern_, code_t *inst, uint8_t *code[], uint32_t *i, uint32_t *relative_index,
-									uint32_t *allocsize, vector_t *memblock, const char *symbol, uint32_t offset)
+									uint32_t *allocsize, vector_t *variables, const char *symbol, uint32_t offset)
 {
-	int32_t		index, block_index;
+	int32_t		index;
 	uint32_t	i_backup = *i;
 
 
@@ -219,16 +224,15 @@ void __attribute__((always_inline))
 		*code = realloc(*code, *allocsize);
 	}
 
-	index = variables_match_name(memblock, symbol, &block_index);
+	index = vector_search(variables, (void*)&symbol);
 	if (index != -1)
 	{
-		memblock_t	*block = VEC_ELEM(memblock_t, memblock, block_index);
-		variable_t	*var = VEC_ELEM(variable_t, block->var, index);
+		variable_t	*var = VEC_ELEM(variable_t, variables, index);
 		ssize_t		intern_index = vector_search(intern_, (void*)&symbol);
 
 		if (intern_index == -1)
 		{
-			intern_symbols_t	new = {(uint8_t*)var->name, VAR, 1, NULL, NULL, (uint8_t*)block->name, var->size};
+			intern_symbols_t	new = {(uint8_t*)var->name, VAR, 1, NULL, NULL, (uint8_t*)var->blockname, var->size};
 			new.pos = malloc(sizeof(uint32_t) * 8);
 			new.pos[0] = *relative_index;
 			new.offset = malloc(sizeof(uint32_t) * 8);
@@ -399,7 +403,7 @@ int		create_object_file(vector_t *code_area, loc_sym_t *local_symbol, vector_t *
 				if ((index = vector_search(extern_symbol, (void*)&inst->symbol)) != -1)
 					add_external_symbol_instruction(extern_, inst, &code, &i, &relative_index, &allocsize, VEC_ELEM(symbol_t, extern_symbol, index), area->addr);
 				else
-					add_internal_var_instruction(intern_, inst, &code, &i, &relative_index, &allocsize, local_symbol->memblock, inst->symbol, area->addr);
+					add_internal_var_instruction(intern_, inst, &code, &i, &relative_index, &allocsize, local_symbol->var, inst->symbol, area->addr);
 			}
 		}
 

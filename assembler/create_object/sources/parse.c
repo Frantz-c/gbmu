@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/13 14:04:54 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/17 15:44:22 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/18 18:42:07 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -232,7 +232,6 @@ __unexpected_char_endl:
 	return (NULL);
 __unexpected_char:
 	sprintf(data->buf, "(#0) unexpected character `%c`", **s);
-__print_error:
 	print_error(data->filename, data->lineno, data->line, data->buf);
 	free(fullname);
 	return (NULL);
@@ -322,7 +321,6 @@ static int		get_dquote_string(char **s, arguments_t args[5], uint32_t i)
 static __attribute__((always_inline))
 uint32_t	get_keywords_and_arguments(char *keyword_start, char **s, arguments_t args[5], data_t *data, vector_t *area, vector_t *macro)
 {
-	char		*arg_start;
 	uint32_t	length;
 
 	if (!is_alpha(**s))
@@ -613,9 +611,10 @@ __too_many_arguments:
 __signed_not_expected:
 	sprintf(data->buf, "signed numbers forbidden in keywords arguments");
 	goto __print_error_and_free_all;
-__not_gameboy_ascii:
+/*__not_gameboy_ascii:
 	sprintf(data->buf, "not gameboy ascii character `%c`", **s);
 	goto __print_error_and_free_all;
+*/
 __too_long_argument:
 	sprintf(data->buf, "too long argument (argument %u)", i + 1);
 	goto __print_error_and_free_all;
@@ -695,9 +694,6 @@ do {\
 	keyword_len = get_keywords_and_arguments(keyword, &s, args, &data, area, macro);\
 	if (keyword_len == 0 || args->type == BYTE_KEYWORD)\
 		goto __end_keyword;\
-\
-	uint32_t	len;\
-	uint32_t	type;\
 \
 	if (keyword_len == 4 && strncmp(keyword, "bank", keyword_len) == 0)\
 		bank_switch(area, args, &data);\

@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/13 14:05:50 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/16 18:06:01 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/18 18:44:25 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -184,7 +184,7 @@ __end:
 
 #define IS_LABEL	0xffu
 
-char	*replace_macro_without_param(char *s, const uint32_t len, vector_t *macro, data_t *data, uint8_t *is_string)
+char	*replace_macro_without_param(char *s, const uint32_t len, vector_t *macro, data_t *data)
 {
 	const char	char_backup = s[len];
 
@@ -246,12 +246,13 @@ char	*replace_macro_without_param(char *s, const uint32_t len, vector_t *macro, 
 __error_macro_with_param:
 	error_msg = "can't use macro with parameters as argument";
 	goto __print_error;
+/*
 __error_syntax_digit:
 	error_msg = "error digit";
 	goto __print_error;
+*/
 //__unexpected_char:
 //	sprintf(data->buf, "in macro `%s` content, unexpected character `%c`", m->name, *p);
-__print_error_fmt:
 	error_msg = (const char *)data->buf;
 __print_error:
 	print_error(data->filename, data->lineno, data->line, error_msg);
@@ -411,7 +412,7 @@ set_mnemonic_and_params(char **s, char **mnemonic, char **param1, char **param2,
 			{
 				register char		*macro_content;
 
-				macro_content = replace_macro_without_param(start, *s - start, macro, data, &is_string);
+				macro_content = replace_macro_without_param(start, *s - start, macro, data);
 				if (macro_content == NULL)
 				{
 					if (!first_param)
@@ -584,12 +585,11 @@ __incomplete_param:
 	goto __print_error;
 __unexpected_char:
 	sprintf(data->buf, "unexpected character `%c`", **s);
-__print_error_fmt:
 	error_msg = data->buf;
 __print_error:
 	print_error(data->filename, data->lineno, data->line, error_msg);
 
-__free_all:
+//__free_all:
 	if (*mnemonic) free(*mnemonic);
 	if (*param1) free(*param1);
 	if (*param2) free(*param2);

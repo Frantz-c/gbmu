@@ -6,7 +6,7 @@
 /*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/22 22:53:58 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/18 13:45:38 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/18 18:25:12 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -20,7 +20,6 @@
 void	add_label(char *name, vector_t *area, vector_t *ext_symbol, loc_sym_t *loc_symbol, data_t *data)
 {
 	int32_t		index;
-	int32_t		block_index;
 
 	if ((index = vector_search(loc_symbol->label, (void*)&name)) != -1)
 	{
@@ -48,7 +47,7 @@ void	add_label(char *name, vector_t *area, vector_t *ext_symbol, loc_sym_t *loc_
 		free(name);
 		return;	
 	}
-	else if ((index = memblock_match_name(loc_symbol->memblock, name)) != -1)
+	else if ((index = vector_search(loc_symbol->memblock, (void *)&name)) != -1)
 	{
 		memblock_t	*block = VEC_ELEM(memblock_t, loc_symbol->memblock, index);
 		
@@ -61,10 +60,9 @@ void	add_label(char *name, vector_t *area, vector_t *ext_symbol, loc_sym_t *loc_
 		free(name);
 		return;
 	}
-	else if ((index = variables_match_name(loc_symbol->memblock, name, &block_index)) != -1)
+	else if ((index = vector_search(loc_symbol->var, (void *)&name)) != -1)
 	{
-		memblock_t	*block = VEC_ELEM(memblock_t, loc_symbol->memblock, block_index);
-		variable_t	*var = VEC_ELEM(variable_t, block->var, index);
+		variable_t	*var = VEC_ELEM(variable_t, loc_symbol->var, index);
 
 		sprintf(
 					data->buf,

@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 13:17:53 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/17 12:31:12 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/18 18:19:39 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -109,7 +109,7 @@ extern char	*replace_content(macro_t *macro, char *param[10])
 	new[length] = '\0';
 	return (new);
 }
-
+/*
 extern int32_t		variables_match_name(const vector_t *memblock, const char *s, int32_t *block_i)
 {
 	register uint32_t	end = memblock->nitems * sizeof(memblock_t);
@@ -143,7 +143,7 @@ extern int32_t		memblock_match_name(const vector_t *memblock, const char *s)
 	}
 	return (-1);
 }
-
+*/
 extern void			push_instruction(code_area_t *area, uint8_t bin[4], param_t p[2], char *symbol,
 						vector_t *ext_symbol, loc_sym_t *loc_symbol, data_t *data)
 {
@@ -175,12 +175,12 @@ extern void			push_instruction(code_area_t *area, uint8_t bin[4], param_t p[2], 
 		new->symbol = strdup(symbol);
 		int32_t	index;
 
-		if (vector_search(loc_symbol->label, (void*)&symbol) == -1
-			&& variables_match_name(loc_symbol->memblock, symbol, NULL) == -1)
+		if (vector_search(loc_symbol->label, (void *)&symbol) == -1
+			&& vector_search(loc_symbol->var, (void *)&symbol) == -1)
 		{
-			if (memblock_match_name(loc_symbol->memblock, symbol) != -1)
+			if (vector_search(loc_symbol->memblock, (void *)&symbol) != -1)
 			{
-				fprintf(stderr, "can't use memory block as operand\n");
+				print_error(data->filename, data->lineno, data->line, "can't use memory block as operand");
 				free(new);
 				return;
 			}
@@ -202,7 +202,7 @@ extern void			push_instruction(code_area_t *area, uint8_t bin[4], param_t p[2], 
 				}
 				else if (sym->type == MEMBLOCK)
 				{
-					fprintf(stderr, "can't use memory block as operand\n");
+					print_error(data->filename, data->lineno, data->line, "can't use memory block as operand");
 					free(new);
 					return;
 				}

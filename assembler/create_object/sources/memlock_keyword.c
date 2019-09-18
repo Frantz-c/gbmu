@@ -6,7 +6,7 @@
 /*   By: fcordon <mhouppin@le-101.fr>               +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/10 19:00:27 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/17 16:22:41 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/18 18:03:37 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -42,17 +42,22 @@ extern void	set_memlock_area(vector_t *memblock, arguments_t args[4], data_t *da
 
 //	ARGUMENT 2 -> (uint32) start_addr
 	addr = *(uint32_t *)(args[1].value);
-	if (addr > 0xfffe || (addr >= 0xfea0 && addr < 0xff80) || (addr >= 0xe000 && addr < 0xfe00) || addr < 0x8000)
+	if (addr < 0xA000 || (addr >= 0xE000 && addr < 0xFF80) || addr >= 0xFFFF)
 		goto __invalid_region;
 
-//	ARGUMENT 3 -> (uint32) end_addr
-	end = *(uint32_t *)(args[2].value);
+//	ARGUMENT 3 -> (uint32) length
+	end = *(uint32_t *)(args[2].value) + addr;
 	if (end < addr)
 		goto __too_little_end;
-	if (end > 0xffff || (end >= 0xfea0 && end < 0xff80) || (end >= 0xe000 && end < 0xfe00) || end < 0x8000)
+	if (end > 0xFFFF || (end <= 0xFF80 && end > 0xE000) || end <= 0xA000)
 		goto __invalid_region2;
+	if (addr >= 0xA000 && addr < 0xC000 && end > 0xC000 && end <= 0xE000)
+	{
+		sprintf(data->buf, "block `%s` overlap distincts memory area (%hx:%hx)", name, (short)addr, (short)end);
+		print_warning(data->filename, data->lineno, data->line, data->buf);
+	}
 
-	memblock_t	new = {addr, end, end - addr, data->lineno, name, strdup(data->filename), NULL};
+	memblock_t	new = {addr, end, end - addr, data->lineno, name, strdup(data->filename)};
 	vector_push(memblock, (void*)&new);
 
 	return;

@@ -57,9 +57,6 @@
 
 	1) declare an extern symbol
 		.extern		symbol_name
-	
-	info:
-		extern symbols are only VARIABLES or LABELS
 
 
 ====================================================================================
