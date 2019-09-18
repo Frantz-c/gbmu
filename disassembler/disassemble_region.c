@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/05/22 22:17:53 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/18 12:42:40 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/18 18:56:02 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -206,7 +206,7 @@ const char	*get_ram_size(uint8_t c)
 	{
 		case 0x00: return ("0 banks");
 		//case 0x01: return ("16 KBits (2 Kbyte)");
-		case 0x02: return ("2 banks"); // ??
+		case 0x02: return ("1 banks"); // ??
 		case 0x03: return ("8 banks");
 		case 0x04: return ("32 banks");
 		case 0x05: return ("16 banks");
