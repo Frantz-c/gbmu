@@ -1,0 +1,64 @@
+
+.program_start	0x150
+.game_title		"LD SHIJI"
+.cgb_support	"incompatible"
+.sgb_support	"not_supported"
+.cart_type		"mbc1 sram"
+.rom_size		"4 banks"
+.ram_size		"0 banks"
+.destination	"japan"
+.version		0
+
+
+#
+#	variable:	変数：メモリのとある場所
+#	program:	目的を果たすための指示の集合体
+#
+
+.bank	0,	0x3000
+%include "ascii_printer.gbs"
+
+
+
+.bank	0,	0x150
+
+call	_load_ascii
+
+## ここからコードを書きましょう！
+## 目的：A＝123、H=12、B=H、C=0、D=E、E=255、L=A
+
+ld	A, 123		# 123 = 0x7B
+ld	H, 12		# 12 = 0x0C
+ld	B, H
+ld	C, 0		# 0 - 0x00
+ld	E, 255		# 255 = 0xFF
+ld	D, E
+ld	L, A
+
+
+
+ld	[0xC000],	A
+push	HL
+push	DE
+ld		E,	D
+push	DE
+push	BC
+ld		C,	B
+push	BC
+ld		L,	H
+push	HL
+ld		A,	[0xC000]
+ld		L,	A
+push	HL
+
+## ここからはテキストを表示するためのコードです
+
+ld		HL,	__fmt
+call	_print_string
+
+__loop:
+	halt
+	nop
+	jr	__loop
+
+__fmt:	.ascii	"A = 0x~\nH = 0x~\nB = 0x~\nC = 0x~\nD = 0x~\nE = 0x~\nL = 0x~\0"

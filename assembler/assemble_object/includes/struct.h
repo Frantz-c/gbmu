@@ -26,7 +26,7 @@
 # define ROM_SIZE		0x80
 # define RAM_SIZE		0x100
 # define DESTINATION	0x200
-# define VERSION		0x300
+# define VERSION		0x400
 
 # define NINTENDO_LOGO		"\xCE\xED\x66\x66\xCC\x0D\x00\x0B\x03\x73\x00\x83"\
 							"\x00\x0C\x00\x0D\x00\x08\x11\x1F\x88\x89\x00\x0E"\
