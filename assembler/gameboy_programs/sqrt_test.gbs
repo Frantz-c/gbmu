@@ -6,7 +6,7 @@
 #    By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+      #
 #                                                  #+#   #+    #+    #+#       #
 #    Created: 2019/09/16 22:16:23 by fcordon      #+#   ##    ##    #+#        #
-#    Updated: 2019/09/16 22:20:22 by fcordon     ###    #+. /#+    ###.fr      #
+#    Updated: 2019/09/20 11:27:14 by fcordon     ###    #+. /#+    ###.fr      #
 #                                                          /                   #
 #                                                         /                    #
 # **************************************************************************** #
@@ -30,7 +30,7 @@
 #call		_set_put_pixel_character_code
 call		_load_ascii
 
-ld			HL,	225
+ld			HL,	503
 call		_sqrt_16
 push		HL
 
@@ -41,7 +41,7 @@ halt
 nop
 jr		0xFE
 
-__FMT:	.ascii	"\n\n\n\nSQRT(225) = 0x~\0"
+__FMT:	.ascii	"\n\n\n\nSQRT(503) = 0x~\0"
 
 
 .bank	0,	0x2000

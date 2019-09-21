@@ -6,7 +6,7 @@
 #    By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+      #
 #                                                  #+#   #+    #+    #+#       #
 #    Created: 2019/09/15 15:26:28 by fcordon      #+#   ##    ##    #+#        #
-#    Updated: 2019/09/16 22:06:48 by fcordon     ###    #+. /#+    ###.fr      #
+#    Updated: 2019/09/20 17:57:11 by fcordon     ###    #+. /#+    ###.fr      #
 #                                                          /                   #
 #                                                         /                    #
 # **************************************************************************** #
@@ -23,6 +23,8 @@
 %define DX		0xFF86
 %define DY		0xFF87
 %define COLOR	0xFF88
+%define START_X	0xFF89
+%define START_Y	0xFF90
 
 
 _put_line:	## put_line(start = HL, end = DE, color = C)
@@ -31,12 +33,19 @@ _put_line:	## put_line(start = HL, end = DE, color = C)
 	push	BC
 	push	HL
 
+	ld		A,			H
+	ld		[START_X],	A
+	ld		A,			L
+	ld		[START_Y],	A
 	ld		A,			C
 	ld		[COLOR],	A
 	xor		A
 	ld		[SIGN_A],	A
 	ld		[SIGN_B],	A
 
+## >> Calcul A
+## end.x - start.x
+	__PL_calcul_A:
 	ld		A,	D
 	sub		A,	H
 	jpz		__PL_vertical_line
@@ -44,10 +53,12 @@ _put_line:	## put_line(start = HL, end = DE, color = C)
 	## result is negative
 	not		A
 	inc		A
-	ld		[COTE_A],	A
 	ld		[SIGN_A],	A
-
 	__PL_calcul_B:
+	ld		[COTE_A],	A
+
+## >> Calcul B
+## end.y - start.y
 	ld		A,	E
 	sub		A,	L
 	jpz		__PL_horizontal_line
@@ -55,40 +66,33 @@ _put_line:	## put_line(start = HL, end = DE, color = C)
 	## result is negative
 	not		A
 	inc		A
-	ld		[COTE_B],	A
 	ld		[SIGN_B],	A
-
 	__PL_calcul_HYP:
-	push	HL
-	pop		BC
-	ld		D,	0
-	ld		HL,	__SQRT8_table_lo
-	ld		E,	A
-	add		HL,	DE
-	ld		C,	[HL]
-	ld		HL,	__SQRT16_table_hi
-	add		HL,	DE
-	ld		B,	[HL]
+	ld		[COTE_B],	A
 
-#	ld		[COTE_C],	A
-	ld		A,	[COTE_A]
-	ld		HL,	__SQRT8_table_lo
-	ld		E,	A
-	add		HL,	DE
-	ld		A,	C
-	add		A,	[HL]
+## >> Calcul HYP
+##	push	HL
+##	push	BC
+##			COTE B
 	ld		C,	A
-	ld		A,	B
-	adc		A,	0
+	call	_mul_8
+	ld		A,	H
+	ld		[COTE_C],		A
+	ld		A,	L
+	ld		[COTE_C + 1],	A
+##			COTE A
+	ld		A,	[COTE_A]
+	ld		C,	A
+	call	_mul_8
+	push	BC
+	ld		A,	[COTE_C]
 	ld		B,	A
-	ld		HL,	__SQRT16_table_hi
-	add		HL,	DE
-	ld		A,	[HL]
-	add		A,	B
-	ld		B,	A
-## BC = A*A + B*B
-	ld		H,	B
-	ld		L,	C
+	ld		A,	[COTE_C + 1]
+	ld		C,	A
+	add		HL,	BC
+	pop		BC
+
+## HL = A*A + B*B
 	call	_sqrt_16
 	ld		A,				H
 	ld		[COTE_C],		A
@@ -96,16 +100,20 @@ _put_line:	## put_line(start = HL, end = DE, color = C)
 	ld		A,				L
 	ld		[COTE_C + 1],	A	## COTE_C ok
 	ld		E,				A
-	pop		BC
 
 	## dx = div_16(COTE_A << 8, HYPO)
 	__PL_calcul_dx:
 	## HYPO = DE
 	ld		A,	[COTE_A]
 	ld		H,	A		## HL = COTE_A << 8
+
 	ld		L,	0
 	call	_div_16	## HL / DE
 	ld		A,	L
+	cp		A,	0
+	jrnz	__next_2
+	ld		A,	255
+	__next_2:
 	ld		[DX],	A
 	## dy = div_16(COTE_B << 8, HYPO)
 	ld		A,	[COTE_C]
@@ -117,6 +125,10 @@ _put_line:	## put_line(start = HL, end = DE, color = C)
 	ld		L,	0
 	call	_div_16
 	ld		A,	L
+	cp		A,	0
+	jrnz	__next_1
+	ld		A,	255
+	__next_1:
 	ld		[DY],	A
 
 	## loop (i = 0; i < HYPO + 1; i++)
@@ -125,45 +137,90 @@ _put_line:	## put_line(start = HL, end = DE, color = C)
 	#    Y = start.y + ((dy * i) >> 8)
 	#    call _put_pixel
 	#  }
-	ld	DE,	0	## E = 0
-	ld	A,	[COTE_C]
-	ld	B,	A	
-	inc	B		## B = HYPO + 1
+	ld		DE,	0
+	ld		A,	[COTE_C + 1]
+	add		A,	1
+	ld		[COTE_C + 1],	A
+	jrnc	__PL_draw_loop
+	ld		A,	[COTE_C]
+	inc		A
+	ld		[COTE_C],	A
 
 	__PL_draw_loop:
 	## Y = start.y + ((dy * i) >> 8)
-	ld	A,	[DY]
-	ld	H,	0
-	ld	L,	A			## HL = DX
+	ld		A,	[DY]
+	ld		H,	0
+	ld		L,	A			## HL = DY
 	call	_mul_16		## HL = HL * DE (DX * E)
-	ld	A,	H			## A = HL << 8
-	pop		HL			## pop start
-	push	HL
-	add	A,	L			## A += start.y
-	ld	C,	A			## C = px.y
+	ld		A,	[START_Y]
+	add		A,	H			## A += (HL >> 8)
+	ld		C,	A			## C = px.y
+
 
 	## X = start.x + ((dx * i) >> 8)
-	ld	A,	[DX]
-	ld	H,	0
-	ld	L,	A			## HL = DX
+	ld		A,	[DX]
+	ld		H,	0
+	ld		L,	A			## HL = DX
 	call	_mul_16		## HL = HL * DE (DX * E)
-	ld	A,	H			## A = HL << 8
-	pop		HL			## pop start
-	push	HL
-	add	A,	H			## A += start.x
-	ld	H,	A			## H = px.x
+	ld		A,	[START_X]
+	add		A,	H			## A += (HL >> 8)
+	ld		H,	A			## H = px.x
 
 	push	DE
-	ld	A,	[COLOR]
-	ld	E,	A
-	ld	A,	H
+	ld		A,	[COLOR]
+	ld		E,	A
+	ld		A,	H
 	call	_put_pixel	## _put_pixel(X = A, Y = C, color = E)
 	pop		DE
 
-	inc		E
-	ld		A,	E
-	sub		B
+	inc		DE
+	ld		A,	[COTE_C + 1]
+	cp		A,	E
 	jrnz	__PL_draw_loop
+	ld		A,	[COTE_C]
+	cp		A,	D
+	jrnz	__PL_draw_loop
+
+
+
+####################################################
+
+
+#	ld	DE,	0	## E = 0
+#	ld	A,	[COTE_C + 1]
+#	ld	B,	A	
+#	inc	B		## B = HYPO + 1
+#
+#	__PL_draw_loop:
+#	## Y = start.y + ((dy * i) >> 8)
+#	ld	A,	[DY]
+#	ld	H,	0
+#	ld	L,	A			## HL = DY
+#	call	_mul_16		## HL = HL * DE (DX * E)
+#	ld	A,	[START_Y]
+#	add	A,	H			## A += (HL >> 8)
+#	ld	C,	A			## C = px.y
+#
+#	## X = start.x + ((dx * i) >> 8)
+#	ld	A,	[DX]
+#	ld	H,	0
+#	ld	L,	A			## HL = DX
+#	call	_mul_16		## HL = HL * DE (DX * E)
+#	ld	A,	[START_X]
+#	add	A,	H			## A += (HL >> 8)
+#	ld	H,	A			## H = px.x
+#
+#	push	DE
+#	ld	A,	[COLOR]
+#	ld	E,	A
+#	ld	A,	H
+#	call	_put_pixel	## _put_pixel(X = A, Y = C, color = E)
+#	pop		DE
+#
+#	inc		E
+#	ld		A,	E
+#	sub		B
+#	jrnz	__PL_draw_loop
 
 	pop		HL
 	pop		BC

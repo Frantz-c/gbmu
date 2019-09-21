@@ -6,7 +6,7 @@
 /*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/31 19:36:13 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/18 17:53:02 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/19 14:41:27 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -37,6 +37,12 @@ insn_err_t;
 #define ID_STRING_TYPE	0x8		// [a-zA-Z_][a-zA-Z0-9_]*
 #define GB_STRING_TYPE	0x10	// gameboy ascii string (>= ' ' && <= '_')
 #define DB_QUOTE_STRING	0x20	// "string"
+
+/*
+** symbol max length
+** aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+*/
+#define SYM_MAX_LEN		60
 
 typedef struct	arguments_s
 {

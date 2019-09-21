@@ -6,7 +6,7 @@
 /*   By: fcordon <fcordon@le-101.fr>                +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/22 22:53:58 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/18 18:25:12 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/20 20:09:21 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -39,8 +39,8 @@ void	add_label(char *name, vector_t *area, vector_t *ext_symbol, loc_sym_t *loc_
 		{
 			sprintf(
 						data->buf,
-						"(#0) duplicate symbol `%s`\n", // (previous declaration in file %s:%u)",
-						name //, lab->filename, lab->line
+						"duplicate symbol `%s` (previous declaration in file %s:%u)",
+						name, lab->filename, lab->line
 					);
 			print_error(data->filename, data->lineno, data->line, data->buf);
 		}

@@ -1,0 +1,238 @@
+# **************************************************************************** #
+#                                                           LE - /             #
+#                                                               /              #
+#    put_line2.gbs                                    .::    .:/ .      .::    #
+#                                                  +:+:+   +:    +:  +:+:+     #
+#    By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+      #
+#                                                  #+#   #+    #+    #+#       #
+#    Created: 2019/09/20 17:23:13 by fcordon      #+#   ##    ##    #+#        #
+#    Updated: 2019/09/21 18:31:12 by fcordon     ###    #+. /#+    ###.fr      #
+#                                                          /                   #
+#                                                         /                    #
+# **************************************************************************** #
+
+.memlock		putline_var, 0xFF90, 5
+.var			length_x,		1,	putline_var
+.var			length_y,		1,	putline_var
+.var			add_1,			1,	putline_var
+.var			algo,			1,	putline_var
+.var			X,				1,	putline_var
+
+%define			DOWN_DOWN	0
+%define			DOWN_RIGHT	1
+
+_put_line3:	## put_line(start = HL, end = DE, color = C)
+#{
+	push	DE
+	push	BC
+
+	ld		A,			1
+	ld		[add_1],	A
+	ld		[algo],		A
+
+## A = end.x - start.x
+	ld	A,	D
+	sub	H
+	jpz		__PL_print_vertical_line	; or a point
+	jrnc	__PL_no_swap_start_end
+## swap HL DE (start, end)
+	ld	[length_x],	A
+	ld	A,			H
+	ld	B,			D
+	ld	D,			A
+	ld	H,			B
+	ld	A,			L
+	ld	B,			E
+	ld	E,			A
+	ld	L,			B
+## length = -length
+	ld	A,			[length_x]
+	cpl	A
+	inc	A
+	__PL_no_swap_start_end:
+	ld	[length_x],	A
+	ld	C,			A	## C = length
+
+
+## A = end.y - start.y
+	ld	A,	E
+	sub	L
+	jpz		__PL_print_horizontal_line
+	jrnc	__PL_save_n_shift
+	ld	B,	A
+	ld	A,	0xFF
+	ld	[add_1], A
+	ld	A,	B
+	cpl	A
+	inc	A
+	__PL_save_n_shift:
+	ld	[length_y],	A
+	cp	A,	C	## cp n_shift, length
+	jrc	__next__
+	jrz	__next__	## 2 conditions = shit
+	xor	A
+	ld	[algo],	A
+	__next__:
+	ld	A,	[length_y]
+	inc	A
+	ld	[length_y],	A
+	ld	B,	A	## B = n_shift
+	ld	A,	[length_x]
+	inc	A
+	ld	[length_x],	A
+
+	
+	ld	A,		H
+	ld	[X],	A
+	ld	B,		A		## B = x
+	ld	A,		L
+	ld	C,		A		## C = y
+	pop		DE			## E is color
+	push	DE
+	ld	A,	[algo]
+	cp	DOWN_DOWN
+	jrz	down_down
+
+
+	down_right:
+
+	ld	A,	[length_x]
+	ld	L,		A		## L = length_x
+	ld	A,	[length_y]
+	ld	H,	A	## H = length_y
+	ld	A,	L	## L = length_x (const)
+	ld	D,	A	## D = DX
+	ld	B,	L	## B = length_x (counter)
+	ld		A,	[X]
+
+	__DR_loop:
+	call	_put_pixel
+
+	dec		B
+	jrz		__end
+
+	ld		A,	D
+	sub		A,	H	## DX -= length_y
+	ld		D,	A
+	jrz		__inc_or_dec_y
+	jrnc	__no_inc_or_dec_y
+	__inc_or_dec_y:
+
+	add		A,	L
+	ld		D,	A
+## dec or inc Y
+	ld		A,	[add_1]
+	add		A,	C
+	ld		C,	A
+	__no_inc_or_dec_y:
+	ld		A,	[X]
+	inc		A
+	ld		[X], A
+	jr		__DR_loop
+
+
+	__end:
+	pop	BC
+	pop	DE
+	ret
+
+
+
+	down_down:
+	ld	A,	[length_y]
+	ld	L,		A		## L = length_y
+	ld	A,	[length_x]
+	ld	H,	A	## H = length_x
+	ld	A,	L	## L = length_y (const)
+	ld	D,	A	## D = DY
+	ld	B,	L	## B = length_y (counter)
+	ld		A,	[X]
+
+	__DD_loop:
+	call	_put_pixel
+
+	dec		B
+	jrz		__end
+
+	ld		A,	D
+	sub		A,	H	## DY -= length_x
+	ld		D,	A
+	jrz		__inc_x
+	jrnc	__no_inc_x
+	__inc_x:
+
+	add		A,	L
+	ld		D,	A
+	ld		A,	[X]
+	inc		A
+	ld		[X], A
+
+	__no_inc_x:
+## dec or inc Y
+	ld		A,	[add_1]
+	add		A,	C
+	ld		C,	A
+	ld		A,	[X]
+	jr		__DD_loop
+
+
+
+
+	__PL_print_vertical_line:
+	ld	A,	E
+	sub	L
+	jrz	__print_one_px
+	jrnc	__no_swap_y
+	cpl	A
+	inc	A
+	ld	[length_x],	A
+## swap(start.y, end.y) 
+	ld	A,	E
+	ld	E,	L
+	ld	L,	A
+	ld	A,	[length_x]
+	__no_swap_y:
+	pop		DE
+	push	DE
+	inc	A
+	ld	D,	A
+	ld	C,	L
+	ld	A,	H
+
+	__vertical_loop:
+	call	_put_pixel
+	ld		A,	H
+	inc		C
+	dec		D
+	jrnz	__vertical_loop
+	jp		__end
+
+
+
+	__PL_print_horizontal_line:
+	pop		DE
+	push	DE
+	ld		A,	[length_x]
+	inc		A
+	ld		D,	A
+	ld		C,	L
+	ld		A,	H
+
+	__horizontal_loop:
+	call	_put_pixel
+	inc		H
+	ld		A,	H
+	dec		D
+	jrnz	__horizontal_loop
+	jp		__end
+
+
+	__print_one_px:
+	ld		A,	H
+	ld		C,	L
+	pop		DE
+	push	DE
+	call	_put_pixel
+	jp		__end
+#}
+

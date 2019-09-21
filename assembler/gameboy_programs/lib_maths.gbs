@@ -6,12 +6,14 @@
 #    By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+      #
 #                                                  #+#   #+    #+    #+#       #
 #    Created: 2019/09/15 16:51:47 by fcordon      #+#   ##    ##    #+#        #
-#    Updated: 2019/09/16 22:30:25 by fcordon     ###    #+. /#+    ###.fr      #
+#    Updated: 2019/09/20 22:39:05 by fcordon     ###    #+. /#+    ###.fr      #
 #                                                          /                   #
 #                                                         /                    #
 # **************************************************************************** #
 
 ## SQRT
+
+#_mul_16:	##	mul_16(HL = number, DE = multiplier)	# result = {HL}
 
 _sqrt_16:	##sqrt(HL = number)	# return = {HL = result}
 #{
@@ -19,81 +21,84 @@ _sqrt_16:	##sqrt(HL = number)	# return = {HL = result}
 	push	DE
 	push	BC
 
-	ld		D,	H
+	xor		A
+	cp		A,	H
+	jrnz	__next
+	cp		A,	L
+	jrz		__ret_0
+	ld		A,	1
+	cp		A,	L
+	jrnz	__next
+	__ret_1:
+	ld		L,	1
+	jr		__SQRT16_return
+	__ret_0:
+	ld		L,	0
+	jr		__SQRT16_return
+	
+
+
+__next:
+	ld		B,	H
+	ld		C,	L
+
+	ld		H,	0
+	ld		L,	2
+	ld		D,	0
 	ld		E,	L
-	ld		C,	0x15
-	ld		HL,	__SQRT16_table_hi + 15
 
 	__SQRT16_loop:
-	ld		A,	[HL++]
-	inc		C
-	sub		A,	D
-	jrc		__SQRT16_loop
-	jrz		__SQRT16_loop
+		call	_mul_16
+		ld		A,	H
+		cp		A,	B
+		jrz		__check_low
+		jrnc	__SQRT16_return_dec_E
+		jr		__SQRT16_next_number
+		__check_low:
+		ld		A,	L
+		cp		A,	C
+		jrz		__SQRT16_return_E
+		jrnc	__SQRT16_return_dec_E
+		__SQRT16_next_number:
+		inc		E
+		ld		L,	E
+		ld		H,	0
+		jr		__SQRT16_loop
 
-	dec		HL
-	dec		HL
-	dec		C
-	ld		A,	[HL]
-	sub		A,	D
-	jrz		__SQRT16_get_this_lo
-
-#	ld		D,	[HL]
-
-	ld		HL,	__SQRT8_table_lo
-	ld		B,	0
-	add		HL,	BC
-	__SQRT16_loop2:
-	ld		A,	[HL--]
-	dec		C
-	sub		A,	E
-	jrnc	__SQRT16_loop2
-
-	__SQRT16_get_this_lo:
-	ld		L,	C
-	ld		H,	0
-
-#	inc		HL
-#	inc		HL
-#	ld		L,	[HL]
-#	jr		__SQRT16_return
-
-#	__SQRT16_get_this_lo:
-#	ld		HL,	__SQRT8_table_lo
-#	ld		B,	0
-#	add		HL,	BC
-#	ld		L,	[HL]
-
+	__SQRT16_return_dec_E:
+		dec	E
+	__SQRT16_return_E:
+		ld	L,	E
 	__SQRT16_return:
-#		ld	H,	D
+		ld	H,	0
 		pop	BC
 		pop	DE
 		ret
 
 
-	__SQRT16_table_hi:
-		.byte	0		0		0		0		0		0		0		0\
-				0		0		0		0		0		0		0		0\
-				1		1		1		1		1		1		1		2\
-				2		2		2		2		3		3		3		3\
-				4		4		4		4		5		5		5		5\
-				6		6		6		7		7		7		8		8\
-				9		9		9		10		10		10		11		11\
-				12		12		13		13		14		14		15		15\
-				16		16		17		17		18		18		19		19\
-				20		20		21		21		22		23		23		24\
-				25		25		26		26		27		28		28		29\
-				30		30		31		32		33		33		34		35\
-				36		36		37		38		39		39		40		41\
-				42		43		43		44		45		46		47		48\
-				49		49		50		51		52		53		54		55\
-				56		57		58		59		60		61		62		63\
-				64		65		66		67		68		69		70		71\
-				72		73		74		75		76		77		78		79\
-				81		82		83		84		85		86		87		89\
-				90		91		92		93		95		96		97		98\
-				100		101		102		103		105		106		107		108\
-				110		111
+#	__SQRT16_table_hi:
+#		.byte	0		0		0		0		0		0		0		0\
+#				0		0		0		0		0		0		0		0\
+#				1		1		1		1		1		1		1		2\
+#				2		2		2		2		3		3		3		3\
+#				4		4		4		4		5		5		5		5\
+#				6		6		6		7		7		7		8		8\
+#				9		9		9		10		10		10		11		11\
+#				12		12		13		13		14		14		15		15\
+#				16		16		17		17		18		18		19		19\
+#				20		20		21		21		22		23		23		24\
+#				25		25		26		26		27		28		28		29\
+#				30		30		31		32		33		33		34		35\
+#				36		36		37		38		39		39		40		41\
+#				42		43		43		44		45		46		47		48\
+#				49		49		50		51		52		53		54		55\
+#				56		57		58		59		60		61		62		63\
+#				64		65		66		67		68		69		70		71\
+#				72		73		74		75		76		77		78		79\
+#				81		82		83		84		85		86		87		89\
+#				90		91		92		93		95		96		97		98\
+#				100		101		102		103		105		106		107		108\
+#				110		111
 
 #}
 
@@ -155,606 +160,145 @@ _sqrt_8:	##sqrt(A = number)	# return = {A = result}
 _div_8:	## div(A = number, C = diviser)	## return {A = result, B = remainder}
 #{
 	push	DE
-	push	BC
 
-	ld	E,	0
+	ld		D,	C
+	ld		B,	A
+	ld		E,	255
+	__DIV8_loop:
+		inc	E
+		sub	A,	C
+		jrc	__DIV8_return_carry
+		jrnz	__DIV8_loop
+		inc	E
+		jr	__DIV8_return_no_carry
+
+	__DIV8_return_carry:
+	add	A,	C
+	__DIV8_return_no_carry:
+	ld	C,	D
 	ld	B,	A
-	sub	A,	C
-	jrc	__return_result
-
-	__loop:
-		inc		E
-		ld		B,	A
-		sub		A,	C
-		jrnc	__loop
-
-	__return_result:
 	ld	A,	E
 
-	ld	E,	B
-	pop	BC
-	ld	B,	E
-	pop	DE
+	pop	DE	
 	ret
 #}
 
 
 
 
+%define last_num	0xFF94
 _div_16:	##	div(HL = number, DE = diviser)	# ret{result = HL, remainder = DE}
 #{
 	push	BC
 
 	push	HL
 	push	DE
-	push	DE
-	pop		HL		## HL = diviser + ...
-	pop		DE		## DE = number
-	pop		BC		## BC = diviser
+	pop		HL
+	pop		DE
 
-	ld		BC,	0	## BC = result
-
-	#### opti: HL = (diviser << 1) until (HL > number)
+	ld		BC,	0xFFFF
 
 	__DIV16_loop:
-		ld		A,	E
-		sub		A,	L
-		ld		A,	D
-		__no_carry:
-		sbc		A,	H
-		jrc		__ret_C		## underflow
-		
 		inc		BC
-		jr		__DIV16_loop
+		
+		ld		A,	E
+		ld		[last_num],	A
+		sub		A,	L
+		ld		E,	A
+		ld		A,	D
+		ld		[last_num + 1],	A
+		sbb		A,	H
+		ld		D,	A
+		jrc		__DIV16_return_carry
+
+		ld		A,	[last_num + 1]
+		cp		A,	L
+		jrnz	__DIV16_loop
+		ld		A,	[last_num]
+		cp		A,	H
+		jrnz	__DIV16_loop
+
+	ld	H,	B
+	ld	L,	C
+	pop	BC
+	ret
+
+	__DIV16_return_carry:
+	ld		A,	E
+	add		A,	L
+	ld		E,	A
+	ld		A,	D
+	adc		A,	H
+	ld		D,	A
+
+	ld	H,	B
+	ld	L,	C
+	pop	BC
+	ret
 
 
-
-	__ret_C:
-		## get remainder
-		ld	A,	C
-		add	A,	B
-		jrz	__return_BC		## BC == 0
-		## HL -= BC (diviser * x - diviser)
-		ld	A,	L
-		sub	A,	C
-		ld	E,	A
-		ld	A,	H
-		sbc	A,	C
-		ld	D,	A
-
-		__return_BC:
-		ld	H,	B
-		ld	L,	C
-		pop	BC
-		ret
 #}
+
 
 ## MUL
 
-%define	int8_mul_2(n)\
-	sla	n
-%define	int8_mul_4(n)\
-	sla	n\
-	sla	n
-%define	int8_mul_8(n)\
-	sla	n\
-	sla	n\
-	sla	n
-%define	int8_mul_16(n)\
-	sla	n\
-	sla	n\
-	sla	n\
-	sla	n
-%define	int8_mul_32(n)\
-	sla	n\
-	sla	n\
-	sla	n\
-	sla	n\
-	sla	n
-%define	int8_mul_64(n)\
-	sla	n\
-	sla	n\
-	sla	n\
-	sla	n\
-	sla	n\
-	sla	n
-%define	int8_mul_128(n)\
-	sla	n\
-	sla	n\
-	sla	n\
-	sla	n\
-	sla	n\
-	sla	n\
-	sla	n
-
 						
-_mul_8:	##mul(n = A, mul = C)	## return {A = result}
+_mul_8:	##mul(n = A, mul = C)	## return {HL = result}
 #{
-	push	BC
 	push	DE
+	push	BC
 
-	ld	B,	0
-	ld	D,	A
+	ld		D,	0
+	ld		E,	A
+	ld		HL,	0
+	xor		A
+	__MUL8_loop:
+		srl		C
+		jrnc	__MUL8_shift_de
 
-	bit	7,	C
-	jrz	__MUL_bit6
-	int8_mul_128(A)
-	add	A,	B
-	ld	B,	A
-	ld	A,	D
+		add		HL,	DE
+		__MUL8_shift_de:
+		jrz		__MUL8_return
+		sla		E
+		rl		D
+		jr		__MUL8_loop
+	
+	__MUL8_return:
+		pop		BC
+		pop		DE
+		ret
 
-	__MUL_bit6:
-		bit	6,	C
-		jrz	__MUL_bit5
-		int8_mul_64(A)
-		add	A,	B
-		ld	B,	A
-		ld	A,	D
-
-	__MUL_bit5:
-		bit	5,	C
-		jrz	__MUL_bit4
-		int8_mul_32(A)
-		add	A,	B
-		ld	B,	A
-		ld	A,	D
-
-	__MUL_bit4:
-		bit	4,	C
-		jrz	__MUL_bit3
-		int8_mul_16(A)
-		add	A,	B
-		ld	B,	A
-		ld	A,	D
-
-	__MUL_bit3:
-		bit	3,	C
-		jrz	__MUL_bit2
-		int8_mul_8(A)
-		add	A,	B
-		ld	B,	A
-		ld	A,	D
-
-	__MUL_bit2:
-		bit	2,	C
-		jrz	__MUL_bit1
-		int8_mul_4(A)
-		add	A,	B
-		ld	B,	A
-		ld	A,	D
-
-	__MUL_bit1:
-		bit	1,	C
-		jrz	__MUL_add_A
-		int8_mul_2(A)
-		add	A,	B
-		ld	B,	A
-		ld	A,	D
-
-	__MUL_add_A:
-	bit	0,	C
-	jrz	__end
-	add	A,	B
-	ld	B,	A
-
-	__end:
-	ld	A,	B
-	pop	DE
-	pop	BC
-	ret
 #}
 
-%define	SHIFT_15(hi, lo)\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi
-%define	SHIFT_14(hi, lo)\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi
-%define	SHIFT_13(hi, lo)\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi
-%define	SHIFT_12(hi, lo)\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi
-%define	SHIFT_11(hi, lo)\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi
-%define	SHIFT_10(hi, lo)\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi
-%define	SHIFT_9(hi, lo)\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi
-%define	SHIFT_8(hi, lo)\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi
-%define	SHIFT_7(hi, lo)\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi
-%define	SHIFT_6(hi, lo)\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi
-%define	SHIFT_5(hi, lo)\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi
-%define	SHIFT_4(hi, lo)\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi
-%define	SHIFT_3(hi, lo)\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi
-%define	SHIFT_2(hi, lo)\
-	sla	lo\
-	rl	hi\
-	sla	lo\
-	rl	hi
-%define	SHIFT_1(hi, lo)\
-	sla	lo\
-	rl	hi
 
-%define ADD_DE_BC	\
-	ld		A,	C\
-	add		A,	E\
-	ld		E,	A\
-	ld		A,	B\
-	adc		A,	D\
-	ld		D,	A\
-	ld		B,	H\
-	ld		C,	L
-
-
-
-%define	tmp_hi	0xFFA0
-%define	tmp_lo	0xFFA1
-
-_mul_16:	##	mul_16(HL = number, DE = multiplier)	# result = {HL}
+_mul_16:	## mul(num = HL, mul = DE)		# return {result = HL}
 #{
-	push	BC
 	push	DE
-
-	ld		A,			D
-	ld		[tmp_hi],	A
-	ld		A,			E
-	ld		[tmp_lo],	A
+	push	BC
 
 	ld		B,	H
 	ld		C,	L
-	ld		DE,	0
-	ld		A,	[tmp_hi]
+	ld		HL,	0
+	__MUL16_loop:
+		ld		A,	E
+		or		A,	D
+		jrz		__MUL16_return
 
-	bit		7,	A			## bit 15
-	jrz		__MUL16_bit_14
-	SHIFT_15(B, C)
-	ADD_DE_BC
-	ld		A,	[tmp_hi]
+		srl		D
+		rr		E
+		jrnc	__MUL16_shift_bc
 
-	__MUL16_bit_14:
-		bit		6,	A			## bit 14
-		jrz		__MUL16_bit_13
-		SHIFT_14(B, C)
-		ADD_DE_BC
-		ld		A,	[tmp_hi]
-
-	__MUL16_bit_13:
-		bit		5,	A			## bit 13
-		jrz		__MUL16_bit_12
-		SHIFT_13(B, C)
-		ADD_DE_BC
-		ld		A,	[tmp_hi]
-
-	__MUL16_bit_12:
-		bit		4,	A			## bit 12
-		jrz		__MUL16_bit_11
-		SHIFT_12(B, C)
-		ADD_DE_BC
-		ld		A,	[tmp_hi]
-
-	__MUL16_bit_11:
-		bit		3,	A			## bit 11
-		jrz		__MUL16_bit_10
-		SHIFT_11(B, C)
-		ADD_DE_BC
-		ld		A,	[tmp_hi]
-
-	__MUL16_bit_10:
-		bit		2,	A			## bit 10
-		jrz		__MUL16_bit_9
-		SHIFT_10(B, C)
-		ADD_DE_BC
-		ld		A,	[tmp_hi]
-
-	__MUL16_bit_9:
-		bit		1,	A			## bit 9
-		jrz		__MUL16_bit_8
-		SHIFT_9(B, C)
-		ADD_DE_BC
-		ld		A,	[tmp_hi]
-
-	__MUL16_bit_8:
-		bit		0,	A			## bit 8
-		jrz		__MUL16_bit_7
-		SHIFT_8(B, C)
-		ADD_DE_BC
-
-	__MUL16_bit_7:
-		ld		A,	[tmp_lo]
-		bit		7,	A			## bit 7
-		jrz		__MUL16_bit_6
-		SHIFT_7(B, C)
-		ADD_DE_BC
-		ld		A,	[tmp_lo]
-
-	__MUL16_bit_6:
-		bit		6,	A			## bit 6
-		jrz		__MUL16_bit_5
-		SHIFT_6(B, C)
-		ADD_DE_BC
-		ld		A,	[tmp_lo]
-
-	__MUL16_bit_5:
-		bit		5,	A			## bit 5
-		jrz		__MUL16_bit_4
-		SHIFT_5(B, C)
-		ADD_DE_BC
-		ld		A,	[tmp_lo]
-
-	__MUL16_bit_4:
-		bit		4,	A			## bit 4
-		jrz		__MUL16_bit_3
-		SHIFT_4(B, C)
-		ADD_DE_BC
-		ld		A,	[tmp_lo]
-
-	__MUL16_bit_3:
-		bit		3,	A			## bit 3
-		jrz		__MUL16_bit_2
-		SHIFT_3(B, C)
-		ADD_DE_BC
-		ld		A,	[tmp_lo]
-
-	__MUL16_bit_2:
-		bit		2,	A			## bit 2
-		jrz		__MUL16_bit_1
-		SHIFT_2(B, C)
-		ADD_DE_BC
-		ld		A,	[tmp_lo]
-
-	__MUL16_bit_1:
-		bit		1,	A			## bit 1
-		jrz		__MUL16_bit_0
-		SHIFT_1(B, C)
-		ADD_DE_BC
-		ld		A,	[tmp_lo]
-
-	__MUL16_bit_0:
-		bit		0,	A			## bit 0
-		jrz		__MUL16_mov_return
-		ld		H,	D
-		ld		L,	E
 		add		HL,	BC
-		jr		__MUL16_return
+		__MUL16_shift_bc:
+		sla		C
+		rl		B
+		jr		__MUL16_loop
 
-	__MUL16_mov_return:
-	ld		H,	D
-	ld		L,	E
+	
 	__MUL16_return:
-	pop		DE
-	pop		BC
-	ret
+		pop		BC
+		pop		DE
+		ret
+
 #}
 
-%undef int8_mul_2
-%undef int8_mul_4
-%undef int8_mul_8
-%undef int8_mul_16
-%undef int8_mul_32
-%undef int8_mul_64
-%undef int8_mul_128

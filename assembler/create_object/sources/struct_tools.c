@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/16 13:17:53 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/18 18:19:39 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/20 12:03:24 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -186,7 +186,7 @@ extern void			push_instruction(code_area_t *area, uint8_t bin[4], param_t p[2], 
 			}
 			else if ((index = vector_search(ext_symbol, (void*)&symbol)) == -1)
 			{
-				label_t	sym = {symbol, 0, NOT_DECLARED, data->lineno, data->filename};
+				label_t	sym = {symbol, 0, NOT_DECLARED, data->lineno, strdup(data->filename)};
 
 				size_t	index = vector_index(loc_symbol->label, (void*)&symbol);
 				vector_insert(loc_symbol->label, (void*)&sym, index);

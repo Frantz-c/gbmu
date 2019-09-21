@@ -6,7 +6,7 @@
 /*   By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/08/26 18:33:33 by fcordon      #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/17 12:02:50 by fcordon     ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/09/20 12:02:00 by fcordon     ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -24,6 +24,7 @@ extern void	check_undefined_symbols(vector_t *label)
 		{
 			//g_error++;
 			sprintf(buf, "\e[1;31mundefined symbol \e[0m\"%s\"\n", l->name);
+			printf("%s", l->filename);
 			print_error_dont_show(l->filename, l->line, buf);
 		}
 	}

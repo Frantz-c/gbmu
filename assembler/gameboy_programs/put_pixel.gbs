@@ -6,7 +6,7 @@
 #    By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+      #
 #                                                  #+#   #+    #+    #+#       #
 #    Created: 2019/09/12 22:15:34 by fcordon      #+#   ##    ##    #+#        #
-#    Updated: 2019/09/15 15:17:33 by fcordon     ###    #+. /#+    ###.fr      #
+#    Updated: 2019/09/20 21:07:16 by fcordon     ###    #+. /#+    ###.fr      #
 #                                                          /                   #
 #                                                         /                    #
 # **************************************************************************** #
@@ -59,6 +59,7 @@ _lcdc_on:	## lcdc_on(void)
 ##		bit to set		= (X % 8)
 _put_pixel:		## put_pixel(x = A, y = C, E = color)
 #{
+	push	HL
 	push	BC
 	push	DE
 
@@ -135,6 +136,7 @@ _put_pixel:		## put_pixel(x = A, y = C, E = color)
 
 	pop		DE
 	pop		BC
+	pop		HL
 	ret
 
 	__bit_mask:	.byte	0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01

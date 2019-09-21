@@ -6,7 +6,7 @@
 #    By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+      #
 #                                                  #+#   #+    #+    #+#       #
 #    Created: 2019/09/15 19:24:25 by fcordon      #+#   ##    ##    #+#        #
-#    Updated: 2019/09/15 20:19:03 by fcordon     ###    #+. /#+    ###.fr      #
+#    Updated: 2019/09/20 22:35:07 by fcordon     ###    #+. /#+    ###.fr      #
 #                                                          /                   #
 #                                                         /                    #
 # **************************************************************************** #
@@ -26,26 +26,23 @@
 
 call	_load_ascii
 
-ld		A,	19
-ld		C,	13
-call	_mul_8
-ld		C,	A
-push	BC
+%define	num	51
+%define	den	15
 
-ld		A,	24
-ld		C,	5
+ld		A,	num
+ld		C,	den
+push	AF
 call	_div_8
-ld		C,	A
-ld		E,	B
+pop		HL		## H = num
+ld		E,	A	## result
+ld		L,	C	## diviser
+ld		C,	B	## remainder
+push	BC
 push	DE
-push	BC
-
-ld		HL,	0x12
-ld		DE,	0x300
-call	_mul_16
-ld		C,	H
 push	HL
-push	BC
+ld		L,	H
+push	HL
+
 
 
 ld		HL,	__FMT
@@ -56,9 +53,7 @@ nop
 jr		0xFE
 
 __FMT:	.ascii	"TESTS _mul_8/_div_8\n\n\n\n\n"
-		.ascii	"0x12 * 0x300\n> result = 0x~~\n\n"
-		.ascii	"24 / 5 :\n> result = 0x~\n> remainder = 0x~\n\n"
-		.ascii	"19 * 13:\n> result = 0x~\0"
+		.ascii	" 0x~ / 0x~:\n> result = 0x~\n> remainder = 0x~\0"
 
 
 .bank	0,	0x2800

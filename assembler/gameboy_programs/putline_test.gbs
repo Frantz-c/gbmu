@@ -6,7 +6,7 @@
 #    By: fcordon <marvin@le-101.fr>                 +:+   +:    +:    +:+      #
 #                                                  #+#   #+    #+    #+#       #
 #    Created: 2019/09/15 19:24:25 by fcordon      #+#   ##    ##    #+#        #
-#    Updated: 2019/09/15 22:11:19 by fcordon     ###    #+. /#+    ###.fr      #
+#    Updated: 2019/09/21 18:42:42 by fcordon     ###    #+. /#+    ###.fr      #
 #                                                          /                   #
 #                                                         /                    #
 # **************************************************************************** #
@@ -24,18 +24,28 @@
 
 .bank	0,	0x150
 
-call		_lcdc_off
-call		_clean_character_data
-call		_set_put_pixel_character_code
+call	_lcdc_off
+call	_clean_character_data
+call	_set_put_pixel_character_code
+
+%define	end_x	70
+%define	end_y	40
 
 
 
-ld		H,	75
-ld		L,	100
-ld		D,	0
-ld		E,	0
+ld		H,	00
+ld		L,	00
+ld		D,	end_x
+ld		E,	end_y
 ld		C,	0x3
-call	_put_line
+call	_put_line3
+
+ld		A,	end_x
+ld		C,	end_y
+ld		E,	0x1
+call	_put_pixel
+
+
 
 call	_lcdc_on
 
@@ -58,4 +68,4 @@ jr		0xFE
 .bank	0,	0x3000
 
 %include "put_pixel.gbs"
-%include "put_line.gbs"
+%include "put_line3.gbs"
