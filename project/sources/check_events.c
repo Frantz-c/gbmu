@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/08 09:53:23 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/13 13:29:12 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/10/09 16:03:15 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -15,6 +15,85 @@
 #include "bitmask.h"
 #include "graphics.h"
 #include "memory_map.h"
+
+void	check_halt_events(void)
+{
+	bool	kint = false;
+
+	P1_REGISTER |= 0xFu;
+
+	SDL_Event	ev;
+
+	while (SDL_PollEvent(&ev))
+	{
+		if (ev.type == SDL_WINDOWEVENT && ev.window.event == SDL_WINDOWEVENT_CLOSE)
+		{
+			if (ev.window.windowID == SDL_GetWindowID(g_window))
+				exit(EXIT_SUCCESS);
+			else if (ev.window.windowID == SDL_GetWindowID(g_dwindow))
+			{
+				SDL_DestroyTexture(g_dtexture);
+				SDL_DestroyRenderer(g_drender);
+				SDL_DestroyWindow(g_dwindow);
+				g_dwindow = NULL;
+			}
+		}
+		else if (ev.type == SDL_KEYDOWN)
+		{
+			SDL_Scancode	code = ev.key.keysym.scancode;
+			if ((P1_REGISTER & BIT_4) == 0 && (P1_REGISTER & BIT_5) == BIT_5)
+			{
+				if (code == SDL_SCANCODE_S || code == SDL_SCANCODE_DOWN)
+				{
+					P1_REGISTER &= ~(BIT_3);
+					kint = true;
+				}
+				if (code == SDL_SCANCODE_W || code == SDL_SCANCODE_UP)
+				{
+					P1_REGISTER &= ~(BIT_2);
+					kint = true;
+				}
+				if (code == SDL_SCANCODE_A || code == SDL_SCANCODE_LEFT)
+				{
+					P1_REGISTER &= ~(BIT_1);
+					kint = true;
+				}
+				if (code == SDL_SCANCODE_D || code == SDL_SCANCODE_RIGHT)
+				{
+					P1_REGISTER &= ~(BIT_0);
+					kint = true;
+				}
+			}
+			if ((P1_REGISTER & BIT_4) == BIT_4 && (P1_REGISTER & BIT_5) == 0)
+			{
+				if (code == SDL_SCANCODE_SPACE)
+				{
+					P1_REGISTER &= ~(BIT_3);
+					kint = true;
+				}
+				if (code == SDL_SCANCODE_RALT || code == SDL_SCANCODE_LALT)
+				{
+					P1_REGISTER &= ~(BIT_2);
+					kint = true;
+				}
+				if (code == SDL_SCANCODE_BACKSPACE)
+				{
+					P1_REGISTER &= ~(BIT_1);
+					kint = true;
+				}
+				if (code == SDL_SCANCODE_RETURN)
+				{
+					P1_REGISTER &= ~(BIT_0);
+					kint = true;
+				}
+			}
+		}
+	}
+	if (kint && (IE_REGISTER & BIT_4) == BIT_4)
+	{
+		IF_REGISTER |= BIT_4;
+	}
+}
 
 void	check_cntrl_events(cycle_count_t cycles)
 {
@@ -25,7 +104,13 @@ void	check_cntrl_events(cycle_count_t cycles)
 	{
 		ev_cycles -= 10000;
 
-		check_gb_events();
+		if (GAMEBOY_STATUS == NORMAL_MODE)
+			check_gb_events();
+		else
+		{
+			check_halt_events();
+			return ;
+		}
 
 		SDL_Event ev;
 
