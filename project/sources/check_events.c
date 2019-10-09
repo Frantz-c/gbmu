@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/08 09:53:23 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/10/09 16:03:15 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/10/09 16:30:28 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -38,7 +38,7 @@ void	check_halt_events(void)
 				g_dwindow = NULL;
 			}
 		}
-		else if (ev.type == SDL_KEYDOWN)
+		else if (ev.type == SDL_KEYDOWN && ev.key.repeat == 0)
 		{
 			SDL_Scancode	code = ev.key.keysym.scancode;
 			if ((P1_REGISTER & BIT_4) == 0 && (P1_REGISTER & BIT_5) == BIT_5)

@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/08 11:02:11 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/09/13 14:04:47 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/10/09 16:28:13 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -403,6 +403,7 @@ rrca:
 stop:
 	ADD_PC(1);
 	GAMEBOY_STATUS = STOP_MODE;
+	IF_REGISTER &= ~(BIT_4);
 	return (4);
 
 ld_de_imm16:
@@ -768,6 +769,7 @@ LD_HL_BLOCK(l);
 halt:
 	ADD_PC(1);
 	GAMEBOY_STATUS = HALT_MODE;
+	IF_REGISTER &= ~(BIT_4);
 	return (4);
 
 LD_HL_BLOCK(a);
