@@ -6,7 +6,7 @@
 /*   By: mhouppin <mhouppin@le-101.fr>              +:+   +:    +:    +:+     */
 /*                                                 #+#   #+    #+    #+#      */
 /*   Created: 2019/07/08 11:02:11 by mhouppin     #+#   ##    ##    #+#       */
-/*   Updated: 2019/10/09 16:28:13 by mhouppin    ###    #+. /#+    ###.fr     */
+/*   Updated: 2019/10/09 16:50:46 by mhouppin    ###    #+. /#+    ###.fr     */
 /*                                                         /                  */
 /*                                                        /                   */
 /* ************************************************************************** */
@@ -1148,12 +1148,12 @@ add_sp_imm8:
 	imm_16 = regs->reg_sp + (int8_t)imm_8;
 	if ((imm_8 < 0x80u) && (imm_16 & 0xFFu) < (regs->reg_sp & 0xFFu))
 		regs->reg_f |= FLAG_CY;
-//	else if ((imm_8 >= 0x80u) && (imm_16 & 0xFFu) > (regs->reg_sp & 0xFFu))
-//		regs->reg_f |= FLAG_CY;
+	else if ((imm_8 >= 0x80u) && (imm_16 & 0xFFu) > (regs->reg_sp & 0xFFu))
+		regs->reg_f |= FLAG_CY;
 	if ((imm_8 < 0x80u) && (imm_16 & 0xFu) < (regs->reg_sp & 0xFu))
 		regs->reg_f |= FLAG_H;
-//	else if ((imm_8 >= 0x80u) && (imm_16 & 0xFu) > (regs->reg_sp & 0xFu))
-//		regs->reg_f |= FLAG_H;
+	else if ((imm_8 >= 0x80u) && (imm_16 & 0xFu) > (regs->reg_sp & 0xFu))
+		regs->reg_f |= FLAG_H;
 	regs->reg_sp = imm_16;
 	return (16);
 
@@ -1259,7 +1259,7 @@ cp_a_imm8:
 		regs->reg_f |= FLAG_CY;
 	if ((regs->reg_a & 0xFu) < (imm_8 & 0xFu))
 		regs->reg_f |= FLAG_H;
-	return (4);
+	return (8);
 
 rst_38h:
 	ADD_PC(1);
@@ -1474,7 +1474,7 @@ rrc_hl:
 	return (16);
 
 rrc_a:
-	RLC_8(regs->reg_a);
+	RRC_8(regs->reg_a);
 	return (8);
 
 rl_b:
